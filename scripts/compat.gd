@@ -91,25 +91,99 @@ static func _deslocamento(dados, texto: String, alinhamento: int, largura: float
 
 ## `draw_string` do Godot 4: posição na linha de base, alinhamento dentro
 ## de `largura`, tamanho em pixels.
+##
+## TAMANHOS PADRÃO. No Godot 3 cada tamanho de letra é uma fonte com a sua
+## própria imagem de letras, e essa imagem cresce com o tamanho: de 100 px
+## para cima ela tem 2048x2048 (8 MB cada, mais outra para o contorno). O
+## jogo pede dezenas de tamanhos — só as letras passavam de 60 MB, e numa
+## TV Box de 1 GB isso derrubava o Android. Aqui a fonte vem de poucos
+## tamanhos padrão (no máximo 128 px) e o desenho é esticado até o tamanho
+## pedido.
 static func texto(alvo: CanvasItem, dados, pos: Vector2, texto: String, alinhamento: int = ESQUERDA,
 		largura: float = -1.0, tamanho: int = 16, cor: Color = Color(1, 1, 1)) -> void:
 	if texto.empty() or cor.a <= 0.0:
 		return
-	var f = fonte(dados, tamanho)
+	var real = tamanho_padrao(tamanho)
 	var x = _deslocamento(dados, texto, alinhamento, largura, tamanho)
-	f.draw(alvo.get_canvas_item(), pos + Vector2(x, 0.0), texto, cor)
+	_escrever(alvo, fonte(dados, real), pos + Vector2(x, 0.0), float(tamanho) / float(real), texto, cor, Color(1, 1, 1, 0))
 
 
 ## `draw_string_outline` do Godot 4: só o contorno, na cor pedida. No
 ## Godot 4 o número é a espessura total do traço; no 3 é quanto o
-## contorno avança para fora da letra — metade.
+## contorno avança para fora da letra — metade (e na escala da fonte
+## padrão usada).
 static func contorno(alvo: CanvasItem, dados, pos: Vector2, texto: String, alinhamento: int = ESQUERDA,
 		largura: float = -1.0, tamanho: int = 16, espessura: int = 1, cor: Color = Color(1, 1, 1)) -> void:
 	if texto.empty() or cor.a <= 0.0 or espessura <= 0:
 		return
-	var f = fonte(dados, tamanho, int(max(1, round(espessura * 0.5))))
+	var real = tamanho_padrao(tamanho)
+	var escala = float(tamanho) / float(real)
+	# O raio do contorno também em poucos valores: cada raio diferente é
+	# mais uma imagem de letras na memória.
+	var raio = _raio_padrao(espessura * 0.5 / escala)
 	var x = _deslocamento(dados, texto, alinhamento, largura, tamanho)
-	f.draw(alvo.get_canvas_item(), pos + Vector2(x, 0.0), texto, Color(1, 1, 1, 0), -1, cor)
+	_escrever(alvo, fonte(dados, real, raio), pos + Vector2(x, 0.0), escala, texto, Color(1, 1, 1, 0), cor)
+
+
+## Os tamanhos padrão: até 32 px, de 2 em 2; até 64, de 8 em 8; depois
+## 80, 96 e 128. Acima de 128 o desenho é ampliado a partir de 128.
+static func tamanho_padrao(tamanho: int) -> int:
+	if tamanho <= 32:
+		return int(max(8, tamanho + tamanho % 2))
+	if tamanho <= 64:
+		return int(ceil(tamanho / 8.0) * 8)
+	if tamanho <= 80:
+		return 80
+	if tamanho <= 96:
+		return 96
+	return 128
+
+
+static func _raio_padrao(raio: float) -> int:
+	for padrao in [1, 2, 3, 4, 6, 8, 12, 16]:
+		if raio <= padrao * 1.2:
+			return padrao
+	return 20
+
+
+static func _escrever(alvo: CanvasItem, f: Font, pos: Vector2, escala: float, texto: String, cor: Color, cor_contorno: Color) -> void:
+	var rid = alvo.get_canvas_item()
+	if abs(escala - 1.0) < 0.01:
+		f.draw(rid, pos, texto, cor, -1, cor_contorno)
+		return
+	# O desenho do texto esticado vai por cima da transformação que o jogo
+	# já estiver usando neste item (tremor, zoom, rolagem da Central).
+	var base = _transformacao(alvo)
+	alvo.draw_set_transform_matrix(base * Transform2D(Vector2(escala, 0.0), Vector2(0.0, escala), pos))
+	f.draw(rid, Vector2.ZERO, texto, cor, -1, cor_contorno)
+	alvo.draw_set_transform_matrix(base)
+
+
+# ------------------------------------------------------------ transformação do desenho
+## O Godot 3 não devolve a transformação de desenho em uso. O jogo a muda
+## por aqui (`transformar`), e o texto esticado sabe por cima do que
+## desenhar. Vale só no quadro em que foi posta: cada `_draw` começa do zero.
+const _transformacoes := {}
+
+
+static func transformar(alvo: CanvasItem, pos: Vector2, rotacao: float, escala: Vector2) -> void:
+	alvo.draw_set_transform(pos, rotacao, escala)
+	var t = Transform2D(rotacao, pos)
+	t.x *= escala.x
+	t.y *= escala.y
+	_transformacoes[alvo.get_instance_id()] = [Engine.get_idle_frames(), t]
+
+
+static func transformar_matriz(alvo: CanvasItem, matriz: Transform2D) -> void:
+	alvo.draw_set_transform_matrix(matriz)
+	_transformacoes[alvo.get_instance_id()] = [Engine.get_idle_frames(), matriz]
+
+
+static func _transformacao(alvo: CanvasItem) -> Transform2D:
+	var e = _transformacoes.get(alvo.get_instance_id())
+	if e == null or e[0] != Engine.get_idle_frames():
+		return Transform2D.IDENTITY
+	return e[1]
 
 
 ## `z_index` de um Control: no Godot 3 só o Node2D tem a propriedade, mas o

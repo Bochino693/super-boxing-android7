@@ -13,7 +13,9 @@ uniform vec4 nucleo : hint_color = vec4(1.0, 1.0, 1.0, 1.0);
 varying vec2 local;
 
 void vertex() {
-	local = VERTEX;
+	// Posição no nó (com a escala que o texto de tamanho padrão usa): o
+	// reflexo corre pelo letreiro no mesmo lugar, qualquer que seja a fonte.
+	local = (EXTRA_MATRIX * vec4(VERTEX, 0.0, 1.0)).xy;
 }
 
 void fragment() {

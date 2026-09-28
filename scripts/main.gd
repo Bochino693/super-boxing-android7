@@ -2406,14 +2406,14 @@ func _draw_moedas() -> void:
 			var pk = MOEDA_ORIGEM.linear_interpolate(MOEDA_DESTINO, ease(uk, 0.8))
 			pk.y -= sin(uk * PI) * 260.0
 			draw_circle(pk, r * (0.5 - float(k) * 0.08), Compat.cor(Paleta.AMBAR, 0.22 - float(k) * 0.04))
-		draw_set_transform(p, 0.0, Vector2(largura, 1.0))
+		Compat.transformar(self, p, 0.0, Vector2(largura, 1.0))
 		draw_circle(Vector2.ZERO, r + 4.0, Color("6b3d00"))
 		draw_circle(Vector2.ZERO, r, Color("ffc21a"))
 		draw_circle(Vector2.ZERO, r * 0.74, Color("ffdd55"))
 		if giro > 0.35:
 			Icones.ficha(self, Vector2.ZERO, r * 0.52, Color("8a5200"))
 		draw_arc(Vector2.ZERO, r * 0.86, -2.4, -0.9, 10, Color(1, 1, 1, 0.8), 3.0, true)
-		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+		Compat.transformar(self, Vector2.ZERO, 0.0, Vector2.ONE)
 
 # ======================================================================
 # IMPACTO E VEREDITO
@@ -2577,9 +2577,9 @@ func _draw_ko() -> void:
 	draw_rect(tela, Color(0.55, 0.0, 0.06, (0.30 + 0.20 * pisca) * a))
 	var tranco = 1.0 + 0.45 * exp(-_ko_t * 9.0) * cos(_ko_t * 30.0)
 	var centro = tela.get_center() + Vector2(0.0, -40.0)
-	draw_set_transform(centro * (1.0 - tranco), 0.0, Vector2(tranco, tranco))
+	Compat.transformar(self, centro * (1.0 - tranco), 0.0, Vector2(tranco, tranco))
 	_texto_arcade("K.O.", centro.y + 60.0, 230, Color(1.0, 0.18, 0.28, a), LARGURA_UTIL)
-	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	Compat.transformar(self, Vector2.ZERO, 0.0, Vector2.ONE)
 	_texto_arcade("VOCÊ FOI NOCAUTEADO", centro.y + 170.0, 58, Color(1.0, 1.0, 1.0, a), LARGURA_UTIL)
 
 ## O FIM DA RODADA NA ARENA: quem ganhou, e como a torcida reage.
@@ -4489,9 +4489,9 @@ func _desenhar_ok_segurado() -> void:
 	Traco.setor(ci, centro, 190.0, -PI * 0.5, -PI * 0.5 + TAU * fracao, Compat.cor(Paleta.AMBAR, aparece), 18.0)
 	var resta = int(ceil(SEGURAR_OK_S - _ok_segurado))
 	var pulso = 1.0 + 0.08 * (1.0 - fmod(_ok_segurado, 1.0))
-	ci.draw_set_transform(centro, 0.0, Vector2.ONE * pulso)
+	Compat.transformar(ci, centro, 0.0, Vector2.ONE * pulso)
 	Compat.texto(ci, fonte, Vector2(-200.0, 62.0), str(resta), Compat.CENTRO, 400.0, 170, Compat.cor(Paleta.CREME, aparece))
-	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	Compat.transformar(ci, Vector2.ZERO, 0.0, Vector2.ONE)
 	Compat.texto(ci, fonte, Vector2(0.0, 1170.0), "CONFIGURAÇÕES", Compat.CENTRO, TELA.x, 52, Compat.cor(Paleta.AMBAR, aparece))
 	Compat.texto(ci, fonte_texto, Vector2(0.0, 1236.0), "CONTINUE SEGURANDO OK  •  SOLTE PARA CANCELAR", Compat.CENTRO, TELA.x, _corpo(28), Compat.cor(Paleta.CREME, 0.85 * aparece))
 
@@ -5291,7 +5291,7 @@ func _draw() -> void:
 	# falam quando algo realmente importante precisa ser dito), só o
 	# cartão avulso no meio da tela é que não aparece mais.
 
-	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	Compat.transformar(self, Vector2.ZERO, 0.0, Vector2.ONE)
 	if central_aberta:
 		_draw_central()
 		# O ASSISTENTE COBRE A CENTRAL. Enquanto ele está no ar, mexer nos
@@ -5628,7 +5628,7 @@ func _draw_espera_do_soco() -> void:
 		_draw_troca_saindo(saida)
 	# Tudo o que é desta tela entra pela direita, junto, num gesto só.
 	var base_x = (1.0 - chega) * TELA.x
-	draw_set_transform(Vector2(base_x, 0.0), 0.0, Vector2.ONE)
+	Compat.transformar(self, Vector2(base_x, 0.0), 0.0, Vector2.ONE)
 	# O ROUND, na barra de baixo da moldura. É a única informação que
 	# cabe ali e a única que a pessoa quer no instante anterior ao soco.
 	var piscada = 0.78 + 0.22 * sin(animation_time * 4.4)
@@ -5639,9 +5639,9 @@ func _draw_espera_do_soco() -> void:
 		_rotulo("A VIDA ACABOU  •  ELE NÃO ESPEROU", 1744.0, Color.white)
 	elif fraco:
 		var tremor = sin(animation_time * 60.0) * 6.0 * clamp(_fraco_ate - animation_time - 1.4, 0.0, 1.0)
-		draw_set_transform(Vector2(base_x + tremor, 0.0), 0.0, Vector2.ONE)
+		Compat.transformar(self, Vector2(base_x + tremor, 0.0), 0.0, Vector2.ONE)
 		_texto_arcade("MAIS FORTE!", 1690.0, 88, Paleta.AMBAR, LARGURA_UTIL)
-		draw_set_transform(Vector2(base_x, 0.0), 0.0, Vector2.ONE)
+		Compat.transformar(self, Vector2(base_x, 0.0), 0.0, Vector2.ONE)
 		_rotulo("ESSE NÃO PONTUOU  •  BATA DE NOVO", 1744.0, Color.white)
 	else:
 		_texto_arcade(chamada, 1690.0, 84, Compat.cor(Color.white, piscada), LARGURA_UTIL)
@@ -5655,7 +5655,7 @@ func _draw_espera_do_soco() -> void:
 			Paleta.AMBAR, LARGURA_UTIL
 		)
 		_rotulo("RECORDE DA CASA  %04d" % _melhor(), 1840.0, Paleta.TINTA_FRACA)
-	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	Compat.transformar(self, Vector2.ZERO, 0.0, Vector2.ONE)
 	# Os dois socos ficam à vista DURANTE a espera: é enquanto se prepara
 	# para bater que saber o que o primeiro valeu muda alguma coisa. Na
 	# MESMA altura do resultado: na troca eles não se mexem.
@@ -5717,7 +5717,7 @@ func _draw_troca_saindo(s: float) -> void:
 	var k = 1.0 - vai
 	if k > 0.01:
 		var c = PLACA_DO_PLACAR.get_center()
-		draw_set_transform(c * (1.0 - k), 0.0, Vector2(k, k))
+		Compat.transformar(self, c * (1.0 - k), 0.0, Vector2(k, k))
 		_placa_arcade(PLACA_DO_PLACAR, _troca_cor, 1.0, 0.0)
 		_placar(_troca_placar, CENTRO_DO_PLACAR, Color.white, PLACAR_NA_ARENA)
 		var vt = verdict_time
@@ -5725,7 +5725,7 @@ func _draw_troca_saindo(s: float) -> void:
 		_draw_barra_de_pontuacao(_troca_progresso, 1.0, _troca_cor, false)
 		verdict_time = vt
 	if not _troca_nome.empty():
-		draw_set_transform(Vector2(-vai * TELA.x, 0.0), 0.0, Vector2.ONE)
+		Compat.transformar(self, Vector2(-vai * TELA.x, 0.0), 0.0, Vector2.ONE)
 		var topo_f = VEREDITO_TOPO
 		var base_f = VEREDITO_BASE
 		draw_colored_polygon(PoolVector2Array([
@@ -5737,7 +5737,7 @@ func _draw_troca_saindo(s: float) -> void:
 		_texto_arcade(_troca_nome, 1490.0, 78, _troca_cor, LARGURA_UTIL)
 		if not _troca_frase.empty():
 			_texto_cabendo(_troca_frase, 1556.0, 44, Paleta.AMBAR, LARGURA_UTIL)
-	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	Compat.transformar(self, Vector2.ZERO, 0.0, Vector2.ONE)
 
 ## A ABERTURA GIRA EM TRÊS CAPÍTULOS.
 ##
@@ -6583,7 +6583,7 @@ func _draw_central() -> void:
 	# por cima logo depois. O efeito é o de uma janela com rolagem, sem
 	# precisar de um Viewport só para isso.
 	central_fundo = 0.0
-	draw_set_transform(_deslocamento - Vector2(0.0, central_rolagem), 0.0, Vector2.ONE)
+	Compat.transformar(self, _deslocamento - Vector2(0.0, central_rolagem), 0.0, Vector2.ONE)
 	match central_pagina:
 		1:
 			_central_golpe()
@@ -6595,7 +6595,7 @@ func _draw_central() -> void:
 			_central_maquina()
 		_:
 			_central_operacao()
-	draw_set_transform(_deslocamento, 0.0, Vector2.ONE)
+	Compat.transformar(self, _deslocamento, 0.0, Vector2.ONE)
 	_auditando_o_miolo = false
 
 	# ---- As faixas paradas, cobrindo o que a página passou por baixo.
@@ -7794,9 +7794,9 @@ func _draw_texture_cover(texture: Texture, rect: Rect2, alpha: float, mirror := 
 		source.position.y = (source_size.y - wanted_height) * 0.5
 		source.size.y = wanted_height
 	if mirror:
-		draw_set_transform(_deslocamento + Vector2(rect.end.x, rect.position.y), 0.0, Vector2(-1.0, 1.0))
+		Compat.transformar(self, _deslocamento + Vector2(rect.end.x, rect.position.y), 0.0, Vector2(-1.0, 1.0))
 		draw_texture_rect_region(texture, Rect2(Vector2.ZERO, rect.size), source, Color(1, 1, 1, alpha))
-		draw_set_transform(_deslocamento, 0.0, Vector2.ONE)
+		Compat.transformar(self, _deslocamento, 0.0, Vector2.ONE)
 	else:
 		draw_texture_rect_region(texture, rect, source, Color(1, 1, 1, alpha))
 
@@ -8309,10 +8309,10 @@ func _texto_intro(texto: String, y: float, tamanho_visual: float, corpo_fixo: in
 	var fator = tamanho_visual / float(corpo_fixo)
 	var base = Compat.t2d(0.0, Vector2.ONE * zoom_impacto, 0.0, _deslocamento + ALVO_DO_SOCO - ALVO_DO_SOCO * zoom_impacto)
 	var local = Compat.t2d(0.0, Vector2.ONE * fator, 0.0, Vector2(x + 480.0, y))
-	draw_set_transform_matrix(base * local)
+	Compat.transformar_matriz(self, base * local)
 	var medida = Compat.medida(fonte, texto, corpo_fixo)
 	_letreiro(texto, Vector2(-medida.x * 0.5, 0.0), corpo_fixo, cor, Compat.cor(cor, cor.a * 0.28))
-	draw_set_transform_matrix(base)
+	Compat.transformar_matriz(self, base)
 
 func _texto_arcade(texto: String, y: float, tamanho_max: int, cor: Color, largura: float, x := MARGEM) -> void:
 	var tamanho = _tamanho_que_cabe(texto, tamanho_max, largura * 0.94)

@@ -149,9 +149,12 @@ func _ready() -> void:
 		var path = Catalog.path_for(nome)
 		if not ResourceLoader.exists(path) and not Compat.existe(path):
 			continue
-		var stream: AudioStreamSample = load(path).duplicate() if ResourceLoader.exists(path) else null
-		if stream == null:
+		# Um som que não carregou (arquivo faltando ou estragado) fica mudo,
+		# e não derruba o banco de sons inteiro.
+		var original = load(path) if ResourceLoader.exists(path) else null
+		if not (original is AudioStreamSample):
 			continue
+		var stream: AudioStreamSample = original.duplicate()
 		if nome in Catalog.LOOPS:
 			stream.loop_mode = AudioStreamSample.LOOP_FORWARD
 			stream.loop_begin = 0
