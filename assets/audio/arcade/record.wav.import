@@ -1,14 +1,13 @@
 [remap]
 
 importer="wav"
-type="AudioStreamWAV"
-uid="uid://vrvq3402iwdk"
-path="res://.godot/imported/record.wav-f09c1c864371559202396398ad8fbcde.sample"
+type="AudioStreamSample"
+path="res://.import/record.wav-f09c1c864371559202396398ad8fbcde.sample"
 
 [deps]
 
 source_file="res://assets/audio/arcade/record.wav"
-dest_files=["res://.godot/imported/record.wav-f09c1c864371559202396398ad8fbcde.sample"]
+dest_files=[ "res://.import/record.wav-f09c1c864371559202396398ad8fbcde.sample" ]
 
 [params]
 
@@ -21,4 +20,4 @@ edit/normalize=false
 edit/loop_mode=0
 edit/loop_begin=0
 edit/loop_end=-1
-compress/mode=2
+compress/mode=1

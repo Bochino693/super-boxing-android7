@@ -1,14 +1,13 @@
 [remap]
 
 importer="wav"
-type="AudioStreamWAV"
-uid="uid://c0avhn2vshlvn"
-path="res://.godot/imported/error.wav-99844ed22afbc0c517ece11da3662cae.sample"
+type="AudioStreamSample"
+path="res://.import/error.wav-99844ed22afbc0c517ece11da3662cae.sample"
 
 [deps]
 
 source_file="res://assets/audio/error.wav"
-dest_files=["res://.godot/imported/error.wav-99844ed22afbc0c517ece11da3662cae.sample"]
+dest_files=[ "res://.import/error.wav-99844ed22afbc0c517ece11da3662cae.sample" ]
 
 [params]
 
@@ -21,4 +20,4 @@ edit/normalize=false
 edit/loop_mode=0
 edit/loop_begin=0
 edit/loop_end=-1
-compress/mode=2
+compress/mode=1

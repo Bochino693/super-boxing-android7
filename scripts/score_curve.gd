@@ -1,5 +1,5 @@
 class_name ScoreCurve
-extends RefCounted
+extends Reference
 
 ## A NOTA DE UM SOCO — E POR QUE ELA MUDOU DE FORMA.
 ##
@@ -46,44 +46,44 @@ extends RefCounted
 ## A nota que o soco de referência paga. Metade da escala, e não um
 ## número solto: é o que faz "soco médio" e "meio do placar" serem a
 ## mesma ideia em vez de duas.
-const PONTOS_DE_REFERENCIA := 5000
+const PONTOS_DE_REFERENCIA = 5000
 
 ## O CONTRASTE. 1,0 é a resposta neutra depois da ancoragem.
-const CONTRASTE_MIN := 0.70
-const CONTRASTE_MAX := 1.80
-const DEFAULT_CONTRASTE := 1.35
+const CONTRASTE_MIN = 0.70
+const CONTRASTE_MAX = 1.80
+const DEFAULT_CONTRASTE = 1.35
 
-const DEFAULT_DEAD_ZONE := 0.0
-const DEFAULT_MIN_SPEED := 0.30
-const DEFAULT_MAX_SPEED := 8.00
+const DEFAULT_DEAD_ZONE = 0.0
+const DEFAULT_MIN_SPEED = 0.30
+const DEFAULT_MAX_SPEED = 8.00
 
 ## Onde o soco de referência cai dentro da faixa, quando ninguém disse.
 ## Um pouco acima do meio: a metade de baixo da faixa é ocupada por
 ## socos de teste, de criança e de quem está só passando, e a de cima
 ## pelos socos que a máquina existe para medir.
-const REFERENCIA_PADRAO := 0.46
+const REFERENCIA_PADRAO = 0.46
 ## Até onde a âncora pode andar. Encostada demais numa ponta, a curva
 ## vira uma parede de um lado e um chão do outro.
-const REFERENCIA_MIN := 0.22
-const REFERENCIA_MAX := 0.80
+const REFERENCIA_MIN = 0.22
+const REFERENCIA_MAX = 0.80
 
 ## Limites de regulagem oferecidos pela Central Técnica.
-const MIN_SPEED_MIN := 0.20
-const MIN_SPEED_MAX := 10.00
-const MAX_SPEED_MIN := 0.75
-const MAX_SPEED_MAX := 30.00
-const DEAD_ZONE_MAX := 0.25
-const CHARGE_MAX_SECONDS := 2.80
+const MIN_SPEED_MIN = 0.20
+const MIN_SPEED_MAX = 10.00
+const MAX_SPEED_MIN = 0.75
+const MAX_SPEED_MAX = 30.00
+const DEAD_ZONE_MAX = 0.25
+const CHARGE_MAX_SECONDS = 2.80
 
 ## `ref_speed = 0` quer dizer "não foi escolhido": use `REFERENCIA_PADRAO`.
 ## É isto que deixa toda chamada antiga continuar valendo.
-const REFERENCIA_AUTOMATICA := 0.0
+const REFERENCIA_AUTOMATICA = 0.0
 
 ## O 9999 É UM PRÊMIO RARO, NÃO O RESULTADO NORMAL DE ENCOSTAR NO TETO.
 ## Somente um golpe que já alcançou o máximo físico entra no sorteio; a
 ## aleatoriedade nunca aumenta um golpe menor. Nos outros 999 casos ele
 ## continua sendo extraordinário, mas fica um ponto abaixo da perfeição.
-const CHANCE_PERFEITA := 1000
+const CHANCE_PERFEITA = 1000
 
 ## O SOCO DE VERDADE NUNCA DÁ O MESMO NÚMERO DUAS VEZES.
 ##
@@ -108,35 +108,35 @@ const CHANCE_PERFEITA := 1000
 ##      seguidas nunca vê o mesmo número, e o 9998 de "encostou no teto"
 ##      deixou de existir: quem encosta no teto cai espalhado entre ~9000
 ##      e ~9900.
-const VARIACAO := 0.13
-const CHANCE_DE_EMBALO := 0.18
-const EMBALO_MIN := 0.06
-const EMBALO_MAX := 0.16
-const LIMIAR_DIFICIL := 8000
+const VARIACAO = 0.13
+const CHANCE_DE_EMBALO = 0.18
+const EMBALO_MIN = 0.06
+const EMBALO_MAX = 0.16
+const LIMIAR_DIFICIL = 8000
 ## Quanto sobra acima da parede e quão depressa ela "endurece".
-const FAIXA_ALTA := 1998.0
-const ESCALA_ALTA := 1650.0
-const TREMIDO_DOS_DIGITOS := 27
-const MEMORIA_DE_NOTAS := 16
+const FAIXA_ALTA = 1998.0
+const ESCALA_ALTA = 1650.0
+const TREMIDO_DOS_DIGITOS = 27
+const MEMORIA_DE_NOTAS = 16
 
 static func variar(pontos: int, sorte: RandomNumberGenerator, recentes: Array = []) -> int:
 	if pontos <= 0:
 		return pontos
-	var base := float(mini(pontos, GameDef.SCORE_MAX))
-	var sino := (sorte.randf() + sorte.randf() + sorte.randf()) / 1.5 - 1.0
-	var fator := 1.0 + sino * VARIACAO
+	var base = float(int(min(pontos, GameDef.SCORE_MAX)))
+	var sino = (sorte.randf() + sorte.randf() + sorte.randf()) / 1.5 - 1.0
+	var fator = 1.0 + sino * VARIACAO
 	if sorte.randf() < CHANCE_DE_EMBALO:
-		var embalo := sorte.randf_range(EMBALO_MIN, EMBALO_MAX)
+		var embalo = sorte.randf_range(EMBALO_MIN, EMBALO_MAX)
 		fator += embalo if sorte.randf() < 0.5 else -embalo
-	var nota := base * maxf(fator, 0.5)
+	var nota = base * max(fator, 0.5)
 	nota = parede_dos_8000(nota, sorte.randf_range(0.55, 1.0))
-	var final := int(round(nota)) + sorte.randi_range(-TREMIDO_DOS_DIGITOS, TREMIDO_DOS_DIGITOS)
-	final = clampi(final, 1, GameDef.SCORE_MAX - 1)
+	var final = int(round(nota)) + sorte.randi_range(-TREMIDO_DOS_DIGITOS, TREMIDO_DOS_DIGITOS)
+	final = int(clamp(final, 1, GameDef.SCORE_MAX - 1))
 	# Número redondo ou repetido parece valor de tabela: desvia.
-	var tentativas := 0
+	var tentativas = 0
 	while (final % 100 == 0 or recentes.has(final)) and tentativas < 12:
-		var passo := sorte.randi_range(3, 41)
-		final = clampi(final + (passo if sorte.randf() < 0.5 else -passo), 1, GameDef.SCORE_MAX - 1)
+		var passo = sorte.randi_range(3, 41)
+		final = int(clamp(final + (passo if sorte.randf() < 0.5 else -passo), 1, GameDef.SCORE_MAX - 1))
 		tentativas += 1
 	return final
 
@@ -146,35 +146,35 @@ static func variar(pontos: int, sorte: RandomNumberGenerator, recentes: Array = 
 static func parede_dos_8000(nota: float, sorte: float) -> float:
 	if nota <= LIMIAR_DIFICIL:
 		return nota
-	var excesso := (nota - LIMIAR_DIFICIL) * clampf(sorte, 0.0, 1.0)
+	var excesso = (nota - LIMIAR_DIFICIL) * clamp(sorte, 0.0, 1.0)
 	return LIMIAR_DIFICIL + FAIXA_ALTA * (1.0 - exp(-excesso / ESCALA_ALTA))
 
 ## O 9999 continua sendo um prêmio: só o golpe que encostou no teto da
 ## tabela entra no sorteio, e um em `CHANCE_PERFEITA` leva.
 static func aplicar_perfeito_raro(tabela: int, pontos: int, sorteio: int) -> int:
 	if tabela < GameDef.SCORE_MAX:
-		return clampi(pontos, 0, GameDef.SCORE_MAX - 1)
-	return GameDef.SCORE_MAX if posmod(sorteio, CHANCE_PERFEITA) == 0 else clampi(pontos, 0, GameDef.SCORE_MAX - 1)
+		return int(clamp(pontos, 0, GameDef.SCORE_MAX - 1))
+	return GameDef.SCORE_MAX if posmod(sorteio, CHANCE_PERFEITA) == 0 else int(clamp(pontos, 0, GameDef.SCORE_MAX - 1))
 
 static func sanitize(
 	min_speed: float, max_speed: float, contraste: float, dead_zone: float,
 	ref_speed := REFERENCIA_AUTOMATICA
 ) -> Dictionary:
-	var low := clampf(min_speed, MIN_SPEED_MIN, MIN_SPEED_MAX)
-	var high := clampf(max_speed, maxf(MAX_SPEED_MIN, low + 0.5), MAX_SPEED_MAX)
-	var dz := clampf(dead_zone, 0.0, DEAD_ZONE_MAX)
-	var span := high - low
+	var low = clamp(min_speed, MIN_SPEED_MIN, MIN_SPEED_MAX)
+	var high = clamp(max_speed, max(MAX_SPEED_MIN, low + 0.5), MAX_SPEED_MAX)
+	var dz = clamp(dead_zone, 0.0, DEAD_ZONE_MAX)
+	var span = high - low
 	# A âncora vive DENTRO da faixa, e com folga das duas pontas. Um
 	# `ref_speed` herdado de outra montagem — ou digitado errado — não
 	# pode desmontar a curva; ele é trazido de volta para a janela útil.
-	var ref := ref_speed
+	var ref = ref_speed
 	if ref <= 0.0:
 		ref = low + span * REFERENCIA_PADRAO
-	ref = clampf(ref, low + span * REFERENCIA_MIN, low + span * REFERENCIA_MAX)
+	ref = clamp(ref, low + span * REFERENCIA_MIN, low + span * REFERENCIA_MAX)
 	return {
 		"min_speed": low,
 		"max_speed": high,
-		"contraste": clampf(contraste, CONTRASTE_MIN, CONTRASTE_MAX),
+		"contraste": clamp(contraste, CONTRASTE_MIN, CONTRASTE_MAX),
 		"dead_zone": dz,
 		"ref_speed": ref,
 	}
@@ -185,20 +185,20 @@ static func fracao_de_referencia(cfg: Dictionary) -> float:
 	var low: float = cfg["min_speed"]
 	var high: float = cfg["max_speed"]
 	var dz: float = cfg["dead_zone"]
-	var bruta := clampf((float(cfg["ref_speed"]) - low) / maxf(high - low, 0.01), 0.0, 1.0)
+	var bruta = clamp((float(cfg["ref_speed"]) - low) / max(high - low, 0.01), 0.0, 1.0)
 	if dz > 0.0:
-		bruta = (bruta - dz) / maxf(1.0 - dz, 0.01)
-	return clampf(bruta, 0.08, 0.92)
+		bruta = (bruta - dz) / max(1.0 - dz, 0.01)
+	return clamp(bruta, 0.08, 0.92)
 
 static func normalized(speed: float, min_speed: float, max_speed: float, dead_zone := DEFAULT_DEAD_ZONE) -> float:
-	var cfg := sanitize(min_speed, max_speed, DEFAULT_CONTRASTE, dead_zone)
+	var cfg = sanitize(min_speed, max_speed, DEFAULT_CONTRASTE, dead_zone)
 	var span: float = cfg["max_speed"] - cfg["min_speed"]
-	var x := clampf((maxf(speed, 0.0) - cfg["min_speed"]) / span, 0.0, 1.0)
+	var x = clamp((max(speed, 0.0) - cfg["min_speed"]) / span, 0.0, 1.0)
 	var dz: float = cfg["dead_zone"]
 	if x <= dz:
 		return 0.0
-	x = (x - dz) / maxf(1.0 - dz, 0.01)
-	return clampf(x, 0.0, 1.0)
+	x = (x - dz) / max(1.0 - dz, 0.01)
+	return clamp(x, 0.0, 1.0)
 
 ## A RESPOSTA DA CURVA, SOZINHA E SEM UNIDADE.
 ##
@@ -219,20 +219,20 @@ static func normalized(speed: float, min_speed: float, max_speed: float, dead_zo
 ##      mais forte nunca vale menos. Isso é o mínimo que uma máquina de
 ##      soco precisa garantir, e é testado a passo fino.
 static func resposta(x: float, m: float, k: float) -> float:
-	var frac := clampf(x, 0.0, 1.0)
+	var frac = clamp(x, 0.0, 1.0)
 	if frac <= 0.0:
 		return 0.0
 	if frac >= 1.0:
 		return 1.0
-	var ancora := clampf(m, 0.08, 0.92)
-	var gama := log(0.5) / log(ancora)
-	var u := clampf(pow(frac, gama), 0.0, 1.0)
-	var contraste := clampf(k, CONTRASTE_MIN, CONTRASTE_MAX)
-	var a := pow(u, contraste)
-	var b := pow(1.0 - u, contraste)
+	var ancora = clamp(m, 0.08, 0.92)
+	var gama = log(0.5) / log(ancora)
+	var u = clamp(pow(frac, gama), 0.0, 1.0)
+	var contraste = clamp(k, CONTRASTE_MIN, CONTRASTE_MAX)
+	var a = pow(u, contraste)
+	var b = pow(1.0 - u, contraste)
 	if a + b <= 0.0:
 		return u
-	return clampf(a / (a + b), 0.0, 1.0)
+	return clamp(a / (a + b), 0.0, 1.0)
 
 static func points_from_speed(
 	speed: float,
@@ -242,10 +242,10 @@ static func points_from_speed(
 	dead_zone := DEFAULT_DEAD_ZONE,
 	ref_speed := REFERENCIA_AUTOMATICA
 ) -> int:
-	var cfg := sanitize(min_speed, max_speed, contraste, dead_zone, ref_speed)
-	var x := normalized(speed, cfg["min_speed"], cfg["max_speed"], cfg["dead_zone"])
-	var fracao := resposta(x, fracao_de_referencia(cfg), cfg["contraste"])
-	var pontos := clampi(int(round(fracao * GameDef.SCORE_MAX)), 0, GameDef.SCORE_MAX)
+	var cfg = sanitize(min_speed, max_speed, contraste, dead_zone, ref_speed)
+	var x = normalized(speed, cfg["min_speed"], cfg["max_speed"], cfg["dead_zone"])
+	var fracao = resposta(x, fracao_de_referencia(cfg), cfg["contraste"])
+	var pontos = int(clamp(int(round(fracao * GameDef.SCORE_MAX)), 0, GameDef.SCORE_MAX))
 	# Um golpe aprovado e acima da zona morta precisa aparecer. O
 	# arredondamento pode zerar o começo da escala, e nota zero num soco
 	# que a placa aceitou parece falha do saco, não dificuldade.
@@ -258,10 +258,10 @@ static func points_from_speed(
 	return pontos
 
 static func speed_from_charge(seconds: float, min_speed: float, max_speed: float) -> float:
-	var t := clampf(seconds / CHARGE_MAX_SECONDS, 0.0, 1.0)
+	var t = clamp(seconds / CHARGE_MAX_SECONDS, 0.0, 1.0)
 	# A carga virtual cresce devagar no começo e acelera perto do fim.
-	var virtual_strength := pow(t, 0.65)
-	return lerpf(min_speed, max_speed, virtual_strength)
+	var virtual_strength = pow(t, 0.65)
+	return lerp(min_speed, max_speed, virtual_strength)
 
 static func points_from_charge(
 	seconds: float,
@@ -281,7 +281,7 @@ static func points_from_charge(
 ## exigir mais velocidade para pagar 5000 é, literalmente, a máquina
 ## ficar mais difícil. O contraste só muda o espalhamento.
 static func difficulty_name(min_speed: float, max_speed: float, ref_speed: float) -> String:
-	var m := _fracao_da_ancora(min_speed, max_speed, ref_speed)
+	var m = _fracao_da_ancora(min_speed, max_speed, ref_speed)
 	if m <= 0.38:
 		return "FÁCIL"
 	if m <= 0.60:
@@ -293,7 +293,7 @@ static func difficulty_name(min_speed: float, max_speed: float, ref_speed: float
 ## O próximo degrau de dificuldade, EM VELOCIDADE — para o botão da
 ## Central rodar entre os quatro nomes acima sem inventar valores.
 static func proxima_dificuldade(min_speed: float, max_speed: float, ref_speed: float) -> float:
-	var cfg := sanitize(min_speed, max_speed, DEFAULT_CONTRASTE, 0.0, ref_speed)
+	var cfg = sanitize(min_speed, max_speed, DEFAULT_CONTRASTE, 0.0, ref_speed)
 	var low: float = cfg["min_speed"]
 	var span: float = float(cfg["max_speed"]) - low
 	match difficulty_name(min_speed, max_speed, ref_speed):
@@ -306,10 +306,10 @@ static func proxima_dificuldade(min_speed: float, max_speed: float, ref_speed: f
 	return low + span * 0.32
 
 static func _fracao_da_ancora(min_speed: float, max_speed: float, ref_speed: float) -> float:
-	var cfg := sanitize(min_speed, max_speed, DEFAULT_CONTRASTE, 0.0, ref_speed)
+	var cfg = sanitize(min_speed, max_speed, DEFAULT_CONTRASTE, 0.0, ref_speed)
 	var low: float = cfg["min_speed"]
-	return clampf(
-		(float(cfg["ref_speed"]) - low) / maxf(float(cfg["max_speed"]) - low, 0.01), 0.0, 1.0
+	return clamp(
+		(float(cfg["ref_speed"]) - low) / max(float(cfg["max_speed"]) - low, 0.01), 0.0, 1.0
 	)
 
 ## A CURVA INTEIRA EM `amostras` PONTOS, para a Central desenhar antes de
@@ -319,11 +319,11 @@ static func amostrar(
 	min_speed: float, max_speed: float, contraste: float, dead_zone: float,
 	amostras := 48, ref_speed := REFERENCIA_AUTOMATICA
 ) -> Array:
-	var cfg := sanitize(min_speed, max_speed, contraste, dead_zone, ref_speed)
+	var cfg = sanitize(min_speed, max_speed, contraste, dead_zone, ref_speed)
 	var pontos: Array = []
 	for i in range(amostras + 1):
-		var t := float(i) / float(amostras)
-		var v: float = lerpf(0.0, cfg["max_speed"] * 1.05, t)
+		var t = float(i) / float(amostras)
+		var v: float = lerp(0.0, cfg["max_speed"] * 1.05, t)
 		pontos.append(Vector2(v, float(points_from_speed(
 			v, cfg["min_speed"], cfg["max_speed"], cfg["contraste"],
 			cfg["dead_zone"], cfg["ref_speed"]

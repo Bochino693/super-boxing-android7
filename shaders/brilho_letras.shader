@@ -8,7 +8,7 @@ uniform float posicao = -0.5;
 uniform float largura = 0.085;
 uniform float inclinacao = 0.28;
 uniform float forca = 1.0;
-uniform vec3 nucleo : source_color = vec3(1.0, 1.0, 1.0);
+uniform vec4 nucleo : hint_color = vec4(1.0, 1.0, 1.0, 1.0);
 
 varying vec2 local;
 
@@ -27,7 +27,7 @@ void fragment() {
 	float vizinhanca = 1.0 - smoothstep(largura, largura * 3.2, d);
 	float escurece = clamp(vizinhanca - halo, 0.0, 1.0) * corpo;
 	vec3 cor = base.rgb * mix(1.0, 0.82, escurece);
-	cor = mix(cor, nucleo, clamp(brilho * 0.9, 0.0, 1.0));
-	cor += nucleo * brilho * 0.30;
+	cor = mix(cor, nucleo.rgb, clamp(brilho * 0.9, 0.0, 1.0));
+	cor += nucleo.rgb * brilho * 0.30;
 	COLOR = vec4(cor, base.a);
 }

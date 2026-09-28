@@ -1,66 +1,47 @@
 @echo off
 setlocal
-rem Script interno: quem chama e o GERAR_APK_AGORA.bat (na raiz).
+rem Script interno: quem chama e o GERAR_APK_AGORA.bat (na raiz), pelo
+rem GERAR_APK_COMPLETO.ps1, que ja deixa o Godot 3.6.2, o modelo Android, o
+rem plugin USB, o Java e a chave de assinatura prontos.
 cd /d "%~dp0..\.."
 
 if "%~1"=="" (
-  echo USO: EXPORTAR_APK_ANDROID.bat "C:\caminho\Godot_v4.6.1-stable_win64_console.exe"
+  echo USO: EXPORTAR_APK_ANDROID.bat "C:\caminho\Godot_v3.6.2-stable_win64.exe"
   exit /b 2
 )
 if not exist "%~1" (
   echo ERRO: executavel do Godot nao encontrado: %~1
   exit /b 2
 )
-if not exist "addons\PunchUsbSerial\bin\release\PunchUsbSerial-release.aar" (
-  echo ERRO: execute PREPARAR_PLUGIN_USB_ANDROID.bat primeiro.
+if not exist "android\plugins\PunchUsbSerial-release.aar" (
+  echo ERRO: plugin USB nao encontrado em android\plugins.
   exit /b 3
 )
-if not exist "android\build\build.gradle" if not exist "android\build.gradle" (
-  echo ERRO: no Godot, use Projeto ^> Instalar modelo de compilacao Android.
+if not exist "android\build\build.gradle" (
+  echo ERRO: modelo Android do Godot 3.6.2 nao encontrado em android\build.
   exit /b 4
 )
-
-rem APK DE RELEASE, e nao de depuracao. O de depuracao leva as bibliotecas
-rem nativas sem otimizar e sem remover simbolos (era o que fazia o APK
-rem passar de 200 MB) e roda o GDScript com as checagens de depuracao
-rem ligadas -- mais lento justamente na TV Box.
-rem
-rem A assinatura usa a MESMA chave de sempre (a de depuracao do Godot), para
-rem o APK novo instalar POR CIMA do antigo sem apagar ranking e ajustes.
-set "CHAVE=%APPDATA%\Godot\keystores\debug.keystore"
-if not exist "%CHAVE%" (
-  echo ERRO: chave do Godot nao encontrada em %CHAVE%
-  echo Abra o projeto no editor Godot uma vez e exporte qualquer APK de teste;
-  echo o editor cria essa chave sozinho.
-  exit /b 7
-)
-set "GODOT_ANDROID_KEYSTORE_RELEASE_PATH=%CHAVE%"
-set "GODOT_ANDROID_KEYSTORE_RELEASE_USER=androiddebugkey"
-set "GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD=android"
 
 if not exist "build\android" mkdir "build\android"
 if exist "build\android\SuperBoxing.apk" del /q "build\android\SuperBoxing.apk"
 
-rem IMPORTAR ANTES DE EXPORTAR. Quando uma fonte ou imagem muda, o Godot
-rem reimporta tudo no inicio da exportacao e, no Windows, pode fechar no
-rem meio disso sem criar o APK. Com a importacao feita num passo proprio
-rem (e repetida uma vez, se cair), a exportacao ja encontra tudo pronto.
-rem OS MODELOS 3D SAO REIMPORTADOS DO ZERO. Quando uma atualizacao troca
-rem as texturas de um .glb (o boxeador, por exemplo), a cena importada
-rem antiga guardada em .godot ainda aponta para as texturas que sumiram e
-rem o Godot mostra "Unrecognized UID" -- inofensivo, mas assusta. Apagar
-rem so as cenas .glb importadas resolve; o Godot as refaz em segundos.
-if exist ".godot\imported" del /q ".godot\imported\*.glb-*.scn" ".godot\imported\*.glb-*.md5" 2>nul
+rem IMPORTAR ANTES DE EXPORTAR. Com a importacao num passo proprio (e
+rem repetida uma vez, se cair), a exportacao ja encontra tudo pronto.
+rem O modelo 3D e reimportado do zero: uma cena importada antiga guardada em
+rem .import pode apontar para texturas que mudaram.
+if exist ".import" del /q ".import\boxeador.glb-*" 2>nul
 
 echo Importando recursos do projeto...
-"%~1" --headless --path "%CD%" --import
-"%~1" --headless --path "%CD%" --import
+"%~1" --no-window --path "%CD%" -e --quit
+"%~1" --no-window --path "%CD%" -e --quit
 
+rem APK DE RELEASE, e nao de depuracao: bibliotecas nativas otimizadas e o
+rem GDScript sem as checagens de depuracao -- mais rapido na TV Box.
 echo Gerando o APK...
-"%~1" --headless --path "%CD%" --export-release "Android" "build\android\SuperBoxing.apk"
+"%~1" --no-window --path "%CD%" --export "Android" "build\android\SuperBoxing.apk"
 if not exist "build\android\SuperBoxing.apk" (
   echo O Godot fechou antes de terminar. Tentando mais uma vez...
-  "%~1" --headless --path "%CD%" --export-release "Android" "build\android\SuperBoxing.apk"
+  "%~1" --no-window --path "%CD%" --export "Android" "build\android\SuperBoxing.apk"
 )
 if not exist "build\android\SuperBoxing.apk" (
   echo ERRO: o Godot terminou sem criar o APK.

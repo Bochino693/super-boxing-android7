@@ -1,14 +1,13 @@
 [remap]
 
 importer="wav"
-type="AudioStreamWAV"
-uid="uid://cfwpna87qkuby"
-path="res://.godot/imported/shutter.wav-93cd4681a0f2bfcfeae413ec00d6493d.sample"
+type="AudioStreamSample"
+path="res://.import/shutter.wav-93cd4681a0f2bfcfeae413ec00d6493d.sample"
 
 [deps]
 
 source_file="res://assets/audio/arcade/shutter.wav"
-dest_files=["res://.godot/imported/shutter.wav-93cd4681a0f2bfcfeae413ec00d6493d.sample"]
+dest_files=[ "res://.import/shutter.wav-93cd4681a0f2bfcfeae413ec00d6493d.sample" ]
 
 [params]
 
@@ -21,4 +20,4 @@ edit/normalize=false
 edit/loop_mode=0
 edit/loop_begin=0
 edit/loop_end=-1
-compress/mode=2
+compress/mode=1

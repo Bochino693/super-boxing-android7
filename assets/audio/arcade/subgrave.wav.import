@@ -1,14 +1,13 @@
 [remap]
 
 importer="wav"
-type="AudioStreamWAV"
-uid="uid://3s3ksso2spgw"
-path="res://.godot/imported/subgrave.wav-716ff2bdcdd5d26a455f6eebcf1769c6.sample"
+type="AudioStreamSample"
+path="res://.import/subgrave.wav-716ff2bdcdd5d26a455f6eebcf1769c6.sample"
 
 [deps]
 
 source_file="res://assets/audio/arcade/subgrave.wav"
-dest_files=["res://.godot/imported/subgrave.wav-716ff2bdcdd5d26a455f6eebcf1769c6.sample"]
+dest_files=[ "res://.import/subgrave.wav-716ff2bdcdd5d26a455f6eebcf1769c6.sample" ]
 
 [params]
 
@@ -21,4 +20,4 @@ edit/normalize=false
 edit/loop_mode=0
 edit/loop_begin=0
 edit/loop_end=-1
-compress/mode=2
+compress/mode=1

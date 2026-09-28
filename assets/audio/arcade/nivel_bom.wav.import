@@ -1,14 +1,13 @@
 [remap]
 
 importer="wav"
-type="AudioStreamWAV"
-uid="uid://v634bhupeduv"
-path="res://.godot/imported/nivel_bom.wav-9ffcfd30163f1ce277582a7f8d57bb0b.sample"
+type="AudioStreamSample"
+path="res://.import/nivel_bom.wav-9ffcfd30163f1ce277582a7f8d57bb0b.sample"
 
 [deps]
 
 source_file="res://assets/audio/arcade/nivel_bom.wav"
-dest_files=["res://.godot/imported/nivel_bom.wav-9ffcfd30163f1ce277582a7f8d57bb0b.sample"]
+dest_files=[ "res://.import/nivel_bom.wav-9ffcfd30163f1ce277582a7f8d57bb0b.sample" ]
 
 [params]
 
@@ -21,4 +20,4 @@ edit/normalize=false
 edit/loop_mode=0
 edit/loop_begin=0
 edit/loop_end=-1
-compress/mode=2
+compress/mode=1

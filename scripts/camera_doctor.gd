@@ -6,13 +6,13 @@ extends Node
 
 signal terminou
 
-const RAMO_USUARIO := ""
-const RAMO_MAQUINA := ""
+const RAMO_USUARIO = ""
+const RAMO_MAQUINA = ""
 
-var linhas: Array[String] = []
-var rodando := false
-var indices: Array[int] = []
-var backend := "CameraServer Android"
+var linhas: Array = []
+var rodando = false
+var indices: Array = []
+var backend = "CameraServer Android"
 
 func diagnosticar(resolver: bool, _caminho_antigo := "", _caminho_inspetor := "") -> void:
 	if rodando:
@@ -35,16 +35,16 @@ func diagnosticar(resolver: bool, _caminho_antigo := "", _caminho_inspetor := ""
 			# Chamada direta: `has_method` num plugin Android responde "não"
 			# para tudo (ver `CameraService.METODOS_DA_PONTE`).
 			var relatorio = ponte.call("getCameraReport") if ponte != null else null
-			if relatorio == null or str(relatorio).is_empty():
+			if relatorio == null or str(relatorio).empty():
 				linhas.append("PLUGIN USB SEM RELATÓRIO — GERE DE NOVO COM GERAR_APK_AGORA.bat")
 			else:
 				for linha in str(relatorio).split("\n", false):
 					linhas.append(linha)
-		var feeds := CameraServer.feeds()
+		var feeds = CameraServer.feeds()
 		for i in range(feeds.size()):
 			indices.append(i)
 			linhas.append("CAMERA %d: %s" % [i, str(feeds[i].get_name())])
-		if feeds.is_empty():
+		if feeds.empty():
 			linhas.append("Android nao publicou nenhuma camera; confirme permissao e suporte Camera2/UVC.")
 		else:
 			linhas.append("%d camera(s) disponivel(is) pelo Android." % feeds.size())
@@ -54,5 +54,5 @@ func diagnosticar(resolver: bool, _caminho_antigo := "", _caminho_inspetor := ""
 static func ler_registro(_caminho: String) -> String:
 	return ""
 
-static func liberar_privacidade() -> PackedStringArray:
-	return PackedStringArray()
+static func liberar_privacidade() -> PoolStringArray:
+	return PoolStringArray()

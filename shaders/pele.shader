@@ -1,4 +1,4 @@
-// PELE DO BOXEADOR — feita para o renderizador Compatibility (TV Box).
+// PELE DO BOXEADOR — feita para o GLES2 do Godot 3 (TV Box S905L).
 //
 // O material padrão deixava a pele com cara de plástico: uma cor só,
 // brilho liso e a sombra cortando seco. Aqui:
@@ -13,15 +13,15 @@
 shader_type spatial;
 render_mode blend_mix, depth_draw_opaque, cull_back;
 
-uniform sampler2D pintura : source_color, filter_linear_mipmap_anisotropic;
-uniform sampler2D relevo : hint_normal, filter_linear_mipmap_anisotropic;
-uniform sampler2D poros : hint_normal, filter_linear_mipmap, repeat_enable;
-uniform vec4 tom : source_color = vec4(1.0);
+uniform sampler2D pintura : hint_albedo;
+uniform sampler2D relevo : hint_normal;
+uniform sampler2D poros : hint_normal;
+uniform vec4 tom : hint_color = vec4(1.0);
 uniform float relevo_forca = 1.0;
 uniform float poros_forca = 0.10;
 uniform float poros_escala = 110.0;
 uniform float embrulho = 0.30;
-uniform vec3 cor_por_dentro : source_color = vec3(0.85, 0.22, 0.12);
+uniform vec4 cor_por_dentro : hint_color = vec4(0.85, 0.22, 0.12, 1.0);
 uniform float por_dentro = 0.40;
 uniform float suor = 0.30;
 uniform float aspereza = 0.46;
@@ -56,8 +56,8 @@ void light() {
 	float difusa = clamp((ndl + embrulho) / (1.0 + embrulho), 0.0, 1.0);
 	// ... e a faixa de passagem para a sombra fica avermelhada.
 	float faixa = clamp(1.0 - abs(ndl) * 2.2, 0.0, 1.0) * step(-0.45, ndl);
-	vec3 espalhada = cor_por_dentro * faixa * por_dentro;
-	DIFFUSE_LIGHT += (vec3(difusa) + espalhada * (1.0 - difusa)) * ATTENUATION * LIGHT_COLOR / PI;
+	vec3 espalhada = cor_por_dentro.rgb * faixa * por_dentro;
+	DIFFUSE_LIGHT += (vec3(difusa) + espalhada * (1.0 - difusa)) * ATTENUATION * LIGHT_COLOR * ALBEDO;
 
 	vec3 h = normalize(LIGHT + VIEW);
 	float ndh = max(dot(NORMAL, h), 0.0);

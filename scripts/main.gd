@@ -23,34 +23,34 @@ extends Control
 ## serial (protocolo V2, ver docs/PROTOCOLO_SERIAL.md). Não há tecla
 ## nem simulação de bancada — só o sensor de verdade marca ponto.
 
-const TELA := Vector2(1080.0, 1920.0)
+const TELA = Vector2(1080.0, 1920.0)
 const ArcadeStage = preload("res://scripts/presentation/arcade_stage.gd")
 
 # ======================================================================
 # AS BANDAS DA TELA
 # ======================================================================
 ## Cabeçalho: marca do jogo e modo de operação.
-const BANDA_TOPO := 150.0
+const BANDA_TOPO = 150.0
 ## Alvo do soco: de onde saem ondas, faíscas e clarão.
-const PALCO_TOPO := 162.0
-const PALCO_BASE := 1032.0
+const PALCO_TOPO = 162.0
+const PALCO_BASE = 1032.0
 ## O MEDALHÃO: o visor da máquina. Uma máquina de fliperama tem UM
 ## painel de placar, e é ele que a pessoa olha em todo momento do jogo —
 ## na contagem, na carga, no impacto e no resultado. Por isso o medalhão
 ## não é "a tela do resultado": é o visor, e cada estado só troca o que
 ## está escrito dentro dele.
-const MEDALHAO_CENTRO := Vector2(540.0, 1245.0)
-const MEDALHAO_RAIO := 186.0
+const MEDALHAO_CENTRO = Vector2(540.0, 1245.0)
+const MEDALHAO_RAIO = 186.0
 ## Leitura: o veredito e o convite, embaixo do visor.
-const LEITURA_TOPO := 1450.0
-const LEITURA_BASE := 1600.0
+const LEITURA_TOPO = 1450.0
+const LEITURA_BASE = 1600.0
 ## Cartões de recorde/partidas/créditos.
-const CARTOES_Y := 1622.0
-const CARTOES_ALTURA := 122.0
+const CARTOES_Y = 1622.0
+const CARTOES_ALTURA = 122.0
 ## Rodapé: assinatura da casa e, só na bancada, as teclas de teste.
-const RODAPE_Y := 1876.0
+const RODAPE_Y = 1876.0
 ## Margem lateral livre de moldura de LED.
-const MARGEM := 60.0
+const MARGEM = 60.0
 ## O ALVO NA TELA. É o centro do visor — o mesmo lugar em que o farol
 ## chama o soco e em que o número nasce logo depois.
 ## O CENTRO DO QUADRO DA ARENA, e é ele que manda no espetáculo inteiro:
@@ -59,15 +59,15 @@ const MARGEM := 60.0
 ## meio do vazio — é o lutador dentro da moldura, e por isso o ponto saiu
 ## de 930 para o centro de `ArenaQuadro.TELA`. Mexer num sem mexer no
 ## outro faria as faíscas do soco explodirem ao lado de quem apanhou.
-const ALVO_DO_SOCO := Vector2(540.0, 880.0)
-const LARGURA_UTIL := TELA.x - MARGEM * 2.0
+const ALVO_DO_SOCO = Vector2(540.0, 880.0)
+const LARGURA_UTIL = TELA.x - MARGEM * 2.0
 
 ## As cores que voam. Saem da paleta porque confete branco, que num
 ## fundo preto era o mais vistoso, é justamente o que some num fundo claro.
-const CORES_FESTA := Paleta.FESTA
+const CORES_FESTA = Paleta.FESTA
 
 ## Quantas marcas a máquina guarda.
-const RANKING_TAMANHO := 20
+const RANKING_TAMANHO = 20
 
 # ======================================================================
 # A CENTRAL TÉCNICA, DESCRITA UMA VEZ SÓ
@@ -88,17 +88,17 @@ const RANKING_TAMANHO := 20
 ## nova no MEIO renumeraria todas as de baixo, e um botão que acredita
 ## estar em outra página responde a clique sem estar desenhado — a pior
 ## espécie de defeito, porque só aparece na mão de quem estiver usando.
-const PAGINAS := ["OPERAÇÃO", "GOLPE", "CÂMERA E SOM", "DADOS", "SACO"]
+const PAGINAS = ["OPERAÇÃO", "GOLPE", "CÂMERA E SOM", "DADOS", "SACO"]
 
 ## Os retângulos dos botões NÃO são escritos à mão. Um par de − / + com o
 ## valor no meio é um "passo" (`_passo`), e é ele que decide onde ficam
 ## os dois botões e onde sobra espaço para o número. Foi um número
 ## escrito por cima de um botão que motivou isso: com a conta num lugar
 ## só, o texto não tem como invadir a área de clique.
-const LADO_BOTAO := 64.0
+const LADO_BOTAO = 64.0
 ## Passos: chave -> retângulo total (botões nas pontas, valor no meio).
 ## NENHUM RETÂNGULO PODE ENCOSTAR NO OUTRO **DENTRO DA MESMA PÁGINA**.
-const PASSOS := {
+const PASSOS = {
 	"vmin": Rect2(110, 404, 400, LADO_BOTAO),
 	"vmax": Rect2(570, 404, 400, LADO_BOTAO),
 	# O SOCO DE REFERÊNCIA FICA LOGO ABAIXO DO PISO E DO TETO: ele é a
@@ -125,15 +125,15 @@ const PASSOS := {
 ## As mesmas âncoras para a página SACO. O botão TENTAR DE NOVO já
 ## nasceu 246 px acima da moldura a que pertence, por cima da linha que
 ## diz onde o saco está — o mesmo defeito, no mesmo dia.
-const SACO_ESTADO_Y := 1120.0
-const SACO_ESTADO_H := 282.0
-const SACO_SOCORRO_Y := SACO_ESTADO_Y + SACO_ESTADO_H + 24.0
+const SACO_ESTADO_Y = 1120.0
+const SACO_ESTADO_H = 282.0
+const SACO_SOCORRO_Y = SACO_ESTADO_Y + SACO_ESTADO_H + 24.0
 
-const DADOS_DIAG_Y := 600.0
-const DADOS_RITMO_Y := 1194.0
-const DADOS_APAGAR_Y := 1490.0
+const DADOS_DIAG_Y = 600.0
+const DADOS_RITMO_Y = 1194.0
+const DADOS_APAGAR_Y = 1490.0
 
-const BOTOES_SIMPLES := {
+const BOTOES_SIMPLES = {
 	"fechar": Rect2(920, 140, 68, 64),
 	# --- página OPERAÇÃO
 	"modo_livre": Rect2(110, 406, 400, 68),
@@ -190,7 +190,7 @@ const BOTOES_SIMPLES := {
 ## Sem esta tabela, um clique numa página acertaria o botão de outra —
 ## os retângulos continuam existindo mesmo quando não estão desenhados, e
 ## um botão invisível que responde é a pior espécie de defeito.
-const PAGINA_DO_CONTROLE := {
+const PAGINA_DO_CONTROLE = {
 	"fechar": -1, "padroes": -1, "salvar": -1,
 	"modo_livre": 0, "modo_ficha": 0, "mapear_start": 0, "mapear_credito": 0,
 	"vmin": 1, "vmax": 1, "referencia": 1, "curva": 1,
@@ -208,21 +208,21 @@ const PAGINA_DO_CONTROLE := {
 	"motor_desce": 4, "motor_sobe": 4, "motor_para": 4, "motor_destrava": 4,
 }
 ## As abas, no topo da caixa.
-const ABA_LARGURA := 184.0
-const ABA_RECT := Rect2(80, 250, 920, 62)
+const ABA_LARGURA = 184.0
+const ABA_RECT = Rect2(80, 250, 920, 62)
 
-var state: GameDef.State = GameDef.State.IDLE
-var central_aberta := false
+var state: int = GameDef.State.IDLE
+var central_aberta = false
 ## SEGURAR OK NA ABERTURA ABRE A CENTRAL. Um toque não faz nada; seis
 ## segundos segurando mostram a contagem e entram nas configurações.
 ## Soltar antes cancela. Assim o controle remoto basta para o técnico, e
 ## ninguém entra na Central sem querer.
-const SEGURAR_OK_S := 6.0
-const TECLAS_OK := [KEY_ENTER, KEY_KP_ENTER, KEY_SPACE]
-var _ok_segurado := -1.0
-var game_mode := "credit"
-var credits := 0
-var plays := 0
+const SEGURAR_OK_S = 6.0
+const TECLAS_OK = [KEY_ENTER, KEY_KP_ENTER, KEY_SPACE]
+var _ok_segurado = -1.0
+var game_mode = "credit"
+var credits = 0
+var plays = 0
 ## AS CINCO MELHORES MARCAS, em ordem decrescente.
 ##
 ## Guardar cinco em vez de uma só não é enfeite: com um recorde único,
@@ -230,10 +230,10 @@ var plays := 0
 ## movimentada fica inalcançável em uma semana. Com uma lista, entrar em
 ## quinto ainda é entrar — e é essa pequena vitória que faz a pessoa
 ## pagar a segunda ficha.
-var ranking: Array[Dictionary] = []
+var ranking: Array = []
 ## Faixa de velocidade (m/s) que vira pontos no placar.
-var hit_min_speed := ScoreCurve.DEFAULT_MIN_SPEED
-var hit_max_speed := ScoreCurve.DEFAULT_MAX_SPEED
+var hit_min_speed = ScoreCurve.DEFAULT_MIN_SPEED
+var hit_max_speed = ScoreCurve.DEFAULT_MAX_SPEED
 ## O SOCO DE REFERÊNCIA — o botão de dificuldade da casa.
 ##
 ## É a velocidade que paga exatamente 5000 pontos, metade do placar. Os
@@ -242,22 +242,22 @@ var hit_max_speed := ScoreCurve.DEFAULT_MAX_SPEED
 ## tem de bater mais forte para tirar meio placar", que é uma frase
 ## defensável na frente do cliente; o expoente que ocupava este lugar
 ## não era. Ver `ScoreCurve`.
-var score_ref_speed := ScoreCurve.REFERENCIA_AUTOMATICA
+var score_ref_speed = ScoreCurve.REFERENCIA_AUTOMATICA
 ## Quanto a nota se espalha ENTRE as três âncoras. Não mexe em nenhuma
 ## delas: um soco de referência paga 5000 com qualquer contraste.
-var score_contraste := ScoreCurve.DEFAULT_CONTRASTE
-var score_dead_zone := ScoreCurve.DEFAULT_DEAD_ZONE
+var score_contraste = ScoreCurve.DEFAULT_CONTRASTE
+var score_dead_zone = ScoreCurve.DEFAULT_DEAD_ZONE
 ## A RÉGUA QUE A MÁQUINA APRENDE SOZINHA. Ver `AutoEscala` — é a resposta
 ## ao "não consigo passar de mil", e a razão de a faixa de fábrica ter
 ## deixado de ser um palpite que precisa estar certo.
-var auto_escala := AutoEscala.new()
+var auto_escala = AutoEscala.new()
 ## A última velocidade aceita, em m/s. Fica à vista na Central: sem ela,
 ## quem opera não tem como saber se o problema é o soco ou a régua.
-var ultima_velocidade := 0.0
-var ultima_nota := 0
+var ultima_velocidade = 0.0
+var ultima_nota = 0
 ## Configuração enviada ao firmware (CONFIG,eixo,raio,vmin,pulso_ms).
-var sensor_eixo := "A"
-var sensor_raio := 0.020
+var sensor_eixo = "A"
+var sensor_raio = 0.020
 ## O PISO QUE O JOGO MANDA À PLACA É O MESMO PISO DA PONTUAÇÃO.
 ##
 ## Estava 0,8 aqui contra 0,30 no `ScoreCurve.DEFAULT_MIN_SPEED`, e a
@@ -280,13 +280,13 @@ var sensor_raio := 0.020
 ## Parada, fica perto de zero. Um soco passa de 3. É o número que se
 ## confere a olho, e o que responde "o sensor está vivo?" sem que
 ## ninguém precise interpretar nada.
-var sensor_forca := 0.0
-var sensor_forca_maxima := 0.0
-var sensor_gatilho := 0.0
+var sensor_forca = 0.0
+var sensor_forca_maxima = 0.0
+var sensor_gatilho = 0.0
 ## A última recusa da placa, em palavras de gente. Ver `_recusa_da_placa`.
-var ultima_recusa := ""
+var ultima_recusa = ""
 ## Os ajustes do sensor foram descartados por serem de outra escala.
-var ajustes_do_sensor_zerados := false
+var ajustes_do_sensor_zerados = false
 
 ## A ESCALA DE MEDIDA DO FIRMWARE, gravada junto dos ajustes.
 ##
@@ -302,7 +302,7 @@ var ajustes_do_sensor_zerados := false
 ## anterior é DESCARTADO e volta ao padrão desta versão. Quem tinha
 ## calibração fina refaz o assistente, o que é minutos; quem não tinha
 ## ganha uma máquina que funciona.
-const ESCALA_DO_SENSOR := 10
+const ESCALA_DO_SENSOR = 10
 ## Evolui a dificuldade sem apagar eixo, raio e gatilho físicos já
 ## calibrados no gabinete.
 ##
@@ -321,31 +321,31 @@ const ESCALA_DO_SENSOR := 10
 ## âncora a 46% da faixa e contraste 1,35 (3 m/s ~ 3500, 4 ~ 5200,
 ## 5 ~ 6900, 6 ~ 8300 antes da "parede dos 8000"). A migração também
 ## derruba um piso que a régua automática tenha empurrado para cima.
-const ESQUEMA_DA_PONTUACAO := 9
+const ESQUEMA_DA_PONTUACAO = 9
 
-var sensor_vmin := ScoreCurve.DEFAULT_MIN_SPEED
+var sensor_vmin = ScoreCurve.DEFAULT_MIN_SPEED
 ## O PULSO MÍNIMO EM MILISSEGUNDOS que a placa recebe no CONFIG.
 ##
 ## Ele NÃO é escolhido: sai da largura da palheta e do teto calibrado,
 ## em `_aplicar_faixas`. Ver `ArduinoProtocol.pulso_minimo_ms` para o
 ## estrago que a escolha à mão causava.
-var sensor_pulso_ms := ArduinoProtocol.pulso_minimo_ms(0.020, ScoreCurve.DEFAULT_MAX_SPEED)
+var sensor_pulso_ms = ArduinoProtocol.pulso_minimo_ms(0.020, ScoreCurve.DEFAULT_MAX_SPEED)
 ## Porta serial configurada; "" = automática (primeira disponível).
-var porta_configurada := ""
+var porta_configurada = ""
 ## O par que efetivamente chegou ao MPU neste computador. É preferência,
 ## nunca cadeado: se mudar a COM ou o backend falhar, a busca inteira
 ## continua. Ao religar a máquina, evita começar do zero sem sacrificar
 ## a portabilidade do pacote para outro Windows.
-var porta_serial_conhecida := ""
-var caminho_serial_conhecido := ""
+var porta_serial_conhecida = ""
+var caminho_serial_conhecido = ""
 
-var countdown_left := 3.0
-var last_count := 3
-var espera_left := GameDef.ESPERA_DO_SOCO
+var countdown_left = 3.0
+var last_count = 3
+var espera_left = GameDef.ESPERA_DO_SOCO
 ## Se a rodada em curso debitou uma ficha. É o que autoriza a devolução
 ## quando a espera acaba sem soco — e, sendo consumido na devolução,
 ## impede que a mesma ficha volte duas vezes.
-var credito_gasto := false
+var credito_gasto = false
 ## DOIS SOCOS POR JOGADOR, e cada um aparece sozinho na tela.
 ##
 ## A rodada deixou de ser um golpe só. São dois, um depois do outro, e a
@@ -360,11 +360,11 @@ var credito_gasto := false
 ## ranking que já está gravado. Com o melhor dos dois, a escala fica
 ## exatamente onde estava — e a segunda tentativa continua valendo a pena,
 ## porque ela pode substituir a primeira.
-const SOCOS_POR_RODADA := 2
+const SOCOS_POR_RODADA = 2
 ## Verdade quando uma queda do sensor encerrou a rodada depois do
 ## primeiro golpe. A nota já conquistada vale, mas a máquina não rearma
 ## uma segunda tentativa impossível.
-var rodada_encerrada_antecipadamente := false
+var rodada_encerrada_antecipadamente = false
 
 ## ------------------------------------------------------------------
 ## O MOTOR QUE BAIXA E LEVANTA O SACO.
@@ -373,12 +373,12 @@ var rodada_encerrada_antecipadamente := false
 ## `SacoMotor` cuida do resto — sem esperar, sem repetir e desistindo
 ## quando a placa não responde. Ver `scripts/saco_motor.gd`, que é curto
 ## de propósito: tudo o que pode ligar um motor cabe numa página.
-var saco := SacoMotor.new()
+var saco = SacoMotor.new()
 
 ## A FAXINA DAS FOTOS, correndo por fora do clique que a pediu.
 ## Ver scripts/faxina.gd: apagar centenas de arquivos dentro do clique
 ## congela a tela com a fila esperando.
-var faxina := Faxina.new()
+var faxina = Faxina.new()
 ## QUANTO O RESULTADO DE UM SOCO FICA À VISTA ANTES DE PEDIR O PRÓXIMO.
 ##
 ## Contado a partir do VEREDITO, não do golpe: o placar já subiu e o nome
@@ -389,7 +389,7 @@ var faxina := Faxina.new()
 ## outro golpe (1,2 s de tempo morto mais 200 ms de repouso). Isto é de
 ## propósito: quando a tela diz "SOQUE", a placa já está pronta. Pedir um
 ## soco que seria descartado é a pior coisa que esta máquina pode fazer.
-const ESPERA_PARA_O_PROXIMO_SOCO := 1.9
+const ESPERA_PARA_O_PROXIMO_SOCO = 1.9
 
 ## QUANTO O VEREDITO FICA SOZINHO ANTES DE A TABELA ENTRAR.
 ##
@@ -401,10 +401,10 @@ const ESPERA_PARA_O_PROXIMO_SOCO := 1.9
 ## tabela, ou o som do ranking toca meio segundo antes da tabela existir.
 ##
 ## O valor também encolheu, junto com os três atos abaixo. Ver lá.
-const ESPERA_DO_RANKING := 1.15
-const ESPERA_DO_RANKING_DEBOCHE := 7.6
-const ESPERA_DO_RANKING_FESTA := 3.8
-const ESPERA_DO_RANKING_EMPATE := 4.4
+const ESPERA_DO_RANKING = 1.15
+const ESPERA_DO_RANKING_DEBOCHE = 7.6
+const ESPERA_DO_RANKING_FESTA = 3.8
+const ESPERA_DO_RANKING_EMPATE = 4.4
 ## Os socos desta rodada, na ordem em que aconteceram.
 ## Cada item preserva pontos e também as medidas cruas que os explicam.
 var socos: Array = []
@@ -412,24 +412,24 @@ var socos: Array = []
 ## animação do cartão — o cartão do soco que acabou de acontecer nasce
 ## grande e brilhando e assenta em meio segundo, que é o que faz a pessoa
 ## olhar para ELE e não varrer a tela procurando o que mudou.
-var ultimo_soco_em := -100.0
+var ultimo_soco_em = -100.0
 
 ## O GOLPE DESTA TENTATIVA JÁ FOI. O saco balança depois do impacto e o
 ## MPU-6050 vê esse balanço como um segundo evento; esta trava vale por
 ## tentativa, e é rearmada quando a próxima começa.
-var golpe_registrado := false
+var golpe_registrado = false
 ## Instante do último golpe ACEITO, para o tempo morto entre eventos.
 ##
 ## Começa em NUNCA, e não em zero. `Time.get_ticks_msec()` conta desde o
 ## start do processo: com zero, "faz quanto tempo desde o último golpe"
 ## dava menos que o tempo morto durante o primeiro segundo de máquina
 ## ligada, e o primeiro soco da manhã era recusado em silêncio.
-const NUNCA_MS := -1000000
-var ultimo_golpe_ms := NUNCA_MS
+const NUNCA_MS = -1000000
+var ultimo_golpe_ms = NUNCA_MS
 ## O firmware avisou que o acelerômetro saturou. Fica registrado para a
 ## Central; um golpe saturado NÃO vira 9999 artificial, porque a máquina
 ## não sabe quanto ele valeu de verdade.
-var saturacao_recente := ""
+var saturacao_recente = ""
 
 ## OS DOIS BOTÕES DO GABINETE, mapeados e guardados.
 ##
@@ -441,49 +441,49 @@ var saturacao_recente := ""
 ##
 ## `guid` identifica o controle; `index` é o botão; `nome` é o que o
 ## sistema chama aquele controle, para o técnico reconhecer a placa.
-var botao_start := {"guid": "", "index": 6, "nome": ""}
-var botao_credito := {"guid": "", "index": 4, "nome": ""}
+var botao_start = {"guid": "", "index": 6, "nome": ""}
+var botao_credito = {"guid": "", "index": 4, "nome": ""}
 ## "" | "start" | "credito" — o que a Central está esperando capturar.
-var mapeando := ""
+var mapeando = ""
 ## Contadores de teste: sobem a cada aperto reconhecido. São a prova de
 ## que o mapeamento pegou; sem eles o técnico aperta o botão e não sabe
 ## se o problema é a placa, o índice ou o jogo.
-var contador_start := 0
-var contador_credito := 0
+var contador_start = 0
+var contador_credito = 0
 ## ANTIRREPIQUE. Botão de arcade é chave mecânica e treme ao fechar: um
 ## aperto vira dois ou três eventos em poucos milissegundos, e o segundo
 ## viraria um crédito a mais ou um START engolindo a rodada recém-criada.
-const REPIQUE_MS := 250
-var ultimo_start_ms := NUNCA_MS
-var ultimo_credito_ms := NUNCA_MS
+const REPIQUE_MS = 250
+var ultimo_start_ms = NUNCA_MS
+var ultimo_credito_ms = NUNCA_MS
 ## Qual página da Central está aberta.
-var central_pagina := 0
+var central_pagina = 0
 ## Volume das duas mesas que o operador regula, em dB. Vão do silêncio
 ## prático (-40) a um pouco acima do nominal (+6): um salão barulhento
 ## precisa de mais, e uma loja de shopping precisa de bem menos.
-var volume_musica := 0.0
-var volume_efeitos := 0.0
+var volume_musica = 0.0
+var volume_efeitos = 0.0
 ## Quanto tempo faz que alguém apertou START sem saldo. Enquanto é curto,
 ## o lugar do crédito pisca na abertura: apontar para onde a ficha entra
 ## resolve mais do que qualquer frase.
-var aviso_de_credito := -1.0
+var aviso_de_credito = -1.0
 ## Marcado quando `_carregar` converteu marcas da escala antiga. `_ready`
 ## grava logo em seguida, e é isso que torna a conversão de uma vez só.
-var _converteu_esquema := false
+var _converteu_esquema = false
 ## A ESTRELA DE PANCADA: quanto tempo desde o golpe, com que força e de
 ## qual nível. Negativo quer dizer que não há pancada no ar.
-var pancada_tempo := -1.0
-var pancada_forca := 0.0
+var pancada_tempo = -1.0
+var pancada_forca = 0.0
 var pancada_nivel: Dictionary = {}
 ## HIT-STOP: o congelamento curto que dá peso ao golpe. Enquanto ele
 ## corre, o relógio do jogo PARA — animação, contagem e máquina de
 ## estados — e só a tela continua sendo desenhada. É o que faz um
 ## nocaute parecer que acertou alguma coisa sólida.
-var hitstop_left := 0.0
+var hitstop_left = 0.0
 ## ZOOM DE IMPACTO: a tela inteira cresce um pouco e volta. Fica no
 ## desenho, não na câmera, porque não há câmera — o jogo é um `_draw`.
-var zoom_impacto := 1.0
-var zoom_alvo := 1.0
+var zoom_impacto = 1.0
+var zoom_alvo = 1.0
 ## A CORTINA ENTRE UMA TELA E OUTRA.
 ##
 ## Antes as telas trocavam no meio de um quadro: a foto virava o alvo, o
@@ -493,8 +493,8 @@ var zoom_alvo := 1.0
 ## Agora uma faixa diagonal atravessa a tela a cada troca, na cor da
 ## marca, com o alvo do jogo montado nela. Meio segundo, o tempo de a
 ## pessoa entender que a máquina avançou.
-var transicao := -1.0
-const TRANSICAO_DURACAO := 0.62
+var transicao = -1.0
+const TRANSICAO_DURACAO = 0.62
 
 ## A TROCA ENTRE O PRIMEIRO E O SEGUNDO SOCO NÃO É CORTINA.
 ##
@@ -504,43 +504,43 @@ const TRANSICAO_DURACAO := 0.62
 ## a plaqueta do placar encolhe no próprio centro e o veredito sai pela
 ## esquerda, enquanto a chamada do segundo soco entra pela direita. Uma
 ## luta de dois golpes, sem corte.
-const TROCA_DURACAO := 0.62
-const TROCA_SAIDA := 0.30
-const TROCA_ENTRADA_ATRASO := 0.16
-var _troca := -1.0
-var _troca_placar := ""
-var _troca_cor := Color.WHITE
-var _troca_nome := ""
-var _troca_frase := ""
-var _troca_progresso := 0.0
-var result_score := 0
-var result_speed := 0.0
-var result_simulado := false
+const TROCA_DURACAO = 0.62
+const TROCA_SAIDA = 0.30
+const TROCA_ENTRADA_ATRASO = 0.16
+var _troca = -1.0
+var _troca_placar = ""
+var _troca_cor = Color.white
+var _troca_nome = ""
+var _troca_frase = ""
+var _troca_progresso = 0.0
+var result_score = 0
+var result_speed = 0.0
+var result_simulado = false
 ## Posição conquistada no ranking (1 a 20), ou 0 se o golpe não entrou.
-var posicao_no_ranking := 0
-var displayed_score := 0.0
-var animation_time := 0.0
-var state_time := 0.0
-var result_time := 0.0
-var verdict_time := -1.0
-var proximo_tique := 0
-var proximo_fogo := 0.0
-var tremor := 0.0
-var clarao := 0.0
-var notice := ""
+var posicao_no_ranking = 0
+var displayed_score = 0.0
+var animation_time = 0.0
+var state_time = 0.0
+var result_time = 0.0
+var verdict_time = -1.0
+var proximo_tique = 0
+var proximo_fogo = 0.0
+var tremor = 0.0
+var clarao = 0.0
+var notice = ""
 ## Até quando a tela de espera mostra "MAIS FORTE!" no lugar da chamada:
 ## o soco fraco demais não conta, e quem bateu precisa VER isso.
-var _fraco_ate := 0.0
-var notice_left := 0.0
-var confirm_action := ""
-var confirm_until := 0.0
+var _fraco_ate = 0.0
+var notice_left = 0.0
+var confirm_action = ""
+var confirm_until = 0.0
 
 ## Serial.
 var link: SerialLink
-var serial_status := "INICIANDO"
-var porta_atual := ""
-var ultimo_sinal_ms := -1
-var proxima_tentativa := 0.0
+var serial_status = "INICIANDO"
+var porta_atual = ""
+var ultimo_sinal_ms = -1
+var proxima_tentativa = 0.0
 
 ## ------------------------------------------------------------------
 ## A BUSCA PELO ARDUINO NÃO PODE ENGASGAR O JOGO.
@@ -578,7 +578,7 @@ var proxima_tentativa := 0.0
 ##    enumerando, o laço principal não tenta abrir porta nenhuma — em vez
 ##    de trancar (o que devolveria a espera ao jogo), ele simplesmente
 ##    deixa esta volta passar. A próxima vem em um décimo de segundo.
-const ESPERA_DA_LISTA := 2.0
+const ESPERA_DA_LISTA = 2.0
 ## NA CENTRAL A LISTA É VIGIADA DE PERTO.
 ##
 ## É lá que o técnico está com a placa na mão, espetando o cabo e
@@ -587,32 +587,32 @@ const ESPERA_DA_LISTA := 2.0
 ## cabo que já estava no lugar — e nesse intervalo a tela dizia
 ## "DESCONECTADO", que é a frase mais errada possível para a situação:
 ## a placa ESTÁ conectada, quem ainda não sabe é o jogo.
-const ESPERA_DA_LISTA_NA_CENTRAL := 0.6
-var _lista_pedida_em := -99.0
-var _lista_ja_veio := false
+const ESPERA_DA_LISTA_NA_CENTRAL = 0.6
+var _lista_pedida_em = -99.0
+var _lista_ja_veio = false
 ## A primeira lista não tem com o que ser comparada: sem esta bandeira,
 ## toda porta que o PC já tinha seria anunciada como recém-chegada no
 ## arranque.
-var _lista_comparavel := false
+var _lista_comparavel = false
 ## A PORTA QUE ACABOU DE APARECER NO SISTEMA — ou seja, o cabo que
 ## alguém acabou de espetar. Ela fura a fila: é, de longe, o lugar mais
 ## provável de estar a placa.
-var _porta_recem_chegada := ""
+var _porta_recem_chegada = ""
 ## QUANDO A PLACA FALOU PELA PRIMEIRA VEZ. Só serve para a Central
 ## comemorar por um instante — ver `_seletor_porta_refinado`.
-var _placa_achada_em := -99.0
+var _placa_achada_em = -99.0
 
 ## 2) DURANTE O SOCO, A BUSCA ESPERA. Quando a porta não está aberta, o
 ##    golpe não vai ser lido de qualquer jeito — reconectar meio segundo
 ##    depois não muda nada para quem joga, e não travar a tela no meio do
 ##    golpe muda tudo. A espera tem teto: se uma rodada atrás da outra
 ##    segurasse a busca para sempre, a máquina nunca mais acharia a placa.
-const TETO_DA_ESPERA_DO_SOCO := 4.0
-var _busca_adiada_desde := -1.0
-var proximo_ping := 0.0
+const TETO_DA_ESPERA_DO_SOCO = 4.0
+var _busca_adiada_desde = -1.0
+var proximo_ping = 0.0
 ## Última telemetria, exibida na Central Técnica.
-var telemetria := ""
-var portas_visiveis: PackedStringArray = []
+var telemetria = ""
+var portas_visiveis: PoolStringArray = []
 ## Quantos apertos de botão chegaram PELA SERIAL nesta sessão. Separados
 ## dos do Zero Delay de propósito: são dois caminhos diferentes, e saber
 ## qual dos dois está mudo é metade do conserto.
@@ -621,42 +621,42 @@ var portas_visiveis: PackedStringArray = []
 ## coisas passaram a ser independentes.
 ## O estado CRU dos dois pinos, como a placa os lê agora. Não é "o jogo
 ## aceitou o aperto": é o fio.
-var pino_start := false
-var pino_credito := false
-var sensor_presente := false
-var firmware_optico_identificado := false
+var pino_start = false
+var pino_credito = false
+var sensor_presente = false
+var firmware_optico_identificado = false
 ## Assim que o firmware se identifica, esta COM deixa de ser uma candidata:
 ## ela e a placa. Durante a calibracao o jogo pode esperar ou reabrir essa
 ## mesma porta, mas nunca volta a passear por Bluetooth e portas virtuais.
-var porta_arduino_identificada := ""
-var placa_calibrando := false
-var progresso_calibracao := 0
-var mensagem_sensor_publica := ""
-var serial_start := 0
-var serial_credito := 0
+var porta_arduino_identificada = ""
+var placa_calibrando = false
+var progresso_calibracao = 0
+var mensagem_sensor_publica = ""
+var serial_start = 0
+var serial_credito = 0
 ## Quando a porta atual foi CONFIRMADA aberta. Serve para desistir dela.
-var _porta_aberta_em := 0.0
+var _porta_aberta_em = 0.0
 ## Quando a abertura foi PEDIDA. Não é a mesma coisa, e a diferença é o
 ## defeito: pela ponte por processo o pedido atravessa um cano, um
 ## PowerShell e um driver antes de a porta abrir de verdade. Contar a
 ## paciência a partir do pedido é descontar dela o tempo do encanamento —
 ## e num PC lento o encanamento come a paciência inteira antes de a placa
 ## ter chance de falar. Ver `ESPERA_DA_CONFIRMACAO`.
-var _porta_pedida_em := 0.0
-var _porta_confirmada := false
+var _porta_pedida_em = 0.0
+var _porta_confirmada = false
 ## A fila de portas desta volta, e onde a volta está.
-var _fila_de_portas: PackedStringArray = []
+var _fila_de_portas: PoolStringArray = []
 ## Quantas voltas completas já foram dadas na fila. Vai para a tela: uma
 ## busca que mostra o número da volta é uma busca que se vê acontecendo,
 ## e não uma que "nunca termina".
-var _varreduras := 0
+var _varreduras = 0
 ## Quantas vezes a porta FIXADA na Central falhou seguidas.
-var _falhas_da_porta_fixa := 0
+var _falhas_da_porta_fixa = 0
 ## Quando o caminho atual até a placa entrou em uso, e quantas vezes o
 ## jogo já trocou de caminho nesta sessão.
-var _caminho_desde := 0.0
-var _trocas_de_caminho := 0
-var _proxima_escolha_de_caminho := 0.0
+var _caminho_desde = 0.0
+var _trocas_de_caminho = 0
+var _proxima_escolha_de_caminho = 0.0
 ## A VARREDURA CEGA, UMA VEZ LIBERADA, NÃO VOLTA A SER TRANCADA.
 ##
 ## Ela entra depois da primeira volta sem sucesso — e a partir daí vale
@@ -669,23 +669,23 @@ var _proxima_escolha_de_caminho := 0.0
 ## Uma linha impede troca por simples demora de descoberta. Quedas
 ## repetidas, porém, revogam essa prova pelo disjuntor abaixo: "funcionou
 ## uma vez" não pode condenar a máquina a oscilar a noite inteira.
-var _caminho_provado := false
+var _caminho_provado = false
 ## Um caminho que entrega uma linha e cai sem parar não está provado.
 ## Três quedas em dois minutos abrem o disjuntor e fazem o jogo tentar o
 ## outro backend, sem reiniciar o programa nem consumir partida.
-var _quedas_do_caminho: Array[int] = []
-var _troca_de_caminho_pendente := false
-const QUEDAS_ATE_TROCAR_CAMINHO := 3
-const JANELA_DE_QUEDAS_MS := 120000
+var _quedas_do_caminho: Array = []
+var _troca_de_caminho_pendente = false
+const QUEDAS_ATE_TROCAR_CAMINHO = 3
+const JANELA_DE_QUEDAS_MS = 120000
 ## A PLACA JÁ FALOU NESTA PORTA? Substitui a pergunta antiga, que era
 ## `"CONECTADO" in serial_status` — e além de frágil ela estava errada:
 ## "DESCONECTADO" contém "CONECTADO", então a frase que diz que a placa
 ## caiu respondia que a placa estava lá.
-var placa_respondeu := false
+var placa_respondeu = false
 
 ## Câmera e dados locais do proprietário. Nenhum deles depende da rede.
 var camera_service: CameraService
-var camera_enabled := true
+var camera_enabled = true
 ## A CÂMERA É CONDIÇÃO PARA JOGAR, e não um enfeite da partida.
 ##
 ## Ligada (o padrão), a rodada não começa e a ficha não é gasta enquanto
@@ -694,7 +694,7 @@ var camera_enabled := true
 ## assim mesmo. A chave existe para a bancada e para a manutenção: uma
 ## máquina que não deixa nem abrir a tela de teste sem webcam é pior do
 ## que uma que joga sem foto.
-var camera_obrigatoria := false
+var camera_obrigatoria = false
 ## O ÍNDICE E O BACK-END QUE JÁ FUNCIONARAM NESTA MÁQUINA.
 ##
 ## Descobrir a câmera é a parte cara: no Windows, varrer dez índices em
@@ -702,50 +702,50 @@ var camera_obrigatoria := false
 ## máquina fazia toda vez que ligava. Guardado, o gabinete abre a webcam
 ## na primeira tentativa — e a foto da primeira partida da noite sai
 ## igual à da centésima.
-var camera_index := 0
+var camera_index = 0
 ## O teto de efeitos escolhido na Central, guardado entre sessões.
-var teto_efeitos := Perfil.TETO_INICIAL
-var camera_mirrored := false
+var teto_efeitos = Perfil.TETO_INICIAL
+var camera_mirrored = false
 ## Na Central, TESTAR FOTO congela somente o retrato capturado por um breve
 ## instante. Fora desse intervalo a prévia permanece ao vivo.
 var foto_teste_texture: ImageTexture = null
-var foto_teste_ate_ms := 0
+var foto_teste_ate_ms = 0
 ## Quem roda os comandos de diagnóstico e publica a resposta na tela.
 var medico: CameraDoctor
 var statistics: Dictionary = {}
-var result_photo_path := ""
-var pose_finished := false
+var result_photo_path = ""
+var pose_finished = false
 ## A CONTAGEM SEGURA ENQUANTO A CÂMERA NÃO ACENDE.
 ##
 ## E segura com HORA MARCADA. Uma máquina sem webcam, com o cabo solto ou
 ## com o Python faltando não pode ficar sem jogar: quem pôs a ficha tem
 ## direito à partida, com foto ou sem. Passados estes segundos a rodada
 ## começa assim mesmo, e a tela diz por quê.
-const ESPERA_MAXIMA_DA_CAMERA := 12.0
-var aguardando_camera := false
-var espera_da_camera := 0.0
+const ESPERA_MAXIMA_DA_CAMERA = 12.0
+var aguardando_camera = false
+var espera_da_camera = 0.0
 ## Esta rodada já desistiu da câmera e segue sem foto. Só é possível com
 ## a exigência desligada na Central — ver `camera_obrigatoria`.
-var pose_sem_camera := false
+var pose_sem_camera = false
 ## A FOTO É DA POSE FINAL, NÃO DE QUALQUER MOMENTO DA CONTAGEM.
 ##
 ## Ver o comentário grande em `_processar_contagem`. O obturador só abre
 ## dentro desta janela final, em segundos antes de a contagem zerar.
-const JANELA_TARDIA_OBTURADOR_SEGUNDOS := 0.5
-var _obturador_tardio_aberto := false
-var photo_retained := false
-var ranking_announced := false
+const JANELA_TARDIA_OBTURADOR_SEGUNDOS = 0.5
+var _obturador_tardio_aberto = false
+var photo_retained = false
+var ranking_announced = false
 ## Instante em que a tabela realmente começou. Uma comemoração longa
 ## pode adiar a classificação sem fazer a animação correr escondida.
-var ranking_started_at := -1.0
-var intro_active := true
-var intro_time := 0.0
+var ranking_started_at = -1.0
+var intro_active = true
+var intro_time = 0.0
 ## O CARREGADOR SEGURA A ENTRADA. Enquanto a tela de carregamento cobre o
 ## jogo (shaders compilando, texturas subindo), a entrada fica parada no
 ## primeiro quadro e o vigia de desempenho não mede nada: os quadros
 ## lentos do arranque não são a máquina, são o arranque. Ver
 ## `scripts/carregador.gd`.
-var entrada_segurada := false
+var entrada_segurada = false
 ## O QUANTO A ABERTURA JÁ CHEGOU, de 0 a 1.
 ##
 ## A entrada termina pousando o emblema e o letreiro exatamente onde a
@@ -753,9 +753,9 @@ var entrada_segurada := false
 ## Mas o resto da abertura — o cabeçalho, o convite, os créditos — não
 ## existe na entrada e apareceria de um quadro para o outro. Este número
 ## faz só essa mobília entrar suave, sem tocar no que já estava na tela.
-var abertura_chegada := 1.0
+var abertura_chegada = 1.0
 ## Quanto tempo a tela de espera está no ar sem repetir a apresentação.
-var atracao_relogio := 0.0
+var atracao_relogio = 0.0
 var _photo_cache: Dictionary = {}
 ## O CACHE DE FOTOS NÃO PODE SER DECODIFICADO NA LINHA DO JOGO.
 ##
@@ -770,7 +770,7 @@ var _photo_cache: Dictionary = {}
 ## a linha do jogo só cria a textura (rápido) quando a imagem já está
 ## pronta. Chamado assim que o placar entra no ranking, isso dá vários
 ## segundos de folga antes de a tabela precisar de fato mostrar a foto.
-var _mutex_fotos := Mutex.new()
+var _mutex_fotos = Mutex.new()
 var _fotos_decodificadas: Dictionary = {}
 
 ## O QUE A ARENA DEIXOU DO ÚLTIMO GOLPE, guardado para a tela ler.
@@ -778,20 +778,20 @@ var _fotos_decodificadas: Dictionary = {}
 ## `_draw` roda sessenta vezes por segundo e não pode sortear frase nem
 ## perguntar "houve nocaute?" a cada passagem: a frase trocaria de texto
 ## no meio da leitura. O golpe decide uma vez, aqui, e a tela só mostra.
-var arena_frase := ""
-var arena_nocaute := false
+var arena_frase = ""
+var arena_nocaute = false
 ## COMO A RODADA ACABOU, para a arena e a torcida: "" (ainda em jogo),
 ## "nocaute", "vitoria" (bateu bem e ele ficou de pé), "empate" ou
 ## "derrota" (fraco: ele tira onda e a torcida vaia).
-var desfecho := ""
-var _nocaute_na_rodada := false
+var desfecho = ""
+var _nocaute_na_rodada = false
 ## O NOCAUTE NO JOGADOR (derrota): quanto falta para o lutador soltar o
 ## soco final, se a luva já está a caminho, e há quanto tempo o "K.O."
 ## está na tela (-1: não está).
-var _ko_em := -1.0
-var _ko_a_caminho := -1.0
-var _ko_t := -1.0
-const KO_DURACAO := 3.2
+var _ko_em = -1.0
+var _ko_a_caminho = -1.0
+var _ko_t = -1.0
+const KO_DURACAO = 3.2
 ## O SOCO NA TELA: quem demora para bater leva um do lutador.
 ##
 ## SE VOCÊ NÃO BATE NELE, ELE BATE EM VOCÊ. Antes ele esperava 6,5 a 11 s
@@ -800,48 +800,48 @@ const KO_DURACAO := 3.2
 ## jogador acabou de fazer muda a decisão (ver `_tempo_do_ataque`): um
 ## soco fraco o deixa confiante (vem mais cedo); um soco que doeu o deixa
 ## cauteloso (demora mais).
-const SOCO_NA_TELA_PRIMEIRO := Vector2(4.0, 5.5)
-const SOCO_NA_TELA_DEPOIS := Vector2(5.0, 7.0)
-const SOCO_NA_TELA_CONFIANTE := Vector2(2.3, 3.2)
-var _soco_na_tela_em := 5.0
+const SOCO_NA_TELA_PRIMEIRO = Vector2(4.0, 5.5)
+const SOCO_NA_TELA_DEPOIS = Vector2(5.0, 7.0)
+const SOCO_NA_TELA_CONFIANTE = Vector2(2.3, 3.2)
+var _soco_na_tela_em = 5.0
 ## A reação do lutador ao último soco do jogador ("taunt_weak", "cordas"…).
-var _ultima_reacao := ""
+var _ultima_reacao = ""
 ## O REVIDE: ele aguentou a rodada sem cair (empate) e devolve um soco
 ## na tela antes de comemorar. Quanto falta para ele sair, e se a luva já
 ## está a caminho (-1: nada).
-var _revide_em := -1.0
-var _revide_a_caminho := -1.0
+var _revide_em = -1.0
+var _revide_a_caminho = -1.0
 
 ## A VIDA DO JOGADOR — é o TEMPO dele. Ela só cai quando o lutador VEM
 ## e acerta a tela (quem demora leva); parado na guarda ele não tira
 ## nada. Zerou,
 ## o jogador é nocauteado: a luva final, "K.O.", a câmera vai ao chão e a
 ## rodada acaba em derrota (a ficha não volta). Enche de novo a cada rodada.
-var vida_jogador := 1.0
-var _vida_jogador_fantasma := 1.0
-var _jogador_nocauteado := false
-var _fim_por_nocaute := -1.0
-const DANO_DO_SOCO_NA_TELA := 0.25
+var vida_jogador = 1.0
+var _vida_jogador_fantasma = 1.0
+var _jogador_nocauteado = false
+var _fim_por_nocaute = -1.0
+const DANO_DO_SOCO_NA_TELA = 0.25
 ## O CAMBALEIO depois do soco na tela: a câmera da arena balança e o
 ## balanço morre devagar, com uma rachadura no vidro do quadro. Tudo
 ## sorteado a cada vez (nunca sai igual) e sempre liso, sem travar.
-var _cambaleio_t := -1.0
-var _cambaleio_dur := 1.6
+var _cambaleio_t = -1.0
+var _cambaleio_dur = 1.6
 var _rachadura: Array = []
-var _rachadura_t := -1.0
+var _rachadura_t = -1.0
 ## Quantos socos já foram dados — a semente das frases. Ver `ArenaFrases`.
-var arena_semente := 0
+var arena_semente = 0
 
-var fx := PunchFX.new()
+var fx = PunchFX.new()
 ## O RELÓGIO DO JOGO. Ver `Ritmo` para o que ele conserta e por quê.
-var ritmo := Ritmo.new()
+var ritmo = Ritmo.new()
 ## O VIGIA DO RITMO. Mede o quadro e, quando a máquina não dá conta,
 ## manda os efeitos gastarem menos — sozinho, sem ninguém configurar.
-var desempenho := Desempenho.new()
+var desempenho = Desempenho.new()
 ## Deslocamento do tremor no quadro atual. Fica guardado porque o texto
 ## curvo troca a transformação do canvas e precisa devolvê-la exatamente
 ## como estava — senão o tremor some do resto da tela a partir dali.
-var _deslocamento := Vector2.ZERO
+var _deslocamento = Vector2.ZERO
 ## AS DUAS LETRAS DA MÁQUINA — e o motivo de serem duas.
 ##
 ## A Bungee é uma fonte de CARTAZ: letra larga, caixa alta, feita para
@@ -860,31 +860,31 @@ var _deslocamento := Vector2.ZERO
 ## tem acentuação completa do português e mantém o buraco da letra aberto
 ## a 20 px. O cartaz continua Bungee, então a identidade não muda — muda
 ## só o lugar em que a letra tinha de trabalhar e não conseguia.
-var fonte: Font        ## Bungee: o cartaz.
-var fonte_texto: Font  ## Saira Condensed: a leitura.
-var logo: Texture2D = null
+var fonte: Resource        ## Bungee: o cartaz.
+var fonte_texto: Resource  ## Saira Condensed: a leitura.
+var logo: Texture = null
 
-@onready var letreiro_do_nome: Letreiro = $Letreiro
-@onready var fundo: PunchBackground = $Fundo
-@onready var moldura: LedFrame = $Moldura
-@onready var sons: AudioBank = $Audio
+onready var letreiro_do_nome: Letreiro = $Letreiro
+onready var fundo: PunchBackground = $Fundo
+onready var moldura: LedFrame = $Moldura
+onready var sons: AudioBank = $Audio
 ## A janela 3D. Ver `scripts/arena/arena3d.gd`.
-@onready var arena: Arena3D = $Arena
+onready var arena: Arena3D = $Arena
 
 func _enter_tree() -> void:
 	# O pai entra antes dos filhos. Definir aqui o retângulo vertical garante
 	# que Fundo, Moldura, Arena e demais Controls já nasçam em 1080x1920.
-	# Dentro do SubViewport vertical do carregador o giro é feito lá fora,
+	# Dentro do Viewport vertical do carregador o giro é feito lá fora,
 	# na imagem pronta — aqui o jogo fica em pé e sem giro.
-	if OS.get_name() == "Android" and not (get_viewport() is SubViewport):
+	if OS.get_name() == "Android" and not _em_viewport_proprio():
 		anchor_left = 0.0
 		anchor_top = 0.0
 		anchor_right = 0.0
 		anchor_bottom = 0.0
-		size = TELA
-		pivot_offset = Vector2.ZERO
-		rotation = -PI * 0.5
-		position = Vector2(0.0, 1080.0)
+		rect_size = TELA
+		rect_pivot_offset = Vector2.ZERO
+		rect_rotation = -90.0
+		rect_position = Vector2(0.0, 1080.0)
 
 func _ready() -> void:
 	_montar_camada_ok()
@@ -895,8 +895,8 @@ func _ready() -> void:
 	# efeitos que ela aguenta e roda a 30 quadros por segundo constantes.
 	desempenho.qualidade = Perfil.QUALIDADE_INICIAL
 	desempenho.teto = Perfil.TETO_INICIAL
-	Engine.max_fps = Perfil.FPS
-	fonte = ThemeDB.fallback_font
+	Engine.target_fps = Perfil.FPS
+	fonte = Compat.fonte_padrao()
 	if ResourceLoader.exists("res://assets/fonts/Bungee-Regular.ttf"):
 		fonte = load("res://assets/fonts/Bungee-Regular.ttf")
 	# A letra de leitura cai para a de cartaz se o arquivo faltar: uma
@@ -931,7 +931,7 @@ func _ready() -> void:
 	camera_service.mirrored = camera_mirrored
 	add_child(camera_service)
 	medico = CameraDoctor.new()
-	medico.terminou.connect(_fim_do_exame)
+	medico.connect("terminou", self, "_fim_do_exame")
 	add_child(medico)
 	sons.set_volumes(volume_musica, volume_efeitos)
 	_aplicar_faixas()
@@ -965,43 +965,42 @@ func _ready() -> void:
 ## jogo ocupa todos os pixels, sem a moldura que a primeira correção criou.
 ## Em outra proporção, `KEEP` preserva o desenho sem zoom, corte ou deformação.
 func _configurar_enquadramento_universal() -> void:
-	# Na Smart Pro o jogo vive num SubViewport vertical e a cena externa gira
+	# Na Smart Pro o jogo vive num Viewport vertical e a cena externa gira
 	# o quadro inteiro. Alterar a Window aqui recolocaria o Android no modo de
 	# compatibilidade pequeno que este adaptador existe para evitar.
-	if get_viewport() is SubViewport:
-		pivot_offset = Vector2.ZERO
-		scale = Vector2.ONE
-		position = Vector2.ZERO
+	if _em_viewport_proprio():
+		rect_pivot_offset = Vector2.ZERO
+		rect_scale = Vector2.ONE
+		rect_position = Vector2.ZERO
 		return
-	var janela := get_window()
-	if janela != null:
-		if OS.get_name() == "Android":
-			# A Smart Pro recusa um framebuffer 1080x1920 e o reduz no centro.
-			# Mantemos a Window em 1920x1080 e giramos esta cena 1080x1920.
-			janela.content_scale_size = Vector2i(1920, 1080)
-		else:
-			janela.content_scale_size = Vector2i(int(TELA.x), int(TELA.y))
-		janela.content_scale_mode = Window.CONTENT_SCALE_MODE_CANVAS_ITEMS
-		janela.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_KEEP
-		janela.content_scale_stretch = Window.CONTENT_SCALE_STRETCH_FRACTIONAL
-	pivot_offset = Vector2.ZERO
-	scale = Vector2.ONE
+	if OS.get_name() == "Android":
+		# A Smart Pro recusa um framebuffer 1080x1920 e o reduz no centro.
+		# Mantemos a janela em 1920x1080 e giramos esta cena 1080x1920.
+		Compat.enquadrar(get_tree(), Vector2(1920, 1080))
+	else:
+		Compat.enquadrar(get_tree(), TELA)
+	rect_pivot_offset = Vector2.ZERO
+	rect_scale = Vector2.ONE
 	if OS.get_name() == "Android":
 		# 1080x1920 rotacionado -90 graus ocupa exatamente 1920x1080.
 		anchor_left = 0.0
 		anchor_top = 0.0
 		anchor_right = 0.0
 		anchor_bottom = 0.0
-		size = TELA
-		rotation = -PI * 0.5
-		position = Vector2(0.0, 1080.0)
+		rect_size = TELA
+		rect_rotation = -90.0
+		rect_position = Vector2(0.0, 1080.0)
 	else:
-		rotation = 0.0
-		position = Vector2.ZERO
+		rect_rotation = 0.0
+		rect_position = Vector2.ZERO
+
+## O jogo vive no Viewport vertical do carregador (e não direto na janela)?
+func _em_viewport_proprio() -> bool:
+	return get_viewport() != get_tree().root
 
 func _ponto_da_tela_para_o_jogo(ponto: Vector2) -> Vector2:
-	# No SubViewport o contêiner já entrega o ponto no espaço do jogo.
-	if OS.get_name() == "Android" and not (get_viewport() is SubViewport):
+	# No Viewport o contêiner já entrega o ponto no espaço do jogo.
+	if OS.get_name() == "Android" and not _em_viewport_proprio():
 		# Inversa de: tela = (jogo.y, 1080 - jogo.x).
 		return Vector2(TELA.x - ponto.y, ponto.x)
 	return ponto
@@ -1032,7 +1031,7 @@ func _montar_arena() -> void:
 
 ## A ARENA SÓ EXISTE NAS TELAS EM QUE APARECE.
 ##
-## Fora daqui o `SubViewport` fica com o desenho DESLIGADO — não é uma
+## Fora daqui o `Viewport` fica com o desenho DESLIGADO — não é uma
 ## imagem escondida, é uma imagem que não chega a ser calculada. Numa TV
 ## Box isso é a diferença entre o mundo 3D custar o dia inteiro e custar
 ## só os segundos em que alguém está olhando para ele. A tabela de
@@ -1058,9 +1057,9 @@ func _arena_no_ar() -> bool:
 ## rápido de `_sair_do_jogo`.
 func _notification(what: int) -> void:
 	match what:
-		NOTIFICATION_APPLICATION_FOCUS_OUT, NOTIFICATION_APPLICATION_PAUSED:
+		NOTIFICATION_WM_FOCUS_OUT, NOTIFICATION_APP_PAUSED:
 			Porteiro.foco(false)
-		NOTIFICATION_APPLICATION_FOCUS_IN, NOTIFICATION_APPLICATION_RESUMED:
+		NOTIFICATION_WM_FOCUS_IN, NOTIFICATION_APP_RESUMED:
 			Porteiro.foco(true)
 			# Voltou de uma janela do Android (ou a TV Box acordou): a
 			# câmera confere na hora se está viva e se já foi autorizada.
@@ -1071,15 +1070,15 @@ func _notification(what: int) -> void:
 			if central_aberta or calib_ativo:
 				return
 			_sair_do_jogo()
-		NOTIFICATION_WM_CLOSE_REQUEST:
+		NOTIFICATION_WM_QUIT_REQUEST:
 			_sair_do_jogo()
 
-var _saindo := false
+var _saindo = false
 ## Quando câmera/Arduino podem começar (depois do carregamento) e quando o
 ## diário da inicialização é dado por concluído (se nada travou até lá).
-var _perifericos_em := 0.0
-var _diario_fecha_em := -1.0
-var _vida_do_fundo := -1.0
+var _perifericos_em = 0.0
+var _diario_fecha_em = -1.0
+var _vida_do_fundo = -1.0
 
 ## SAIR SEM TRAVAR.
 ##
@@ -1135,15 +1134,15 @@ func _exit_tree() -> void:
 ## qualquer encostada virava ponto. O piso nunca desce deste valor — nem
 ## pela Central, nem pela escala automática —, e a placa recebe o mesmo
 ## número na CONFIG, recusando o bloqueio lento como FRACO lá mesmo.
-const BLOQUEIO_MAXIMO_S := 0.015
+const BLOQUEIO_MAXIMO_S = 0.015
 
 func _piso_do_bloqueio() -> float:
 	return sensor_raio / BLOQUEIO_MAXIMO_S
 
 func _aplicar_faixas() -> void:
-	hit_min_speed = maxf(hit_min_speed, _piso_do_bloqueio())
-	hit_max_speed = maxf(hit_max_speed, hit_min_speed + 1.5)
-	var cfg := ScoreCurve.sanitize(
+	hit_min_speed = max(hit_min_speed, _piso_do_bloqueio())
+	hit_max_speed = max(hit_max_speed, hit_min_speed + 1.5)
+	var cfg = ScoreCurve.sanitize(
 		hit_min_speed, hit_max_speed, score_contraste, score_dead_zone, score_ref_speed
 	)
 	hit_min_speed = cfg["min_speed"]
@@ -1186,8 +1185,8 @@ func _melhor() -> int:
 ## Insere uma pontuação e devolve a posição conquistada (1 a 5), ou 0 se
 ## ela não foi boa o bastante para entrar na lista.
 func _entrar_no_ranking(pontos: int, foto := "", origem := "SENSOR") -> int:
-	var inserted := RankingStore.insert(ranking, pontos, foto, origem)
-	ranking.assign(inserted["entries"])
+	var inserted = RankingStore.insert(ranking, pontos, foto, origem)
+	Compat.atribuir(ranking, inserted["entries"])
 	for path in inserted["dropped_photos"]:
 		RankingStore.delete_photo(path)
 	return int(inserted["position"])
@@ -1210,7 +1209,7 @@ func _process(delta: float) -> void:
 		Diario.pronto()
 	# O impacto não suspende mais a UI, partículas e relógios da rodada.
 	# O clarão/tremor já comunicam a pancada sem congelar a tela inteira.
-	hitstop_left = maxf(0.0, hitstop_left - delta)
+	hitstop_left = max(0.0, hitstop_left - delta)
 	_contar_ok_segurado(delta)
 	if _ensaio >= 0:
 		_passo_do_ensaio()
@@ -1225,7 +1224,7 @@ func _process(delta: float) -> void:
 		desempenho.medir(delta)
 	# O PASSO DO JOGO NÃO É MAIS O TEMPO CRU DO QUADRO.
 	#
-	# Havia aqui um teto e mais nada: `minf(delta, 0.1)`. Ele resolvia o
+	# Havia aqui um teto e mais nada: `min(delta, 0.1)`. Ele resolvia o
 	# caso do soluço isolado — um quadro de meio segundo não vira meio
 	# segundo de jogo de uma vez — e não resolvia o caso que a queixa
 	# descrevia, que é outro e é o comum: o tempo do quadro CHACOALHA
@@ -1242,7 +1241,7 @@ func _process(delta: float) -> void:
 	# `desempenho.medir` continua recebendo o delta CRU, logo acima: um
 	# vigia que olhasse para o tempo já suavizado não enxergaria o
 	# engasgo que ele existe para combater.
-	var passo := ritmo.passo(delta)
+	var passo = ritmo.passo(delta)
 	# A serial recebe prioridade no começo do quadro. A câmera e a arena
 	# podem custar milissegundos; o evento físico não deve esperar por elas.
 	animation_time += passo
@@ -1250,7 +1249,7 @@ func _process(delta: float) -> void:
 	_poll_serial(passo)
 	# O cenário é a camada mais cara do jogo; quando a máquina aperta, ela
 	# encolhe junto com os efeitos.
-	ArcadeStage.enfeite = desempenho.qualidade
+	ArcadeStage.definir_enfeite(desempenho.qualidade)
 	# A MOLDURA DE LED NÃO ENCOLHIA NUNCA. Cem e tantas lâmpadas, três
 	# desenhos cada, em toda tela do jogo, do início ao fim — o único
 	# enfeite que ficava de fora do vigia de desempenho.
@@ -1258,7 +1257,7 @@ func _process(delta: float) -> void:
 	# E OS ARCOS TAMBÉM. Eram a última camada cara que nunca encolhia:
 	# 96 segmentos com borda lisa, do anel de 1300 pixels ao de 90, em
 	# todo quadro do impacto. Ver `Traco.arco`.
-	Traco.qualidade = desempenho.qualidade
+	Traco.definir_qualidade(desempenho.qualidade)
 	_passo_do_cambaleio(passo)
 	if arena != null:
 		arena.qualidade = desempenho.qualidade
@@ -1279,13 +1278,13 @@ func _process(delta: float) -> void:
 		camera_service.janelas_liberadas = state == GameDef.State.IDLE \
 			and not intro_active and not central_aberta and not entrada_segurada
 	_laco_de_atracao(passo)
-	zoom_impacto = lerpf(zoom_impacto, zoom_alvo, clampf(passo * 7.0, 0.0, 1.0))
-	if absf(zoom_impacto - 1.0) < 0.002 and is_equal_approx(zoom_alvo, 1.0):
+	zoom_impacto = lerp(zoom_impacto, zoom_alvo, clamp(passo * 7.0, 0.0, 1.0))
+	if abs(zoom_impacto - 1.0) < 0.002 and is_equal_approx(zoom_alvo, 1.0):
 		zoom_impacto = 1.0
 	fx.atualizar(passo)
 	# Poeira dourada subindo do rodapé, só na tela de espera.
 	fx.brisa(
-		"abertura", Rect2(120.0, TELA.y + 10.0, 840.0, 40.0), Color(Paleta.AMBAR, 0.30), 4.0,
+		"abertura", Rect2(120.0, TELA.y + 10.0, 840.0, 40.0), Compat.cor(Paleta.AMBAR, 0.30), 4.0,
 		state == GameDef.State.IDLE and not intro_active and not central_aberta
 	)
 	# O FUNDO ANDA NO RELÓGIO DO JOGO, e não num relógio próprio.
@@ -1297,7 +1296,7 @@ func _process(delta: float) -> void:
 	# fundo, com coisa se movendo devagar e em linha reta, que essa
 	# diferença aparece mais. Agora é um relógio só, o suavizado.
 	fundo.avancar(passo)
-	var vida_do_fundo := 1.0 if state == GameDef.State.IDLE else 0.35
+	var vida_do_fundo = 1.0 if state == GameDef.State.IDLE else 0.35
 	if not is_equal_approx(vida_do_fundo, _vida_do_fundo):
 		_vida_do_fundo = vida_do_fundo
 		fundo.vida(vida_do_fundo)
@@ -1305,8 +1304,8 @@ func _process(delta: float) -> void:
 	_passo_das_moedas(passo)
 	moldura.avancar(passo)
 	letreiro_do_nome.avancar(passo)
-	tremor = maxf(0.0, tremor - passo * 26.0)
-	clarao = maxf(0.0, clarao - passo * 2.6)
+	tremor = max(0.0, tremor - passo * 26.0)
+	clarao = max(0.0, clarao - passo * 2.6)
 	if transicao >= 0.0:
 		transicao += passo
 		if transicao > TRANSICAO_DURACAO:
@@ -1327,7 +1326,7 @@ func _process(delta: float) -> void:
 		notice_left -= passo
 	else:
 		notice = ""
-	if not confirm_action.is_empty() and animation_time > confirm_until:
+	if not confirm_action.empty() and animation_time > confirm_until:
 		confirm_action = ""
 
 	if central_aberta:
@@ -1353,7 +1352,7 @@ func _process(delta: float) -> void:
 	# no quadro em que a contagem muda para ARMED; o golpe posterior ao
 	# sino já encontra o estado correto, sem esperar o próximo desenho.
 	_poll_serial(0.0)
-	queue_redraw()
+	update()
 
 ## Milissegundos entre quadros da webcam, conforme o que está na tela.
 func _ritmo_da_camera() -> int:
@@ -1386,7 +1385,7 @@ func _processar_abertura(delta: float) -> void:
 	if intro_active and entrada_segurada:
 		return
 	if intro_active:
-		var antes := intro_time
+		var antes = intro_time
 		intro_time += delta
 		# As deixas sonoras vêm da mesma tabela que desenha a entrada.
 		# Ler o intervalo (antes, agora] em vez de "passou de" é o que
@@ -1401,7 +1400,7 @@ func _processar_abertura(delta: float) -> void:
 			clarao = 0.60
 			fx.faiscas(ArcadeStage.SOCO, 26, Paleta.AMBAR, 1250.0)
 			fx.onda(ArcadeStage.SOCO, 60.0, 620.0, Paleta.CREME, 12.0, 0.55)
-			fx.poeira(ArcadeStage.SOCO + Vector2(0.0, 180.0), 14, Color(Paleta.AMBAR, 0.35), 380.0)
+			fx.poeira(ArcadeStage.SOCO + Vector2(0.0, 180.0), 14, Compat.cor(Paleta.AMBAR, 0.35), 380.0)
 		if antes < ArcadeStage.T_MORPH and intro_time >= ArcadeStage.T_MORPH:
 			sons.music(-16.0)
 		if intro_time >= ArcadeStage.INTRO_SECONDS:
@@ -1418,7 +1417,7 @@ func _processar_abertura(delta: float) -> void:
 			# abertura. A tela principal nasce pronta nessa mesma posição.
 			abertura_chegada = 1.0
 		return
-	abertura_chegada = minf(1.0, abertura_chegada + delta * 2.2)
+	abertura_chegada = min(1.0, abertura_chegada + delta * 2.2)
 	if aviso_de_credito >= 0.0:
 		aviso_de_credito += delta
 		if aviso_de_credito > 2.6:
@@ -1469,17 +1468,17 @@ func _processar_contagem(delta: float) -> void:
 	if not pose_finished and countdown_left <= 0.0:
 		pose_finished = true
 		result_photo_path = camera_service.capture_photo() if camera_service != null else ""
-		if not result_photo_path.is_empty() and camera_service.ultima_foto != null:
+		if not result_photo_path.empty() and camera_service.ultima_foto != null:
 			# A textura sai da imagem que a câmera acabou de entregar, e
 			# não do arquivo recém-gravado: ler o disco de volta no mesmo
 			# quadro é o que fazia a imagem sumir e voltar no obturador.
-			_photo_cache[result_photo_path] = ImageTexture.create_from_image(
+			_photo_cache[result_photo_path] = Compat.textura(
 				camera_service.ultima_foto
 			)
 		clarao = 0.65
 		sons.play("shutter", -5.0)
 		return
-	var atual := maxi(0, int(ceil(countdown_left)))
+	var atual = int(max(0, int(ceil(countdown_left))))
 	if atual > 0 and atual < last_count:
 		last_count = atual
 		sons.play("count")
@@ -1517,7 +1516,7 @@ func _processar_armado(delta: float) -> void:
 	_soco_na_tela_em -= delta
 	if _soco_na_tela_em <= 0.0 and not golpe_registrado and arena != null:
 		if arena.soco_na_tela():
-			_soco_na_tela_em = randf_range(SOCO_NA_TELA_DEPOIS.x, SOCO_NA_TELA_DEPOIS.y)
+			_soco_na_tela_em = rand_range(SOCO_NA_TELA_DEPOIS.x, SOCO_NA_TELA_DEPOIS.y)
 			# ...e a torcida pede o soco de quem está demorando.
 			sons.play("torcida_incentivo", -9.0)
 		else:
@@ -1538,7 +1537,7 @@ func _processar_armado(delta: float) -> void:
 		# socar uma vez e esperar para jogar de graça a noite inteira.
 		# Quem já socou vai para o resultado com o que fez; só quem não
 		# socou nenhuma vez recebe a ficha de volta.
-		if socos.is_empty():
+		if socos.empty():
 			sons.play("error", -4.0)
 			_devolver_credito()
 			_entrar_em_abertura()
@@ -1551,11 +1550,11 @@ func _processar_armado(delta: float) -> void:
 ## pouco mais — tanto mais quanto mais machucado está).
 func _tempo_do_ataque() -> float:
 	if _ultima_reacao == "taunt_weak":
-		return randf_range(SOCO_NA_TELA_CONFIANTE.x, SOCO_NA_TELA_CONFIANTE.y)
-	var base := randf_range(SOCO_NA_TELA_PRIMEIRO.x, SOCO_NA_TELA_PRIMEIRO.y)
-	if _ultima_reacao.is_empty() or arena == null:
+		return rand_range(SOCO_NA_TELA_CONFIANTE.x, SOCO_NA_TELA_CONFIANTE.y)
+	var base = rand_range(SOCO_NA_TELA_PRIMEIRO.x, SOCO_NA_TELA_PRIMEIRO.y)
+	if _ultima_reacao.empty() or arena == null:
 		return base
-	return base + clampf(arena.dano(), 0.0, 1.0) * 1.5
+	return base + clamp(arena.dano(), 0.0, 1.0) * 1.5
 
 ## O SEGUNDO SOCO DA RODADA.
 ##
@@ -1581,7 +1580,7 @@ func _armar_proximo_soco() -> void:
 	_troca_cor = GameDef.classificar(result_score)["cor_faixa"] as Color
 	_troca_nome = ScoreTier.nome_de(result_score) if verdict_time >= 0.0 else ""
 	_troca_frase = arena_frase
-	_troca_progresso = clampf(displayed_score / float(GameDef.SCORE_MAX), 0.0, 1.0)
+	_troca_progresso = clamp(displayed_score / float(GameDef.SCORE_MAX), 0.0, 1.0)
 	_troca = 0.0
 	displayed_score = 0.0
 	verdict_time = -1.0
@@ -1617,21 +1616,21 @@ func _fechar_rodada() -> void:
 	# Subir agora deixa o motor terminar o curso enquanto o jogador lê a
 	# nota, em vez de fazer a próxima pessoa esperar por ele.
 	saco.quero(SacoMotor.Onde.EM_CIMA)
-	var melhor := 0
-	var melhor_v := 0.0
-	var simulado := false
+	var melhor = 0
+	var melhor_v = 0.0
+	var simulado = false
 	for soco in socos:
 		if int(soco["pontos"]) >= melhor:
 			melhor = int(soco["pontos"])
 			melhor_v = float(soco["velocidade"])
 		if bool(soco["simulado"]):
 			simulado = true
-	result_score = clampi(melhor, 0, GameDef.SCORE_MAX)
+	result_score = int(clamp(melhor, 0, GameDef.SCORE_MAX))
 	result_speed = melhor_v
 	result_simulado = simulado
 
 	plays += 1
-	var origem := "SIMULAÇÃO" if result_simulado else "ÓPTICO LM393"
+	var origem = "SIMULAÇÃO" if result_simulado else "ÓPTICO LM393"
 	posicao_no_ranking = _entrar_no_ranking(result_score, result_photo_path, origem)
 	photo_retained = posicao_no_ranking > 0
 	# A TABELA SÓ APARECE 2,5 s (NO MÍNIMO) DEPOIS DAQUI. Tempo de sobra
@@ -1656,8 +1655,8 @@ func _fechar_rodada() -> void:
 ## reagir à rodada que acabou: é para ela, ao longo de algumas dezenas de
 ## socos, parar de descrever a bancada e passar a descrever o gabinete.
 func _aprender_a_regua() -> void:
-	var novo := auto_escala.passo(hit_min_speed, _referencia_efetiva(), hit_max_speed)
-	if novo.is_empty():
+	var novo = auto_escala.passo(hit_min_speed, _referencia_efetiva(), hit_max_speed)
+	if novo.empty():
 		return
 	hit_min_speed = float(novo["vmin"])
 	hit_max_speed = float(novo["vmax"])
@@ -1688,7 +1687,7 @@ func _entrar_em_resultado(encerrar_rodada := false) -> void:
 		rodada_encerrada_antecipadamente = true
 	# A nota mostrada é a DESTE soco. A rodada só é fechada — ranking,
 	# estatística, disco — quando o último golpe já foi dado.
-	if socos.is_empty():
+	if socos.empty():
 		result_score = 0
 		result_speed = 0.0
 	else:
@@ -1748,19 +1747,19 @@ func _tabela_no_ar() -> bool:
 		return false
 	return verdict_time >= _espera_do_ranking()
 
-const SONS_RANKING_NEUTROS := [
+const SONS_RANKING_NEUTROS = [
 	"ranking_neutral_1", "ranking_neutral_2", "ranking_neutral_3",
 ]
 
 func _som_ranking_neutro() -> String:
-	var semente := maxi(0, plays + posicao_no_ranking)
+	var semente = int(max(0, plays + posicao_no_ranking))
 	return str(SONS_RANKING_NEUTROS[semente % SONS_RANKING_NEUTROS.size()])
 
 func _processar_resultado(delta: float) -> void:
 	result_time += delta
 	_passo_do_ko(delta)
 	_passo_do_revide(delta)
-	var avanco := clampf(result_time / GameDef.CONTAGEM_DURACAO, 0.0, 1.0)
+	var avanco = clamp(result_time / GameDef.CONTAGEM_DURACAO, 0.0, 1.0)
 	# O número dispara e vai freando — o suspense que um placar de
 	# arcade precisa ter. O veredito só entra quando a contagem termina.
 	# Curva cúbica: ganha velocidade de imediato e assenta suavemente no
@@ -1772,7 +1771,7 @@ func _processar_resultado(delta: float) -> void:
 	# sensação de "ele está demorando para parar". Na quarta potência o
 	# número dispara, chega perto do valor quase imediatamente e só
 	# assenta os últimos dígitos; a leitura é a mesma e a espera some.
-	var suave := 1.0 - pow(1.0 - avanco, 4.0)
+	var suave = 1.0 - pow(1.0 - avanco, 4.0)
 	displayed_score = float(result_score) * suave
 
 	sons.score_progress(avanco)
@@ -1818,27 +1817,27 @@ func _processar_resultado(delta: float) -> void:
 ## disparado UMA VEZ. É o que faz a batida da linha e o estouro do
 ## confete caírem no mesmo quadro do movimento que os justifica — e não
 ## meio segundo antes, que é quando a festa parece solta da tela.
-var _ato_assentou := false
-var _ato_festejou := false
-var _ato_carimbou := false
-var _festa_ranking_decorrido := 0.0
-var _festa_ranking_proximo := 0.0
-var _festa_ranking_canhao := 0
+var _ato_assentou = false
+var _ato_festejou = false
+var _ato_carimbou = false
+var _festa_ranking_decorrido = 0.0
+var _festa_ranking_proximo = 0.0
+var _festa_ranking_canhao = 0
 
 func _marcar_atos_do_ranking() -> void:
 	if posicao_no_ranking <= 0:
 		return
-	var celebracao := RankingCelebration.para(posicao_no_ranking)
-	if celebracao.is_empty():
+	var celebracao = RankingCelebration.para(posicao_no_ranking)
+	if celebracao.empty():
 		return
-	var t := _tempo_do_ranking()
+	var t = _tempo_do_ranking()
 	# A BATIDA DO SELO: som grave, tranco e faíscas no mesmo quadro em que
 	# o carimbo encosta na tela.
 	if not _ato_carimbou and t >= ATO_ANUNCIO / 5.1:
 		_ato_carimbou = true
 		sons.play("hit", -2.0)
 		sons.play("subgrave", -6.0)
-		tremor = maxf(tremor, 26.0)
+		tremor = max(tremor, 26.0)
 		var cor_c: Color = celebracao.get("cor", Paleta.AMBAR)
 		fx.faiscas(Vector2(540.0, 810.0), 40, cor_c, 1400.0)
 		fx.onda(Vector2(540.0, 810.0), 200.0, 900.0, cor_c, 16.0, 0.6)
@@ -1860,7 +1859,7 @@ func _marcar_atos_do_ranking() -> void:
 		_festa_ranking_proximo = 0.0
 		_festa_ranking_canhao = 0
 		# Um tranco leve só: a festa é o confete, não a tela chacoalhando.
-		tremor = maxf(tremor, float(celebracao["tremor"]) * 0.25)
+		tremor = max(tremor, float(celebracao["tremor"]) * 0.25)
 
 func _manter_festa(delta: float) -> void:
 	_manter_festa_do_ranking(delta)
@@ -1868,8 +1867,8 @@ func _manter_festa(delta: float) -> void:
 	## estouros também. Um impacto leve tem intervalo zero e não comemora
 	## nada: dizer "mandou bem" a quem não mandou é o jeito mais rápido
 	## de a máquina perder a credibilidade.
-	var nivel := ScoreTier.de(result_score)
-	var intervalo := float(nivel["festa_intervalo"])
+	var nivel = ScoreTier.de(result_score)
+	var intervalo = float(nivel["festa_intervalo"])
 	# A FESTA DURA O VEREDITO INTEIRO, e não cinco segundos.
 	#
 	# Ela parava em 5 s, bem no meio da revelação do ranking — e a tela
@@ -1888,24 +1887,24 @@ func _manter_festa(delta: float) -> void:
 func _manter_festa_do_ranking(delta: float) -> void:
 	if not _ato_festejou or posicao_no_ranking <= 0:
 		return
-	var celebracao := RankingCelebration.para(posicao_no_ranking)
-	if celebracao.is_empty():
+	var celebracao = RankingCelebration.para(posicao_no_ranking)
+	if celebracao.empty():
 		return
 	_festa_ranking_decorrido += delta
-	var duracao := float(celebracao["confete_duracao"])
+	var duracao = float(celebracao["confete_duracao"])
 	if _festa_ranking_decorrido > duracao:
 		return
 	if _festa_ranking_decorrido >= _festa_ranking_proximo:
 		_festa_ranking_proximo += float(celebracao["confete_intervalo"])
-		var intensidade := float(celebracao["forca"]) / 700.0
+		var intensidade = float(celebracao["forca"]) / 700.0
 		fx.chuva_de_confete(1080.0, int(celebracao["confete_lote"]), CORES_FESTA, intensidade)
-	var canhoes := int(celebracao["canhoes"])
+	var canhoes = int(celebracao["canhoes"])
 	# Canhões alternados, nunca no mesmo quadro: impacto visual maior e
 	# custo distribuído. Campeão ganha centro + dois lados; pódio, lados.
-	var instante_canhao := 0.18 + float(_festa_ranking_canhao) * 0.42
+	var instante_canhao = 0.18 + float(_festa_ranking_canhao) * 0.42
 	if _festa_ranking_canhao < canhoes and _festa_ranking_decorrido >= instante_canhao:
-		var pontos := [Vector2(120.0, 1880.0), Vector2(960.0, 1880.0), Vector2(540.0, 1920.0)]
-		var ordem := [2, 0, 1] if posicao_no_ranking == 1 else [0, 1, 2]
+		var pontos = [Vector2(120.0, 1880.0), Vector2(960.0, 1880.0), Vector2(540.0, 1920.0)]
+		var ordem = [2, 0, 1] if posicao_no_ranking == 1 else [0, 1, 2]
 		fx.confete(pontos[ordem[_festa_ranking_canhao]], 28, CORES_FESTA, float(celebracao["forca"]))
 		_festa_ranking_canhao += 1
 
@@ -1916,7 +1915,7 @@ func _input(event: InputEvent) -> void:
 	# O CONTROLE REMOTO DA TV BOX. Menu abre/fecha a Central; com ela
 	# aberta, as setas andam entre os botões, OK aperta e Voltar fecha.
 	if event is InputEventKey and event.pressed:
-		var tecla := (event as InputEventKey).keycode
+		var tecla = (event as InputEventKey).scancode
 		if tecla == KEY_MENU and not event.echo:
 			_toggle_central()
 			get_viewport().set_input_as_handled()
@@ -1932,14 +1931,14 @@ func _input(event: InputEvent) -> void:
 		if central_aberta and not calib_ativo and _navegar_central_pelo_controle(tecla, event.echo):
 			get_viewport().set_input_as_handled()
 			return
-	if event is InputEventKey and not event.pressed and (event as InputEventKey).keycode in TECLAS_OK:
+	if event is InputEventKey and not event.pressed and (event as InputEventKey).scancode in TECLAS_OK:
 		_ok_segurado = -1.0
 	if event is InputEventKey and event.pressed and not event.echo:
-		if event.keycode == KEY_F9:
+		if event.scancode == KEY_F9:
 			_toggle_central()
 			get_viewport().set_input_as_handled()
 			return
-		if event.keycode == KEY_ESCAPE:
+		if event.scancode == KEY_ESCAPE:
 			if central_aberta:
 				_fechar_central()
 			elif state != GameDef.State.IDLE:
@@ -1948,33 +1947,33 @@ func _input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 			return
 		if central_aberta:
-			if event.keycode == KEY_T:
+			if event.scancode == KEY_T:
 				_teste_de_golpe()
 			# Setas e Page Up/Down rolam a página. O gabinete não tem
 			# mouse; o teclado que o técnico pluga para configurar tem.
-			elif event.keycode == KEY_DOWN:
+			elif event.scancode == KEY_DOWN:
 				_rolar(ROLA_SETA)
-			elif event.keycode == KEY_UP:
+			elif event.scancode == KEY_UP:
 				_rolar(-ROLA_SETA)
-			elif event.keycode == KEY_PAGEDOWN:
+			elif event.scancode == KEY_PAGEDOWN:
 				_rolar(CENTRAL_JANELA * 0.8)
-			elif event.keycode == KEY_PAGEUP:
+			elif event.scancode == KEY_PAGEUP:
 				_rolar(-CENTRAL_JANELA * 0.8)
-			elif event.keycode == KEY_HOME:
+			elif event.scancode == KEY_HOME:
 				central_rolagem = 0.0
-			elif event.keycode == KEY_END:
+			elif event.scancode == KEY_END:
 				central_rolagem = _rolagem_maxima()
 			get_viewport().set_input_as_handled()
 			return
 		# TECLADO É BANCADA. Num salão os comandos entram pelos botões do
 		# gabinete ou pela serial; deixar 5/C e 1/Enter valendo sempre é
 		# deixar um teclado esquecido no armário virar crédito de graça.
-		if event.keycode in [KEY_5, KEY_C]:
+		if event.scancode in [KEY_5, KEY_C]:
 			if _simulador_liberado():
 				_add_credit()
 			get_viewport().set_input_as_handled()
 			return
-		if event.keycode in [KEY_1, KEY_ENTER, KEY_KP_ENTER]:
+		if event.scancode in [KEY_1, KEY_ENTER, KEY_KP_ENTER]:
 			if _simulador_liberado():
 				_pressionou_start()
 			get_viewport().set_input_as_handled()
@@ -1985,15 +1984,15 @@ func _input(event: InputEvent) -> void:
 		return
 
 	if central_aberta and not calib_ativo and event is InputEventMouseButton and event.pressed:
-		var roda := event as InputEventMouseButton
-		if roda.button_index == MOUSE_BUTTON_WHEEL_UP:
+		var roda = event as InputEventMouseButton
+		if roda.button_index == BUTTON_WHEEL_UP:
 			_rolar(-ROLA_RODA)
 			return
-		if roda.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+		if roda.button_index == BUTTON_WHEEL_DOWN:
 			_rolar(ROLA_RODA)
 			return
 
-	if central_aberta and event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+	if central_aberta and event is InputEventMouseButton and event.pressed and event.button_index == BUTTON_LEFT:
 		if calib_ativo:
 			_click_calibracao(_ponto_da_tela_para_o_jogo(event.position))
 		else:
@@ -2017,17 +2016,17 @@ func _simulador_liberado() -> bool:
 func _botao_do_gabinete(evento: InputEventJoypadButton) -> void:
 	if not evento.pressed:
 		return
-	var nome := Input.get_joy_name(evento.device)
-	var guid := Input.get_joy_guid(evento.device)
+	var nome = Input.get_joy_name(evento.device)
+	var guid = Input.get_joy_guid(evento.device)
 
 	# 1) A CENTRAL ESTÁ ESPERANDO ESTE APERTO?
-	if central_aberta and not mapeando.is_empty():
+	if central_aberta and not mapeando.empty():
 		_gravar_botao(evento.button_index, guid, nome)
 		return
 	if central_aberta:
 		return
 
-	var agora := Time.get_ticks_msec()
+	var agora = Time.get_ticks_msec()
 	if _combina(botao_start, evento.button_index, guid):
 		if agora - ultimo_start_ms < REPIQUE_MS:
 			return
@@ -2049,12 +2048,12 @@ func _botao_do_gabinete(evento: InputEventJoypadButton) -> void:
 ## hora certa. Recusar é melhor do que aceitar e deixar a máquina
 ## indefinida.
 func _gravar_botao(indice: int, guid: String, nome: String) -> void:
-	var outro := botao_credito if mapeando == "start" else botao_start
+	var outro = botao_credito if mapeando == "start" else botao_start
 	if _combina(outro, indice, guid):
 		_show_notice("ESSE BOTÃO JÁ É O OUTRO COMANDO — ESCOLHA OUTRO")
 		sons.play("error", -6.0)
 		return
-	var mapa := {"guid": guid, "index": indice, "nome": nome}
+	var mapa = {"guid": guid, "index": indice, "nome": nome}
 	if mapeando == "start":
 		botao_start = mapa
 		contador_start = 0
@@ -2073,10 +2072,10 @@ func _gravar_botao(indice: int, guid: String, nome: String) -> void:
 func _combina(mapa: Dictionary, indice: int, guid: String) -> bool:
 	if int(mapa.get("index", -1)) != indice:
 		return false
-	var esperado := str(mapa.get("guid", ""))
-	return esperado.is_empty() or esperado == guid
+	var esperado = str(mapa.get("guid", ""))
+	return esperado.empty() or esperado == guid
 
-func _mapa_de_botao(bruto: Variant, indice_padrao: int) -> Dictionary:
+func _mapa_de_botao(bruto, indice_padrao: int) -> Dictionary:
 	var d: Dictionary = bruto if bruto is Dictionary else {}
 	return {
 		"guid": str(d.get("guid", "")),
@@ -2153,7 +2152,7 @@ func _arduino_conectado() -> bool:
 ## para a pessoa ler; a luz do painel vem do estado.
 enum FaseSerial { SEM_CAMINHO, PROCURANDO, OUVINDO, CALIBRANDO, LIGADA }
 
-func fase_serial() -> FaseSerial:
+func fase_serial() -> int:
 	if link == null or not link.available():
 		return FaseSerial.SEM_CAMINHO
 	if not link.is_open():
@@ -2284,7 +2283,7 @@ func _devolver_credito() -> void:
 	credito_gasto = false
 	if game_mode != "credit":
 		return
-	credits = mini(credits + 1, GameDef.CREDITOS_MAX)
+	credits = int(min(credits + 1, GameDef.CREDITOS_MAX))
 	_salvar()
 	_show_notice("TEMPO ESGOTADO — CRÉDITO DEVOLVIDO  •  SALDO %02d" % credits)
 
@@ -2325,7 +2324,7 @@ func _entrar_em_abertura() -> void:
 	fundo.matiz = Color(0, 0, 0, 0)
 
 func _discard_round_photo() -> void:
-	if not photo_retained and not result_photo_path.is_empty():
+	if not photo_retained and not result_photo_path.empty():
 		RankingStore.delete_photo(result_photo_path)
 		# O ARQUIVO SOME DO DISCO: a textura em cache para ele vira lixo
 		# que nunca mais vai ser pedido de novo (o caminho tem o
@@ -2341,32 +2340,32 @@ func _add_credit() -> void:
 	if credits >= GameDef.CREDITOS_MAX:
 		sons.play("credit")
 		return
-	credits = mini(credits + 1, GameDef.CREDITOS_MAX)
+	credits = int(min(credits + 1, GameDef.CREDITOS_MAX))
 	# A FICHA ENTRA VOANDO. Uma moeda de ouro gira pelo ar e cai dentro
 	# da placa de créditos; o número sobe no impacto, com faísca e onda.
 	# Várias fichas seguidas entram em fila, uma atrás da outra.
-	var atraso := -0.001
-	if not _moedas.is_empty():
-		atraso = minf(float(_moedas[-1]) , 0.0) - 0.28
+	var atraso = -0.001
+	if not _moedas.empty():
+		atraso = min(float(_moedas[-1]) , 0.0) - 0.28
 	_moedas.append(atraso)
 	_show_notice("CRÉDITO ADICIONADO  •  SALDO %02d" % credits)
 	_salvar()
 
 ## AS FICHAS NO AR. Cada uma é o seu relógio (negativo: ainda na fila).
-var _moedas: Array[float] = []
-var _placa_bateu := -1.0
-const MOEDA_VOO := 0.62
-const MOEDA_ORIGEM := Vector2(1010.0, 1180.0)
-const MOEDA_DESTINO := Vector2(372.0, 1728.0)
+var _moedas: Array = []
+var _placa_bateu = -1.0
+const MOEDA_VOO = 0.62
+const MOEDA_ORIGEM = Vector2(1010.0, 1180.0)
+const MOEDA_DESTINO = Vector2(372.0, 1728.0)
 
 func _passo_das_moedas(passo: float) -> void:
 	if _placa_bateu >= 0.0:
 		_placa_bateu += passo
 		if _placa_bateu > 1.2:
 			_placa_bateu = -1.0
-	if _moedas.is_empty():
+	if _moedas.empty():
 		return
-	var restantes: Array[float] = []
+	var restantes: Array = []
 	for t in _moedas:
 		var antes: float = t
 		var agora: float = t + passo
@@ -2384,7 +2383,7 @@ func _passo_das_moedas(passo: float) -> void:
 
 ## Quantas fichas ainda não chegaram na placa (o número só sobe na chegada).
 func _moedas_no_ar() -> int:
-	var n := 0
+	var n = 0
 	for t in _moedas:
 		if t < MOEDA_VOO:
 			n += 1
@@ -2394,19 +2393,19 @@ func _draw_moedas() -> void:
 	for t in _moedas:
 		if t < 0.0 or t >= MOEDA_VOO:
 			continue
-		var u := t / MOEDA_VOO
+		var u = t / MOEDA_VOO
 		# arco: sobe um pouco e cai na placa
-		var p := MOEDA_ORIGEM.lerp(MOEDA_DESTINO, ease(u, 0.8))
+		var p = MOEDA_ORIGEM.linear_interpolate(MOEDA_DESTINO, ease(u, 0.8))
 		p.y -= sin(u * PI) * 260.0
-		var r := lerpf(46.0, 30.0, u)
-		var giro := absf(cos(t * 19.0))
-		var largura := maxf(0.12, giro)
+		var r = lerp(46.0, 30.0, u)
+		var giro = abs(cos(t * 19.0))
+		var largura = max(0.12, giro)
 		# rastro
 		for k in 5:
-			var uk := maxf(0.0, u - float(k + 1) * 0.045)
-			var pk := MOEDA_ORIGEM.lerp(MOEDA_DESTINO, ease(uk, 0.8))
+			var uk = max(0.0, u - float(k + 1) * 0.045)
+			var pk = MOEDA_ORIGEM.linear_interpolate(MOEDA_DESTINO, ease(uk, 0.8))
 			pk.y -= sin(uk * PI) * 260.0
-			draw_circle(pk, r * (0.5 - float(k) * 0.08), Color(Paleta.AMBAR, 0.22 - float(k) * 0.04))
+			draw_circle(pk, r * (0.5 - float(k) * 0.08), Compat.cor(Paleta.AMBAR, 0.22 - float(k) * 0.04))
 		draw_set_transform(p, 0.0, Vector2(largura, 1.0))
 		draw_circle(Vector2.ZERO, r + 4.0, Color("6b3d00"))
 		draw_circle(Vector2.ZERO, r, Color("ffc21a"))
@@ -2432,26 +2431,26 @@ func _registrar_impacto(
 	# aqui o que importa é ESTE golpe, porque é ele que manda no
 	# espetáculo do impacto — nível, tremor, clarão e som.
 	socos.append({
-		"pontos": clampi(pontos, 0, GameDef.SCORE_MAX),
-		"velocidade": maxf(velocidade, 0.0),
-		"pico_g": maxf(float(pico_g), 0.0),
-		"duracao_ms": maxf(float(duracao_ms), 0.0),
+		"pontos": int(clamp(pontos, 0, GameDef.SCORE_MAX)),
+		"velocidade": max(velocidade, 0.0),
+		"pico_g": max(float(pico_g), 0.0),
+		"duracao_ms": max(float(duracao_ms), 0.0),
 		"simulado": simulado,
 	})
 	ultimo_soco_em = animation_time
-	result_score = clampi(pontos, 0, GameDef.SCORE_MAX)
-	result_speed = maxf(velocidade, 0.0)
+	result_score = int(clamp(pontos, 0, GameDef.SCORE_MAX))
+	result_speed = max(velocidade, 0.0)
 	result_simulado = simulado
 	state = GameDef.State.MEASURING
 	state_time = 0.0
-	var forca := float(result_score) / float(GameDef.SCORE_MAX)
+	var forca = float(result_score) / float(GameDef.SCORE_MAX)
 	# A nota permanece exatamente na curva competitiva calibrada. A reação
 	# física usa a posição REAL do golpe dentro da faixa do sensor; usar a
 	# nota elevada ao expoente aqui comprimía quase todo soco em "fraco".
-	var forca_visual := ScoreCurve.normalized(
+	var forca_visual = ScoreCurve.normalized(
 		result_speed, hit_min_speed, hit_max_speed, score_dead_zone
 	)
-	var alvo := _alvo()
+	var alvo = _alvo()
 	moldura.impacto(0.4 + forca * 0.6)
 	sons.play("hit", 1.5)
 	sons.play("subgrave", -4.0)
@@ -2464,7 +2463,7 @@ func _registrar_impacto(
 	# podem sacudir a máquina do mesmo jeito, e é a receita do nível que
 	# diz quanto de cada coisa entra.
 	pancada_nivel = ScoreTier.de(result_score)
-	var receita := ImpactDirector.golpe(fx, alvo, pancada_nivel, CORES_FESTA)
+	var receita = ImpactDirector.golpe(fx, alvo, pancada_nivel, CORES_FESTA)
 	tremor = float(receita["tremor"])
 	clarao = float(receita["clarao"])
 	hitstop_left = float(receita["hitstop"])
@@ -2487,9 +2486,9 @@ func _registrar_impacto(
 		# Os níveis que derrubam por si são os que já tinham hit-stop na
 		# tabela: é a mesma linha que decide o soluço da imagem, e não um
 		# segundo critério para a mesma ideia de "golpe que para tudo".
-		var derruba := float(pancada_nivel["hitstop"]) > 0.0
-		var ultimo := socos.size() >= SOCOS_POR_RODADA
-		var reacao := arena.golpe(forca_visual, derruba, result_score, ultimo)
+		var derruba = float(pancada_nivel["hitstop"]) > 0.0
+		var ultimo = socos.size() >= SOCOS_POR_RODADA
+		var reacao = arena.golpe(forca_visual, derruba, result_score, ultimo)
 		arena_nocaute = bool(reacao["nocaute"])
 		_ultima_reacao = "knockout" if arena_nocaute else str(reacao.get("reacao", ""))
 		if arena_nocaute:
@@ -2552,8 +2551,8 @@ func _levar_ko() -> void:
 	sons.play("nivel_nocaute", -2.0)
 	sons.play("torcida_vaia", -1.0)
 	sons.duck(12.0, 6.0)
-	tremor = maxf(tremor, 40.0)
-	clarao = maxf(clarao, 0.30)
+	tremor = max(tremor, 40.0)
+	clarao = max(clarao, 0.30)
 	_ko_t = 0.0
 	if not _jogador_nocauteado:
 		arena_frase = ArenaFrases.de_derrota(plays)
@@ -2570,14 +2569,14 @@ func _levar_ko() -> void:
 func _draw_ko() -> void:
 	if _ko_t < 0.0:
 		return
-	var tela := ArenaQuadro.TELA
-	var entra := clampf(_ko_t / 0.18, 0.0, 1.0)
-	var sai := 1.0 - clampf((_ko_t - (KO_DURACAO - 0.5)) / 0.5, 0.0, 1.0)
-	var a := entra * sai
-	var pisca := 0.5 + 0.5 * sin(_ko_t * 18.0) * exp(-_ko_t * 1.5)
+	var tela = ArenaQuadro.TELA
+	var entra = clamp(_ko_t / 0.18, 0.0, 1.0)
+	var sai = 1.0 - clamp((_ko_t - (KO_DURACAO - 0.5)) / 0.5, 0.0, 1.0)
+	var a = entra * sai
+	var pisca = 0.5 + 0.5 * sin(_ko_t * 18.0) * exp(-_ko_t * 1.5)
 	draw_rect(tela, Color(0.55, 0.0, 0.06, (0.30 + 0.20 * pisca) * a))
-	var tranco := 1.0 + 0.45 * exp(-_ko_t * 9.0) * cos(_ko_t * 30.0)
-	var centro := tela.get_center() + Vector2(0.0, -40.0)
+	var tranco = 1.0 + 0.45 * exp(-_ko_t * 9.0) * cos(_ko_t * 30.0)
+	var centro = tela.get_center() + Vector2(0.0, -40.0)
 	draw_set_transform(centro * (1.0 - tranco), 0.0, Vector2(tranco, tranco))
 	_texto_arcade("K.O.", centro.y + 60.0, 230, Color(1.0, 0.18, 0.28, a), LARGURA_UTIL)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
@@ -2591,9 +2590,9 @@ func _draw_ko() -> void:
 ##   torcida vaia quem bateu enquanto ele comemora.
 ##   EMPATE: ele comemora ter aguentado, a torcida aplaude.
 func _fechar_desfecho() -> void:
-	var melhor := 0
+	var melhor = 0
 	for soco in socos:
-		melhor = maxi(melhor, int(soco["pontos"]))
+		melhor = int(max(melhor, int(soco["pontos"])))
 	if _jogador_nocauteado:
 		# Já foi nocauteado (a vida acabou): derrota, sem outro soco final
 		# — o lutador comemora por cima de quem está no chão, e a vaia.
@@ -2656,7 +2655,7 @@ func _passo_do_revide(delta: float) -> void:
 func _levar_revide() -> void:
 	_revide_a_caminho = -1.0
 	_levar_soco_na_tela()
-	vida_jogador = maxf(0.0, vida_jogador - DANO_DO_SOCO_NA_TELA)
+	vida_jogador = max(0.0, vida_jogador - DANO_DO_SOCO_NA_TELA)
 	arena_frase = "ELE AGUENTOU… E REVIDOU!"
 	sons.play("torcida_incentivo", -6.0)
 	if arena != null:
@@ -2685,19 +2684,19 @@ func _disparar_veredito() -> void:
 		# como se um soco tivesse contado): só a derrota e a vaia.
 		verdict_time = 0.0
 		moldura.set_estado(LedFrame.RESULTADO, Paleta.VERMELHO)
-		fundo.matiz = Color(Paleta.VERMELHO, 0.10)
+		fundo.matiz = Compat.cor(Paleta.VERMELHO, 0.10)
 		sons.play("torcida_vaia", -3.0)
 		return
 	## O momento em que a máquina diz quanto valeu o soco. Um por golpe.
 	verdict_time = 0.0
 	proximo_fogo = 0.0
-	var classe := GameDef.classificar(result_score)
+	var classe = GameDef.classificar(result_score)
 	var cor: Color = classe["cor_faixa"]
 	moldura.set_estado(LedFrame.RESULTADO, cor)
 	# A tela inteira toma a cor da faixa, de leve: o veredito chega ao
 	# canto do olho antes de a pessoa terminar de ler a palavra.
-	fundo.matiz = Color(cor, 0.10)
-	var alvo := _alvo()
+	fundo.matiz = Compat.cor(cor, 0.10)
+	var alvo = _alvo()
 
 	# O SOM E A COMEMORAÇÃO SÃO DO NÍVEL, não da faixa grossa.
 	#
@@ -2706,7 +2705,7 @@ func _disparar_veredito() -> void:
 	# explosão, mesmo som, só a palavra mudando. Era exatamente o que a
 	# pessoa que joga duas vezes seguidas percebe.
 	var nivel: Dictionary = classe["nivel"]
-	var id_nivel := str(nivel["id"])
+	var id_nivel = str(nivel["id"])
 	if id_nivel == "LEVE":
 		# Golpe fraco recebe a reação curta enviada pelo operador.
 		sons.play("not_supress", -2.0)
@@ -2722,9 +2721,9 @@ func _disparar_veredito() -> void:
 	# O veredito é a fala da máquina: a trilha desce por todo o tempo em
 	# que o nome do nível está sendo anunciado.
 	sons.duck(16.0, 3.0)
-	var receita := ImpactDirector.golpe(fx, alvo, nivel, CORES_FESTA)
-	tremor = maxf(tremor, float(receita["tremor"]) * 0.8)
-	clarao = maxf(clarao, float(receita["clarao"]) * 0.7)
+	var receita = ImpactDirector.golpe(fx, alvo, nivel, CORES_FESTA)
+	tremor = max(tremor, float(receita["tremor"]) * 0.8)
+	clarao = max(clarao, float(receita["clarao"]) * 0.7)
 
 	if posicao_no_ranking == 1:
 		for sound in ["win", "medium", "lose", "legendary"]:
@@ -2753,22 +2752,22 @@ func _disparar_veredito() -> void:
 ## ímpar seguinte só a repete (já compilada, custa pouco): é o respiro em
 ## que o carregador anima a barra. Depois das telas 2D vêm as etapas da
 ## arena 3D, três quadros cada.
-const ENSAIO_TELAS := 27
-const ENSAIO_QUADROS_2D := ENSAIO_TELAS * 2 + 2
-const ENSAIO_QUADROS_POR_ETAPA := 3
-const ENSAIO_QUADROS := ENSAIO_QUADROS_2D + Arena3D.ETAPAS_DE_AQUECIMENTO * ENSAIO_QUADROS_POR_ETAPA + 2
-const ENSAIO_NOTAS := [900, 2600, 5100, 7050, 8420, 9310, 9820, 9999]
-const ENSAIO_POSICOES := [1, 2, 3, 6, 11, 17, 20, 0]
-const ENSAIO_SALVA := [
+const ENSAIO_TELAS = 27
+const ENSAIO_QUADROS_2D = ENSAIO_TELAS * 2 + 2
+const ENSAIO_QUADROS_POR_ETAPA = 3
+const ENSAIO_QUADROS = ENSAIO_QUADROS_2D + Arena3D.ETAPAS_DE_AQUECIMENTO * ENSAIO_QUADROS_POR_ETAPA + 2
+const ENSAIO_NOTAS = [900, 2600, 5100, 7050, 8420, 9310, 9820, 9999]
+const ENSAIO_POSICOES = [1, 2, 3, 6, 11, 17, 20, 0]
+const ENSAIO_SALVA = [
 	"state", "result_score", "displayed_score", "verdict_time", "result_time",
 	"posicao_no_ranking", "ranking_announced", "ranking_started_at", "pancada_tempo",
 	"pancada_nivel", "pancada_forca", "socos", "clarao", "tremor", "_rachadura",
 	"_rachadura_t", "_cambaleio_t", "countdown_left", "pose_finished", "desfecho", "_ko_t",
 	"arena_frase", "zoom_impacto", "ranking", "ultimo_soco_em",
 ]
-var _ensaio := -1
-var _ensaio_ranking: Array[Dictionary] = []
-var _ensaio_feito := false
+var _ensaio = -1
+var _ensaio_ranking: Array = []
+var _ensaio_feito = false
 
 ## Avança o ensaio um quadro e dispara as etapas da arena na hora certa.
 func _passo_do_ensaio() -> void:
@@ -2779,9 +2778,9 @@ func _passo_do_ensaio() -> void:
 		Diario.marca("ENSAIO: arena montada")
 	if _ensaio == 2:
 		Diario.marca("ENSAIO: telas 2D")
-	var q := _ensaio - ENSAIO_QUADROS_2D
+	var q = _ensaio - ENSAIO_QUADROS_2D
 	if q >= 0 and q % ENSAIO_QUADROS_POR_ETAPA == 0 and arena != null:
-		var etapa := q / ENSAIO_QUADROS_POR_ETAPA
+		var etapa = q / ENSAIO_QUADROS_POR_ETAPA
 		if etapa <= Arena3D.ETAPAS_DE_AQUECIMENTO:
 			Diario.marca("ENSAIO: arena etapa %d" % etapa)
 			arena.etapa_de_aquecimento(etapa)
@@ -2794,7 +2793,7 @@ func aquecimento_progresso() -> float:
 		return 1.0
 	if _ensaio < 0:
 		return 0.0
-	return clampf(float(_ensaio) / float(ENSAIO_QUADROS), 0.0, 1.0)
+	return clamp(float(_ensaio) / float(ENSAIO_QUADROS), 0.0, 1.0)
 
 func aquecimento_pronto() -> bool:
 	return _ensaio_feito or (_ensaio < 0 and not entrada_segurada)
@@ -2809,29 +2808,29 @@ func _encerrar_ensaio() -> void:
 	if arena != null:
 		arena.etapa_de_aquecimento(Arena3D.ETAPAS_DE_AQUECIMENTO)
 	fx.limpar()
-	queue_redraw()
+	update()
 
 func _draw_ensaio() -> void:
-	var guardado := {}
+	var guardado = {}
 	for nome in ENSAIO_SALVA:
 		var valor = get(nome)
 		guardado[nome] = valor.duplicate() if (valor is Array or valor is Dictionary) else valor
 	# uma tela nova a cada DOIS quadros; depois das telas, a abertura leve
 	# os dois primeiros quadros são o da montagem: só a abertura, leve
-	var i := mini(maxi(_ensaio - 2, 0) / 2, ENSAIO_TELAS) if _ensaio >= 2 else ENSAIO_TELAS
-	if _ensaio_ranking.is_empty():
-		var lista: Array[Dictionary] = []
+	var i = int(min(int(max(_ensaio - 2, 0)) / 2, ENSAIO_TELAS)) if _ensaio >= 2 else ENSAIO_TELAS
+	if _ensaio_ranking.empty():
+		var lista: Array = []
 		for k in 14:
-			lista.assign(RankingStore.insert(lista, 9400 - k * 290, "", "ENSAIO")["entries"])
+			Compat.atribuir(lista, RankingStore.insert(lista, 9400 - k * 290, "", "ENSAIO")["entries"])
 		_ensaio_ranking = lista
 	var nota: int = ENSAIO_NOTAS[i % ENSAIO_NOTAS.size()]
 	socos = [
 		{"pontos": nota, "velocidade": 5.0, "pico_g": 0.0, "duracao_ms": 0.0, "simulado": true},
-		{"pontos": maxi(1, nota - 1234), "velocidade": 4.0, "pico_g": 0.0, "duracao_ms": 0.0, "simulado": true},
+		{"pontos": int(max(1, nota - 1234)), "velocidade": 4.0, "pico_g": 0.0, "duracao_ms": 0.0, "simulado": true},
 	]
 	ultimo_soco_em = animation_time - 0.1
 	if ranking.size() < 8:
-		ranking.assign(_ensaio_ranking)
+		Compat.atribuir(ranking, _ensaio_ranking)
 	fundo.visible = true
 	if i < 8:
 		# O resultado de cada nível: número, nome, cor e o círculo.
@@ -2848,7 +2847,7 @@ func _draw_ensaio() -> void:
 		_draw_pancada()
 		_draw_clarao()
 		if i == 1 and _ensaio % 2 == 1:
-			var nivel := ScoreTier.de(9999)
+			var nivel = ScoreTier.de(9999)
 			ImpactDirector.golpe(fx, _alvo(), nivel, CORES_FESTA)
 			ImpactDirector.festa(fx, _alvo(), nivel, CORES_FESTA)
 	elif i < 16:
@@ -2895,7 +2894,7 @@ func _draw_ensaio() -> void:
 ## cambaleio sorteado.
 ## Perdeu por nocaute sem ter dado nenhum soco que valesse.
 func _perdeu_sem_soco() -> bool:
-	return _jogador_nocauteado and socos.is_empty()
+	return _jogador_nocauteado and socos.empty()
 
 ## A vida do jogador acabou: o lutador vem para o soco final.
 func _nocaute_do_jogador() -> void:
@@ -2913,16 +2912,16 @@ func _nocaute_do_jogador() -> void:
 func _levar_soco_na_tela() -> void:
 	# CADA SOCO DO LUTADOR TIRA VIDA DE QUEM ESTÁ DEMORANDO.
 	if state == GameDef.State.ARMED and not _jogador_nocauteado:
-		vida_jogador = maxf(0.0, vida_jogador - DANO_DO_SOCO_NA_TELA)
+		vida_jogador = max(0.0, vida_jogador - DANO_DO_SOCO_NA_TELA)
 		if vida_jogador <= 0.0:
 			_nocaute_do_jogador()
 	sons.play("hit", 2.0)
 	sons.play("subgrave", -2.0)
 	sons.play("arena_corpo", 0.0)
 	sons.duck(12.0, 1.4)
-	tremor = maxf(tremor, randf_range(24.0, 36.0))
-	clarao = maxf(clarao, 0.14)
-	var centro := ArenaQuadro.TELA.get_center() + Vector2(randf_range(-160.0, 160.0), randf_range(-200.0, 120.0))
+	tremor = max(tremor, rand_range(24.0, 36.0))
+	clarao = max(clarao, 0.14)
+	var centro = ArenaQuadro.TELA.get_center() + Vector2(rand_range(-160.0, 160.0), rand_range(-200.0, 120.0))
 	fx.faiscas(centro, 22, Paleta.CREME, 1100.0)
 	fx.onda(centro, 40.0, 520.0, Paleta.CREME, 10.0, 0.45)
 	_montar_rachadura(centro)
@@ -2933,7 +2932,7 @@ func _montar_cambaleio() -> void:
 	# devagar, com frequências e fases sorteadas a cada vez (nunca sai
 	# igual). Nada de congelar a imagem — travada lê como defeito.
 	_cambaleio_t = 0.0
-	_cambaleio_dur = randf_range(1.3, 2.0)
+	_cambaleio_dur = rand_range(1.3, 2.0)
 	if arena != null:
 		arena.cambalear(_cambaleio_dur)
 
@@ -2951,48 +2950,48 @@ func _passo_do_cambaleio(passo: float) -> void:
 func _tremor_da_arena() -> Vector2:
 	if tremor <= 0.1:
 		return Vector2.ZERO
-	var t := minf(tremor * 0.6, 22.0)
-	return Vector2(randf_range(-t, t), randf_range(-t, t))
+	var t = min(tremor * 0.6, 22.0)
+	return Vector2(rand_range(-t, t), rand_range(-t, t))
 
 ## A rachadura: galhos quebrados saindo do ponto do soco, sorteados.
 func _montar_rachadura(centro: Vector2) -> void:
 	_rachadura.clear()
 	_rachadura_t = 0.0
-	var galhos := randi_range(6, 9)
+	var galhos = Compat.randi_range(6, 9)
 	for i in galhos:
-		var ang := float(i) / float(galhos) * TAU + randf_range(-0.3, 0.3)
-		var p := centro
-		var linha := PackedVector2Array([p])
-		for k in randi_range(3, 6):
-			ang += randf_range(-0.45, 0.45)
-			p += Vector2.from_angle(ang) * randf_range(40.0, 110.0)
-			p = p.clamp(ArenaQuadro.TELA.position + Vector2(6, 6), ArenaQuadro.TELA.end - Vector2(6, 6))
+		var ang = float(i) / float(galhos) * TAU + rand_range(-0.3, 0.3)
+		var p = centro
+		var linha = PoolVector2Array([p])
+		for k in Compat.randi_range(3, 6):
+			ang += rand_range(-0.45, 0.45)
+			p += polar2cartesian(1.0, ang) * rand_range(40.0, 110.0)
+			p = Compat.vclamp(p, ArenaQuadro.TELA.position + Vector2(6, 6), ArenaQuadro.TELA.end - Vector2(6, 6))
 			linha.append(p)
 			if randf() < 0.3:
-				var q := p + Vector2.from_angle(ang + randf_range(0.6, 1.2) * (1.0 if randf() < 0.5 else -1.0)) * randf_range(30.0, 70.0)
-				q = q.clamp(ArenaQuadro.TELA.position + Vector2(6, 6), ArenaQuadro.TELA.end - Vector2(6, 6))
-				_rachadura.append(PackedVector2Array([p, q]))
+				var q = p + polar2cartesian(1.0, ang + rand_range(0.6, 1.2) * (1.0 if randf() < 0.5 else -1.0)) * rand_range(30.0, 70.0)
+				q = Compat.vclamp(q, ArenaQuadro.TELA.position + Vector2(6, 6), ArenaQuadro.TELA.end - Vector2(6, 6))
+				_rachadura.append(PoolVector2Array([p, q]))
 		_rachadura.append(linha)
 	# o anel quebrado em volta do impacto
-	var anel := PackedVector2Array()
-	var raio := randf_range(34.0, 52.0)
+	var anel = PoolVector2Array()
+	var raio = rand_range(34.0, 52.0)
 	for k in 13:
-		anel.append(centro + Vector2.from_angle(float(k) / 12.0 * TAU) * raio * randf_range(0.8, 1.2))
+		anel.append(centro + polar2cartesian(1.0, float(k) / 12.0 * TAU) * raio * rand_range(0.8, 1.2))
 	_rachadura.append(anel)
 
 func _draw_soco_na_tela() -> void:
 	# Tudo DENTRO do quadro da arena: é o vidro dela que racha.
-	var tela := ArenaQuadro.TELA
-	if _rachadura_t >= 0.0 and not _rachadura.is_empty():
-		var a := 1.0 - clampf((_rachadura_t - 0.5) / 0.9, 0.0, 1.0)
+	var tela = ArenaQuadro.TELA
+	if _rachadura_t >= 0.0 and not _rachadura.empty():
+		var a = 1.0 - clamp((_rachadura_t - 0.5) / 0.9, 0.0, 1.0)
 		for linha in _rachadura:
 			draw_polyline(linha, Color(0.0, 0.0, 0.0, 0.35 * a), 6.0, true)
 			draw_polyline(linha, Color(1.0, 0.98, 0.95, 0.85 * a), 2.5, true)
 	if _cambaleio_t >= 0.0:
 		# a vista escurece nas bordas do quadro, avermelhada, e volta
-		var v := pow(1.0 - clampf(_cambaleio_t / _cambaleio_dur, 0.0, 1.0), 2.0) * 0.5
-		var cor := Color(0.35, 0.0, 0.08, v)
-		var borda := 110.0
+		var v = pow(1.0 - clamp(_cambaleio_t / _cambaleio_dur, 0.0, 1.0), 2.0) * 0.5
+		var cor = Color(0.35, 0.0, 0.08, v)
+		var borda = 110.0
 		draw_rect(Rect2(tela.position, Vector2(tela.size.x, borda)), cor)
 		draw_rect(Rect2(tela.position.x, tela.end.y - borda, tela.size.x, borda), cor)
 		draw_rect(Rect2(tela.position.x, tela.position.y + borda, borda, tela.size.y - borda * 2.0), cor)
@@ -3008,21 +3007,21 @@ func _draw_soco_na_tela() -> void:
 ## e erro nos passos de − e + significa descobrir que errou depois de a
 ## fila reclamar. O assistente mede: quatro passos, cinco golpes fracos,
 ## cinco fortes, e a conta sai por percentis em `Calibracao`.
-const CALIB_PASSOS := ["REPOUSO", "GOLPES FRACOS", "GOLPES FORTES", "SUGESTÃO"]
-const CALIB_REPOUSO_S := 4.0
-const CALIB_BOTOES := {
+const CALIB_PASSOS = ["REPOUSO", "GOLPES FRACOS", "GOLPES FORTES", "SUGESTÃO"]
+const CALIB_REPOUSO_S = 4.0
+const CALIB_BOTOES = {
 	"calib_avancar": Rect2(560, 1600, 400, 72),
 	"calib_repetir": Rect2(120, 1600, 400, 72),
 	"calib_salvar": Rect2(560, 1690, 400, 72),
 	"calib_cancelar": Rect2(120, 1690, 400, 72),
 }
 
-var calib_ativo := false
-var calib_passo := 0
-var calib_repouso_left := 0.0
-var calib_ruido := 0.0
-var calib_fracos: Array[float] = []
-var calib_fortes: Array[float] = []
+var calib_ativo = false
+var calib_passo = 0
+var calib_repouso_left = 0.0
+var calib_ruido = 0.0
+var calib_fracos: Array = []
+var calib_fortes: Array = []
 ## O NÍVEL DE SINAL VISTO EM CADA GOLPE — só para a tela mostrar.
 ##
 ## No firmware óptico este campo é a leitura de A0, de 0 a 1: um nível de
@@ -3030,15 +3029,15 @@ var calib_fortes: Array[float] = []
 ## assim que um "ruído" virou gatilho e a máquina se estrangulou. Agora
 ## ele é o que sempre foi — um número para conferir a olho se o sensor
 ## está enxergando — e `Calibracao.sugerir` não o recebe mais.
-var calib_sinais: Array[float] = []
+var calib_sinais: Array = []
 var calib_sugestao: Dictionary = {}
 
 ## O ASSISTENTE PELO CONTROLE REMOTO. Os quatro botões são uma grade 2x2:
 ## setas trocam de botão, OK aperta, Voltar cancela.
-const CALIB_ORDEM := ["calib_repetir", "calib_avancar", "calib_cancelar", "calib_salvar"]
-var _foco_calib := 1
+const CALIB_ORDEM = ["calib_repetir", "calib_avancar", "calib_cancelar", "calib_salvar"]
+var _foco_calib = 1
 
-func _navegar_calibracao(tecla: Key, repetindo: bool) -> bool:
+func _navegar_calibracao(tecla: int, repetindo: bool) -> bool:
 	match tecla:
 		KEY_LEFT, KEY_RIGHT:
 			_foco_calib ^= 1
@@ -3077,7 +3076,7 @@ func _fechar_calibracao() -> void:
 func _processar_calibracao(delta: float) -> void:
 	if not calib_ativo or calib_passo != 0:
 		return
-	calib_repouso_left = maxf(0.0, calib_repouso_left - delta)
+	calib_repouso_left = max(0.0, calib_repouso_left - delta)
 	if calib_repouso_left <= 0.0:
 		calib_passo = 1
 		sons.play("menu", -8.0)
@@ -3091,7 +3090,7 @@ func _calibracao_recebeu(velocidade: float, pico: float) -> void:
 		0:
 			# Em repouso, qualquer coisa que chegue é ruído — e o ruído é
 			# justamente o que se quer medir.
-			calib_ruido = maxf(calib_ruido, pico)
+			calib_ruido = max(calib_ruido, pico)
 		1:
 			calib_fracos.append(velocidade)
 			calib_sinais.append(pico)
@@ -3127,7 +3126,7 @@ func _click_calibracao(p: Vector2) -> void:
 				calib_sugestao = Calibracao.sugerir(calib_fracos, calib_fortes, calib_ruido, sensor_raio)
 				_foco_calib = 3
 	elif CALIB_BOTOES["calib_salvar"].has_point(p):
-		if calib_sugestao.is_empty():
+		if calib_sugestao.empty():
 			return
 		hit_min_speed = float(calib_sugestao["vmin"])
 		hit_max_speed = float(calib_sugestao["vmax"])
@@ -3150,27 +3149,27 @@ func _click_calibracao(p: Vector2) -> void:
 		_show_notice("CALIBRAÇÃO SALVA E ENVIADA AO SENSOR")
 
 func _draw_calibracao() -> void:
-	var caixa := Rect2(60, 300, 960, 1500)
+	var caixa = Rect2(60, 300, 960, 1500)
 	_placa(caixa, 22.0, Paleta.CARTAO_BORDA)
 	_placa(caixa.grow(-5.0), 19.0, Color("170c29"))
 	_texto_arcade("CALIBRAÇÃO", 396.0, 62, Paleta.AMBAR, LARGURA_UTIL)
 
 	# A trilha dos quatro passos, com o atual aceso.
 	for i in range(CALIB_PASSOS.size()):
-		var r := Rect2(110.0 + float(i) * 220.0, 440.0, 200.0, 54.0)
-		var feito := i < calib_passo
-		var atual := i == calib_passo
+		var r = Rect2(110.0 + float(i) * 220.0, 440.0, 200.0, 54.0)
+		var feito = i < calib_passo
+		var atual = i == calib_passo
 		var cor: Color = Paleta.VERDE if feito else (Paleta.AMBAR if atual else Color("321d55"))
 		_cartao(r, cor if (feito or atual) else Color("120920"), Paleta.CARTAO_BORDA, 1.0, 2.0)
 		_texto(
 			str(CALIB_PASSOS[i]), r.position.y + 34.0, 15,
 			Color("1c0f31") if (feito or atual) else Paleta.TINTA_LEVE,
-			HORIZONTAL_ALIGNMENT_CENTER, r.position.x, r.size.x
+			Compat.CENTRO, r.position.x, r.size.x
 		)
 
 	match calib_passo:
 		0:
-			_texto_arcade("NÃO ENCOSTE NO SACO", 620.0, 56, Color.WHITE, LARGURA_UTIL)
+			_texto_arcade("NÃO ENCOSTE NO SACO", 620.0, 56, Color.white, LARGURA_UTIL)
 			_rotulo("medindo o ruído de repouso do sensor", 690.0, Paleta.TINTA_FRACA)
 			_texto_arcade("%.1f s" % calib_repouso_left, 820.0, 96, Paleta.AMBAR, LARGURA_UTIL)
 			# O NÚMERO TEM DE DIZER A UNIDADE CERTA. Aqui ele vinha
@@ -3186,38 +3185,38 @@ func _draw_calibracao() -> void:
 		_:
 			_resultado_da_calibracao()
 
-	var pode_avancar := calib_passo < 3
+	var pode_avancar = calib_passo < 3
 	_botao(CALIB_BOTOES["calib_avancar"], "PULAR ESTE PASSO" if pode_avancar else "—", false, Paleta.CIANO, 19)
 	_botao(CALIB_BOTOES["calib_repetir"], "COMEÇAR DE NOVO", false, Paleta.ROXO, 19)
 	_botao(
 		CALIB_BOTOES["calib_salvar"], "SALVAR E ENVIAR AO SENSOR",
-		not calib_sugestao.is_empty(), Paleta.VERDE, 18
+		not calib_sugestao.empty(), Paleta.VERDE, 18
 	)
 	_botao(CALIB_BOTOES["calib_cancelar"], "CANCELAR", false, Paleta.VERMELHO, 19)
 	var foco: Rect2 = CALIB_BOTOES[CALIB_ORDEM[_foco_calib]]
-	var pulso := 0.6 + 0.4 * sin(animation_time * 6.0)
-	draw_rect(foco.grow(6.0), Color(Paleta.AMBAR, 0.18 * pulso))
-	draw_rect(foco.grow(6.0), Color(Paleta.AMBAR, pulso), false, 5.0)
+	var pulso = 0.6 + 0.4 * sin(animation_time * 6.0)
+	draw_rect(foco.grow(6.0), Compat.cor(Paleta.AMBAR, 0.18 * pulso))
+	draw_rect(foco.grow(6.0), Compat.cor(Paleta.AMBAR, pulso), false, 5.0)
 	_rotulo("setas escolhem  •  OK aperta  •  VOLTAR cancela", 1566.0, Paleta.TINTA_FRACA)
 
 func _passo_de_golpes(titulo: String, dica: String, amostras: Array) -> void:
-	_texto_arcade(titulo, 600.0, 52, Color.WHITE, LARGURA_UTIL)
+	_texto_arcade(titulo, 600.0, 52, Color.white, LARGURA_UTIL)
 	_rotulo(dica, 664.0, Paleta.TINTA_FRACA)
 	# Uma casa por golpe: a pessoa que está batendo vê quantos faltam sem
 	# precisar contar de cabeça enquanto bate.
 	for i in range(Calibracao.AMOSTRAS):
-		var r := Rect2(180.0 + float(i) * 148.0, 730.0, 128.0, 128.0)
-		var tem := i < amostras.size()
+		var r = Rect2(180.0 + float(i) * 148.0, 730.0, 128.0, 128.0)
+		var tem = i < amostras.size()
 		_cartao(r, Paleta.AMBAR if tem else Color("120920"), Paleta.CARTAO_BORDA, 1.0, 2.0)
 		_texto(
 			"%.1f" % float(amostras[i]) if tem else "—", r.position.y + 76.0, 26,
 			Color("1c0f31") if tem else Paleta.TINTA_LEVE,
-			HORIZONTAL_ALIGNMENT_CENTER, r.position.x, r.size.x
+			Compat.CENTRO, r.position.x, r.size.x
 		)
 	_rotulo("m/s medidos pelo sensor", 900.0, Paleta.CIANO)
 
 func _resultado_da_calibracao() -> void:
-	if calib_sugestao.is_empty():
+	if calib_sugestao.empty():
 		_texto_arcade("SEM AMOSTRAS SUFICIENTES", 620.0, 44, Paleta.VERMELHO, LARGURA_UTIL)
 		_rotulo("volte e registre os golpes", 690.0, Paleta.TINTA_FRACA)
 		return
@@ -3225,7 +3224,7 @@ func _resultado_da_calibracao() -> void:
 	# AS QUATRO LINHAS, NA ORDEM EM QUE SE LÊ A MÁQUINA: onde começa a
 	# pontuar, quanto vale um soco comum, onde está o topo — e só então o
 	# número que é consequência dos outros três.
-	var linhas := [
+	var linhas = [
 		["VELOCIDADE MÍNIMA", "%.1f m/s" % float(calib_sugestao["vmin"]), str(calib_sugestao["porque_vmin"])],
 		[
 			"SOCO DE REFERÊNCIA (%d)" % ScoreCurve.PONTOS_DE_REFERENCIA,
@@ -3237,18 +3236,18 @@ func _resultado_da_calibracao() -> void:
 		["PULSO MÍNIMO", "%.2f ms" % float(calib_sugestao["pulso_ms"]), str(calib_sugestao["porque_pulso"])],
 	]
 	for i in range(linhas.size()):
-		var y := 640.0 + float(i) * 104.0
+		var y = 640.0 + float(i) * 104.0
 		_cartao(Rect2(120, y - 38.0, 840, 92), Color("120920"), Paleta.CARTAO_BORDA, 1.0, 1.5)
-		_texto(str(linhas[i][0]), y, 20, Paleta.TINTA_FRACA, HORIZONTAL_ALIGNMENT_LEFT, 150.0, 430.0)
-		_texto(str(linhas[i][1]), y, 30, Paleta.AMBAR, HORIZONTAL_ALIGNMENT_RIGHT, 150.0, 780.0)
-		_texto(str(linhas[i][2]), y + 28.0, 14, Paleta.TINTA_LEVE, HORIZONTAL_ALIGNMENT_LEFT, 150.0, 780.0)
+		_texto(str(linhas[i][0]), y, 20, Paleta.TINTA_FRACA, Compat.ESQUERDA, 150.0, 430.0)
+		_texto(str(linhas[i][1]), y, 30, Paleta.AMBAR, Compat.DIREITA, 150.0, 780.0)
+		_texto(str(linhas[i][2]), y + 28.0, 14, Paleta.TINTA_LEVE, Compat.ESQUERDA, 150.0, 780.0)
 
 	# A CURVA QUE VAI VALER, desenhada antes de salvar. É o único jeito de
 	# alguém discordar da sugestão com fundamento.
 	_rotulo("A CURVA COM ESTES NÚMEROS", 1080.0, Paleta.CREME)
-	var antes_min := hit_min_speed
-	var antes_max := hit_max_speed
-	var antes_ref := score_ref_speed
+	var antes_min = hit_min_speed
+	var antes_max = hit_max_speed
+	var antes_ref = score_ref_speed
 	hit_min_speed = float(calib_sugestao["vmin"])
 	hit_max_speed = float(calib_sugestao["vmax"])
 	score_ref_speed = float(calib_sugestao["vref"])
@@ -3267,9 +3266,9 @@ func _resultado_da_calibracao() -> void:
 func _iniciar_serial() -> void:
 	_soltar_link()
 	link = SerialLink.create_best()
-	link.line_received.connect(_on_serial_line)
-	link.opened.connect(_on_serial_opened)
-	link.closed.connect(_on_serial_closed)
+	link.connect("line_received", self, "_on_serial_line")
+	link.connect("opened", self, "_on_serial_opened")
+	link.connect("closed", self, "_on_serial_closed")
 	# Cada caminho novo começa com a ficha limpa: fila do zero, porta
 	# fixada com crédito de novo, e o relógio da vigilância zerado.
 	porta_atual = ""
@@ -3284,7 +3283,7 @@ func _iniciar_serial() -> void:
 	_falhas_da_porta_fixa = 0
 	_porta_confirmada = false
 	_caminho_provado = false
-	_fila_de_portas = PackedStringArray()
+	_fila_de_portas = PoolStringArray()
 	_caminho_desde = animation_time
 	_proxima_escolha_de_caminho = animation_time + SEGUNDOS_ATE_TROCAR_DE_CAMINHO
 	if not link.available():
@@ -3299,9 +3298,9 @@ func _iniciar_serial() -> void:
 		# passado o prazo o jogo REFAZ a escolha do caminho. Uma máquina
 		# em que o PowerShell demorou a subir, ou em que o cabo USB chegou
 		# depois, se conserta sozinha em vez de esperar por alguém.
-		var motivo := link.motivo_da_falta()
+		var motivo = link.motivo_da_falta()
 		serial_status = "SEM CAMINHO ATÉ O ARDUINO — PROCURANDO OUTRO…"
-		if not motivo.is_empty():
+		if not motivo.empty():
 			serial_status += " (%s)" % motivo
 		proxima_tentativa = animation_time + 1.0
 		return
@@ -3313,12 +3312,12 @@ func _iniciar_serial() -> void:
 func _soltar_link() -> void:
 	if link == null:
 		return
-	if link.line_received.is_connected(_on_serial_line):
-		link.line_received.disconnect(_on_serial_line)
-	if link.opened.is_connected(_on_serial_opened):
-		link.opened.disconnect(_on_serial_opened)
-	if link.closed.is_connected(_on_serial_closed):
-		link.closed.disconnect(_on_serial_closed)
+	if link.is_connected("line_received", self, "_on_serial_line"):
+		link.disconnect("line_received", self, "_on_serial_line")
+	if link.is_connected("opened", self, "_on_serial_opened"):
+		link.disconnect("opened", self, "_on_serial_opened")
+	if link.is_connected("closed", self, "_on_serial_closed"):
+		link.disconnect("closed", self, "_on_serial_closed")
 	link.close_port()
 	link.encerrar()
 	link = null
@@ -3385,18 +3384,18 @@ func _sensor_ligado() -> bool:
 ## importa e a da FILA: com quatro portas antes da certa, oito segundos
 ## cada davam mais de meio minuto de "PROCURANDO ARDUINO..." com a placa
 ## espetada e falando. Era essa a demora.
-const PORTA_PACIENCIA := 4.5
-const ESPERA_DA_CONFIRMACAO := 15.0
+const PORTA_PACIENCIA = 4.5
+const ESPERA_DA_CONFIRMACAO = 15.0
 ## Uma ausência curta pode ser o Windows atendendo câmera e vídeo no mesmo
 ## controlador USB. Só reiniciamos a COM depois de silêncio realmente
 ## prolongado; durante COUNTDOWN/ARMED damos margem ainda maior para não
 ## resetar o Arduino exatamente quando o jogador vai socar.
-const SERIAL_SILENCIO_NORMAL_MS := 20000
-const SERIAL_SILENCIO_EM_JOGO_MS := 30000
+const SERIAL_SILENCIO_NORMAL_MS = 20000
+const SERIAL_SILENCIO_EM_JOGO_MS = 30000
 ## Calibrar e recuperar o barramento nunca deve fazer o jogo abandonar a
 ## COM que ja se identificou. O prazo grande e apenas uma rede de seguranca;
 ## o firmware V10 tem prazos internos de milissegundos em cada leitura.
-const SERIAL_SILENCIO_CALIBRANDO_MS := 90000
+const SERIAL_SILENCIO_CALIBRANDO_MS = 90000
 ## A PACIENCIA CURTA, para porta que o sistema NAO chama de placa.
 ##
 ## Bluetooth, leitor de cartao, porta virtual de impressora: elas ABREM
@@ -3408,17 +3407,17 @@ const SERIAL_SILENCIO_CALIBRANDO_MS := 90000
 ##
 ## Se o sistema NAO souber distinguir nenhuma, a lista de promissoras vem
 ## vazia e TODAS ganham a paciencia inteira: "nao sei" nunca vira pressa.
-const PORTA_PACIENCIA_ANONIMA := 1.5
+const PORTA_PACIENCIA_ANONIMA = 1.5
 ## Depois de tantas falhas seguidas, a porta fixada na Central deixa de
 ## ser exclusiva e a varredura volta a incluir todas. Ver
 ## `_fila_de_tentativas`.
-const FALHAS_ATE_SOLTAR_A_PORTA_FIXA := 2
+const FALHAS_ATE_SOLTAR_A_PORTA_FIXA = 2
 ## Tanto tempo sem uma única linha válida e o jogo TROCA DE CAMINHO até a
 ## placa. É o que faz a máquina funcionar num PC onde o caminho preferido
 ## não presta, sem ninguém para mexer em arquivo. Ver
 ## `SerialLink.create_best`.
-const SEGUNDOS_ATE_TROCAR_DE_CAMINHO := 40.0
-var _porta_da_vez := 0
+const SEGUNDOS_ATE_TROCAR_DE_CAMINHO = 40.0
+var _porta_da_vez = 0
 
 ## A PORTA FIXADA É PREFERÊNCIA, NÃO CADEADO — e este foi o "gato" que
 ## deixou a máquina presa numa porta que não existia.
@@ -3436,11 +3435,11 @@ var _porta_da_vez := 0
 ## e a máquina acha a placa onde ela estiver. A preferência continua
 ## valendo (ela é sempre a primeira tentada), mas deixou de ser um
 ## cadeado.
-func _fila_de_tentativas() -> PackedStringArray:
-	var fila := PackedStringArray()
+func _fila_de_tentativas() -> PoolStringArray:
+	var fila = PoolStringArray()
 	# Identificada nesta sessao vence qualquer preferencia antiga. Depois
 	# de READY nao ha mais descoberta: esta e a placa que deve ser reaberta.
-	if not porta_arduino_identificada.is_empty():
+	if not porta_arduino_identificada.empty():
 		fila.append(porta_arduino_identificada)
 	# A PORTA QUE ACABOU DE APARECER entra antes da fixada — e por isso
 	# sobrevive ao `return` da porta fixa logo abaixo. Um gabinete com a
@@ -3452,17 +3451,17 @@ func _fila_de_tentativas() -> PackedStringArray:
 	# sumiu no intervalo (o cabo que deu um mau contato) não pode
 	# continuar furando a fila de uma busca que já seguiu em frente.
 	if (
-		not _porta_recem_chegada.is_empty()
+		not _porta_recem_chegada.empty()
 		and portas_visiveis.has(_porta_recem_chegada)
 		and not fila.has(_porta_recem_chegada)
 	):
 		fila.append(_porta_recem_chegada)
-	if not porta_configurada.is_empty():
+	if not porta_configurada.empty():
 		if not fila.has(porta_configurada):
 			fila.append(porta_configurada)
 		if _falhas_da_porta_fixa < FALHAS_ATE_SOLTAR_A_PORTA_FIXA:
 			return fila
-	if not porta_serial_conhecida.is_empty() and not fila.has(porta_serial_conhecida):
+	if not porta_serial_conhecida.empty() and not fila.has(porta_serial_conhecida):
 		fila.append(porta_serial_conhecida)
 	for porta in portas_visiveis:
 		if not fila.has(porta):
@@ -3516,8 +3515,8 @@ func _espera_da_lista() -> float:
 ## faltar meia fila até chegar nela, e até lá a tela dizia
 ## "DESCONECTADO". Uma porta que NASCE agora é a melhor pista que esta
 ## máquina vai ter, e agora ela fura a fila.
-func _adotar_lista(novas: PackedStringArray) -> void:
-	var antes := portas_visiveis
+func _adotar_lista(novas: PoolStringArray) -> void:
+	var antes = portas_visiveis
 	portas_visiveis = novas
 	_lista_ja_veio = true
 	_lista_pedida_em = animation_time
@@ -3527,7 +3526,7 @@ func _adotar_lista(novas: PackedStringArray) -> void:
 		return
 	# A porta que sumiu da lista não vai responder: dizer isso é melhor
 	# do que continuar esperando por ela até a paciência acabar.
-	if not porta_atual.is_empty() and antes.has(porta_atual) and not novas.has(porta_atual):
+	if not porta_atual.empty() and antes.has(porta_atual) and not novas.has(porta_atual):
 		serial_status = "%s SUMIU DA LISTA — O CABO SAIU?" % porta_atual
 	# A porta que acabou de nascer fura a fila.
 	for porta in novas:
@@ -3544,7 +3543,7 @@ func _adotar_lista(novas: PackedStringArray) -> void:
 		break
 
 func _hora_de_procurar() -> bool:
-	var no_meio_do_golpe := state in [
+	var no_meio_do_golpe = state in [
 		GameDef.State.COUNTDOWN, GameDef.State.ARMED,
 		GameDef.State.MEASURING, GameDef.State.RESULT,
 	]
@@ -3569,8 +3568,8 @@ func _hora_de_procurar() -> bool:
 func _passo_do_motor() -> void:
 	if link == null or not link.is_open():
 		return
-	var linha := saco.passo()
-	if not linha.is_empty():
+	var linha = saco.passo()
+	if not linha.empty():
 		link.send_line(linha)
 
 func _tentar_conectar() -> void:
@@ -3597,7 +3596,7 @@ func _tentar_conectar() -> void:
 		# conferem em um minuto. Mandar a pessoa ler o protocolo serial
 		# inteiro era mandá-la para o lugar errado.
 		serial_status = "SEM CAMINHO ATÉ O ARDUINO — %s" % (
-			link.motivo_da_falta() if link != null and not link.motivo_da_falta().is_empty()
+			link.motivo_da_falta() if link != null and not link.motivo_da_falta().empty()
 			else "VEJA docs/QUANDO_NAO_ACHA_O_ARDUINO.md"
 		)
 		proxima_tentativa = animation_time + 1.0
@@ -3619,7 +3618,7 @@ func _tentar_conectar() -> void:
 	else:
 		_pedir_a_lista()
 	_fila_de_portas = _fila_de_tentativas()
-	if _fila_de_portas.is_empty():
+	if _fila_de_portas.empty():
 		# PROCURAR TEM DE PARECER PROCURAR. A frase era só
 		# "PROCURANDO ARDUINO…", parada, igual a si mesma minuto após
 		# minuto — e para quem está na frente da máquina uma frase que não
@@ -3641,15 +3640,15 @@ func _tentar_conectar() -> void:
 		_porta_da_vez = 0
 		_varreduras += 1
 		_fila_de_portas = _fila_de_tentativas()
-	var porta := _fila_de_portas[_porta_da_vez]
+	var porta = _fila_de_portas[_porta_da_vez]
 	_porta_da_vez += 1
 	# Furar a fila vale UMA vez. Se a placa não estava ali, a porta nova
 	# volta a ser uma porta como as outras e a fila segue normalmente —
 	# senão um adaptador Bluetooth recém-pareado prenderia a busca.
-	var acabou_de_chegar := porta == _porta_recem_chegada
+	var acabou_de_chegar = porta == _porta_recem_chegada
 	if acabou_de_chegar:
 		_porta_recem_chegada = ""
-	var marcada := link.portas_promissoras().has(porta)
+	var marcada = link.portas_promissoras().has(porta)
 	if acabou_de_chegar:
 		serial_status = "ABRINDO %s — PORTA RECÉM-CONECTADA" % porta
 	else:
@@ -3661,7 +3660,7 @@ func _tentar_conectar() -> void:
 	_porta_pedida_em = animation_time
 	_porta_aberta_em = animation_time
 	Diario.marca("ARDUINO: abrindo %s" % porta)
-	var abriu := link.open_port(porta, GameDef.SERIAL_BAUD)
+	var abriu = link.open_port(porta, GameDef.SERIAL_BAUD)
 	Diario.marca("ARDUINO: %s" % ("aberta" if abriu else "nao abriu (%s)" % link.motivo_da_falta()))
 	if abriu:
 		porta_atual = porta
@@ -3671,7 +3670,7 @@ func _tentar_conectar() -> void:
 		serial_status = "FALHA AO ABRIR %s" % porta
 		# Nome inventado pela varredura cega costuma recusar na hora; não
 		# se paga quase um segundo por cada uma das 64 possibilidades.
-		var era_conhecida := portas_visiveis.has(porta) \
+		var era_conhecida = portas_visiveis.has(porta) \
 			or porta == porta_configurada or porta == porta_serial_conhecida
 		proxima_tentativa = animation_time + (0.8 if era_conhecida else 0.15)
 
@@ -3689,11 +3688,11 @@ func _tentar_conectar() -> void:
 func _paciencia_da_porta() -> float:
 	if link == null:
 		return PORTA_PACIENCIA
-	var promissoras := link.portas_promissoras()
-	if promissoras.is_empty():
+	var promissoras = link.portas_promissoras()
+	if promissoras.empty():
 		return PORTA_PACIENCIA
 	# A porta fixada pelo operador é escolha de gente: paciência inteira.
-	if not porta_configurada.is_empty() and porta_atual == porta_configurada:
+	if not porta_configurada.empty() and porta_atual == porta_configurada:
 		return PORTA_PACIENCIA
 	return PORTA_PACIENCIA if promissoras.has(porta_atual) else PORTA_PACIENCIA_ANONIMA
 
@@ -3703,14 +3702,14 @@ func _paciencia_da_porta() -> float:
 ## porta fixada. Um lugar só é o que garante que desistir signifique
 ## sempre a mesma coisa, venha a desistência do encanamento ou da placa.
 func _desistir_da_porta(motivo: String) -> void:
-	if not porta_configurada.is_empty() and porta_atual == porta_configurada:
+	if not porta_configurada.empty() and porta_atual == porta_configurada:
 		_falhas_da_porta_fixa += 1
 		if _falhas_da_porta_fixa == FALHAS_ATE_SOLTAR_A_PORTA_FIXA:
 			_show_notice(
 				"%s NÃO RESPONDE — VARRENDO TODAS AS PORTAS" % porta_configurada
 			)
-	var tem_outras := _fila_de_tentativas().size() > 1
-	var recado := "%s EM %s%s" % [
+	var tem_outras = _fila_de_tentativas().size() > 1
+	var recado = "%s EM %s%s" % [
 		motivo, porta_atual, " — TENTANDO A PRÓXIMA" if tem_outras else ""
 	]
 	if link != null:
@@ -3765,7 +3764,7 @@ func _poll_serial(_delta: float) -> void:
 		# Nada de USB durante o carregamento, com uma janela do Android na
 		# frente, ou antes de a janela da câmera ter sido respondida (uma
 		# janela de cada vez).
-		var pode := not entrada_segurada and animation_time >= _perifericos_em and Porteiro.livre() \
+		var pode = not entrada_segurada and animation_time >= _perifericos_em and Porteiro.livre() \
 			and (camera_service == null or camera_service.permissao_resolvida())
 		if animation_time >= proxima_tentativa and _hora_de_procurar() and pode:
 			_tentar_conectar()
@@ -3789,12 +3788,12 @@ func _poll_serial(_delta: float) -> void:
 	elif ultimo_sinal_ms >= 0 and animation_time >= proximo_ping:
 		link.send_line("PING")
 		proximo_ping = animation_time + 5.0
-	var limite_silencio := SERIAL_SILENCIO_NORMAL_MS
+	var limite_silencio = SERIAL_SILENCIO_NORMAL_MS
 	if placa_calibrando:
 		limite_silencio = SERIAL_SILENCIO_CALIBRANDO_MS
 	elif state in [GameDef.State.COUNTDOWN, GameDef.State.ARMED]:
 		limite_silencio = SERIAL_SILENCIO_EM_JOGO_MS
-	var silencio_ms := Time.get_ticks_msec() - ultimo_sinal_ms if ultimo_sinal_ms >= 0 else 0
+	var silencio_ms = Time.get_ticks_msec() - ultimo_sinal_ms if ultimo_sinal_ms >= 0 else 0
 	if ultimo_sinal_ms >= 0 and silencio_ms > 6000 and animation_time >= proximo_ping:
 		# Antes de tocar na porta, confirma com pings rápidos. A ponte segue
 		# lendo em paralelo e qualquer resposta cancela naturalmente o prazo.
@@ -3819,7 +3818,7 @@ func _poll_serial(_delta: float) -> void:
 		# Uma reconexão automática devolve a máquina sem intervenção;
 		# não reconectar nunca é que perde a máquina a noite inteira.
 		serial_status = "SEM RESPOSTA HÁ %d s — %s — RECONECTANDO" % [int(silencio_ms / 1000), porta_atual]
-		var recado := serial_status
+		var recado = serial_status
 		link.close_port()
 		serial_status = recado
 		return
@@ -3830,8 +3829,8 @@ func _sem_caminho_ate_a_placa() -> void:
 	porta_atual = ""
 	_porta_confirmada = false
 	serial_status = "SEM CAMINHO ATÉ O ARDUINO"
-	var motivo := link.motivo_da_falta()
-	if not motivo.is_empty():
+	var motivo = link.motivo_da_falta()
+	if not motivo.empty():
 		serial_status += " (%s)" % motivo
 	if animation_time >= _proxima_escolha_de_caminho:
 		_trocar_de_caminho("nenhum caminho respondeu")
@@ -3839,7 +3838,7 @@ func _sem_caminho_ate_a_placa() -> void:
 func _trocar_de_caminho(motivo: String) -> void:
 	_trocas_de_caminho += 1
 	_iniciar_serial()
-	var agora := link.descricao() if link != null else "nenhum"
+	var agora = link.descricao() if link != null else "nenhum"
 	serial_status = "TROCANDO DE CAMINHO — %s → %s" % [motivo, agora]
 
 func _on_serial_opened(porta: String) -> void:
@@ -3860,10 +3859,10 @@ func _on_serial_closed(_porta: String) -> void:
 	# nunca disse nada sai da frente em um terço de segundo; só a que
 	# ESTAVA falando e caiu ganha o segundo inteiro, porque nesse caso a
 	# pausa é para o driver soltar a porta antes de reabri-la.
-	var estava_falando := ultimo_sinal_ms >= 0
+	var estava_falando = ultimo_sinal_ms >= 0
 	if estava_falando:
-		var agora_ms := Time.get_ticks_msec()
-		var recentes: Array[int] = []
+		var agora_ms = Time.get_ticks_msec()
+		var recentes: Array = []
 		for instante in _quedas_do_caminho:
 			if agora_ms - instante <= JANELA_DE_QUEDAS_MS:
 				recentes.append(instante)
@@ -3884,7 +3883,7 @@ func _on_serial_closed(_porta: String) -> void:
 	#
 	# Estas duas dizem o que aconteceu e o que vem a seguir, que é a
 	# única coisa que alguém na frente do gabinete quer saber.
-	if _porta.is_empty():
+	if _porta.empty():
 		serial_status = "PROCURANDO A PLACA…"
 	elif estava_falando:
 		serial_status = "A PLACA CAIU EM %s — RECONECTANDO" % _porta
@@ -3893,7 +3892,7 @@ func _on_serial_closed(_porta: String) -> void:
 	# Se esta porta ja disse READY,PUNCH_MPU6050, o problema nao e
 	# descoberta. Reabre a mesma COM primeiro, sem reiniciar a varredura em
 	# portas que sabemos nao serem a placa.
-	if not _porta.is_empty() and _porta == porta_arduino_identificada:
+	if not _porta.empty() and _porta == porta_arduino_identificada:
 		porta_serial_conhecida = _porta
 		_porta_da_vez = 0
 	porta_atual = ""
@@ -3915,7 +3914,7 @@ func _on_serial_closed(_porta: String) -> void:
 	# Sem sensor não há rodada honesta. Antes do primeiro golpe, devolve a
 	# ficha; entre as duas tentativas, preserva o resultado já conquistado.
 	if not central_aberta and state in [GameDef.State.COUNTDOWN, GameDef.State.ARMED]:
-		if socos.is_empty():
+		if socos.empty():
 			_devolver_credito()
 			_entrar_em_abertura()
 		else:
@@ -3923,8 +3922,8 @@ func _on_serial_closed(_porta: String) -> void:
 		_show_notice("SENSOR DESCONECTADO — RECONECTANDO")
 
 func _on_serial_line(line: String) -> void:
-	var msg := ArduinoProtocol.parse(line)
-	if msg.is_empty() or str(msg.get("type", "")) == "":
+	var msg = ArduinoProtocol.parse(line)
+	if msg.empty() or str(msg.get("type", "")) == "":
 		return
 	ultimo_sinal_ms = Time.get_ticks_msec()
 	# Uma linha válida prova que este caminho funciona.
@@ -3967,8 +3966,8 @@ func _on_serial_line(line: String) -> void:
 	match str(msg["type"]):
 		"READY":
 			serial_status = "CONECTADO %s" % porta_atual
-			var ja_identificado := firmware_optico_identificado
-			var dispositivo := str(msg.get("device", "")).strip_edges().to_upper()
+			var ja_identificado = firmware_optico_identificado
+			var dispositivo = str(msg.get("device", "")).strip_edges().to_upper()
 			# Aceita as identificações das revisões do firmware MH/LM393. O
 			# hardware óptico não deve ser rejeitado apenas porque a etiqueta
 			# mudou entre PUNCH_OPTICAL, PUNCH_MH e PUNCH_LM393.
@@ -3989,8 +3988,8 @@ func _on_serial_line(line: String) -> void:
 				# Grava a COM assim que a PLACA se identifica. Esperar o sensor
 				# terminar de calibrar era o que fazia o jogo esquecer a COM
 				# certa justamente quando ela travava aos 70%.
-				var rota_mudou := false
-				if not porta_atual.is_empty() and porta_serial_conhecida != porta_atual:
+				var rota_mudou = false
+				if not porta_atual.empty() and porta_serial_conhecida != porta_atual:
 					porta_serial_conhecida = porta_atual
 					rota_mudou = true
 				if link != null and caminho_serial_conhecido != link.nome_do_caminho():
@@ -4025,7 +4024,7 @@ func _on_serial_line(line: String) -> void:
 			# firmware — inclusive se este programa fechar no meio.
 			saco.receber(msg)
 		"PONG":
-			if not porta_atual.is_empty() and not serial_status.begins_with("CONECTADO"):
+			if not porta_atual.empty() and not serial_status.begins_with("CONECTADO"):
 				serial_status = "CONECTADO %s" % porta_atual
 		"CALIBRATING":
 			if not firmware_optico_identificado:
@@ -4058,7 +4057,7 @@ func _on_serial_line(line: String) -> void:
 				_armar_sensor_optico()
 			_show_notice("SENSOR CALIBRADO")
 		"BUTTON":
-			var nome_botao := str(msg["button"])
+			var nome_botao = str(msg["button"])
 			# CONFIG e o F9 fisico: funciona tanto com a Central aberta quanto
 			# fechada e nunca consome credito nem inicia partida.
 			if nome_botao == "CONFIG":
@@ -4148,10 +4147,10 @@ func _on_serial_line(line: String) -> void:
 ## Depois do impacto o saco balança, e o MPU-6050 vê o balanço como uma
 ## sequência de eventos menores. Sem tempo morto, um soco vira três — e o
 ## segundo, mais fraco, seria o que ficaria no placar.
-const TEMPO_MORTO_MS := 900
+const TEMPO_MORTO_MS = 900
 ## Um soco de verdade dura dezenas de milissegundos. Um toque, um esbarrão
 ## ou um tranco no gabinete duram muito menos.
-const DURACAO_MINIMA_MS := 12.0
+const DURACAO_MINIMA_MS = 12.0
 
 ## O SENSOR SE ANUNCIOU. É o único momento em que a máquina sabe, sozinha,
 ## que saiu da montagem e entrou em operação.
@@ -4165,8 +4164,8 @@ func _sensor_apareceu() -> void:
 	# Só guardamos uma rota depois de chegar até o sensor de verdade. Uma
 	# porta Bluetooth que respondeu lixo ou uma placa sem MPU não contamina
 	# a próxima inicialização. O valor é preferência e pode ser abandonado.
-	var mudou := false
-	if not porta_atual.is_empty() and porta_serial_conhecida != porta_atual:
+	var mudou = false
+	if not porta_atual.empty() and porta_serial_conhecida != porta_atual:
 		porta_serial_conhecida = porta_atual
 		mudou = true
 	if link != null and caminho_serial_conhecido != link.nome_do_caminho():
@@ -4186,7 +4185,7 @@ func _sensor_apareceu() -> void:
 ## que se fez, versão após versão.
 ##
 ## Cada motivo aponta um ajuste diferente, e a frase diz qual:
-const RECUSAS := {
+const RECUSAS = {
 	"CURTO": "EVENTO CURTO DEMAIS — VIBRAÇÃO, NÃO SOCO",
 	"LENTO": "SUBIDA LENTA — EMPURRÃO, NÃO IMPACTO",
 	"SUSTENTADO": "FORÇA SUSTENTADA — O SINAL NÃO CAIU",
@@ -4204,7 +4203,7 @@ func _recusa_da_placa(msg: Dictionary) -> void:
 	if calib_ativo and central_aberta and str(msg["reason"]) == "FRACO" and float(msg["speed"]) > 0.0:
 		_calibracao_recebeu(float(msg["speed"]), float(msg["peak_g"]))
 		return
-	var motivo := str(msg["reason"])
+	var motivo = str(msg["reason"])
 	ultima_recusa = "%s  •  %.1f g, %.0f ms, %.0f °/s, %.2f m/s" % [
 		motivo, float(msg["peak_g"]), float(msg["duration_ms"]),
 		float(msg["gyro_dps"]), float(msg["speed"]),
@@ -4221,9 +4220,9 @@ func _receber_hit(msg: Dictionary) -> void:
 	# Golpe medido é a prova definitiva de que o sensor está lá, mesmo que
 	# o `OK,MPU` tenha se perdido no cabo.
 	_sensor_apareceu()
-	var speed := float(msg["speed"])
-	var pico := float(msg.get("accel", 0.0))
-	var duracao := float(msg.get("duration_ms", 0.0))
+	var speed = float(msg["speed"])
+	var pico = float(msg.get("accel", 0.0))
+	var duracao = float(msg.get("duration_ms", 0.0))
 	telemetria = "último evento: %.2f m/s, %.1fg, %.0f ms, eixo %s" % [
 		speed, pico, duracao, str(msg.get("axis", "?"))
 	]
@@ -4262,7 +4261,7 @@ func _receber_hit(msg: Dictionary) -> void:
 		ultima_recusa = "o jogo ignorou: esta tentativa já teve o golpe dela"
 		return
 	# 3) TEMPO MORTO: o balanço do saco depois do impacto não é um golpe.
-	var desde := Time.get_ticks_msec() - ultimo_golpe_ms
+	var desde = Time.get_ticks_msec() - ultimo_golpe_ms
 	if desde < TEMPO_MORTO_MS:
 		ultima_recusa = "o jogo ignorou: tempo morto (%d ms de %d)" % [desde, TEMPO_MORTO_MS]
 		return
@@ -4304,7 +4303,7 @@ func _receber_hit(msg: Dictionary) -> void:
 
 ## O SORTEIO DA NOTA tem gerador próprio, semeado no arranque: não
 ## depende de quantas vezes o resto do jogo chamou `randf()`.
-var _sorte_da_nota := RandomNumberGenerator.new()
+var _sorte_da_nota = RandomNumberGenerator.new()
 ## As últimas notas dadas, para `ScoreCurve.variar` nunca repetir uma.
 var _notas_recentes: Array = []
 
@@ -4313,11 +4312,11 @@ var _notas_recentes: Array = []
 func _processar_golpe(
 	speed: float, simulado: bool, pico_g := 0.0, duracao_ms := 0.0
 ) -> void:
-	var tabela := ScoreCurve.points_from_speed(
+	var tabela = ScoreCurve.points_from_speed(
 		speed, hit_min_speed, hit_max_speed, score_contraste, score_dead_zone,
 		score_ref_speed
 	)
-	var pontos := tabela
+	var pontos = tabela
 	# O teclado de manutenção conserva o 9999 para testar toda a cerimônia.
 	# No sensor real a nota passa pelo sorteio de `ScoreCurve.variar`
 	# (volátil, sem número fixo, parede nos 8000) e só quem encostou no
@@ -4348,28 +4347,28 @@ func _processar_golpe(
 ## importa, que é a linha do próximo golpe. Doze é o bastante: a coluna
 ## sobe suave porque a própria placa interpola entre um comando e o
 ## seguinte.
-const FITAS_INTERVALO := 0.08
-var _fitas_relogio := 0.0
-var _fitas_ultimo := -1.0
+const FITAS_INTERVALO = 0.08
+var _fitas_relogio = 0.0
+var _fitas_ultimo = -1.0
 
 func _mandar_fitas(fracao: float, agora := true) -> void:
 	if link == null or not link.is_open():
 		return
-	var f := clampf(fracao, 0.0, 1.0)
+	var f = clamp(fracao, 0.0, 1.0)
 	# Sem repetir o mesmo valor: com o placar parado no fim da contagem,
 	# repetir gasta serial para não dizer nada.
 	if not agora and is_equal_approx(f, _fitas_ultimo):
 		return
-	var t := float(Time.get_ticks_msec()) / 1000.0
+	var t = float(Time.get_ticks_msec()) / 1000.0
 	if t - _fitas_relogio < FITAS_INTERVALO:
 		return
 	_fitas_relogio = t
 	_fitas_ultimo = f
 	link.send_line(ArduinoProtocol.build_leds(f))
 
-var _ready_repetido_em := -99.0
-var _config_enviada_em := -99.0
-var _reenviar_config := false
+var _ready_repetido_em = -99.0
+var _config_enviada_em = -99.0
+var _reenviar_config = false
 
 func _enviar_config() -> void:
 	_config_enviada_em = animation_time
@@ -4429,13 +4428,13 @@ func _teste_de_golpe() -> void:
 	else:
 		# O GOLPE SIMULADO TEM DE CAIR DENTRO DA FAIXA CALIBRADA.
 		#
-		# Era `randf_range(vmin + 1,0, vmax * 0,9)`, e o `+ 1,0` é um
+		# Era `rand_range(vmin + 1,0, vmax * 0,9)`, e o `+ 1,0` é um
 		# metro por segundo fixo num número que pode valer 1,2 no total:
 		# numa montagem lenta o piso do sorteio passava do teto, e o
 		# botão de testar da Central mostrava um soco fora da escala da
 		# própria máquina. Em fração da faixa, ele cai sempre onde deve —
 		# de um golpe médio a um golpe forte.
-		var speed := lerpf(hit_min_speed, hit_max_speed, randf_range(0.45, 0.88))
+		var speed = lerp(hit_min_speed, hit_max_speed, rand_range(0.45, 0.88))
 		_show_notice("GOLPE SIMULADO — %.1f m/s" % speed)
 		if state == GameDef.State.ARMED:
 			_receber_hit({
@@ -4452,9 +4451,9 @@ func _contar_ok_segurado(delta: float) -> void:
 	if central_aberta or state != GameDef.State.IDLE:
 		_ok_segurado = -1.0
 		return
-	var antes := int(ceil(SEGURAR_OK_S - _ok_segurado))
+	var antes = int(ceil(SEGURAR_OK_S - _ok_segurado))
 	_ok_segurado += delta
-	var agora := int(ceil(SEGURAR_OK_S - _ok_segurado))
+	var agora = int(ceil(SEGURAR_OK_S - _ok_segurado))
 	if agora != antes and agora > 0 and _ok_segurado > 0.5:
 		sons.play("menu", -10.0)
 	if _ok_segurado >= SEGURAR_OK_S:
@@ -4469,35 +4468,32 @@ var _camada_ok: Node2D = null
 func _montar_camada_ok() -> void:
 	_camada_ok = Node2D.new()
 	_camada_ok.name = "ContagemDaCentral"
-	_camada_ok.z_index = 100
+	Compat.z(_camada_ok, 100)
 	add_child(_camada_ok)
-	_camada_ok.draw.connect(_desenhar_ok_segurado)
+	_camada_ok.connect("draw", self, "_desenhar_ok_segurado")
 
 func _draw_ok_segurado() -> void:
 	if _camada_ok != null:
 		move_child(_camada_ok, get_child_count() - 1)
-		_camada_ok.queue_redraw()
+		_camada_ok.update()
 
 func _desenhar_ok_segurado() -> void:
 	if _ok_segurado < 0.5 or central_aberta:
 		return
-	var ci := _camada_ok
-	var aparece := clampf((_ok_segurado - 0.5) / 0.25, 0.0, 1.0)
+	var ci = _camada_ok
+	var aparece = clamp((_ok_segurado - 0.5) / 0.25, 0.0, 1.0)
 	ci.draw_rect(Rect2(Vector2.ZERO, TELA), Color(0.02, 0.0, 0.03, 0.92 * aparece))
-	var centro := Vector2(TELA.x * 0.5, 880.0)
-	var fracao := clampf(_ok_segurado / SEGURAR_OK_S, 0.0, 1.0)
+	var centro = Vector2(TELA.x * 0.5, 880.0)
+	var fracao = clamp(_ok_segurado / SEGURAR_OK_S, 0.0, 1.0)
 	Traco.arco(ci, centro, 190.0, Color(1, 1, 1, 0.12 * aparece), 18.0)
-	Traco.setor(ci, centro, 190.0, -PI * 0.5, -PI * 0.5 + TAU * fracao, Color(Paleta.AMBAR, aparece), 18.0)
-	var resta := int(ceil(SEGURAR_OK_S - _ok_segurado))
-	var pulso := 1.0 + 0.08 * (1.0 - fmod(_ok_segurado, 1.0))
+	Traco.setor(ci, centro, 190.0, -PI * 0.5, -PI * 0.5 + TAU * fracao, Compat.cor(Paleta.AMBAR, aparece), 18.0)
+	var resta = int(ceil(SEGURAR_OK_S - _ok_segurado))
+	var pulso = 1.0 + 0.08 * (1.0 - fmod(_ok_segurado, 1.0))
 	ci.draw_set_transform(centro, 0.0, Vector2.ONE * pulso)
-	ci.draw_string(fonte, Vector2(-200.0, 62.0), str(resta), HORIZONTAL_ALIGNMENT_CENTER, 400.0, 170, Color(Paleta.CREME, aparece))
+	Compat.texto(ci, fonte, Vector2(-200.0, 62.0), str(resta), Compat.CENTRO, 400.0, 170, Compat.cor(Paleta.CREME, aparece))
 	ci.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-	ci.draw_string(fonte, Vector2(0.0, 1170.0), "CONFIGURAÇÕES", HORIZONTAL_ALIGNMENT_CENTER, TELA.x, 52, Color(Paleta.AMBAR, aparece))
-	ci.draw_string(
-		fonte_texto, Vector2(0.0, 1236.0), "CONTINUE SEGURANDO OK  •  SOLTE PARA CANCELAR",
-		HORIZONTAL_ALIGNMENT_CENTER, TELA.x, _corpo(28), Color(Paleta.CREME, 0.85 * aparece)
-	)
+	Compat.texto(ci, fonte, Vector2(0.0, 1170.0), "CONFIGURAÇÕES", Compat.CENTRO, TELA.x, 52, Compat.cor(Paleta.AMBAR, aparece))
+	Compat.texto(ci, fonte_texto, Vector2(0.0, 1236.0), "CONTINUE SEGURANDO OK  •  SOLTE PARA CANCELAR", Compat.CENTRO, TELA.x, _corpo(28), Compat.cor(Paleta.CREME, 0.85 * aparece))
 
 func _toggle_central() -> void:
 	if central_aberta:
@@ -4562,7 +4558,7 @@ func _passo_visor(chave: String) -> Rect2:
 ## invisível que responde é a pior espécie de defeito: o técnico clica
 ## num lugar vazio e a máquina muda de comportamento.
 func _visivel_na_pagina(chave: String) -> bool:
-	var pagina := int(PAGINA_DO_CONTROLE.get(chave, -1))
+	var pagina = int(PAGINA_DO_CONTROLE.get(chave, -1))
 	return pagina < 0 or pagina == central_pagina
 
 ## A JANELA QUE ROLA, dentro da Central.
@@ -4572,25 +4568,25 @@ func _visivel_na_pagina(chave: String) -> bool:
 ## aplicativo se comporta, e é a única forma de a página caber quando a
 ## letra cresce: sem rolagem, cada rótulo maior empurra a última seção
 ## para fora do painel — que é exatamente a sobreposição que se via.
-const CENTRAL_TOPO := 332.0
-const CENTRAL_BASE := 1762.0
-const CENTRAL_JANELA := CENTRAL_BASE - CENTRAL_TOPO
+const CENTRAL_TOPO = 332.0
+const CENTRAL_BASE = 1762.0
+const CENTRAL_JANELA = CENTRAL_BASE - CENTRAL_TOPO
 ## Quanto anda um giro da roda, uma seta, uma página.
-const ROLA_RODA := 90.0
-const ROLA_SETA := 60.0
+const ROLA_RODA = 90.0
+const ROLA_SETA = 60.0
 
-var central_rolagem := 0.0
+var central_rolagem = 0.0
 ## A base da última seção desenhada. Medida durante o desenho, e não
 ## anotada numa tabela: uma tabela de alturas por página envelhece na
 ## primeira seção que alguém mover, e envelhece em silêncio.
-var central_fundo := 0.0
+var central_fundo = 0.0
 
 ## Quanto ainda há para rolar na página atual.
 func _rolagem_maxima() -> float:
-	return maxf(0.0, central_fundo + 30.0 - CENTRAL_BASE)
+	return max(0.0, central_fundo + 30.0 - CENTRAL_BASE)
 
 func _rolar(quanto: float) -> void:
-	central_rolagem = clampf(central_rolagem + quanto, 0.0, _rolagem_maxima())
+	central_rolagem = clamp(central_rolagem + quanto, 0.0, _rolagem_maxima())
 
 ## O ponto do clique NO ESPAÇO DA PÁGINA.
 ##
@@ -4615,15 +4611,15 @@ func _tocou(chave: String, p: Vector2) -> bool:
 ## botão visível da página vira um ALVO; as setas levam ao alvo mais
 ## próximo naquela direção, OK clica no centro dele (pelo mesmo
 ## `_click_central` do mouse) e a página rola sozinha para mostrar o foco.
-var _foco_central := 0
+var _foco_central = 0
 
 func _alvos_da_central() -> Array:
-	var alvos := []
+	var alvos = []
 	for i in range(PAGINAS.size()):
 		alvos.append({"r": Rect2(ABA_RECT.position.x + float(i) * ABA_LARGURA, ABA_RECT.position.y, ABA_LARGURA, ABA_RECT.size.y), "fixo": true})
 	for chave in PASSOS:
 		if _visivel_na_pagina(chave):
-			var fixo := int(PAGINA_DO_CONTROLE.get(chave, -1)) < 0
+			var fixo = int(PAGINA_DO_CONTROLE.get(chave, -1)) < 0
 			alvos.append({"r": _passo_menos(chave), "fixo": fixo})
 			alvos.append({"r": _passo_mais(chave), "fixo": fixo})
 	for chave in BOTOES_SIMPLES:
@@ -4632,7 +4628,7 @@ func _alvos_da_central() -> Array:
 	return alvos
 
 func _centro_na_pagina(alvo: Dictionary) -> Vector2:
-	var c := (alvo["r"] as Rect2).get_center()
+	var c = (alvo["r"] as Rect2).get_center()
 	if bool(alvo["fixo"]) and c.y > 1000.0:
 		# Rodapé fixo: fica sempre abaixo do fim da página.
 		c.y += _rolagem_maxima() + 400.0
@@ -4646,7 +4642,7 @@ func _rect_na_tela(alvo: Dictionary) -> Rect2:
 	return r
 
 func _navegar_central_pelo_controle(tecla: int, repetindo: bool) -> bool:
-	var direcao := Vector2.ZERO
+	var direcao = Vector2.ZERO
 	match tecla:
 		KEY_UP: direcao = Vector2.UP
 		KEY_DOWN: direcao = Vector2.DOWN
@@ -4655,10 +4651,10 @@ func _navegar_central_pelo_controle(tecla: int, repetindo: bool) -> bool:
 		KEY_ENTER, KEY_KP_ENTER, KEY_SPACE:
 			if repetindo:
 				return true
-			var alvos := _alvos_da_central()
-			if alvos.is_empty():
+			var alvos = _alvos_da_central()
+			if alvos.empty():
 				return true
-			_foco_central = clampi(_foco_central, 0, alvos.size() - 1)
+			_foco_central = int(clamp(_foco_central, 0, alvos.size() - 1))
 			_click_central(_rect_na_tela(alvos[_foco_central]).get_center())
 			return true
 		KEY_BACK, KEY_ESCAPE:
@@ -4668,26 +4664,26 @@ func _navegar_central_pelo_controle(tecla: int, repetindo: bool) -> bool:
 			return true
 		_:
 			return false
-	var lista := _alvos_da_central()
-	if lista.is_empty():
+	var lista = _alvos_da_central()
+	if lista.empty():
 		return true
-	_foco_central = clampi(_foco_central, 0, lista.size() - 1)
+	_foco_central = int(clamp(_foco_central, 0, lista.size() - 1))
 	# Tudo medido no espaço da PÁGINA (os fixos do rodapé entram com a
 	# rolagem somada): assim descer percorre a página inteira, e os
 	# botões do rodapé só ganham quando não há mais nada abaixo.
-	var daqui := _centro_na_pagina(lista[_foco_central])
-	var melhor := -1
-	var melhor_nota := INF
+	var daqui = _centro_na_pagina(lista[_foco_central])
+	var melhor = -1
+	var melhor_nota = INF
 	for i in range(lista.size()):
 		if i == _foco_central:
 			continue
-		var d := _centro_na_pagina(lista[i]) - daqui
-		var ao_longo := d.dot(direcao)
+		var d = _centro_na_pagina(lista[i]) - daqui
+		var ao_longo = d.dot(direcao)
 		if ao_longo <= 4.0:
 			continue
-		var de_lado := absf(d.dot(Vector2(-direcao.y, direcao.x)))
-		var nota := ao_longo + de_lado * 1.2
-		if bool(lista[i]["fixo"]) and not bool(lista[_foco_central]["fixo"]) and absf(direcao.y) > 0.5:
+		var de_lado = abs(d.dot(Vector2(-direcao.y, direcao.x)))
+		var nota = ao_longo + de_lado * 1.2
+		if bool(lista[i]["fixo"]) and not bool(lista[_foco_central]["fixo"]) and abs(direcao.y) > 0.5:
 			nota += 2000.0
 		if nota < melhor_nota:
 			melhor_nota = nota
@@ -4700,26 +4696,26 @@ func _navegar_central_pelo_controle(tecla: int, repetindo: bool) -> bool:
 	if not bool(alvo["fixo"]):
 		var r: Rect2 = alvo["r"]
 		if r.position.y - central_rolagem < 380.0:
-			central_rolagem = clampf(r.position.y - 380.0, 0.0, _rolagem_maxima())
+			central_rolagem = clamp(r.position.y - 380.0, 0.0, _rolagem_maxima())
 		elif r.end.y - central_rolagem > 1740.0:
-			central_rolagem = clampf(r.end.y - 1740.0, 0.0, _rolagem_maxima())
+			central_rolagem = clamp(r.end.y - 1740.0, 0.0, _rolagem_maxima())
 	return true
 
 ## O anel do foco, por cima de tudo na Central.
 func _draw_foco_da_central() -> void:
-	var alvos := _alvos_da_central()
-	if alvos.is_empty():
+	var alvos = _alvos_da_central()
+	if alvos.empty():
 		return
-	_foco_central = clampi(_foco_central, 0, alvos.size() - 1)
-	var r := _rect_na_tela(alvos[_foco_central]).grow(6.0)
-	var pulso := 0.6 + 0.4 * sin(animation_time * 6.0)
-	draw_rect(r, Color(Paleta.AMBAR, 0.18 * pulso))
-	draw_rect(r, Color(Paleta.AMBAR, pulso), false, 5.0)
+	_foco_central = int(clamp(_foco_central, 0, alvos.size() - 1))
+	var r = _rect_na_tela(alvos[_foco_central]).grow(6.0)
+	var pulso = 0.6 + 0.4 * sin(animation_time * 6.0)
+	draw_rect(r, Compat.cor(Paleta.AMBAR, 0.18 * pulso))
+	draw_rect(r, Compat.cor(Paleta.AMBAR, pulso), false, 5.0)
 
 func _click_central(p: Vector2) -> void:
 	# As abas primeiro: elas ficam por cima de tudo.
 	if ABA_RECT.has_point(p):
-		central_pagina = clampi(int((p.x - ABA_RECT.position.x) / ABA_LARGURA), 0, PAGINAS.size() - 1)
+		central_pagina = int(clamp(int((p.x - ABA_RECT.position.x) / ABA_LARGURA), 0, PAGINAS.size() - 1))
 		# A aba da câmera já abre com o relatório na tela: é a foto dele que
 		# resolve, e ninguém precisa descobrir que existe um botão para isso.
 		if central_pagina == 2 and (medico == null or not medico.rodando):
@@ -4745,7 +4741,7 @@ func _click_central(p: Vector2) -> void:
 
 	# Um clique fora de qualquer botão cancela um mapeamento em curso:
 	# quem desistiu não fica com a máquina esperando um aperto para sempre.
-	var acertou := false
+	var acertou = false
 	for chave in BOTOES_SIMPLES:
 		if _tocou(str(chave), p):
 			acertou = true
@@ -4769,8 +4765,8 @@ func _click_central(p: Vector2) -> void:
 			# DESLIGAR TEM DE PARAR O MOTOR, e não só o jogo de falar com
 			# ele. Um motor descendo quando o operador desliga a função e
 			# vai embora é a correia no chão de manhã.
-			var freio := saco.parar()
-			if link != null and link.is_open() and not freio.is_empty():
+			var freio = saco.parar()
+			if link != null and link.is_open() and not freio.empty():
 				link.send_line(freio)
 		_salvar()
 		_show_notice("MOTOR DO SACO LIGADO" if saco.ligado else "MOTOR DO SACO DESLIGADO")
@@ -4790,8 +4786,8 @@ func _click_central(p: Vector2) -> void:
 		# PARAR VALE MESMO COM A FUNÇÃO DESLIGADA e mesmo sem intenção
 		# aberta: é o botão de emergência da página, e um botão de
 		# emergência que às vezes não responde não é botão de emergência.
-		var freio := saco.parar()
-		if link != null and link.is_open() and not freio.is_empty():
+		var freio = saco.parar()
+		if link != null and link.is_open() and not freio.empty():
 			link.send_line(freio)
 		_show_notice("MOTOR PARADO")
 	elif _tocou("motor_destrava", p):
@@ -4806,7 +4802,7 @@ func _click_central(p: Vector2) -> void:
 	elif _tocou("modo_ficha", p):
 		game_mode = "credit"
 	elif _tocou("eixo", p):
-		var eixos := ["A", "H", "L"]
+		var eixos = ["A", "H", "L"]
 		sensor_eixo = eixos[(eixos.find(sensor_eixo) + 1) % 3]
 	elif _tocou("enviar_config", p):
 		_enviar_config()
@@ -4854,12 +4850,12 @@ func _click_central(p: Vector2) -> void:
 		sons.duck(16.0, 2.5)
 		_show_notice("SOCO DE TESTE — CONFIRA A MISTURA")
 	elif _tocou("foto_teste", p):
-		var test_path := camera_service.capture_photo()
-		if test_path.is_empty():
+		var test_path = camera_service.capture_photo()
+		if test_path.empty():
 			_show_notice(camera_service.status)
 		else:
 			if camera_service.ultima_foto != null:
-				foto_teste_texture = ImageTexture.create_from_image(camera_service.ultima_foto)
+				foto_teste_texture = Compat.textura(camera_service.ultima_foto)
 				foto_teste_ate_ms = Time.get_ticks_msec() + 650
 			RankingStore.delete_photo(test_path)
 			_show_notice("CAPTURA DA CÂMERA APROVADA")
@@ -4891,7 +4887,7 @@ func _click_central(p: Vector2) -> void:
 		# da faxina, sobra foto órfã na pasta, que a próxima faxina leva.
 		# Ao contrário, sobraria um ranking apontando para fotos que não
 		# existem mais — e aí a tela de recordes quebra de verdade.
-		var fotos := RankingStore.listar_fotos()
+		var fotos = RankingStore.listar_fotos()
 		ranking.clear()
 		_photo_cache.clear()
 		_salvar()
@@ -4991,17 +4987,17 @@ func _click_central(p: Vector2) -> void:
 func _ajustar(chave: String, direcao: int) -> void:
 	match chave:
 		"vmin":
-			hit_min_speed = clampf(
+			hit_min_speed = clamp(
 				hit_min_speed + direcao * 0.1,
-				ScoreCurve.MIN_SPEED_MIN, minf(ScoreCurve.MIN_SPEED_MAX, hit_max_speed - 0.5)
+				ScoreCurve.MIN_SPEED_MIN, min(ScoreCurve.MIN_SPEED_MAX, hit_max_speed - 0.5)
 			)
 		"vmax":
-			hit_max_speed = clampf(
+			hit_max_speed = clamp(
 				hit_max_speed + direcao * 0.5,
-				maxf(ScoreCurve.MAX_SPEED_MIN, hit_min_speed + 0.5), ScoreCurve.MAX_SPEED_MAX
+				max(ScoreCurve.MAX_SPEED_MIN, hit_min_speed + 0.5), ScoreCurve.MAX_SPEED_MAX
 			)
 		"curva":
-			score_contraste = clampf(
+			score_contraste = clamp(
 				score_contraste + direcao * 0.05,
 				ScoreCurve.CONTRASTE_MIN, ScoreCurve.CONTRASTE_MAX
 			)
@@ -5009,7 +5005,7 @@ func _ajustar(chave: String, direcao: int) -> void:
 			# O SOCO DE REFERÊNCIA ANDA EM m/s, como tudo mais nesta
 			# página. Um passo de 0,1 é o mesmo do piso: quem regula
 			# compara os três números na mesma unidade e na mesma escala.
-			score_ref_speed = clampf(
+			score_ref_speed = clamp(
 				_referencia_efetiva() + direcao * 0.1,
 				hit_min_speed + (hit_max_speed - hit_min_speed) * ScoreCurve.REFERENCIA_MIN,
 				hit_min_speed + (hit_max_speed - hit_min_speed) * ScoreCurve.REFERENCIA_MAX
@@ -5019,15 +5015,15 @@ func _ajustar(chave: String, direcao: int) -> void:
 		# saiu foi a segunda maneira de dizer o que a VELOCIDADE MÍNIMA
 		# já diz.
 		"vol_musica":
-			volume_musica = clampf(volume_musica + direcao, -40.0, 6.0)
+			volume_musica = clamp(volume_musica + direcao, -40.0, 6.0)
 			sons.set_volumes(volume_musica, volume_efeitos)
 		"vol_efeitos":
-			volume_efeitos = clampf(volume_efeitos + direcao, -40.0, 6.0)
+			volume_efeitos = clamp(volume_efeitos + direcao, -40.0, 6.0)
 			sons.set_volumes(volume_musica, volume_efeitos)
 		"porta":
 			_girar_porta(direcao)
 		"raio":
-			sensor_raio = clampf(sensor_raio + direcao * 0.001, 0.005, 0.100)
+			sensor_raio = clamp(sensor_raio + direcao * 0.001, 0.005, 0.100)
 		# O TEMPO DE CURSO É O FREIO DE SEGURANÇA DO MOTOR, não um gosto.
 		#
 		# É ele que a placa usa para desligar sozinha quando o fim de
@@ -5036,10 +5032,10 @@ func _ajustar(chave: String, direcao: int) -> void:
 		# número maior na Central viraria uma promessa que a placa não
 		# cumpre — e o operador confiaria nela.
 		"curso_motor":
-			saco.curso_ms = clampi(saco.curso_ms + direcao * 250, 500, 15000)
+			saco.curso_ms = int(clamp(saco.curso_ms + direcao * 250, 500, 15000))
 			_mandar_config_do_motor()
 		"pausa_motor":
-			saco.pausa_ms = clampi(saco.pausa_ms + direcao * 50, 100, 2000)
+			saco.pausa_ms = int(clamp(saco.pausa_ms + direcao * 50, 100, 2000))
 			_mandar_config_do_motor()
 
 	_aplicar_faixas()
@@ -5055,24 +5051,24 @@ func _ajustar(chave: String, direcao: int) -> void:
 ##
 ## No Windows entram COM1 a COM12 sempre; no Linux e no macOS a
 ## enumeração é confiável e a lista real basta.
-func _opcoes_de_porta() -> PackedStringArray:
-	var opcoes := PackedStringArray(["AUTO"])
+func _opcoes_de_porta() -> PoolStringArray:
+	var opcoes = PoolStringArray(["AUTO"])
 	for porta in portas_visiveis:
 		if not opcoes.has(porta):
 			opcoes.append(porta)
 	# A porta guardada entra na lista mesmo que hoje ninguém a veja: sem
 	# isso, abrir a Central com a placa fora do ar apagaria a escolha.
-	if not porta_configurada.is_empty() and not opcoes.has(porta_configurada):
+	if not porta_configurada.empty() and not opcoes.has(porta_configurada):
 		opcoes.append(porta_configurada)
 	return opcoes
 
 func _girar_porta(direcao: int) -> void:
-	var opcoes := _opcoes_de_porta()
-	var atual := opcoes.find(porta_configurada if not porta_configurada.is_empty() else "AUTO")
+	var opcoes = _opcoes_de_porta()
+	var atual = opcoes.find(porta_configurada if not porta_configurada.empty() else "AUTO")
 	if atual < 0:
 		atual = 0
 	atual = (atual + direcao + opcoes.size()) % opcoes.size()
-	var escolha := opcoes[atual]
+	var escolha = opcoes[atual]
 	porta_configurada = "" if escolha == "AUTO" else escolha
 	# Trocar a porta à mão vale agora, não na próxima varredura.
 	if link != null and link.is_open():
@@ -5097,8 +5093,8 @@ func _confirmar(action: String) -> bool:
 # ESTADO EM DISCO
 # ======================================================================
 func _carregar() -> void:
-	var data := SettingsStore.load_data()
-	if data.is_empty():
+	var data = SettingsStore.load_data()
+	if data.empty():
 		return
 	game_mode = str(data.get("mode", game_mode))
 	saco.carregar(data.get("saco_motor", {}))
@@ -5107,11 +5103,11 @@ func _carregar() -> void:
 	# MIGRAÇÃO: instalações antigas guardavam um recorde só. Ele vira a
 	# primeira linha do ranking, para o dono não perder a marca da casa
 	# ao atualizar o software.
-	var antigo := int(data.get("best_score", 0))
+	var antigo = int(data.get("best_score", 0))
 	# A versão gravada decide se as marcas ainda estão na escala antiga.
 	# Ausente quer dizer "arquivo de antes de existir versão", ou seja,
 	# escala 0 a 999 — e é essa a única vez que a conversão acontece.
-	var esquema := int(data.get("ranking_schema", RankingStore.ESQUEMA_LEGADO))
+	var esquema = int(data.get("ranking_schema", RankingStore.ESQUEMA_LEGADO))
 	ranking = RankingStore.migrate(data.get("ranking", []), antigo, esquema)
 	if esquema < RankingStore.ESQUEMA:
 		# Grava a nova versão já, e não só no próximo `_salvar`: uma queda
@@ -5128,7 +5124,7 @@ func _carregar() -> void:
 		caminho_serial_conhecido = ""
 	# OS AJUSTES DO SENSOR SÓ VALEM NA ESCALA EM QUE FORAM MEDIDOS.
 	# Ver `ESCALA_DO_SENSOR`. Fora dela, ficam os padrões desta versão.
-	var escala_salva := int(data.get("sensor_escala", 0))
+	var escala_salva = int(data.get("sensor_escala", 0))
 	if escala_salva >= ESCALA_DO_SENSOR:
 		hit_min_speed = float(data.get("hit_min_speed", hit_min_speed))
 		hit_max_speed = float(data.get("hit_max_speed", hit_max_speed))
@@ -5149,8 +5145,8 @@ func _carregar() -> void:
 			score_dead_zone = ScoreCurve.DEFAULT_DEAD_ZONE
 			# O teto de cada esquema antigo era fácil demais para um jogo de
 			# soco: o do esquema 8 vale para todos.
-			hit_max_speed = maxf(hit_max_speed, ScoreCurve.DEFAULT_MAX_SPEED)
-			hit_min_speed = minf(hit_min_speed, 0.60)
+			hit_max_speed = max(hit_max_speed, ScoreCurve.DEFAULT_MAX_SPEED)
+			hit_min_speed = min(hit_min_speed, 0.60)
 			_converteu_esquema = true
 		sensor_eixo = str(data.get("sensor_eixo", sensor_eixo))
 		sensor_raio = float(data.get("sensor_raio", sensor_raio))
@@ -5175,7 +5171,7 @@ func _carregar() -> void:
 		# Valores antigos do MPU nao servem para o sensor optico.
 		sensor_eixo = "A"
 		sensor_raio = 0.020
-		ajustes_do_sensor_zerados = not data.is_empty()
+		ajustes_do_sensor_zerados = not data.empty()
 	volume_musica = float(data.get("volume_musica", volume_musica))
 	volume_efeitos = float(data.get("volume_efeitos", volume_efeitos))
 	botao_start = _mapa_de_botao(data.get("botao_start", {}), 6)
@@ -5311,11 +5307,11 @@ func _draw() -> void:
 ## palco reagindo — e a receita mora em `ScoreTier`. Aqui só se decide
 ## QUANDO desenhar; o QUE desenhar é do diretor.
 func _draw_pancada() -> void:
-	if pancada_tempo < 0.0 or pancada_nivel.is_empty():
+	if pancada_tempo < 0.0 or pancada_nivel.empty():
 		return
 	ImpactDirector.desenhar(
 		self, pancada_nivel,
-		clampf(pancada_tempo / ImpactDirector.PANCADA_DURACAO, 0.0, 1.0),
+		clamp(pancada_tempo / ImpactDirector.PANCADA_DURACAO, 0.0, 1.0),
 		_alvo(), pancada_forca
 	)
 
@@ -5333,52 +5329,52 @@ func _draw_pancada() -> void:
 func _draw_transicao() -> void:
 	if transicao < 0.0:
 		return
-	var t := clampf(transicao / TRANSICAO_DURACAO, 0.0, 1.0)
+	var t = clamp(transicao / TRANSICAO_DURACAO, 0.0, 1.0)
 	# Rápida nas pontas e DEVAGAR NO MEIO: o logo para no centro o tempo
 	# de ser lido, e a faixa passa sem borrão.
-	var u := t * 2.0 - 1.0
-	var avanco := 0.5 + 0.5 * signf(u) * pow(absf(u), 2.4)
+	var u = t * 2.0 - 1.0
+	var avanco = 0.5 + 0.5 * sign(u) * pow(abs(u), 2.4)
 	# A faixa é mais larga que a tela para cobrir o corte inteiro no meio
 	# do caminho; sem isso apareceria uma fresta do jogo antigo.
-	var largura := 1500.0
-	var x := lerpf(-largura, TELA.x + largura, avanco)
-	var inclinacao := 260.0
-	var topo := -20.0
-	var base := TELA.y + 20.0
-	var e := x - largura * 0.5
-	var d := x + largura * 0.5
+	var largura = 1500.0
+	var x = lerp(-largura, TELA.x + largura, avanco)
+	var inclinacao = 260.0
+	var topo = -20.0
+	var base = TELA.y + 20.0
+	var e = x - largura * 0.5
+	var d = x + largura * 0.5
 	# AS CORES DO JOGO: magenta vivo no miolo escurecendo para o roxo da
 	# abertura, como o letreiro e o botão START.
-	draw_polygon(PackedVector2Array([
+	draw_polygon(PoolVector2Array([
 		Vector2(e + inclinacao, topo), Vector2(d + inclinacao, topo),
 		Vector2(d - inclinacao, base), Vector2(e - inclinacao, base),
-	]), PackedColorArray([Color("d91283"), Color("d91283"), Color("3a0f5e"), Color("3a0f5e")]))
+	]), PoolColorArray([Color("d91283"), Color("d91283"), Color("3a0f5e"), Color("3a0f5e")]))
 	# As duas bordas com a FAIXA ZEBRADA amarela e preta da moldura da
 	# arena, e um fio de ouro — a cortina é da mesma máquina.
 	for borda in [[e, 1.0], [d, -1.0]]:
 		_zebra_diagonal(float(borda[0]), float(borda[1]), inclinacao, topo, base)
 	# O LOGO DO JOGO viaja montado na faixa, nítido (versão do tamanho
 	# certo).
-	var centro := Vector2(x, TELA.y * 0.5)
+	var centro = Vector2(x, TELA.y * 0.5)
 	if centro.x > -400.0 and centro.x < TELA.x + 400.0:
 		ArcadeStage.imagem(self, ArcadeStage.LOGO, centro, 600.0)
 
 ## Uma borda zebrada (amarelo/preto) ao longo da diagonal da cortina.
 ## `lado` 1 = a faixa fica à direita da linha; -1 = à esquerda.
 func _zebra_diagonal(x_borda: float, lado: float, inclinacao: float, topo: float, base: float) -> void:
-	const LARG := 34.0
-	const PASSO := 64.0
-	var altura := base - topo
-	var n := int(ceil(altura / PASSO))
+	var LARG = 34.0
+	var PASSO = 64.0
+	var altura = base - topo
+	var n = int(ceil(altura / PASSO))
 	for k in n:
-		var y0 := topo + float(k) * PASSO
-		var y1 := minf(y0 + PASSO, base)
-		var f0 := (y0 - topo) / altura
-		var f1 := (y1 - topo) / altura
-		var x0 := x_borda + inclinacao * (1.0 - 2.0 * f0)
-		var x1 := x_borda + inclinacao * (1.0 - 2.0 * f1)
-		var cor := Paleta.AMBAR if k % 2 == 0 else Color("120a1c")
-		draw_colored_polygon(PackedVector2Array([
+		var y0 = topo + float(k) * PASSO
+		var y1 = min(y0 + PASSO, base)
+		var f0 = (y0 - topo) / altura
+		var f1 = (y1 - topo) / altura
+		var x0 = x_borda + inclinacao * (1.0 - 2.0 * f0)
+		var x1 = x_borda + inclinacao * (1.0 - 2.0 * f1)
+		var cor = Paleta.AMBAR if k % 2 == 0 else Color("120a1c")
+		draw_colored_polygon(PoolVector2Array([
 			Vector2(x0, y0), Vector2(x0 + LARG * lado, y0 + 14.0),
 			Vector2(x1 + LARG * lado, y1 + 14.0), Vector2(x1, y1),
 		]), cor)
@@ -5391,9 +5387,9 @@ func _zebra_diagonal(x_borda: float, lado: float, inclinacao: float, topo: float
 func _draw_clarao() -> void:
 	if clarao <= 0.01:
 		return
-	draw_rect(Rect2(Vector2.ZERO, TELA), Color(Paleta.LUZ, clarao * 0.45))
-	var borda := 150.0 * clarao
-	var escuro := Color(Paleta.MARINHO, clarao * 0.30)
+	draw_rect(Rect2(Vector2.ZERO, TELA), Compat.cor(Paleta.LUZ, clarao * 0.45))
+	var borda = 150.0 * clarao
+	var escuro = Compat.cor(Paleta.MARINHO, clarao * 0.30)
 	draw_rect(Rect2(0.0, 0.0, TELA.x, borda), escuro)
 	draw_rect(Rect2(0.0, TELA.y - borda, TELA.x, borda), escuro)
 	draw_rect(Rect2(0.0, 0.0, borda, TELA.y), escuro)
@@ -5401,10 +5397,10 @@ func _draw_clarao() -> void:
 	# Dois ecos deslocados por poucos pixels criam a separação cromática
 	# curta do impacto sem exigir shader ou deixar o placar ilegível.
 	if clarao > 0.18 and state == GameDef.State.MEASURING:
-		var alvo := _alvo()
-		var raio := 100.0 + (1.0 - clarao) * 120.0
-		draw_arc(alvo + Vector2(-9.0, 0.0), raio, 0.0, TAU, Traco.segmentos(raio), Color(Paleta.CIANO, clarao * 0.65), 7.0, true)
-		draw_arc(alvo + Vector2(9.0, 0.0), raio, 0.0, TAU, Traco.segmentos(raio), Color(Paleta.VERMELHO, clarao * 0.60), 7.0, true)
+		var alvo = _alvo()
+		var raio = 100.0 + (1.0 - clarao) * 120.0
+		draw_arc(alvo + Vector2(-9.0, 0.0), raio, 0.0, TAU, Traco.segmentos(raio), Compat.cor(Paleta.CIANO, clarao * 0.65), 7.0, true)
+		draw_arc(alvo + Vector2(9.0, 0.0), raio, 0.0, TAU, Traco.segmentos(raio), Compat.cor(Paleta.VERMELHO, clarao * 0.60), 7.0, true)
 
 # ---------------------------------------------------------------- abertura
 ## A ABERTURA NÃO É UMA TELA SÓ.
@@ -5415,69 +5411,69 @@ func _draw_clarao() -> void:
 ## páginas alternando sozinhas — a marca, os melhores da casa e como
 ## jogar — e, fixos em todas, o convite e os números da máquina, porque
 ## esses dois não podem depender de a pessoa ter chegado na página certa.
-const ABERTURA_PAGINAS := 4
-const ABERTURA_SEGUNDOS := 7.0
+const ABERTURA_PAGINAS = 4
+const ABERTURA_SEGUNDOS = 7.0
 
 ## Página 2 — as cinco melhores marcas.
 func _pagina_recordes(alpha: float) -> void:
-	_texto_arcade("TOP 20 • MELHORES", 392.0, 62, Color(Paleta.CIANO, alpha), LARGURA_UTIL)
-	if ranking.is_empty():
-		_texto("AINDA NINGUÉM SOCOU ESTA MÁQUINA", 780.0, 32, Color(Paleta.TINTA_FRACA, alpha))
-		_texto("O PRIMEIRO NOME DA LISTA PODE SER O SEU", 832.0, 24, Color(Paleta.TINTA_LEVE, alpha))
+	_texto_arcade("TOP 20 • MELHORES", 392.0, 62, Compat.cor(Paleta.CIANO, alpha), LARGURA_UTIL)
+	if ranking.empty():
+		_texto("AINDA NINGUÉM SOCOU ESTA MÁQUINA", 780.0, 32, Compat.cor(Paleta.TINTA_FRACA, alpha))
+		_texto("O PRIMEIRO NOME DA LISTA PODE SER O SEU", 832.0, 24, Compat.cor(Paleta.TINTA_LEVE, alpha))
 		return
 	# SÓ AS PÁGINAS QUE TÊM GENTE, e só as linhas ocupadas: um quadro de
 	# recordes cheio de "—" diz que ninguém joga aqui.
-	var paginas := clampi(int(ceil(float(ranking.size()) / 5.0)), 1, 4)
-	var page := int(state_time / 16.0) % paginas
+	var paginas = int(clamp(int(ceil(float(ranking.size()) / 5.0)), 1, 4))
+	var page = int(state_time / 16.0) % paginas
 	for row in range(5):
-		var i := page * 5 + row
+		var i = page * 5 + row
 		if i >= ranking.size():
 			break
-		var y := 466.0 + row * 116.0
-		var cor := _cor_da_posicao(i + 1)
-		var linha := Rect2(MARGEM + 40.0, y, LARGURA_UTIL - 80.0, 98.0)
-		var vazia := i >= ranking.size()
+		var y = 466.0 + row * 116.0
+		var cor = _cor_da_posicao(i + 1)
+		var linha = Rect2(MARGEM + 40.0, y, LARGURA_UTIL - 80.0, 98.0)
+		var vazia = i >= ranking.size()
 		_cartao(linha, Paleta.CARTAO if not vazia else Paleta.VAZIO, Paleta.CARTAO_BORDA, alpha, 2.0)
 		# Tarja lateral colorida: identifica a posição sem pintar a linha.
-		draw_rect(Rect2(linha.position, Vector2(9.0, linha.size.y)), Color(cor, alpha))
-		var meio := linha.position.y + 64.0
-		_texto("%dº" % (i + 1), meio, 34, Color(cor, alpha), HORIZONTAL_ALIGNMENT_CENTER, linha.position.x + 30.0, 90.0)
+		draw_rect(Rect2(linha.position, Vector2(9.0, linha.size.y)), Compat.cor(cor, alpha))
+		var meio = linha.position.y + 64.0
+		_texto("%dº" % (i + 1), meio, 34, Compat.cor(cor, alpha), Compat.CENTRO, linha.position.x + 30.0, 90.0)
 		if i < 3:
-			Icones.trofeu(self, Vector2(linha.position.x + 168.0, meio - 11.0), 19.0, Color(cor, alpha))
+			Icones.trofeu(self, Vector2(linha.position.x + 168.0, meio - 11.0), 19.0, Compat.cor(cor, alpha))
 		if vazia:
-			_texto("—", meio, 34, Color(Paleta.TINTA_LEVE, alpha), HORIZONTAL_ALIGNMENT_RIGHT, linha.position.x, linha.size.x - 40.0)
+			_texto("—", meio, 34, Compat.cor(Paleta.TINTA_LEVE, alpha), Compat.DIREITA, linha.position.x, linha.size.x - 40.0)
 		else:
 			_draw_player_photo(Rect2(linha.position + Vector2(210.0, 11.0), Vector2(76.0, 76.0)), str(ranking[i].get("photo_path", "")), alpha)
-			_texto("%04d" % RankingStore.score_at(ranking, i), meio, 44, Color(Paleta.TINTA, alpha), HORIZONTAL_ALIGNMENT_RIGHT, linha.position.x, linha.size.x - 40.0)
-			_texto("PONTOS", meio, 18, Color(Paleta.TINTA_LEVE, alpha), HORIZONTAL_ALIGNMENT_RIGHT, linha.position.x, linha.size.x - 190.0)
-	_texto("POSIÇÕES %02d–%02d" % [page * 5 + 1, mini(page * 5 + 5, ranking.size())], 1152.0, 26, Color(Paleta.CIANO, alpha))
+			_texto("%04d" % RankingStore.score_at(ranking, i), meio, 44, Compat.cor(Paleta.TINTA, alpha), Compat.DIREITA, linha.position.x, linha.size.x - 40.0)
+			_texto("PONTOS", meio, 18, Compat.cor(Paleta.TINTA_LEVE, alpha), Compat.DIREITA, linha.position.x, linha.size.x - 190.0)
+	_texto("POSIÇÕES %02d–%02d" % [page * 5 + 1, int(min(page * 5 + 5, ranking.size()))], 1152.0, 26, Compat.cor(Paleta.CIANO, alpha))
 
 ## Página 3 — os três passos, do tamanho de quem lê de longe.
 func _pagina_como_jogar(alpha: float) -> void:
-	_texto_arcade("COMO JOGAR", 392.0, 62, Color(Paleta.CIANO, alpha), LARGURA_UTIL)
-	var passos := [
+	_texto_arcade("COMO JOGAR", 392.0, 62, Compat.cor(Paleta.CIANO, alpha), LARGURA_UTIL)
+	var passos = [
 		["ficha", "INSIRA A FICHA" if game_mode == "credit" else "MÁQUINA LIBERADA", Paleta.ROSA],
 		["botao", "APERTE START", Paleta.VERDE],
 		["alvo", "SOQUE O ALVO COM FORÇA", Paleta.VERMELHO],
 	]
 	for i in range(passos.size()):
-		var y := 428.0 + i * 236.0
+		var y = 428.0 + i * 236.0
 		var cor: Color = passos[i][2]
-		var centro := Vector2(MARGEM + 110.0, y + 60.0)
-		draw_circle(centro, 62.0, Paleta.tinta_clara(cor, 0.20), true, -1.0, true)
-		draw_arc(centro, 62.0, 0.0, TAU, Traco.segmentos(62.0), Color(cor, 0.55 * alpha), 4.0, true)
-		_icone(str(passos[i][0]), centro, 38.0, Color(Paleta.para_texto(cor), alpha))
+		var centro = Vector2(MARGEM + 110.0, y + 60.0)
+		Compat.circulo(self, centro, 62.0, Paleta.tinta_clara(cor, 0.20), true, -1.0, true)
+		draw_arc(centro, 62.0, 0.0, TAU, Traco.segmentos(62.0), Compat.cor(cor, 0.55 * alpha), 4.0, true)
+		_icone(str(passos[i][0]), centro, 38.0, Compat.cor(Paleta.para_texto(cor), alpha))
 		_texto(
-			"%d." % (i + 1), centro.y - 4.0, 26, Color(cor, alpha),
-			HORIZONTAL_ALIGNMENT_LEFT, MARGEM + 210.0, 80.0
+			"%d." % (i + 1), centro.y - 4.0, 26, Compat.cor(cor, alpha),
+			Compat.ESQUERDA, MARGEM + 210.0, 80.0
 		)
 		# Alinhados à ESQUERDA e não centrados: três frases de comprimentos
 		# diferentes, centradas cada uma na sua caixa, não formam uma
 		# coluna — e é a coluna que faz a lista ser lida como três passos.
-		var texto := str(passos[i][1])
+		var texto = str(passos[i][1])
 		_texto(
 			texto, centro.y + 14.0, _tamanho_que_cabe(texto, 44, LARGURA_UTIL - 340.0),
-			Color(Paleta.TINTA, alpha), HORIZONTAL_ALIGNMENT_LEFT,
+			Compat.cor(Paleta.TINTA, alpha), Compat.ESQUERDA,
 			MARGEM + 270.0, LARGURA_UTIL - 340.0
 		)
 
@@ -5497,7 +5493,7 @@ func _draw_partida() -> void:
 	match state:
 		GameDef.State.COUNTDOWN:
 			_texto_arcade("FAÇA SUA POSE", 340.0, 72, Paleta.CIANO, LARGURA_UTIL)
-			var rect := Rect2(180, 470, 720, 720)
+			var rect = Rect2(180, 470, 720, 720)
 			_cartao(Rect2(170, 460, 740, 740), Color("21123b"), Paleta.CIANO, 1.0, 4.0)
 			# A MARCA DA CASA LOGO ABAIXO DO VISOR, à direita e grande o
 			# bastante para se ler de pé na frente da máquina. Fora da
@@ -5509,9 +5505,9 @@ func _draw_partida() -> void:
 				# desenhado com a webcam acesa na frente da pessoa é o
 				# que dá a impressão de a câmera ter desligado justamente
 				# na hora de fotografar.
-				if result_photo_path.is_empty() and camera_service != null and camera_service.tem_imagem():
+				if result_photo_path.empty() and camera_service != null and camera_service.tem_imagem():
 					_draw_texture_cover(camera_service.preview_texture(), rect, 1.0, camera_mirrored)
-					draw_rect(rect, Color(Paleta.CIANO, 1.0), false, 3.0)
+					draw_rect(rect, Compat.cor(Paleta.CIANO, 1.0), false, 3.0)
 				else:
 					_draw_player_photo(rect, result_photo_path, 1.0)
 			elif camera_service != null and camera_service.tem_imagem():
@@ -5537,7 +5533,7 @@ func _draw_partida() -> void:
 					1490.0, Paleta.CIANO
 				)
 			elif not pose_finished:
-				_texto_arcade(str(clampi(int(ceil(countdown_left)), 1, 3)), 1400.0, 150, Color.WHITE, LARGURA_UTIL)
+				_texto_arcade(str(int(clamp(int(ceil(countdown_left)), 1, 3))), 1400.0, 150, Color.white, LARGURA_UTIL)
 				_rotulo("OLHE PARA A CÂMERA", 1490.0, Paleta.AMBAR)
 			else:
 				# O MOTIVO DE VERDADE, e não "SEM CÂMERA" para tudo. A
@@ -5545,13 +5541,13 @@ func _draw_partida() -> void:
 				# privacidade bloqueada, webcam ocupada e dispositivo ausente —
 				# e quem estava na frente da máquina não tinha como saber
 				# qual das quatro era.
-				var recado := "FOTO PRONTA"
-				var cor_recado := Paleta.AMBAR
-				if result_photo_path.is_empty():
+				var recado = "FOTO PRONTA"
+				var cor_recado = Paleta.AMBAR
+				if result_photo_path.empty():
 					recado = camera_service.motivo_curto() if camera_service != null else "SEM CÂMERA"
 					cor_recado = Paleta.VERMELHO
 				_rotulo(recado, 1390.0, cor_recado)
-				_texto_arcade("PREPARE O SOCO", 1480.0, 56, Color.WHITE, LARGURA_UTIL)
+				_texto_arcade("PREPARE O SOCO", 1480.0, 56, Color.white, LARGURA_UTIL)
 		GameDef.State.ARMED:
 			_draw_espera_do_soco()
 		GameDef.State.MEASURING, GameDef.State.RESULT:
@@ -5563,7 +5559,7 @@ func _draw_partida() -> void:
 ## é de propósito: se a imagem da arena pudesse ser desenhada de três
 ## lugares diferentes, um deles acabaria desenhando sem a moldura ou com
 ## as barras trocadas. Um caminho só, usado pelas duas telas do soco.
-var _vida_fantasma := 1.0
+var _vida_fantasma = 1.0
 
 func _draw_arena() -> void:
 	ArenaQuadro.fundo(self)
@@ -5574,10 +5570,10 @@ func _draw_arena() -> void:
 	# compasso do resto da tela, em vez de ter um relógio só dela que
 	# poderia sair de sincronia.
 	ArenaQuadro.moldura(self, ScoreTier.cor_de(result_score), clarao)
-	var dano := arena.dano() if arena != null else 0.0
+	var dano = arena.dano() if arena != null else 0.0
 	# A VIDA NO LUGAR DAS COLUNAS. A barra real cai na hora; o rastro
 	# branco desce devagar atrás dela, mostrando o tamanho do estrago.
-	var vida_real := 1.0 - clampf(dano, 0.0, 1.0)
+	var vida_real = 1.0 - clamp(dano, 0.0, 1.0)
 	if vida_real > _vida_fantasma:
 		_vida_fantasma = vida_real
 	_vida_fantasma = move_toward(_vida_fantasma, vida_real, get_process_delta_time() * 0.45)
@@ -5587,25 +5583,25 @@ func _draw_arena() -> void:
 	# NA LONA, A PERCENTAGEM NÃO É MAIS A NOTÍCIA. Um nível alto derruba
 	# por si, sem encher o medidor — e ler "CAMBALEANDO 61%" ao lado de um
 	# corpo deitado no chão é a plaqueta discordando da imagem.
-	var estado := ArenaFrases.de_dano(dano)
+	var estado = ArenaFrases.de_dano(dano)
 	if arena != null and arena.na_lona():
 		estado = "NA LONA"
 	# O PAINEL DE LUTA DENTRO DO QUADRO: faixa escura no alto, a vida do
 	# JOGADOR à esquerda (o tempo dele — ver `vida_jogador`) e a do
 	# ADVERSÁRIO à direita, espelhada, de frente uma para a outra.
-	var alto := ArenaQuadro.FAIXA_DO_ALTO
+	var alto = ArenaQuadro.FAIXA_DO_ALTO
 	draw_rect(alto, Color(0.02, 0.0, 0.06, 0.55))
 	draw_rect(Rect2(alto.position.x, alto.end.y, alto.size.x, 18.0), Color(0.02, 0.0, 0.06, 0.25))
 	if vida_jogador > _vida_jogador_fantasma:
 		_vida_jogador_fantasma = vida_jogador
 	_vida_jogador_fantasma = move_toward(_vida_jogador_fantasma, vida_jogador, get_process_delta_time() * 0.45)
-	var eu := "VOCÊ" if not _jogador_nocauteado else "VOCÊ  •  NOCAUTEADO"
+	var eu = "VOCÊ" if not _jogador_nocauteado else "VOCÊ  •  NOCAUTEADO"
 	ArenaQuadro.vida(self, fonte, vida_jogador, _vida_jogador_fantasma, animation_time, eu,
 		ArenaQuadro.VIDA_JOGADOR, false, Color("3ec8ff"))
 	ArenaQuadro.vida(self, fonte, vida_real, _vida_fantasma, animation_time, "ADVERSÁRIO  •  %s" % estado,
 		ArenaQuadro.VIDA, true)
 	# o round no meio, entre as duas barras
-	_texto_cabendo("R%d" % mini(socos.size() + 1, SOCOS_POR_RODADA), 268.0, 34, Paleta.AMBAR, 60.0, 510.0)
+	_texto_cabendo("R%d" % int(min(socos.size() + 1, SOCOS_POR_RODADA)), 268.0, 34, Paleta.AMBAR, 60.0, 510.0)
 
 ## A TELA QUE ESPERA O SOCO.
 ##
@@ -5620,36 +5616,36 @@ func _draw_arena() -> void:
 ## soco aterrissa, com o farol mandando anéis para fora. Chamada, e não
 ## instrumento.
 func _draw_espera_do_soco() -> void:
-	var entrada := 1.0
-	var saida := 1.0
+	var entrada = 1.0
+	var saida = 1.0
 	if _troca >= 0.0:
-		saida = clampf(_troca / TROCA_SAIDA, 0.0, 1.0)
-		entrada = clampf((_troca - TROCA_ENTRADA_ATRASO) / (TROCA_DURACAO - TROCA_ENTRADA_ATRASO), 0.0, 1.0)
-	var chega := ease(entrada, 0.4)
+		saida = clamp(_troca / TROCA_SAIDA, 0.0, 1.0)
+		entrada = clamp((_troca - TROCA_ENTRADA_ATRASO) / (TROCA_DURACAO - TROCA_ENTRADA_ATRASO), 0.0, 1.0)
+	var chega = ease(entrada, 0.4)
 	_draw_farol(Paleta.AMBAR, chega)
 	_draw_arena()
 	if saida < 1.0:
 		_draw_troca_saindo(saida)
 	# Tudo o que é desta tela entra pela direita, junto, num gesto só.
-	var base_x := (1.0 - chega) * TELA.x
+	var base_x = (1.0 - chega) * TELA.x
 	draw_set_transform(Vector2(base_x, 0.0), 0.0, Vector2.ONE)
 	# O ROUND, na barra de baixo da moldura. É a única informação que
 	# cabe ali e a única que a pessoa quer no instante anterior ao soco.
-	var piscada := 0.78 + 0.22 * sin(animation_time * 4.4)
-	var chamada := "SOQUE AGORA!" if socos.is_empty() else "AGORA O SEGUNDO!"
-	var fraco := animation_time < _fraco_ate
+	var piscada = 0.78 + 0.22 * sin(animation_time * 4.4)
+	var chamada = "SOQUE AGORA!" if socos.empty() else "AGORA O SEGUNDO!"
+	var fraco = animation_time < _fraco_ate
 	if _jogador_nocauteado:
 		_texto_arcade("VOCÊ CAIU!", 1690.0, 88, Paleta.VERMELHO, LARGURA_UTIL)
-		_rotulo("A VIDA ACABOU  •  ELE NÃO ESPEROU", 1744.0, Color.WHITE)
+		_rotulo("A VIDA ACABOU  •  ELE NÃO ESPEROU", 1744.0, Color.white)
 	elif fraco:
-		var tremor := sin(animation_time * 60.0) * 6.0 * clampf(_fraco_ate - animation_time - 1.4, 0.0, 1.0)
+		var tremor = sin(animation_time * 60.0) * 6.0 * clamp(_fraco_ate - animation_time - 1.4, 0.0, 1.0)
 		draw_set_transform(Vector2(base_x + tremor, 0.0), 0.0, Vector2.ONE)
 		_texto_arcade("MAIS FORTE!", 1690.0, 88, Paleta.AMBAR, LARGURA_UTIL)
 		draw_set_transform(Vector2(base_x, 0.0), 0.0, Vector2.ONE)
-		_rotulo("ESSE NÃO PONTUOU  •  BATA DE NOVO", 1744.0, Color.WHITE)
+		_rotulo("ESSE NÃO PONTUOU  •  BATA DE NOVO", 1744.0, Color.white)
 	else:
-		_texto_arcade(chamada, 1690.0, 84, Color(Color.WHITE, piscada), LARGURA_UTIL)
-		_rotulo("ACERTE O ALVO ANTES QUE ELE TE ACERTE", 1744.0, Color.WHITE)
+		_texto_arcade(chamada, 1690.0, 84, Compat.cor(Color.white, piscada), LARGURA_UTIL)
+		_rotulo("ACERTE O ALVO ANTES QUE ELE TE ACERTE", 1744.0, Color.white)
 	# A PROVOCAÇÃO DA ARENA. Ela não repete a instrução de cima: a
 	# instrução diz o que fazer, esta diz por que vale a pena. É a voz do
 	# jogo, e é o que um cartaz de console antigo teria aqui.
@@ -5672,8 +5668,8 @@ func _draw_espera_do_soco() -> void:
 	# desistir é que avisa — e avisa dizendo que a ficha volta, senão o
 	# aviso vira ameaça.
 	if espera_left <= GameDef.AVISO_DE_VOLTA:
-		var segundos := maxi(0, int(ceil(espera_left)))
-		_apoio("VOLTANDO EM %02d  •  O CRÉDITO É DEVOLVIDO" % segundos, 1886.0, Color.WHITE)
+		var segundos = int(max(0, int(ceil(espera_left))))
+		_apoio("VOLTANDO EM %02d  •  O CRÉDITO É DEVOLVIDO" % segundos, 1886.0, Color.white)
 
 ## O FAROL E O ALVO: anéis saindo do ponto do soco, em batidas.
 ##
@@ -5684,8 +5680,8 @@ func _draw_espera_do_soco() -> void:
 func _draw_farol(cor: Color, forca := 1.0) -> void:
 	if forca <= 0.01:
 		return
-	var centro := ALVO_DO_SOCO
-	var compasso := 1.15
+	var centro = ALVO_DO_SOCO
+	var compasso = 1.15
 	# OS ANÉIS SAEM DE TRÁS DO QUADRO.
 	#
 	# Na versão original eles nasciam pequenos, no meio do alvo desenhado.
@@ -5693,53 +5689,53 @@ func _draw_farol(cor: Color, forca := 1.0) -> void:
 	# lutador leria como falha de desenho. Começando FORA da moldura eles
 	# viram o que sempre quiseram ser: luz escapando por trás do quadro.
 	for i in range(3):
-		var fase := fmod(animation_time / compasso + float(i) / 3.0, 1.0)
-		var raio := lerpf(470.0, 760.0, ease(fase, 0.45))
-		Traco.arco(self, centro, raio, Color(cor, (1.0 - fase) * 0.50 * forca), 10.0)
+		var fase = fmod(animation_time / compasso + float(i) / 3.0, 1.0)
+		var raio = lerp(470.0, 760.0, ease(fase, 0.45))
+		Traco.arco(self, centro, raio, Compat.cor(cor, (1.0 - fase) * 0.50 * forca), 10.0)
 	# OS CANTOS DE MIRA AGORA ABRAÇAM A MOLDURA. Dizem "é AQUI que o soco
 	# acerta" apontando para a arena, e não para um ponto no vazio — e
 	# respiram, para não virarem um enfeite parado.
-	var respiro := 0.5 + 0.5 * sin(animation_time * 2.2)
-	var folga := lerpf(2.0, 10.0, respiro)
-	var m := ArenaQuadro.MOLDURA.grow(folga)
+	var respiro = 0.5 + 0.5 * sin(animation_time * 2.2)
+	var folga = lerp(2.0, 10.0, respiro)
+	var m = ArenaQuadro.MOLDURA.grow(folga)
 	for sx in [0.0, 1.0]:
 		for sy in [0.0, 1.0]:
-			var canto := Vector2(lerpf(m.position.x, m.end.x, sx), lerpf(m.position.y, m.end.y, sy))
-			var dx := 72.0 * (1.0 if sx < 0.5 else -1.0)
+			var canto = Vector2(lerp(m.position.x, m.end.x, sx), lerp(m.position.y, m.end.y, sy))
+			var dx = 72.0 * (1.0 if sx < 0.5 else -1.0)
 			# O BRAÇO DE BAIXO É MAIS CURTO. Com 78 px ele descia até a
 			# linha do "SOQUE AGORA!" e cortava a primeira letra — e um
 			# enfeite que atravessa a chamada principal é um enfeite que
 			# está atrapalhando o trabalho da tela.
-			var dy := (72.0 if sy < 0.5 else -44.0)
-			draw_line(canto, canto + Vector2(dx, 0.0), Color(cor, 0.85 * forca), 9.0, true)
-			draw_line(canto, canto + Vector2(0.0, dy), Color(cor, 0.85 * forca), 9.0, true)
+			var dy = (72.0 if sy < 0.5 else -44.0)
+			draw_line(canto, canto + Vector2(dx, 0.0), Compat.cor(cor, 0.85 * forca), 9.0, true)
+			draw_line(canto, canto + Vector2(0.0, dy), Compat.cor(cor, 0.85 * forca), 9.0, true)
 
 ## A SAÍDA DO PRIMEIRO SOCO na troca: a plaqueta encolhe no próprio
 ## centro e o veredito escorrega para a esquerda. `s` vai de 0 a 1.
 func _draw_troca_saindo(s: float) -> void:
-	var vai := ease(s, 2.2)
-	var k := 1.0 - vai
+	var vai = ease(s, 2.2)
+	var k = 1.0 - vai
 	if k > 0.01:
-		var c := PLACA_DO_PLACAR.get_center()
+		var c = PLACA_DO_PLACAR.get_center()
 		draw_set_transform(c * (1.0 - k), 0.0, Vector2(k, k))
 		_placa_arcade(PLACA_DO_PLACAR, _troca_cor, 1.0, 0.0)
-		_placar(_troca_placar, CENTRO_DO_PLACAR, Color.WHITE, PLACAR_NA_ARENA)
-		var vt := verdict_time
+		_placar(_troca_placar, CENTRO_DO_PLACAR, Color.white, PLACAR_NA_ARENA)
+		var vt = verdict_time
 		verdict_time = 0.0
 		_draw_barra_de_pontuacao(_troca_progresso, 1.0, _troca_cor, false)
 		verdict_time = vt
-	if not _troca_nome.is_empty():
+	if not _troca_nome.empty():
 		draw_set_transform(Vector2(-vai * TELA.x, 0.0), 0.0, Vector2.ONE)
-		var topo_f := VEREDITO_TOPO
-		var base_f := VEREDITO_BASE
-		draw_colored_polygon(PackedVector2Array([
+		var topo_f = VEREDITO_TOPO
+		var base_f = VEREDITO_BASE
+		draw_colored_polygon(PoolVector2Array([
 			Vector2(0.0, topo_f + 18.0), Vector2(TELA.x, topo_f - 18.0),
 			Vector2(TELA.x, base_f - 18.0), Vector2(0.0, base_f + 18.0),
-		]), Color("0c0615", 0.80))
-		draw_line(Vector2(0.0, topo_f + 18.0), Vector2(TELA.x, topo_f - 18.0), Color(_troca_cor, 0.9), 3.0, true)
-		draw_line(Vector2(0.0, base_f + 18.0), Vector2(TELA.x, base_f - 18.0), Color(_troca_cor, 0.9), 3.0, true)
+		]), Compat.cor("0c0615", 0.80))
+		draw_line(Vector2(0.0, topo_f + 18.0), Vector2(TELA.x, topo_f - 18.0), Compat.cor(_troca_cor, 0.9), 3.0, true)
+		draw_line(Vector2(0.0, base_f + 18.0), Vector2(TELA.x, base_f - 18.0), Compat.cor(_troca_cor, 0.9), 3.0, true)
 		_texto_arcade(_troca_nome, 1490.0, 78, _troca_cor, LARGURA_UTIL)
-		if not _troca_frase.is_empty():
+		if not _troca_frase.empty():
 			_texto_cabendo(_troca_frase, 1556.0, 44, Paleta.AMBAR, LARGURA_UTIL)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
@@ -5751,8 +5747,8 @@ func _draw_troca_saindo(s: float) -> void:
 ## da casa e como jogar — e, FIXOS nos três, o convite e os créditos,
 ## porque um botão que muda de lugar a cada oito segundos é um botão que
 ## ninguém acha.
-const ABERTURA_CAPITULOS := 3
-const ABERTURA_DURACAO := 8.0
+const ABERTURA_CAPITULOS = 3
+const ABERTURA_DURACAO = 8.0
 
 ## O LAÇO DE ATRAÇÃO: a apresentação volta sozinha.
 ##
@@ -5765,7 +5761,7 @@ const ABERTURA_DURACAO := 8.0
 ## Um minuto e vinte é o intervalo: curto o bastante para pegar quem
 ## passa duas vezes pelo corredor, longo o bastante para os três
 ## capítulos rodarem inteiros antes de a entrada recomeçar.
-const ATRACAO_INTERVALO := 80.0
+const ATRACAO_INTERVALO = 80.0
 
 func _laco_de_atracao(delta: float) -> void:
 	# Só na tela de espera, e nunca com a Central aberta: reiniciar a
@@ -5792,12 +5788,12 @@ func _titulo_da_abertura_visivel() -> bool:
 		and not central_aberta and not calib_ativo and transicao < 0.0
 
 func _draw_show_idle() -> void:
-	var chegada := ease(abertura_chegada, 0.4)
+	var chegada = ease(abertura_chegada, 0.4)
 	_marca_da_casa(146.0, 132.0, chegada)
-	var capitulo := int(state_time / ABERTURA_DURACAO) % ABERTURA_CAPITULOS
+	var capitulo = int(state_time / ABERTURA_DURACAO) % ABERTURA_CAPITULOS
 	# Cada capítulo entra com o seu próprio esmaecer; sem isso só o
 	# primeiro teria entrada e os outros dariam um salto seco.
-	var entrada := ease(clampf(fmod(state_time, ABERTURA_DURACAO) / 0.5, 0.0, 1.0), 0.35)
+	var entrada = ease(clamp(fmod(state_time, ABERTURA_DURACAO) / 0.5, 0.0, 1.0), 0.35)
 	match capitulo:
 		1:
 			_pagina_recordes(entrada)
@@ -5806,7 +5802,7 @@ func _draw_show_idle() -> void:
 		_:
 			_capitulo_da_marca(entrada)
 	_pontos_do_capitulo(capitulo, chegada)
-	var pulse := 0.8 + 0.2 * sin(animation_time * 2.6)
+	var pulse = 0.8 + 0.2 * sin(animation_time * 2.6)
 	# A MÁQUINA NÃO CONVIDA PARA O QUE ELA NÃO PODE FAZER.
 	#
 	# Enquanto a câmera não está entregando imagem, "PRESSIONE START" é
@@ -5815,84 +5811,75 @@ func _draw_show_idle() -> void:
 	# aparece quando a rodada pode mesmo começar; até lá, o mesmo cartão
 	# diz o que está faltando, com o anel girando para provar que a
 	# máquina está trabalhando nisso e não travada.
-	var liberado := rodada_liberada()
+	var liberado = rodada_liberada()
 	# O START NO ESTILO DO PAINEL DE LUTA: placa inclinada com aro de ouro,
 	# acesa em magenta e respirando — a coisa mais visível da tela.
-	var botao := Rect2(150, 1552, 780, 124)
+	var botao = Rect2(150, 1552, 780, 124)
 	if liberado:
-		var chama := 0.55 + 0.45 * (0.5 + 0.5 * sin(animation_time * 3.2))
+		var chama = 0.55 + 0.45 * (0.5 + 0.5 * sin(animation_time * 3.2))
 		_placa_arcade(botao, Paleta.ROSA, chegada, chama)
-		_texto_arcade("PRESSIONE START", 1640.0, 62, Color(Color.WHITE, chegada), botao.size.x - 60.0, botao.position.x + 30.0)
+		_texto_arcade("PRESSIONE START", 1640.0, 62, Compat.cor(Color.white, chegada), botao.size.x - 60.0, botao.position.x + 30.0)
 	else:
 		_placa_arcade(botao, Paleta.CIANO, chegada, 0.0)
 	if not liberado:
-		_texto("PREPARANDO O JOGO", 1608.0, 34, Color(Paleta.CIANO, chegada))
-		_texto(motivo_da_recusa(), 1652.0, 18, Color(Color.WHITE, 0.85 * chegada))
+		_texto("PREPARANDO O JOGO", 1608.0, 34, Compat.cor(Paleta.CIANO, chegada))
+		_texto(motivo_da_recusa(), 1652.0, 18, Compat.cor(Color.white, 0.85 * chegada))
 		_carregando(Vector2(880.0, 1616.0), 22.0, Paleta.CIANO)
 	# O LUGAR DO CRÉDITO PISCA quando alguém aperta START sem saldo.
-	var cor_credito := Color(Paleta.CIANO, chegada)
+	var cor_credito = Compat.cor(Paleta.CIANO, chegada)
 	if aviso_de_credito >= 0.0:
-		var bate := 0.5 + 0.5 * sin(aviso_de_credito * 16.0)
-		cor_credito = Color(Paleta.VERMELHO.lerp(Paleta.AMBAR, bate), chegada)
+		var bate = 0.5 + 0.5 * sin(aviso_de_credito * 16.0)
+		cor_credito = Compat.cor(Paleta.VERMELHO.linear_interpolate(Paleta.AMBAR, bate), chegada)
 		_cartao(
-			Rect2(300, 1700, 480, 62), Color(Paleta.VERMELHO, 0.20 * bate),
-			Color(Paleta.AMBAR, bate), chegada, 3.0
+			Rect2(300, 1700, 480, 62), Compat.cor(Paleta.VERMELHO, 0.20 * bate),
+			Compat.cor(Paleta.AMBAR, bate), chegada, 3.0
 		)
 	_draw_placa_de_creditos(cor_credito, chegada)
 	_draw_moedas()
 	# SE A ABERTURA ANTERIOR TRAVOU, a tela diz onde (por 2 minutos). É o
 	# que permite corrigir sem cabo nem computador: basta uma foto.
-	var travou := Diario.travou_em()
-	if not travou.is_empty() and animation_time < 120.0:
-		_letreiro_centrado("A ÚLTIMA ABERTURA PAROU EM:  " + travou, 1890.0, 20, Color(Paleta.AMBAR, 0.9), fonte_texto)
+	var travou = Diario.travou_em()
+	if not travou.empty() and animation_time < 120.0:
+		_letreiro_centrado("A ÚLTIMA ABERTURA PAROU EM:  " + travou, 1890.0, 20, Compat.cor(Paleta.AMBAR, 0.9), fonte_texto)
 
 ## A PLACA DE CRÉDITOS. Era uma linha amarela miúda solta sobre a faixa
 ## vermelha do rodapé — cor quente em cima de cor quente, e pequena: de
 ## longe virava um borrão. Agora é uma placa escura com a ficha desenhada,
 ## o rótulo em branco e o número grande na letra do placar.
 func _draw_placa_de_creditos(cor: Color, alpha: float) -> void:
-	var caixa := Rect2(330.0, 1690.0, 420.0, 76.0)
+	var caixa = Rect2(330.0, 1690.0, 420.0, 76.0)
 	# O BATE DA FICHA: a placa pula, acende em ouro e o número estufa.
-	var bate := 0.0
+	var bate = 0.0
 	if _placa_bateu >= 0.0:
 		bate = exp(-_placa_bateu * 5.0)
-		caixa = caixa.grow(10.0 * bate * absf(cos(_placa_bateu * 22.0)))
-		cor = cor.lerp(Paleta.AMBAR, bate)
-	_placa_arcade(caixa, Color(cor, 0.9), alpha, 0.5 * bate)
-	var meio_y := caixa.position.y + caixa.size.y * 0.5
+		caixa = caixa.grow(10.0 * bate * abs(cos(_placa_bateu * 22.0)))
+		cor = cor.linear_interpolate(Paleta.AMBAR, bate)
+	_placa_arcade(caixa, Compat.cor(cor, 0.9), alpha, 0.5 * bate)
+	var meio_y = caixa.position.y + caixa.size.y * 0.5
 	if game_mode == "free":
-		_letreiro_centrado("JOGO LIVRE", meio_y + 15.0, 40, Color(cor, alpha))
+		_letreiro_centrado("JOGO LIVRE", meio_y + 15.0, 40, Compat.cor(cor, alpha))
 		return
-	Icones.ficha(self, Vector2(caixa.position.x + 44.0, meio_y), 24.0, Color(Paleta.AMBAR, alpha))
-	draw_string(
-		fonte_texto, Vector2(caixa.position.x + 84.0, meio_y + 13.0), "CRÉDITOS",
-		HORIZONTAL_ALIGNMENT_LEFT, 200.0, _corpo(36), Color(Color.WHITE, alpha)
-	)
-	var numero := "%02d" % maxi(0, credits - _moedas_no_ar())
+	Icones.ficha(self, Vector2(caixa.position.x + 44.0, meio_y), 24.0, Compat.cor(Paleta.AMBAR, alpha))
+	Compat.texto(self, fonte_texto, Vector2(caixa.position.x + 84.0, meio_y + 13.0), "CRÉDITOS", Compat.ESQUERDA, 200.0, _corpo(36), Compat.cor(Color.white, alpha))
+	var numero = "%02d" % int(max(0, credits - _moedas_no_ar()))
 	if bate > 0.01:
 		# "+1" subindo da placa
-		var sobe := 1.0 - bate
-		_letreiro("+1", Vector2(caixa.end.x + 22.0, caixa.position.y + 52.0 - 60.0 * sobe), 48, Color(Paleta.AMBAR, bate * alpha), Color(Paleta.AMBAR, 0.3 * bate * alpha))
-	draw_string_outline(
-		fonte, Vector2(caixa.position.x, meio_y + 20.0), numero,
-		HORIZONTAL_ALIGNMENT_RIGHT, caixa.size.x - 26.0, 52, 8, Color(Paleta.CONTORNO, alpha)
-	)
-	draw_string(
-		fonte, Vector2(caixa.position.x, meio_y + 20.0), numero,
-		HORIZONTAL_ALIGNMENT_RIGHT, caixa.size.x - 26.0, 52, Color(cor, alpha)
-	)
+		var sobe = 1.0 - bate
+		_letreiro("+1", Vector2(caixa.end.x + 22.0, caixa.position.y + 52.0 - 60.0 * sobe), 48, Compat.cor(Paleta.AMBAR, bate * alpha), Compat.cor(Paleta.AMBAR, 0.3 * bate * alpha))
+	Compat.contorno(self, fonte, Vector2(caixa.position.x, meio_y + 20.0), numero, Compat.DIREITA, caixa.size.x - 26.0, 52, 8, Compat.cor(Paleta.CONTORNO, alpha))
+	Compat.texto(self, fonte, Vector2(caixa.position.x, meio_y + 20.0), numero, Compat.DIREITA, caixa.size.x - 26.0, 52, Compat.cor(cor, alpha))
 
 func _capitulo_da_marca(alpha: float) -> void:
-	var flutuar := smoothstep(0.5, 1.3, state_time)
-	var centro := Vector2(540, 560 + sin(animation_time * 1.4) * 8 * flutuar)
+	var flutuar = smoothstep(0.5, 1.3, state_time)
+	var centro = Vector2(540, 560 + sin(animation_time * 1.4) * 8 * flutuar)
 	# O BRILHO ATRÁS DO ESCUDO CHEGA DEVAGAR. Ele nascia aceso no quadro
 	# em que a entrada acabava — o logo parecia sumir e voltar com o efeito.
-	var brilho := alpha * smoothstep(0.5, 1.9, state_time)
+	var brilho = alpha * smoothstep(0.5, 1.9, state_time)
 	_raios_do_escudo(centro, brilho)
 	# O ESCUDO É UM NÓ COM SHADER (brilho varrendo, pulso): aqui só se diz
 	# onde ele fica neste quadro. Ver `_posicionar_escudo`.
 	_escudo_pedido = {"centro": centro, "largura": 924.0, "alpha": alpha,
-		"quadro": Engine.get_process_frames(), "vida": flutuar}
+		"quadro": Engine.get_idle_frames(), "vida": flutuar}
 	# E JÁ NESTE QUADRO: esperar o próximo `_process` deixava um quadro
 	# sem logo nenhum entre a entrada e a abertura (o "piscar").
 	_posicionar_escudo()
@@ -5902,9 +5889,9 @@ func _capitulo_da_marca(alpha: float) -> void:
 	# mesmo lugar, no mesmo corpo e com a mesma entrada esmaecida — o que
 	# muda é quem passa a tinta, porque só um nó pode carregar material.
 	_nome_do_jogo(alpha)
-	_texto("QUAL É A SUA FORÇA?", 1150.0, 32, Color(Color.WHITE, alpha))
-	_texto("RECORDE DA CASA", 1270.0, 24, Color(Color("b2a6d8"), alpha))
-	_texto("%04d" % _melhor(), 1400.0, 98, Color(Paleta.AMBAR, alpha))
+	_texto("QUAL É A SUA FORÇA?", 1150.0, 32, Compat.cor(Color.white, alpha))
+	_texto("RECORDE DA CASA", 1270.0, 24, Compat.cor(Color("b2a6d8"), alpha))
+	_texto("%04d" % _melhor(), 1400.0, 98, Compat.cor(Paleta.AMBAR, alpha))
 
 ## ENTREGA O NOME AO NÓ QUE TEM O SHADER.
 ##
@@ -5915,49 +5902,49 @@ func _capitulo_da_marca(alpha: float) -> void:
 ## a tela continua mandando quando, onde e com que opacidade.
 ## Raios girando atrás do escudo, magenta e ciano, achatados como a estrela.
 func _raios_do_escudo(centro: Vector2, alpha: float) -> void:
-	var giro := animation_time * 0.22
-	var n := 16
+	var giro = animation_time * 0.22
+	var n = 16
 	for i in n:
-		var a0 := giro + float(i) * TAU / float(n)
-		var a1 := a0 + TAU / float(n) * 0.5
-		var r := 700.0
-		var cor := Paleta.ROSA if i % 2 == 0 else Paleta.CIANO
-		var pulso := 0.08 + 0.05 * sin(animation_time * 1.7 + float(i) * 0.8)
-		draw_colored_polygon(PackedVector2Array([
+		var a0 = giro + float(i) * TAU / float(n)
+		var a1 = a0 + TAU / float(n) * 0.5
+		var r = 700.0
+		var cor = Paleta.ROSA if i % 2 == 0 else Paleta.CIANO
+		var pulso = 0.08 + 0.05 * sin(animation_time * 1.7 + float(i) * 0.8)
+		draw_colored_polygon(PoolVector2Array([
 			centro,
 			centro + Vector2(cos(a0), sin(a0) * 0.72) * r,
 			centro + Vector2(cos(a1), sin(a1) * 0.72) * r,
-		]), Color(cor, pulso * alpha))
+		]), Compat.cor(cor, pulso * alpha))
 
 ## Brilhos nas pontas da estrela: acendem e apagam, cada um no seu tempo.
 func _faiscas_do_escudo(centro: Vector2, alpha: float) -> void:
 	for i in 7:
-		var fase := fmod(animation_time * 0.9 + float(i) * 0.37, 1.0)
-		var v := sin(fase * PI)
+		var fase = fmod(animation_time * 0.9 + float(i) * 0.37, 1.0)
+		var v = sin(fase * PI)
 		if v < 0.05:
 			continue
 		var ang: float = float(i) * 2.39 + floor(animation_time * 0.9 + float(i) * 0.37) * 1.7
-		var p := centro + Vector2(cos(ang) * 430.0, sin(ang) * 250.0)
-		var t := 26.0 * v
-		var cor := Color(1.0, 0.97, 0.88, v * alpha)
+		var p = centro + Vector2(cos(ang) * 430.0, sin(ang) * 250.0)
+		var t = 26.0 * v
+		var cor = Color(1.0, 0.97, 0.88, v * alpha)
 		draw_line(p - Vector2(t, 0), p + Vector2(t, 0), cor, 3.0, true)
 		draw_line(p - Vector2(0, t), p + Vector2(0, t), cor, 3.0, true)
 		draw_circle(p, 4.0 * v, cor)
 
-## O nó do escudo (TextureRect com `escudo_vivo.gdshader`). Aparece só no
+## O nó do escudo (TextureRect com `escudo_vivo.shader`). Aparece só no
 ## quadro em que a abertura pediu, respira e balança de leve.
 var _escudo: TextureRect = null
-var _escudo_pedido := {}
+var _escudo_pedido = {}
 
 func _montar_escudo() -> void:
 	_escudo = TextureRect.new()
 	_escudo.name = "EscudoVivo"
 	_escudo.texture = ArcadeStage.LOGO
-	_escudo.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_escudo.expand = true
 	_escudo.stretch_mode = TextureRect.STRETCH_SCALE
 	_escudo.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var mat := ShaderMaterial.new()
-	mat.shader = load("res://shaders/escudo_vivo.gdshader")
+	var mat = ShaderMaterial.new()
+	mat.shader = load("res://shaders/escudo_vivo.shader")
 	_escudo.material = mat
 	_escudo.visible = false
 	add_child(_escudo)
@@ -5965,23 +5952,26 @@ func _montar_escudo() -> void:
 func _posicionar_escudo() -> void:
 	if _escudo == null:
 		return
-	var pedido_agora := not _escudo_pedido.is_empty() \
-		and Engine.get_process_frames() - int(_escudo_pedido["quadro"]) <= 2 \
+	var pedido_agora = not _escudo_pedido.empty() \
+		and Engine.get_idle_frames() - int(_escudo_pedido["quadro"]) <= 2 \
 		and transicao < 0.0 and not central_aberta and not intro_active
 	_escudo.visible = pedido_agora
 	if not pedido_agora:
 		return
 	var largura: float = _escudo_pedido["largura"]
-	var altura := largura * float(ArcadeStage.LOGO.get_height()) / float(ArcadeStage.LOGO.get_width())
+	var altura = largura * float(ArcadeStage.LOGO.get_height()) / float(ArcadeStage.LOGO.get_width())
 	# O balanço também entra aos poucos (a entrada pousa o logo PARADO).
 	var vida: float = _escudo_pedido.get("vida", 1.0)
-	var respira := 1.0 + 0.028 * sin(animation_time * 2.2) * vida
-	_escudo.size = Vector2(largura, altura)
-	_escudo.pivot_offset = _escudo.size * 0.5
-	_escudo.position = (_escudo_pedido["centro"] as Vector2) - _escudo.size * 0.5
-	_escudo.scale = Vector2(respira, respira)
-	_escudo.rotation = sin(animation_time * 0.8) * 0.022 * vida
+	var respira = 1.0 + 0.028 * sin(animation_time * 2.2) * vida
+	_escudo.rect_size = Vector2(largura, altura)
+	_escudo.rect_pivot_offset = _escudo.rect_size * 0.5
+	_escudo.rect_position = (_escudo_pedido["centro"] as Vector2) - _escudo.rect_size * 0.5
+	_escudo.rect_scale = Vector2(respira, respira)
+	_escudo.rect_rotation = rad2deg(sin(animation_time * 0.8) * 0.022 * vida)
 	_escudo.modulate = Color(1, 1, 1, float(_escudo_pedido["alpha"]))
+	# Os relógios do shader, prontos e pequenos (meia precisão na Mali-450).
+	var agora = Compat.agora()
+	(_escudo.material as ShaderMaterial).set_shader_param("fases", Vector2(Compat.fracao(agora, 0.24), Compat.fase(agora, 2.6)))
 
 func _nome_do_jogo(alpha: float) -> void:
 	# O NÓ FICA ACIMA DO DESENHO PRINCIPAL — é o que faz o reflexo passar
@@ -5999,26 +5989,26 @@ func _nome_do_jogo(alpha: float) -> void:
 ## Quantos capítulos existem e em qual estamos. Sem isso o rodízio parece
 ## a tela trocando sozinha por defeito.
 func _pontos_do_capitulo(capitulo: int, alpha := 1.0) -> void:
-	var largura := float(ABERTURA_CAPITULOS) * 30.0
+	var largura = float(ABERTURA_CAPITULOS) * 30.0
 	for i in range(ABERTURA_CAPITULOS):
-		var atual := i == capitulo
-		var centro := Vector2(540.0 - largura * 0.5 + 15.0 + i * 30.0, 1500.0)
+		var atual = i == capitulo
+		var centro = Vector2(540.0 - largura * 0.5 + 15.0 + i * 30.0, 1500.0)
 		var cor: Color = Paleta.AMBAR if atual else Color("50367d")
-		draw_circle(centro, 8.0 if atual else 5.0, Color(cor, alpha), true, -1.0, true)
+		Compat.circulo(self, centro, 8.0 if atual else 5.0, Compat.cor(cor, alpha), true, -1.0, true)
 
 ## A PLAQUETA DO PLACAR, montada a cavaleiro na borda de baixo da moldura.
 ## NO ALTO DA ARENA, logo abaixo das barras de vida, em cima da torcida:
 ## no meio do quadro ela cobria o corpo e o rosto do lutador.
-const PLACA_DO_PLACAR := Rect2(300.0, 318.0, 480.0, 178.0)
+const PLACA_DO_PLACAR = Rect2(300.0, 318.0, 480.0, 178.0)
 ## O centro do número dentro da plaqueta.
-const CENTRO_DO_PLACAR := Vector2(540.0, 372.0)
+const CENTRO_DO_PLACAR = Vector2(540.0, 372.0)
 ## A faixa do veredito, abaixo do quadro.
-const VEREDITO_TOPO := 1626.0
-const VEREDITO_BASE := 1788.0
-const PLACAR_NA_ARENA := 112
+const VEREDITO_TOPO = 1626.0
+const VEREDITO_BASE = 1788.0
+const PLACAR_NA_ARENA = 112
 
 func _draw_score_hero() -> void:
-	var measuring := state == GameDef.State.MEASURING
+	var measuring = state == GameDef.State.MEASURING
 	# O ANEL MEDE A FORÇA, NÃO O RELÓGIO — e nesta versão ele deixou de
 	# ser anel.
 	#
@@ -6029,12 +6019,12 @@ func _draw_score_hero() -> void:
 	# (quanto o adversário aguentou) e o trilho dentro da plaqueta (quanto
 	# este soco valeu na escala). Dois instrumentos honestos no lugar de
 	# um redondo que disputava espaço com a cena.
-	var progresso_contagem := clampf(result_time / GameDef.CONTAGEM_DURACAO, 0.0, 1.0)
-	var progresso := 0.0 if measuring else clampf(displayed_score / float(GameDef.SCORE_MAX), 0.0, 1.0)
+	var progresso_contagem = clamp(result_time / GameDef.CONTAGEM_DURACAO, 0.0, 1.0)
+	var progresso = 0.0 if measuring else clamp(displayed_score / float(GameDef.SCORE_MAX), 0.0, 1.0)
 	var cor_final: Color = GameDef.classificar(result_score)["cor_faixa"] as Color
 	# A cor também chega, em vez de saltar no último quadro: ciano de
 	# leitura durante a análise, cor da faixa conforme o valor assenta.
-	var cor := Paleta.CIANO.lerp(cor_final, progresso_contagem * 0.82)
+	var cor = Paleta.CIANO.linear_interpolate(cor_final, progresso_contagem * 0.82)
 	if verdict_time >= 0.0:
 		cor = cor_final
 	_draw_campo_de_forca(ALVO_DO_SOCO, cor, progresso, measuring)
@@ -6047,12 +6037,12 @@ func _draw_score_hero() -> void:
 		# fraco contado). A plaqueta diz o que aconteceu.
 		_placa_arcade(PLACA_DO_PLACAR, Paleta.VERMELHO, 1.0, 0.25)
 		_placar("K.O.", CENTRO_DO_PLACAR, Paleta.VERMELHO, PLACAR_NA_ARENA)
-		_apoio("NENHUM SOCO CONTADO", PLACA_DO_PLACAR.end.y - 18.0, Color.WHITE)
+		_apoio("NENHUM SOCO CONTADO", PLACA_DO_PLACAR.end.y - 18.0, Color.white)
 	else:
 		_placa_arcade(PLACA_DO_PLACAR, cor, 1.0, 0.0)
 		_placar(
 			"– – – –" if measuring else "%04d" % int(round(displayed_score)),
-			CENTRO_DO_PLACAR, cor if measuring else Color.WHITE, PLACAR_NA_ARENA
+			CENTRO_DO_PLACAR, cor if measuring else Color.white, PLACAR_NA_ARENA
 		)
 		_draw_barra_de_pontuacao(progresso, progresso_contagem, cor, measuring)
 
@@ -6061,15 +6051,15 @@ func _draw_score_hero() -> void:
 		# e os níveis altos são vermelhos, em cima do rodapé vermelho. A
 		# faixa inclinada por trás dá contraste a qualquer cor, sem mudar
 		# a identidade de nenhum nível.
-		var abre_faixa := clampf(verdict_time / 0.25, 0.0, 1.0)
-		var topo_f := VEREDITO_TOPO
-		var base_f := VEREDITO_BASE
-		draw_colored_polygon(PackedVector2Array([
+		var abre_faixa = clamp(verdict_time / 0.25, 0.0, 1.0)
+		var topo_f = VEREDITO_TOPO
+		var base_f = VEREDITO_BASE
+		draw_colored_polygon(PoolVector2Array([
 			Vector2(0.0, topo_f + 18.0), Vector2(TELA.x, topo_f - 18.0),
 			Vector2(TELA.x, base_f - 18.0), Vector2(0.0, base_f + 18.0),
-		]), Color("0c0615", 0.80 * abre_faixa))
-		draw_line(Vector2(0.0, topo_f + 18.0), Vector2(TELA.x, topo_f - 18.0), Color(cor, 0.9 * abre_faixa), 3.0, true)
-		draw_line(Vector2(0.0, base_f + 18.0), Vector2(TELA.x, base_f - 18.0), Color(cor, 0.9 * abre_faixa), 3.0, true)
+		]), Compat.cor("0c0615", 0.80 * abre_faixa))
+		draw_line(Vector2(0.0, topo_f + 18.0), Vector2(TELA.x, topo_f - 18.0), Compat.cor(cor, 0.9 * abre_faixa), 3.0, true)
+		draw_line(Vector2(0.0, base_f + 18.0), Vector2(TELA.x, base_f - 18.0), Compat.cor(cor, 0.9 * abre_faixa), 3.0, true)
 		# O NOME DO NÍVEL VEM ANTES DA COLOCAÇÃO. A pessoa quer saber o
 		# que ela fez — "NOCAUTE" — e só depois onde isso a coloca. A
 		# ordem inversa transformava o veredito numa tabela.
@@ -6080,7 +6070,7 @@ func _draw_score_hero() -> void:
 		# E A FRASE VEM DEPOIS DO NOME. O nome é a nota; a frase é o
 		# locutor. Sem ela o veredito volta a ser uma etiqueta — com ela
 		# a máquina parece ter visto o soco acontecer.
-		if not arena_frase.is_empty():
+		if not arena_frase.empty():
 			_texto_cabendo(arena_frase, 1760.0, 42, Paleta.AMBAR, LARGURA_UTIL)
 		# OS DOIS SOCOS CONTINUAM À VISTA NO RESULTADO, com o que deu a
 		# nota marcado. MELHOR só existe quando há com quem comparar: no
@@ -6095,29 +6085,29 @@ func _draw_score_hero() -> void:
 ## comparar à distância que um retângulo contínuo e não criam partículas,
 ## shaders ou nós novos por quadro.
 func _draw_barra_de_pontuacao(valor: float, contagem: float, cor: Color, medindo: bool) -> void:
-	var trilho := Rect2(PLACA_DO_PLACAR.position.x + 40.0, PLACA_DO_PLACAR.position.y + 112.0,
+	var trilho = Rect2(PLACA_DO_PLACAR.position.x + 40.0, PLACA_DO_PLACAR.position.y + 112.0,
 		PLACA_DO_PLACAR.size.x - 80.0, 22.0)
-	_cartao(trilho.grow(6.0), Color("0f0a18"), Color(cor, 0.34), 1.0, 2.0)
-	var segmentos := 24
-	var vao := 3.0
-	var largura := (trilho.size.x - vao * float(segmentos - 1)) / float(segmentos)
+	_cartao(trilho.grow(6.0), Color("0f0a18"), Compat.cor(cor, 0.34), 1.0, 2.0)
+	var segmentos = 24
+	var vao = 3.0
+	var largura = (trilho.size.x - vao * float(segmentos - 1)) / float(segmentos)
 	for i in range(segmentos):
-		var caixa := Rect2(trilho.position.x + float(i) * (largura + vao), trilho.position.y, largura, trilho.size.y)
-		var aceso := float(i + 1) / float(segmentos) <= valor
-		var tinta := Color("271a3d")
+		var caixa = Rect2(trilho.position.x + float(i) * (largura + vao), trilho.position.y, largura, trilho.size.y)
+		var aceso = float(i + 1) / float(segmentos) <= valor
+		var tinta = Color("271a3d")
 		if medindo:
-			var scanner := int(animation_time * 22.0) % segmentos
-			var distancia := posmod(i - scanner, segmentos)
+			var scanner = int(animation_time * 22.0) % segmentos
+			var distancia = posmod(i - scanner, segmentos)
 			if distancia <= 4:
-				tinta = Color(Paleta.CIANO, 0.30 + (4.0 - float(distancia)) * 0.14)
+				tinta = Compat.cor(Paleta.CIANO, 0.30 + (4.0 - float(distancia)) * 0.14)
 		elif aceso:
 			tinta = cor
 		draw_rect(caixa, tinta)
 	# Um cursor branco curto dá precisão ao ponto que ainda está subindo.
 	if not medindo and valor > 0.0 and valor < 1.0:
-		var cursor_x := trilho.position.x + trilho.size.x * valor
-		draw_rect(Rect2(cursor_x - 2.0, trilho.position.y - 4.0, 4.0, trilho.size.y + 8.0), Color.WHITE)
-	var rotulo := "LENDO SENSOR" if medindo else ("PONTOS CONFIRMADOS" if verdict_time >= 0.0 else "ANALISANDO • %02d%%" % int(contagem * 100.0))
+		var cursor_x = trilho.position.x + trilho.size.x * valor
+		draw_rect(Rect2(cursor_x - 2.0, trilho.position.y - 4.0, 4.0, trilho.size.y + 8.0), Color.white)
+	var rotulo = "LENDO SENSOR" if medindo else ("PONTOS CONFIRMADOS" if verdict_time >= 0.0 else "ANALISANDO • %02d%%" % int(contagem * 100.0))
 	_apoio(rotulo, PLACA_DO_PLACAR.end.y - 18.0, cor)
 
 ## O CARREGANDO: UM ANEL QUE GIRA E UMA FRASE DO QUE ESTÁ ACONTECENDO.
@@ -6132,14 +6122,14 @@ func _draw_barra_de_pontuacao(valor: float, contagem: float, cor: Color, medindo
 ## O anel não é enfeite: ele GIRA, e é o giro que prova que o programa
 ## está vivo. Uma barra parada em 40% diria menos do que este anel.
 func _carregando(centro: Vector2, raio: float, cor: Color, texto := "") -> void:
-	Traco.arco(self, centro, raio, Color(cor, 0.16), 5.0)
-	var comeco := animation_time * 3.4
+	Traco.arco(self, centro, raio, Compat.cor(cor, 0.16), 5.0)
+	var comeco = animation_time * 3.4
 	Traco.setor(self, centro, raio, comeco, comeco + 1.5, cor, 5.0)
 	# Um segundo arco, mais lento e no sentido contrário: com um só, em
 	# giro constante, o olho perde a referência e o anel parece parado.
-	Traco.setor(self, centro, raio * 0.62, -comeco * 0.7, -comeco * 0.7 + 0.9, Color(cor, 0.55), 4.0)
-	if not texto.is_empty():
-		_texto(texto, centro.y + raio + 40.0, 18, cor, HORIZONTAL_ALIGNMENT_CENTER, centro.x - 300.0, 600.0)
+	Traco.setor(self, centro, raio * 0.62, -comeco * 0.7, -comeco * 0.7 + 0.9, Compat.cor(cor, 0.55), 4.0)
+	if not texto.empty():
+		_texto(texto, centro.y + raio + 40.0, 18, cor, Compat.CENTRO, centro.x - 300.0, 600.0)
 
 ## O PLACAR: QUATRO ALGARISMOS, E NADA DISPUTANDO COM ELES.
 ##
@@ -6164,7 +6154,7 @@ func _carregando(centro: Vector2, raio: float, cor: Color, texto := "") -> void:
 ##
 ## `tabular` importa: sem ele, cada algarismo tem a sua largura e o
 ## placar DANÇA de lado enquanto sobe de 0000 a 9999.
-const PLACAR_CORPO := 190
+const PLACAR_CORPO = 190
 
 ## OS DOIS SOCOS, LADO A LADO E CADA UM COM O SEU NÚMERO.
 ##
@@ -6184,26 +6174,26 @@ const PLACAR_CORPO := 190
 ## a palavra MELHOR. É o que explica, sem texto de ajuda, por que a nota
 ## final é aquela.
 func _draw_cartoes_dos_socos(y: float, marcar_melhor: bool) -> void:
-	const ALTURA := 124.0
-	const VAO := 24.0
-	var largura := (ArenaQuadro.PAINEIS_LARGURA - VAO) * 0.5
+	var ALTURA = 124.0
+	var VAO = 24.0
+	var largura = (ArenaQuadro.PAINEIS_LARGURA - VAO) * 0.5
 	# Qual soco vale a nota da rodada: o primeiro dos empatados, para a
 	# marca não pular de um cartão para o outro entre dois quadros.
-	var melhor_i := -1
-	var melhor_p := -1
+	var melhor_i = -1
+	var melhor_p = -1
 	for i in socos.size():
 		if int(socos[i]["pontos"]) > melhor_p:
 			melhor_p = int(socos[i]["pontos"])
 			melhor_i = i
 
 	for i in SOCOS_POR_RODADA:
-		var rect := Rect2(ArenaQuadro.PAINEIS_X + float(i) * (largura + VAO), y, largura, ALTURA)
-		var feito := i < socos.size()
-		var esperando := (not feito) and i == socos.size() and state == GameDef.State.ARMED \
+		var rect = Rect2(ArenaQuadro.PAINEIS_X + float(i) * (largura + VAO), y, largura, ALTURA)
+		var feito = i < socos.size()
+		var esperando = (not feito) and i == socos.size() and state == GameDef.State.ARMED \
 			and not _jogador_nocauteado
-		var eh_melhor := marcar_melhor and feito and i == melhor_i
+		var eh_melhor = marcar_melhor and feito and i == melhor_i
 
-		var cor := Paleta.TINTA_LEVE
+		var cor = Paleta.TINTA_LEVE
 		if eh_melhor:
 			cor = GameDef.classificar(int(socos[i]["pontos"]))["cor_faixa"]
 		elif feito:
@@ -6212,50 +6202,50 @@ func _draw_cartoes_dos_socos(y: float, marcar_melhor: bool) -> void:
 			cor = Paleta.AMBAR
 
 		# O cartão do soco recém-chegado nasce maior e volta ao tamanho.
-		var crescer := 0.0
+		var crescer = 0.0
 		if feito and i == socos.size() - 1:
-			var idade := animation_time - ultimo_soco_em
+			var idade = animation_time - ultimo_soco_em
 			if idade >= 0.0 and idade < 0.5:
 				crescer = (1.0 - idade / 0.5) * 10.0
-		var caixa := rect.grow(crescer)
+		var caixa = rect.grow(crescer)
 
-		var pulso := 1.0
+		var pulso = 1.0
 		if esperando:
 			pulso = 0.62 + 0.38 * sin(animation_time * 4.4)
 
 		# O PAINEL DO SOCO no estilo do painel de luta: o que espera o soco
 		# ACENDE e pulsa; o melhor ganha a cor do nível.
-		var acesa := 0.0
+		var acesa = 0.0
 		if esperando:
 			acesa = 0.35 + 0.35 * (0.5 + 0.5 * sin(animation_time * 4.4))
 		elif eh_melhor:
 			acesa = 0.45
-		_placa_arcade(caixa, Color(cor, pulso), 1.0, acesa)
+		_placa_arcade(caixa, Compat.cor(cor, pulso), 1.0, acesa)
 		# TUDO AQUI DENTRO SE CENTRA NO CARTÃO, E NÃO NA TELA.
 		#
 		# `_letreiro_centrado` centra na LARGURA INTEIRA do visor — foi o
 		# que colocou "SOCO 2" e "2.1 m/s" no meio da tela, por cima do
 		# cartão da esquerda, em vez de dentro do seu. Para caixa, o
 		# ajudante certo é `_texto_cabendo`, que recebe x e largura.
-		var dentro := caixa.size.x - 16.0
-		var esq := caixa.position.x + 8.0
+		var dentro = caixa.size.x - 16.0
+		var esq = caixa.position.x + 8.0
 		# O MELHOR FICA NO PRÓPRIO RÓTULO. A faixa "MELHOR" acima do cartão
 		# encostava na frase do locutor; dentro do rótulo não briga com nada.
 		_texto_cabendo(
 			("SOCO %d  •  MELHOR" if eh_melhor else "SOCO %d") % (i + 1), caixa.position.y + 32.0,
-			CORPO_APOIO, Color(cor, 0.95), dentro, esq
+			CORPO_APOIO, Compat.cor(cor, 0.95), dentro, esq
 		)
 		if feito:
 			# Só a pontuação: g e m/s saíram da tela do jogador (ficam na
 			# Central, para o técnico). Número grande, sozinho, lê de longe.
 			_texto_arcade(
 				"%04d" % int(socos[i]["pontos"]), caixa.position.y + 98.0, 62,
-				Color.WHITE if not eh_melhor else cor, dentro, esq
+				Color.white if not eh_melhor else cor, dentro, esq
 			)
 		else:
 			_texto_arcade(
 				"– – – –" if not esperando else "AGORA",
-				caixa.position.y + 98.0, 42, Color(cor, pulso), dentro, esq
+				caixa.position.y + 98.0, 42, Compat.cor(cor, pulso), dentro, esq
 			)
 
 ## O PLACAR ACEITA UM CORPO DE LETRA porque agora há dois tamanhos: a
@@ -6263,22 +6253,13 @@ func _draw_cartoes_dos_socos(y: float, marcar_melhor: bool) -> void:
 ## corpo cheio de antes. Um número escrito duas vezes por dois códigos
 ## diferentes é como os dois deixam de ter o mesmo contorno.
 func _placar(texto: String, centro: Vector2, cor: Color, corpo := PLACAR_CORPO) -> void:
-	var medida := fonte.get_string_size(texto, HORIZONTAL_ALIGNMENT_LEFT, -1, corpo)
-	var pos := Vector2(centro.x - medida.x * 0.5, centro.y + corpo * 0.36)
+	var medida = Compat.medida(fonte, texto, corpo)
+	var pos = Vector2(centro.x - medida.x * 0.5, centro.y + corpo * 0.36)
 	# Um halo, em vez de três atlas de contorno sobrepostos a cada número.
-	draw_string_outline(
-		fonte, pos, texto, HORIZONTAL_ALIGNMENT_LEFT, -1, corpo,
-		int(corpo * 0.25), Color(cor, 0.22)
-	)
-	draw_string_outline(
-		fonte, pos, texto, HORIZONTAL_ALIGNMENT_LEFT, -1, corpo,
-		int(corpo * 0.085), Color(Paleta.CONTORNO, 0.95)
-	)
-	draw_string(
-		fonte, pos - Vector2(0.0, corpo * 0.045), texto,
-		HORIZONTAL_ALIGNMENT_LEFT, -1, corpo, cor.lightened(0.5)
-	)
-	draw_string(fonte, pos, texto, HORIZONTAL_ALIGNMENT_LEFT, -1, corpo, cor)
+	Compat.contorno(self, fonte, pos, texto, Compat.ESQUERDA, -1, corpo, int(corpo * 0.25), Compat.cor(cor, 0.22))
+	Compat.contorno(self, fonte, pos, texto, Compat.ESQUERDA, -1, corpo, int(corpo * 0.085), Compat.cor(Paleta.CONTORNO, 0.95))
+	Compat.texto(self, fonte, pos - Vector2(0.0, corpo * 0.045), texto, Compat.ESQUERDA, -1, corpo, cor.lightened(0.5))
+	Compat.texto(self, fonte, pos, texto, Compat.ESQUERDA, -1, corpo, cor)
 
 ## O VAZIO ATRÁS DO PLACAR ERA O MAIOR PEDAÇO DA TELA.
 ##
@@ -6291,9 +6272,9 @@ func _draw_campo_de_forca(centro: Vector2, cor: Color, progresso: float, no_impa
 	# No meio segundo do impacto ainda não há pontuação nenhuma para
 	# mostrar, então quem manda é o próprio golpe: começa no talo e
 	# desinfla enquanto a máquina "calcula".
-	var forca := progresso
+	var forca = progresso
 	if no_impacto:
-		forca = 1.0 - clampf(state_time / GameDef.IMPACTO_DURACAO, 0.0, 1.0)
+		forca = 1.0 - clamp(state_time / GameDef.IMPACTO_DURACAO, 0.0, 1.0)
 	# DOIS DISCOS, E OS DOIS MAIORES QUE O QUADRO. Eles tingem a tela
 	# inteira com a cor do nível; o miolo fica escondido atrás da arena,
 	# então o que se vê é o halo escapando em volta da moldura — que é
@@ -6303,19 +6284,19 @@ func _draw_campo_de_forca(centro: Vector2, cor: Color, progresso: float, no_impa
 	# quadro). Os raios abaixo já fazem o halo.
 	if not OS.has_feature("mobile"):
 		for i in range(2):
-			draw_circle(centro, 600.0 + float(i) * 190.0, Color(cor, 0.040 * forca), true, -1.0, true)
+			Compat.circulo(self, centro, 600.0 + float(i) * 190.0, Compat.cor(cor, 0.040 * forca), true, -1.0, true)
 	# E OS RAIOS COMEÇAM FORA DA MOLDURA. Nascendo no centro eles
 	# cruzariam a imagem do lutador; nascendo na borda, viram o brilho de
 	# um telão empurrando luz para os cantos da tela.
 	for i in range(36):
-		var ang := float(i) * TAU / 36.0 + animation_time * 0.22
-		var onda := 0.5 + 0.5 * sin(float(i) * 1.7 - animation_time * 4.0)
-		var perto := 500.0
-		var longe := perto + lerpf(24.0, 260.0, forca * onda)
+		var ang = float(i) * TAU / 36.0 + animation_time * 0.22
+		var onda = 0.5 + 0.5 * sin(float(i) * 1.7 - animation_time * 4.0)
+		var perto = 500.0
+		var longe = perto + lerp(24.0, 260.0, forca * onda)
 		draw_line(
-			centro + Vector2.from_angle(ang) * perto,
-			centro + Vector2.from_angle(ang) * longe,
-			Color(cor, 0.08 + 0.34 * forca * onda), 6.0, true
+			centro + polar2cartesian(1.0, ang) * perto,
+			centro + polar2cartesian(1.0, ang) * longe,
+			Compat.cor(cor, 0.08 + 0.34 * forca * onda), 6.0, true
 		)
 
 ## AS DUAS COLUNAS DE PONTUAÇÃO SAÍRAM DAQUI E VIRARAM AS BARRAS DE DANO.
@@ -6349,81 +6330,81 @@ func _cor_da_posicao(posicao: int) -> Color:
 ## Nada é desenhado por cima da tabela depois que ela aparece: os fogos
 ## do resultado param (ver `_manter_festa`) e o confete mora na camada
 ## de fundo dos efeitos.
-const LINHA_ALTURA := 126.0
-const LISTA_TOPO := 336.0
-const LINHAS_VISIVEIS := 8
-const LISTA_RECORTE_TOPO := 330.0
-const LISTA_RECORTE_BASE := 1350.0
-const LINHA_CASCATA := 0.035
-const LINHA_ENTRADA := 0.24
-const LINHA_DESLIZE := 36.0
+const LINHA_ALTURA = 126.0
+const LISTA_TOPO = 336.0
+const LINHAS_VISIVEIS = 8
+const LISTA_RECORTE_TOPO = 330.0
+const LISTA_RECORTE_BASE = 1350.0
+const LINHA_CASCATA = 0.035
+const LINHA_ENTRADA = 0.24
+const LINHA_DESLIZE = 36.0
 
-const ATO_ANUNCIO := 1.70
-const ATO_TABELA := 0.60
-const ATO_ASSENTA := 0.35
+const ATO_ANUNCIO = 1.70
+const ATO_TABELA = 0.60
+const ATO_ASSENTA = 0.35
 
 func _tempo_do_ranking() -> float:
 	if not ranking_announced or ranking_started_at < 0.0:
 		return 0.0
-	return maxf(0.0, verdict_time - ranking_started_at)
+	return max(0.0, verdict_time - ranking_started_at)
 
 ## Saída suave, sem passar do ponto: é o que tira o "tranco" das linhas.
 static func _suave(t: float) -> float:
-	var u := 1.0 - clampf(t, 0.0, 1.0)
+	var u = 1.0 - clamp(t, 0.0, 1.0)
 	return 1.0 - u * u * u
 
 func _draw_ranking_reveal() -> void:
-	var t := _tempo_do_ranking()
-	var entrou := posicao_no_ranking > 0
-	var anuncio := ATO_ANUNCIO if entrou else 0.0
+	var t = _tempo_do_ranking()
+	var entrou = posicao_no_ranking > 0
+	var anuncio = ATO_ANUNCIO if entrou else 0.0
 	if entrou and t < anuncio:
 		_ranking_anuncio(t / anuncio)
 		return
 
-	var tabela := t - anuncio
-	var destaque := clampf((tabela - ATO_TABELA) / ATO_ASSENTA, 0.0, 1.0)
-	var celebracao := RankingCelebration.para(posicao_no_ranking)
+	var tabela = t - anuncio
+	var destaque = clamp((tabela - ATO_TABELA) / ATO_ASSENTA, 0.0, 1.0)
+	var celebracao = RankingCelebration.para(posicao_no_ranking)
 	_ranking_cabecalho(entrou, celebracao, tabela)
 
 	# A janela já chega rolada para a vizinhança da posição conquistada,
 	# com a linha dela na quinta posição visível (do 1º ao 5º lugar a
 	# tabela aparece desde o topo).
-	var ocupadas := mini(ranking.size(), RANKING_TAMANHO)
-	var foco := clampi(posicao_no_ranking - 5, 0, maxi(ocupadas - LINHAS_VISIVEIS, 0))
-	var offset := float(foco) * LINHA_ALTURA
+	var ocupadas = int(min(ranking.size(), RANKING_TAMANHO))
+	var foco = int(clamp(posicao_no_ranking - 5, 0, int(max(ocupadas - LINHAS_VISIVEIS, 0))))
+	var offset = float(foco) * LINHA_ALTURA
 	for i in range(ocupadas):
-		var y := LISTA_TOPO + float(i) * LINHA_ALTURA - offset
+		var y = LISTA_TOPO + float(i) * LINHA_ALTURA - offset
 		if y < LISTA_RECORTE_TOPO or y + LINHA_ALTURA - 18.0 > LISTA_RECORTE_BASE:
 			continue
-		var atraso := float(i - foco) * LINHA_CASCATA
-		var entrada := clampf((tabela - atraso) / LINHA_ENTRADA, 0.0, 1.0)
+		var atraso = float(i - foco) * LINHA_CASCATA
+		var entrada = clamp((tabela - atraso) / LINHA_ENTRADA, 0.0, 1.0)
 		if entrada <= 0.0:
 			continue
-		var do_jogador := posicao_no_ranking == i + 1
+		var do_jogador = posicao_no_ranking == i + 1
 		_ranking_linha(i, y, entrada, do_jogador, destaque if do_jogador else 0.0)
 	_ranking_rodape()
 
 ## O cabeçalho: título, faixa da colocação e o fio.
 func _ranking_cabecalho(entrou: bool, celebracao: Dictionary, tabela: float) -> void:
-	var chegada := _suave(tabela / 0.30)
-	var a := chegada
-	_texto_arcade("TOP 20", 206.0 - (1.0 - chegada) * 16.0, 104, Color(Paleta.CIANO, a), LARGURA_UTIL)
-	draw_rect(Rect2(MARGEM + 40.0, 236.0, LARGURA_UTIL - 80.0, 3.0), Color(Paleta.CIANO, 0.5 * a))
+	var chegada = _suave(tabela / 0.30)
+	var a = chegada
+	_texto_arcade("TOP 20", 206.0 - (1.0 - chegada) * 16.0, 104, Compat.cor(Paleta.CIANO, a), LARGURA_UTIL)
+	draw_rect(Rect2(MARGEM + 40.0, 236.0, LARGURA_UTIL - 80.0, 3.0), Compat.cor(Paleta.CIANO, 0.5 * a))
 	if not entrou:
-		var recado := "TENTE SUPERAR ESSAS MARCAS"
+		var recado = "TENTE SUPERAR ESSAS MARCAS"
 		if result_score < RankingStore.MINIMO:
 			recado = "SÓ ENTRA QUEM FAZ %d PONTOS OU MAIS" % RankingStore.MINIMO
-		_texto_cabendo(recado, 296.0, 34, Color(Paleta.TINTA_FRACA, a), LARGURA_UTIL)
+		_texto_cabendo(recado, 296.0, 34, Compat.cor(Paleta.TINTA_FRACA, a), LARGURA_UTIL)
 		return
 	var cor: Color = celebracao.get("cor", Paleta.AMBAR)
-	var faixa := Rect2(MARGEM + 150.0, 258.0, LARGURA_UTIL - 300.0, 56.0)
-	_placa(faixa, 12.0, Color("10081e", 0.92 * a))
-	draw_rect(faixa, Color(cor, 0.85 * a), false, 2.0)
-	draw_rect(Rect2(faixa.position, Vector2(7.0, faixa.size.y)), Color(cor, a))
+	var faixa = Rect2(MARGEM + 150.0, 258.0, LARGURA_UTIL - 300.0, 56.0)
+	_placa(faixa, 12.0, Compat.cor("10081e", 0.92 * a))
+	draw_rect(faixa, Compat.cor(cor, 0.85 * a), false, 2.0)
+	draw_rect(Rect2(faixa.position, Vector2(7.0, faixa.size.y)), Compat.cor(cor, a))
 	_texto(
 		str(celebracao.get("subtitulo", "%dº LUGAR" % posicao_no_ranking)),
-		faixa.position.y + 38.0, 30, Color(cor, a),
-		HORIZONTAL_ALIGNMENT_CENTER, faixa.position.x, faixa.size.x
+		faixa.position.y + 38.0, 30, Compat.cor(cor, a),
+		Compat.CENTRO, faixa.position.x, faixa.size.x
 	)
 
 ## "23/09 • 14:32" a partir do `created_at` gravado (ISO do sistema).
@@ -6439,65 +6420,65 @@ static func _data_curta(iso: String) -> String:
 ## alcançado (na cor do nível) e quando ela foi feita. "JOGADOR" em todas
 ## as linhas não dizia nada.
 func _ranking_linha(i: int, y: float, entrada: float, e_do_jogador: bool, destaque := 0.0) -> void:
-	var vazia := i >= ranking.size()
-	var posicao := i + 1
-	var cor := _cor_da_posicao(posicao)
-	var passo := _suave(entrada)
-	var tinta := passo
-	var card := Rect2(78.0 - (1.0 - passo) * LINHA_DESLIZE, y, 924.0, LINHA_ALTURA - 16.0)
+	var vazia = i >= ranking.size()
+	var posicao = i + 1
+	var cor = _cor_da_posicao(posicao)
+	var passo = _suave(entrada)
+	var tinta = passo
+	var card = Rect2(78.0 - (1.0 - passo) * LINHA_DESLIZE, y, 924.0, LINHA_ALTURA - 16.0)
 
 	if vazia:
 		# Vaga sem ninguém não vira ladrilho: a tabela termina onde
 		# terminam os nomes.
 		return
-		_placa(card, 10.0, Color("0f081a", tinta * 0.85))
-		draw_rect(card, Color("291846", tinta * 0.8), false, 1.5)
-		_texto("%02d" % posicao, y + 66.0, 34, Color(Paleta.TINTA_LEVE, tinta), HORIZONTAL_ALIGNMENT_CENTER, card.position.x + 24.0, 82.0)
-		_texto("VAGA ABERTA", y + 64.0, 26, Color(Paleta.TINTA_FRACA, tinta * 0.8), HORIZONTAL_ALIGNMENT_LEFT, card.position.x + 232.0)
+		_placa(card, 10.0, Compat.cor("0f081a", tinta * 0.85))
+		draw_rect(card, Compat.cor("291846", tinta * 0.8), false, 1.5)
+		_texto("%02d" % posicao, y + 66.0, 34, Compat.cor(Paleta.TINTA_LEVE, tinta), Compat.CENTRO, card.position.x + 24.0, 82.0)
+		_texto("VAGA ABERTA", y + 64.0, 26, Compat.cor(Paleta.TINTA_FRACA, tinta * 0.8), Compat.ESQUERDA, card.position.x + 232.0)
 		return
 
-	var alta := posicao <= 3
-	var nota := RankingStore.score_at(ranking, i)
-	var fundo := Color("251443") if alta else Color("170c29")
+	var alta = posicao <= 3
+	var nota = RankingStore.score_at(ranking, i)
+	var fundo = Color("251443") if alta else Color("170c29")
 	if e_do_jogador:
 		# A linha de quem jogou ACENDE no lugar: brilho que chega e fica
 		# num tom quente, e um halo que só pulsa uma vez.
-		fundo = fundo.lerp(Color("b2106c"), destaque)
+		fundo = fundo.linear_interpolate(Color("b2106c"), destaque)
 		if destaque > 0.0 and destaque < 1.0:
-			var halo := sin(destaque * PI)
-			_placa(card.grow(6.0 + 10.0 * halo), 16.0, Color(Paleta.AMBAR, 0.16 * halo))
-	_placa(card, 10.0, Color(fundo, tinta))
-	var borda := 3.0 if alta or e_do_jogador else 1.5
-	var borda_cor := Paleta.AMBAR if e_do_jogador and destaque > 0.0 else cor
-	draw_rect(card, Color(borda_cor, tinta * (0.95 if alta or e_do_jogador else 0.45)), false, borda)
-	draw_rect(Rect2(card.position, Vector2(8.0, card.size.y)), Color(cor, tinta))
+			var halo = sin(destaque * PI)
+			_placa(card.grow(6.0 + 10.0 * halo), 16.0, Compat.cor(Paleta.AMBAR, 0.16 * halo))
+	_placa(card, 10.0, Compat.cor(fundo, tinta))
+	var borda = 3.0 if alta or e_do_jogador else 1.5
+	var borda_cor = Paleta.AMBAR if e_do_jogador and destaque > 0.0 else cor
+	draw_rect(card, Compat.cor(borda_cor, tinta * (0.95 if alta or e_do_jogador else 0.45)), false, borda)
+	draw_rect(Rect2(card.position, Vector2(8.0, card.size.y)), Compat.cor(cor, tinta))
 
 	# A ficha do número: no pódio é a medalha cheia; abaixo, neutra.
-	var ficha := Rect2(card.position.x + 24.0, y + 14.0, 82.0, 82.0)
-	_placa(ficha, 10.0, Color(cor, tinta) if alta else Color("0c0517", tinta * 0.92))
+	var ficha = Rect2(card.position.x + 24.0, y + 14.0, 82.0, 82.0)
+	_placa(ficha, 10.0, Compat.cor(cor, tinta) if alta else Compat.cor("0c0517", tinta * 0.92))
 	if not alta:
-		draw_rect(ficha, Color(cor, tinta * 0.35), false, 1.5)
+		draw_rect(ficha, Compat.cor(cor, tinta * 0.35), false, 1.5)
 	_texto(
 		"%02d" % posicao, ficha.position.y + 56.0, 36,
-		Color(Color("0f071e") if alta else cor, tinta),
-		HORIZONTAL_ALIGNMENT_CENTER, ficha.position.x, ficha.size.x
+		Compat.cor(Color("0f071e") if alta else cor, tinta),
+		Compat.CENTRO, ficha.position.x, ficha.size.x
 	)
 	_draw_player_photo(Rect2(card.position + Vector2(126.0, 14.0), Vector2(82.0, 82.0)), str(ranking[i].get("photo_path", "")), tinta)
 
-	var x_texto := card.position.x + 232.0
-	var nivel := ScoreTier.nome_de(nota)
-	var cor_nivel := Paleta.texto_sobre(fundo, ScoreTier.cor_de(nota))
+	var x_texto = card.position.x + 232.0
+	var nivel = ScoreTier.nome_de(nota)
+	var cor_nivel = Paleta.texto_sobre(fundo, ScoreTier.cor_de(nota))
 	if e_do_jogador:
-		_texto("VOCÊ", y + 50.0, 31, Color(Paleta.CREME, tinta), HORIZONTAL_ALIGNMENT_LEFT, x_texto, 300.0)
-		_texto(nivel, y + 84.0, 20, Color(cor_nivel, tinta), HORIZONTAL_ALIGNMENT_LEFT, x_texto, 320.0)
+		_texto("VOCÊ", y + 50.0, 31, Compat.cor(Paleta.CREME, tinta), Compat.ESQUERDA, x_texto, 300.0)
+		_texto(nivel, y + 84.0, 20, Compat.cor(cor_nivel, tinta), Compat.ESQUERDA, x_texto, 320.0)
 	else:
-		_texto(nivel, y + 50.0, 25, Color(cor_nivel, tinta), HORIZONTAL_ALIGNMENT_LEFT, x_texto, 320.0)
-		var quando := _data_curta(str(ranking[i].get("created_at", "")))
-		if not quando.is_empty():
-			_texto(quando, y + 84.0, 20, Color(Paleta.TINTA_LEVE, tinta), HORIZONTAL_ALIGNMENT_LEFT, x_texto, 320.0)
+		_texto(nivel, y + 50.0, 25, Compat.cor(cor_nivel, tinta), Compat.ESQUERDA, x_texto, 320.0)
+		var quando = _data_curta(str(ranking[i].get("created_at", "")))
+		if not quando.empty():
+			_texto(quando, y + 84.0, 20, Compat.cor(Paleta.TINTA_LEVE, tinta), Compat.ESQUERDA, x_texto, 320.0)
 	_texto(
 		"%04d" % nota, y + 78.0, 56 if (alta or e_do_jogador) else 48,
-		Color(Paleta.TINTA, tinta), HORIZONTAL_ALIGNMENT_RIGHT,
+		Compat.cor(Paleta.TINTA, tinta), Compat.DIREITA,
 		card.position.x, card.size.x - 32.0
 	)
 
@@ -6517,52 +6498,52 @@ func _ranking_rodape() -> void:
 func _passo_com_batida(t: float) -> float:
 	if t >= 1.0:
 		return 1.0
-	var p := t - 1.0
+	var p = t - 1.0
 	return p * p * ((1.6 + 1.0) * p + 1.6) + 1.0
 
 ## ATO 1 — O ANÚNCIO: o selo com o número da posição, sozinho na tela.
 func _ranking_anuncio(t: float) -> void:
-	var centro := Vector2(540.0, 810.0)
-	var celebracao := RankingCelebration.para(posicao_no_ranking)
-	var abre := clampf(t * 3.0, 0.0, 1.0)
+	var centro = Vector2(540.0, 810.0)
+	var celebracao = RankingCelebration.para(posicao_no_ranking)
+	var abre = clamp(t * 3.0, 0.0, 1.0)
 	# O SELO DESPENCA: nasce grande e bate no lugar, como um carimbo.
-	var escala := lerpf(2.4, 1.0, _suave(abre)) * (1.0 + 0.08 * sin(clampf((t * 3.0 - 1.0) * 3.0, 0.0, 1.0) * PI))
+	var escala = lerp(2.4, 1.0, _suave(abre)) * (1.0 + 0.08 * sin(clamp((t * 3.0 - 1.0) * 3.0, 0.0, 1.0) * PI))
 	var cor_do_anuncio: Color = celebracao.get("cor", Paleta.AMBAR)
 	# O clarão da batida e as duas ondas de choque saindo do selo.
-	var batida := clampf(t * 3.0 - 1.0, 0.0, 1.0)
+	var batida = clamp(t * 3.0 - 1.0, 0.0, 1.0)
 	if batida > 0.0:
-		draw_rect(Rect2(Vector2.ZERO, TELA), Color(Color.WHITE, 0.55 * (1.0 - batida) * (1.0 - batida)))
+		draw_rect(Rect2(Vector2.ZERO, TELA), Compat.cor(Color.white, 0.55 * (1.0 - batida) * (1.0 - batida)))
 		for onda in range(2):
-			var o := clampf(batida * 1.3 - float(onda) * 0.25, 0.0, 1.0)
+			var o = clamp(batida * 1.3 - float(onda) * 0.25, 0.0, 1.0)
 			if o > 0.0 and o < 1.0:
-				var r_onda := lerpf(280.0, 900.0, _suave(o))
-				Traco.arco(self, centro, r_onda, Color(cor_do_anuncio, 0.7 * (1.0 - o)), lerpf(26.0, 4.0, o))
+				var r_onda = lerp(280.0, 900.0, _suave(o))
+				Traco.arco(self, centro, r_onda, Compat.cor(cor_do_anuncio, 0.7 * (1.0 - o)), lerp(26.0, 4.0, o))
 	# O leque de luz girando atrás, longo e alternado.
-	var feixes := 24
+	var feixes = 24
 	for f in range(feixes):
-		var ang_f := float(f) * TAU / float(feixes) - animation_time * 0.5
-		var comprimento := lerpf(0.0, 900.0, _suave(abre)) * (1.0 if f % 2 == 0 else 0.6)
+		var ang_f = float(f) * TAU / float(feixes) - animation_time * 0.5
+		var comprimento = lerp(0.0, 900.0, _suave(abre)) * (1.0 if f % 2 == 0 else 0.6)
 		if comprimento < 4.0:
 			continue  # raio sem comprimento é um triângulo achatado
-		var ponta := centro + Vector2.from_angle(ang_f) * comprimento
-		var lado_f := Vector2.from_angle(ang_f + PI * 0.5) * 34.0 * (1.0 if f % 2 == 0 else 0.5)
-		draw_colored_polygon(PackedVector2Array([centro, ponta + lado_f, ponta - lado_f]), Color(cor_do_anuncio, 0.10 * abre))
-	var raio := float(celebracao.get("raio_selo", 280.0)) * escala
+		var ponta = centro + polar2cartesian(1.0, ang_f) * comprimento
+		var lado_f = polar2cartesian(1.0, ang_f + PI * 0.5) * 34.0 * (1.0 if f % 2 == 0 else 0.5)
+		draw_colored_polygon(PoolVector2Array([centro, ponta + lado_f, ponta - lado_f]), Compat.cor(cor_do_anuncio, 0.10 * abre))
+	var raio = float(celebracao.get("raio_selo", 280.0)) * escala
 	var cor_selo: Color = celebracao.get("cor", Paleta.AMBAR)
 
-	var quantidade_raios := int(celebracao.get("raios", 12))
+	var quantidade_raios = int(celebracao.get("raios", 12))
 	for i in range(quantidade_raios):
-		var ang := float(i) * TAU / float(quantidade_raios) + animation_time * 0.35
-		var perto := raio * 1.12
+		var ang = float(i) * TAU / float(quantidade_raios) + animation_time * 0.35
+		var perto = raio * 1.12
 		draw_line(
-			centro + Vector2.from_angle(ang) * perto,
-			centro + Vector2.from_angle(ang) * (perto + lerpf(30.0, 150.0, abre)),
-			Color(cor_selo, 0.26 * abre), 6.0 if posicao_no_ranking <= 3 else 4.0, true
+			centro + polar2cartesian(1.0, ang) * perto,
+			centro + polar2cartesian(1.0, ang) * (perto + lerp(30.0, 150.0, abre)),
+			Compat.cor(cor_selo, 0.26 * abre), 6.0 if posicao_no_ranking <= 3 else 4.0, true
 		)
-	draw_circle(centro, raio, Color(Paleta.VERMELHO, 0.92), true, -1.0, true)
+	Compat.circulo(self, centro, raio, Compat.cor(Paleta.VERMELHO, 0.92), true, -1.0, true)
 	Traco.arco(self, centro, raio, cor_selo, 10.0 if posicao_no_ranking == 1 else 7.0)
 	for anel in range(int(celebracao.get("aneis", 1))):
-		Traco.arco(self, centro, raio * (0.86 - float(anel) * 0.075), Color(Paleta.CREME, 0.40 - float(anel) * 0.09), 3.0)
+		Traco.arco(self, centro, raio * (0.86 - float(anel) * 0.075), Compat.cor(Paleta.CREME, 0.40 - float(anel) * 0.09), 3.0)
 	if posicao_no_ranking == 1:
 		Icones.cinturao(self, centro + Vector2(0.0, -raio * 0.57), raio * 0.23, cor_selo)
 	else:
@@ -6570,18 +6551,18 @@ func _ranking_anuncio(t: float) -> void:
 	# Todos os textos usam uma caixa centrada no próprio selo. Antes a
 	# caixa começava em x=230 e terminava fora da tela; por isso palavras
 	# escapavam do círculo e a composição parecia desmontada.
-	var texto_largura := raio * 1.52
-	var texto_x := centro.x - texto_largura * 0.5
+	var texto_largura = raio * 1.52
+	var texto_x = centro.x - texto_largura * 0.5
 	_texto_arcade(str(celebracao.get("titulo", "VOCÊ ENTROU")), centro.y - raio * 0.20, 62, Paleta.CREME, texto_largura, texto_x)
 	# O número ocupa o centro óptico e não a borda inferior.
 	_texto_arcade("%dº" % posicao_no_ranking, centro.y + raio * 0.25, 126, Paleta.CREME, texto_largura, texto_x)
 	_texto_arcade(str(celebracao.get("subtitulo", "NO TOP 20")), centro.y + raio * 0.56, 43, cor_selo, texto_largura, texto_x)
 
 # ---------------------------------------------------------------- central
-const CENTRAL_FUNDO := Color("1c0f31")
+const CENTRAL_FUNDO = Color("1c0f31")
 
 func _draw_central() -> void:
-	var caixa := Rect2(40, 96, 1000, 1790)
+	var caixa = Rect2(40, 96, 1000, 1790)
 	_placa(caixa, 22.0, Paleta.CARTAO_BORDA)
 	_placa(caixa.grow(-5.0), 19.0, CENTRAL_FUNDO)
 	# A AUDITORIA COMEÇA AQUI, e não antes.
@@ -6600,7 +6581,7 @@ func _draw_central() -> void:
 	# O Godot não recorta o que um `_draw` desenha, então a página inteira
 	# é desenhada e as duas faixas — cabeçalho e rodapé — são REPINTADAS
 	# por cima logo depois. O efeito é o de uma janela com rolagem, sem
-	# precisar de um SubViewport só para isso.
+	# precisar de um Viewport só para isso.
 	central_fundo = 0.0
 	draw_set_transform(_deslocamento - Vector2(0.0, central_rolagem), 0.0, Vector2.ONE)
 	match central_pagina:
@@ -6623,8 +6604,8 @@ func _draw_central() -> void:
 	_letreiro("CENTRAL TÉCNICA", Vector2(110.0, 204.0), 44, Paleta.CREME)
 	# A VERSÃO À VISTA: é o primeiro número a conferir quando algo não bate
 	# com o que foi prometido — foto da Central já diz qual APK está rodando.
-	_texto("VERSÃO %d" % Versao.NUMERO, 240.0, 20, Paleta.AMBAR, HORIZONTAL_ALIGNMENT_RIGHT, 110.0, 860.0)
-	_texto("Configuração, diagnóstico e calibração", 240.0, 18, Paleta.TINTA_FRACA, HORIZONTAL_ALIGNMENT_LEFT, 110.0)
+	_texto("VERSÃO %d" % Versao.NUMERO, 240.0, 20, Paleta.AMBAR, Compat.DIREITA, 110.0, 860.0)
+	_texto("Configuração, diagnóstico e calibração", 240.0, 18, Paleta.TINTA_FRACA, Compat.ESQUERDA, 110.0)
 	_botao(BOTOES_SIMPLES["fechar"], "×", false, Paleta.VERMELHO, 32)
 	_abas_da_central()
 	_barra_de_rolagem()
@@ -6644,23 +6625,23 @@ func _draw_central() -> void:
 ## que faz falta — o diagnóstico da câmera, o saldo, as ações do
 ## firmware. Some sozinha quando a página cabe inteira.
 func _barra_de_rolagem() -> void:
-	var maxima := _rolagem_maxima()
+	var maxima = _rolagem_maxima()
 	if maxima <= 1.0:
 		return
-	var trilho := Rect2(1014, CENTRAL_TOPO + 6.0, 8, CENTRAL_JANELA - 12.0)
-	draw_rect(trilho, Color(Paleta.CREME, 0.10))
-	var proporcao := CENTRAL_JANELA / (CENTRAL_JANELA + maxima)
-	var altura := maxf(60.0, trilho.size.y * proporcao)
-	var topo := trilho.position.y + (trilho.size.y - altura) * (central_rolagem / maxima)
-	draw_rect(Rect2(trilho.position.x, topo, trilho.size.x, altura), Color(Paleta.AMBAR, 0.85))
+	var trilho = Rect2(1014, CENTRAL_TOPO + 6.0, 8, CENTRAL_JANELA - 12.0)
+	draw_rect(trilho, Compat.cor(Paleta.CREME, 0.10))
+	var proporcao = CENTRAL_JANELA / (CENTRAL_JANELA + maxima)
+	var altura = max(60.0, trilho.size.y * proporcao)
+	var topo = trilho.position.y + (trilho.size.y - altura) * (central_rolagem / maxima)
+	draw_rect(Rect2(trilho.position.x, topo, trilho.size.x, altura), Compat.cor(Paleta.AMBAR, 0.85))
 
 func _abas_da_central() -> void:
 	for i in range(PAGINAS.size()):
-		var r := Rect2(
+		var r = Rect2(
 			ABA_RECT.position + Vector2(float(i) * ABA_LARGURA, 0.0),
 			Vector2(ABA_LARGURA - 6.0, ABA_RECT.size.y)
 		)
-		var atual := i == central_pagina
+		var atual = i == central_pagina
 		_cartao(r, Paleta.AMBAR if atual else Color("21123b"), Paleta.CARTAO_BORDA, 1.0, 2.0)
 		# `_texto_cabendo`, e não `_texto`: com cinco abas em 920 px o
 		# rótulo mais longo não cabe em corpo 20, e letra transbordando
@@ -6697,7 +6678,7 @@ func _central_operacao() -> void:
 	_ficha_do_botao(botao_credito, "CRÉDITO", Rect2(570, 706, 400, 150), contador_credito)
 
 	_secao(Rect2(80, 920, 920, 225), "PERSONAGEM DA ARENA", Paleta.VERDE)
-	var avancado := arena != null and arena.modelo_avancado()
+	var avancado = arena != null and arena.modelo_avancado()
 	_texto(
 		"LUTADOR HD • NOVE POSES" if avancado else "FALTAM POSES NA FOLHA",
 		1000.0, 24, Paleta.VERDE if avancado else Paleta.AMBAR
@@ -6725,23 +6706,23 @@ func _central_operacao() -> void:
 ## placa, o índice ou o jogo.
 func _ficha_do_botao(mapa: Dictionary, titulo: String, rect: Rect2, contador: int) -> void:
 	_cartao(rect, Color("170c29"), Paleta.CARTAO_BORDA, 1.0, 2.0)
-	_texto(titulo, rect.position.y + 34.0, 20, Paleta.CREME, HORIZONTAL_ALIGNMENT_CENTER, rect.position.x, rect.size.x)
-	var indice := int(mapa.get("index", -1))
+	_texto(titulo, rect.position.y + 34.0, 20, Paleta.CREME, Compat.CENTRO, rect.position.x, rect.size.x)
+	var indice = int(mapa.get("index", -1))
 	_texto(
 		"BOTÃO %d" % indice if indice >= 0 else "NÃO MAPEADO",
 		rect.position.y + 68.0, 18,
 		Paleta.AMBAR if indice >= 0 else Paleta.VERMELHO,
-		HORIZONTAL_ALIGNMENT_CENTER, rect.position.x, rect.size.x
+		Compat.CENTRO, rect.position.x, rect.size.x
 	)
-	var nome := str(mapa.get("nome", ""))
+	var nome = str(mapa.get("nome", ""))
 	_texto(
-		nome if not nome.is_empty() else "controle não identificado",
+		nome if not nome.empty() else "controle não identificado",
 		rect.position.y + 98.0, 14, Paleta.TINTA_LEVE,
-		HORIZONTAL_ALIGNMENT_CENTER, rect.position.x + 8.0, rect.size.x - 16.0
+		Compat.CENTRO, rect.position.x + 8.0, rect.size.x - 16.0
 	)
 	_texto(
 		"apertado %d ×" % contador, rect.position.y + 128.0, 16, Paleta.VERDE,
-		HORIZONTAL_ALIGNMENT_CENTER, rect.position.x, rect.size.x
+		Compat.CENTRO, rect.position.x, rect.size.x
 	)
 
 # ------------------------------------------------------------- GOLPE
@@ -6806,8 +6787,8 @@ func _central_golpe() -> void:
 		auto_escala.ligada, Paleta.VERDE, 18
 	)
 	_botao(BOTOES_SIMPLES["esquecer_escala"], "ESQUECER E RECOMEÇAR", false, Paleta.ROXO, 18)
-	var memoria := auto_escala.quantos()
-	var estado := "aprendendo — %d socos na memória (precisa de %d)" % [
+	var memoria = auto_escala.quantos()
+	var estado = "aprendendo — %d socos na memória (precisa de %d)" % [
 		memoria, AutoEscala.MINIMO_PARA_VALER
 	]
 	if not auto_escala.ligada:
@@ -6815,8 +6796,8 @@ func _central_golpe() -> void:
 	elif auto_escala.pronta():
 		estado = "ativo — %d socos na memória, ajustando aos poucos" % memoria
 	_texto(estado, 968.0, 16, Paleta.CREME if auto_escala.pronta() else Paleta.TINTA_FRACA)
-	var destino := auto_escala.alvo()
-	if destino.is_empty():
+	var destino = auto_escala.alvo()
+	if destino.empty():
 		_texto(
 			"só os 30%% mais fortes passam de %d pontos, em qualquer gabinete" % (
 				ScoreCurve.PONTOS_DE_REFERENCIA
@@ -6847,7 +6828,7 @@ func _central_golpe() -> void:
 	_seletor_porta_refinado()
 	var nome_polaridade: String = str({"A":"AUTO", "H":"ALTO", "L":"BAIXO"}.get(sensor_eixo, "AUTO"))
 	_botao(BOTOES_SIMPLES["eixo"], "SINAL  %s" % nome_polaridade, false, Paleta.ROXO, 20)
-	_texto("POLARIDADE DO BLOQUEIO", 1562.0, 15, Paleta.TINTA_FRACA, HORIZONTAL_ALIGNMENT_CENTER, BOTOES_SIMPLES["eixo"].position.x, BOTOES_SIMPLES["eixo"].size.x)
+	_texto("POLARIDADE DO BLOQUEIO", 1562.0, 15, Paleta.TINTA_FRACA, Compat.CENTRO, BOTOES_SIMPLES["eixo"].position.x, BOTOES_SIMPLES["eixo"].size.x)
 	_stepper("raio", "%.0f mm" % (sensor_raio * 1000.0), "LARGURA DA PALHETA", Paleta.CIANO)
 	# O PULSO MÍNIMO PERDEU O − E O +, E ISSO É O CONSERTO.
 	#
@@ -6859,21 +6840,21 @@ func _central_golpe() -> void:
 	# calibrado — e ao lado vem a única frase que o torna conferível a
 	# olho: até que velocidade esta montagem enxerga, e se a régua cabe
 	# dentro disso.
-	var janela := ArduinoProtocol.janela_medivel(sensor_raio, sensor_pulso_ms)
+	var janela = ArduinoProtocol.janela_medivel(sensor_raio, sensor_pulso_ms)
 	# OS DOIS SUBIRAM VINTE PIXELS. A legenda "LARGURA DA PALHETA" e a
 	# frase que confere a janela do sensor estavam na mesma faixa de
 	# altura, uma centrada na coluna da esquerda e a outra na largura
 	# inteira: elas se cruzavam no meio. Subindo o par de visores, a
 	# frase ganha a linha inteira para ela.
-	var caixa_pulso := Rect2(570, 1566, 400, LADO_BOTAO)
+	var caixa_pulso = Rect2(570, 1566, 400, LADO_BOTAO)
 	_cartao(caixa_pulso, Color("120920"), Paleta.CARTAO_BORDA, 1.0, 1.5)
 	_texto(
 		"%.2f ms" % sensor_pulso_ms, caixa_pulso.position.y + 42.0, 26, Paleta.CIANO,
-		HORIZONTAL_ALIGNMENT_CENTER, caixa_pulso.position.x, caixa_pulso.size.x
+		Compat.CENTRO, caixa_pulso.position.x, caixa_pulso.size.x
 	)
 	_texto(
 		"PULSO MÍNIMO — CALCULADO", caixa_pulso.end.y + 20.0, 15, Paleta.TINTA_FRACA,
-		HORIZONTAL_ALIGNMENT_CENTER, caixa_pulso.position.x, caixa_pulso.size.x
+		Compat.CENTRO, caixa_pulso.position.x, caixa_pulso.size.x
 	)
 	_texto(
 		"o sensor mede de %.2f a %.1f m/s  •  a régua vai até %.1f" % [
@@ -6881,7 +6862,7 @@ func _central_golpe() -> void:
 		],
 		1700.0, 15,
 		Paleta.VERMELHO if janela.y < hit_max_speed else Paleta.TINTA_LEVE,
-		HORIZONTAL_ALIGNMENT_CENTER, 120.0, 840.0
+		Compat.CENTRO, 120.0, 840.0
 	)
 
 	_secao(Rect2(80, 1734, 920, 124), "AÇÕES NO FIRMWARE", Paleta.VERDE)
@@ -6890,12 +6871,12 @@ func _central_golpe() -> void:
 
 	_texto(
 		telemetria if telemetria != "" else "sem telemetria ainda",
-		1890.0, 15, Paleta.TINTA_FRACA, HORIZONTAL_ALIGNMENT_LEFT, 120.0, 860.0
+		1890.0, 15, Paleta.TINTA_FRACA, Compat.ESQUERDA, 120.0, 860.0
 	)
-	if not saturacao_recente.is_empty():
+	if not saturacao_recente.empty():
 		_texto(
 			"SATURAÇÃO DO SENSOR: %s" % saturacao_recente,
-			1922.0, 15, Paleta.VERMELHO, HORIZONTAL_ALIGNMENT_LEFT, 120.0, 860.0
+			1922.0, 15, Paleta.VERMELHO, Compat.ESQUERDA, 120.0, 860.0
 		)
 
 ## A ÚLTIMA BATIDA, EM VELOCIDADE E EM PONTOS, LADO A LADO.
@@ -6907,43 +6888,43 @@ func _central_golpe() -> void:
 ## ser "o pessoal bate fraco" e passa a ser "o máximo da régua está longe
 ## demais do que esta máquina mede", que é o que de fato acontecia.
 func _leitura_do_ultimo_soco(y: float) -> void:
-	var caixa := Rect2(110, y - 26.0, 860, 62)
+	var caixa = Rect2(110, y - 26.0, 860, 62)
 	_cartao(caixa, Color("0d0617"), Paleta.CARTAO_BORDA, 1.0, 1.5)
 	if ultima_velocidade <= 0.0:
 		_texto(
 			"nenhum soco ainda — bata uma vez, ou use TESTAR SENSOR",
-			y + 12.0, 16, Paleta.TINTA_LEVE, HORIZONTAL_ALIGNMENT_CENTER, caixa.position.x, caixa.size.x
+			y + 12.0, 16, Paleta.TINTA_LEVE, Compat.CENTRO, caixa.position.x, caixa.size.x
 		)
 		return
 	_texto(
 		"ÚLTIMO SOCO", y - 2.0, 14, Paleta.TINTA_FRACA,
-		HORIZONTAL_ALIGNMENT_LEFT, caixa.position.x + 18.0, 200.0
+		Compat.ESQUERDA, caixa.position.x + 18.0, 200.0
 	)
 	_texto(
 		"%.2f m/s" % ultima_velocidade, y + 24.0, 26, Paleta.CIANO,
-		HORIZONTAL_ALIGNMENT_LEFT, caixa.position.x + 18.0, 240.0
+		Compat.ESQUERDA, caixa.position.x + 18.0, 240.0
 	)
 	_texto(
 		"%04d" % ultima_nota, y + 24.0, 30, ScoreTier.cor_de(ultima_nota),
-		HORIZONTAL_ALIGNMENT_RIGHT, caixa.position.x, caixa.size.x - 20.0
+		Compat.DIREITA, caixa.position.x, caixa.size.x - 20.0
 	)
 	_texto(
 		ScoreTier.nome_de(ultima_nota), y - 2.0, 14, Paleta.TINTA_FRACA,
-		HORIZONTAL_ALIGNMENT_RIGHT, caixa.position.x, caixa.size.x - 20.0
+		Compat.DIREITA, caixa.position.x, caixa.size.x - 20.0
 	)
 	# ONDE AQUELE SOCO CAIU NA RÉGUA. É a linha que denuncia a escala.
-	var trilho := Rect2(caixa.position.x + 300.0, y + 6.0, 260.0, 10.0)
+	var trilho = Rect2(caixa.position.x + 300.0, y + 6.0, 260.0, 10.0)
 	draw_rect(trilho, Color("271743"))
-	var fracao := ScoreCurve.normalized(
+	var fracao = ScoreCurve.normalized(
 		ultima_velocidade, hit_min_speed, hit_max_speed, score_dead_zone
 	)
 	draw_rect(
-		Rect2(trilho.position, Vector2(maxf(trilho.size.x * fracao, 3.0), trilho.size.y)),
+		Rect2(trilho.position, Vector2(max(trilho.size.x * fracao, 3.0), trilho.size.y)),
 		ScoreTier.cor_de(ultima_nota)
 	)
 	_texto(
 		"%d%% da régua" % int(round(fracao * 100.0)), y + 34.0, 13, Paleta.TINTA_LEVE,
-		HORIZONTAL_ALIGNMENT_CENTER, trilho.position.x, trilho.size.x
+		Compat.CENTRO, trilho.position.x, trilho.size.x
 	)
 
 ## A CURVA DESENHADA, do jeito que ela vai pagar.
@@ -6953,22 +6934,22 @@ func _leitura_do_ultimo_soco(y: float) -> void:
 ## salvar, senão regula por tentativa e erro em cima da fila do salão.
 func _curva_desenhada(rect: Rect2) -> void:
 	_cartao(rect, Color("120920"), Paleta.CARTAO_BORDA, 1.0, 1.5)
-	var amostras := ScoreCurve.amostrar(
+	var amostras = ScoreCurve.amostrar(
 		hit_min_speed, hit_max_speed, score_contraste, score_dead_zone, 64, score_ref_speed
 	)
-	if amostras.is_empty():
+	if amostras.empty():
 		return
 	var v_max: float = (amostras[amostras.size() - 1] as Vector2).x
-	var pontos := PackedVector2Array()
+	var pontos = PoolVector2Array()
 	for a in amostras:
 		var p: Vector2 = a
 		pontos.append(Vector2(
-			rect.position.x + rect.size.x * clampf(p.x / maxf(v_max, 0.01), 0.0, 1.0),
-			rect.end.y - rect.size.y * clampf(p.y / float(GameDef.SCORE_MAX), 0.0, 1.0)
+			rect.position.x + rect.size.x * clamp(p.x / max(v_max, 0.01), 0.0, 1.0),
+			rect.end.y - rect.size.y * clamp(p.y / float(GameDef.SCORE_MAX), 0.0, 1.0)
 		))
 	draw_polyline(pontos, Paleta.AMBAR, 3.0, true)
-	_texto("0 m/s", rect.end.y + 20.0, 13, Paleta.TINTA_LEVE, HORIZONTAL_ALIGNMENT_LEFT, rect.position.x, rect.size.x)
-	_texto("%.0f m/s" % v_max, rect.end.y + 20.0, 13, Paleta.TINTA_LEVE, HORIZONTAL_ALIGNMENT_RIGHT, rect.position.x, rect.size.x)
+	_texto("0 m/s", rect.end.y + 20.0, 13, Paleta.TINTA_LEVE, Compat.ESQUERDA, rect.position.x, rect.size.x)
+	_texto("%.0f m/s" % v_max, rect.end.y + 20.0, 13, Paleta.TINTA_LEVE, Compat.DIREITA, rect.position.x, rect.size.x)
 
 # ------------------------------------------------------------ CÂMERA
 func _central_camera() -> void:
@@ -6989,7 +6970,7 @@ func _central_camera() -> void:
 		"FOTO AUTOMÁTICA",
 		false, Paleta.AMBAR, 15
 	)
-	var previa := Rect2(340, 556, 400, 220)
+	var previa = Rect2(340, 556, 400, 220)
 	_cartao(previa, Color("120920"), Paleta.CARTAO_BORDA, 1.0, 2.0)
 	if camera_service != null and camera_service.estado == CameraService.Estado.EXAME:
 		# DURANTE O EXAME A PRÉVIA FICA VAZIA DE PROPÓSITO — a webcam é do
@@ -6999,7 +6980,7 @@ func _central_camera() -> void:
 		_carregando(previa.get_center(), 34.0, Paleta.CIANO)
 		_texto(
 			"EXAMINANDO — A CÂMERA VOLTA NO FIM", previa.end.y + 34.0, 17,
-			Paleta.CIANO, HORIZONTAL_ALIGNMENT_CENTER, previa.position.x - 100.0, previa.size.x + 200.0
+			Paleta.CIANO, Compat.CENTRO, previa.position.x - 100.0, previa.size.x + 200.0
 		)
 	elif foto_teste_texture != null and Time.get_ticks_msec() < foto_teste_ate_ms:
 		_draw_texture_cover(foto_teste_texture, previa, 1.0, camera_mirrored)
@@ -7007,7 +6988,7 @@ func _central_camera() -> void:
 		_draw_texture_cover(camera_service.preview_texture(), previa, 1.0, camera_mirrored)
 	else:
 		_texto("SEM IMAGEM", previa.position.y + previa.size.y * 0.5, 22, Paleta.TINTA_LEVE)
-	var cam_status := camera_service.status if camera_service != null else "SEM SERVIÇO"
+	var cam_status = camera_service.status if camera_service != null else "SEM SERVIÇO"
 	# DUAS FRASES, DUAS LINHAS. As duas eram desenhadas na MESMA linha de
 	# base — uma centrada e a outra à esquerda —, então elas se cruzavam
 	# no meio da tela e ninguém conseguia ler nenhuma das duas. É o tipo
@@ -7016,11 +6997,11 @@ func _central_camera() -> void:
 	if camera_service != null:
 		_texto(
 			camera_service.ficha_da_ponte(), 840.0, 16, Paleta.CIANO,
-			HORIZONTAL_ALIGNMENT_LEFT, 120.0, 860.0
+			Compat.ESQUERDA, 120.0, 860.0
 		)
 	# ---- o relatório, na tela, e não numa janela que abre atrás do jogo
 	_secao(Rect2(80, 866, 920, 620), "DIAGNÓSTICO DA CÂMERA", Paleta.AMBAR)
-	var ocupado := medico != null and medico.rodando
+	var ocupado = medico != null and medico.rodando
 	_botao(BOTOES_SIMPLES["diagnosticar"], "AGUARDE…" if ocupado else "DIAGNOSTICAR", ocupado, Paleta.CIANO, 18)
 	_botao(BOTOES_SIMPLES["instalar_camera"], "RESOLVER ACESSO", false, Paleta.VERDE, 18)
 	if ocupado:
@@ -7028,7 +7009,7 @@ func _central_camera() -> void:
 		# este anel, os dois minutos são indistinguíveis de um botão que
 		# não fez nada — que foi exatamente a queixa que trouxe até aqui.
 		_carregando(Vector2(540.0, 1010.0), 26.0, Paleta.CIANO)
-	if medico == null or medico.linhas.is_empty():
+	if medico == null or medico.linhas.empty():
 		_texto(
 			"Webcam USB/UVC aberta direto pelo plugin Android do jogo.",
 			1018.0, 15, Paleta.CIANO
@@ -7050,16 +7031,16 @@ func _central_camera() -> void:
 		# Trinta pixels por linha e a linha encolhe até caber: o relatório
 		# da ponte tem frases longas (USB, Camera2) e nenhuma pode invadir
 		# a de baixo nem sair da caixa. Cabem até catorze.
-		for i in range(mini(medico.linhas.size(), 14)):
-			var linha := str(medico.linhas[i])
+		for i in range(int(min(medico.linhas.size(), 14))):
+			var linha = str(medico.linhas[i])
 			# Aviso em vermelho, resposta comum em creme: quem olha de
 			# relance precisa achar o problema sem ler tudo.
-			var grave := linha == linha.to_upper() and linha.length() > 12
+			var grave = linha == linha.to_upper() and linha.length() > 12
 			_texto_cabendo(
 				linha, 1010.0 + float(i) * 30.0, 16,
 				Paleta.VERMELHO if grave else Paleta.CREME, 860.0, 120.0
 			)
-	if medico != null and not medico.indices.is_empty():
+	if medico != null and not medico.indices.empty():
 		_texto(
 			"CÂMERAS ENCONTRADAS NOS ÍNDICES: %s" % _lista_de_indices(medico.indices),
 			1456.0, 17, Paleta.VERDE
@@ -7078,12 +7059,12 @@ func _central_dados() -> void:
 	# cartão, por cima da colocação — "1º" e "9999" no mesmo pixel nas
 	# cinco células. Medido pela auditoria de layout, não por acaso.
 	_lista_do_ranking(Rect2(110, 410, 860, 74))
-	var resumo := StatisticsStore.summary(statistics)
+	var resumo = StatisticsStore.summary(statistics)
 	_texto(
 		"Hoje %d  •  7 dias %d  •  média %04d  •  Top 5: %d" % [resumo["today"], resumo["last7"], resumo["average"], resumo["top5_entries"]],
-		522.0, 16, Paleta.TINTA_LEVE, HORIZONTAL_ALIGNMENT_LEFT, 120.0, 860.0
+		522.0, 16, Paleta.TINTA_LEVE, Compat.ESQUERDA, 120.0, 860.0
 	)
-	_texto("Recorde da casa: %04d" % _melhor(), 552.0, 18, Paleta.AMBAR, HORIZONTAL_ALIGNMENT_LEFT, 120.0, 860.0)
+	_texto("Recorde da casa: %04d" % _melhor(), 552.0, 18, Paleta.AMBAR, Compat.ESQUERDA, 120.0, 860.0)
 
 	# A SEÇÃO CRESCEU PORQUE AS LINHAS NÃO CABIAM — e não caber não era
 	# um detalhe de estética: as três últimas linhas do diagnóstico
@@ -7109,7 +7090,7 @@ func _central_dados() -> void:
 	# Agora a linha seguinte nasce da anterior (`_linha`) e a moldura
 	# nasce da contagem (`_altura_da_pilha`). Não sobrou número para
 	# errar, e o teste tests/test_central_legivel.gd mede o resultado.
-	var caixa_diag := Rect2(80, DADOS_DIAG_Y, 920, _altura_da_pilha(15))
+	var caixa_diag = Rect2(80, DADOS_DIAG_Y, 920, _altura_da_pilha(15))
 	_secao(caixa_diag, "DIAGNÓSTICO DA PLACA", Paleta.CIANO)
 	_pilha(caixa_diag)
 	_linha(serial_status, 16, Paleta.TINTA_FRACA)
@@ -7138,7 +7119,7 @@ func _central_dados() -> void:
 		17, Paleta.VERDE if (serial_start + serial_credito) > 0 else Paleta.TINTA_LEVE
 	)
 	_linha(
-		"portas vistas: %s" % (", ".join(portas_visiveis) if not portas_visiveis.is_empty() else "nenhuma"),
+		"portas vistas: %s" % (PoolStringArray(portas_visiveis).join(", ") if not portas_visiveis.empty() else "nenhuma"),
 		15, Paleta.TINTA_LEVE
 	)
 	# POR ONDE O JOGO ESTÁ FALANDO COM A PLACA.
@@ -7146,9 +7127,9 @@ func _central_dados() -> void:
 	# Deixou de ser uma pergunta de sim ou não quando a ponte por processo
 	# entrou: hoje há dois caminhos, e saber QUAL está em uso é o que
 	# separa "o .dll não veio" de "o PowerShell recusou".
-	var tem_serial := link != null and link.available()
-	var recado_serial := link.descricao() if tem_serial else "NENHUM"
-	if link != null and not link.motivo_da_falta().is_empty():
+	var tem_serial = link != null and link.available()
+	var recado_serial = link.descricao() if tem_serial else "NENHUM"
+	if link != null and not link.motivo_da_falta().empty():
 		recado_serial += " — %s" % link.motivo_da_falta()
 	_linha(
 		"caminho até a placa: %s" % recado_serial,
@@ -7158,7 +7139,7 @@ func _central_dados() -> void:
 	# respondeu" deixaram de ser a mesma coisa quando o firmware parou de
 	# travar sem sensor — e é justamente essa separação que diz ao técnico
 	# se ele deve olhar o cabo USB ou os fios do I2C.
-	var sensor_online := _sensor_ligado()
+	var sensor_online = _sensor_ligado()
 	_linha(
 		"sensor óptico: %s" % (
 			"PRONTO — sinal atual" if sensor_online
@@ -7188,8 +7169,8 @@ func _central_dados() -> void:
 	# ele lê — e uma tela que se mexe enquanto se lê é uma tela em que não
 	# se confia.
 	_linha(
-		"última recusa: %s" % (ultima_recusa if not ultima_recusa.is_empty() else "nenhuma nesta sessão"),
-		15, Paleta.AMBAR if not ultima_recusa.is_empty() else Paleta.TINTA_LEVE
+		"última recusa: %s" % (ultima_recusa if not ultima_recusa.empty() else "nenhuma nesta sessão"),
+		15, Paleta.AMBAR if not ultima_recusa.empty() else Paleta.TINTA_LEVE
 	)
 	# A EXTENSÃO NATIVA CARREGOU? A PERGUNTA QUE FALTAVA, e a que explica
 	# o "funciona no meu PC" inteiro.
@@ -7229,14 +7210,14 @@ func _central_dados() -> void:
 	# ver isso em lugar nenhum.
 	_linha(
 		"porta escolhida: %s" % (
-			"automática (varre todas)" if porta_configurada.is_empty()
+			"automática (varre todas)" if porta_configurada.empty()
 			else "%s — %d falha(s); %s" % [
 				porta_configurada, _falhas_da_porta_fixa,
 				"ainda exclusiva" if _falhas_da_porta_fixa < FALHAS_ATE_SOLTAR_A_PORTA_FIXA
 				else "liberada, varrendo todas"
 			]
 		),
-		15, Paleta.TINTA_LEVE if porta_configurada.is_empty() else Paleta.CIANO
+		15, Paleta.TINTA_LEVE if porta_configurada.empty() else Paleta.CIANO
 	)
 	_linha(
 		"sistema: %s  •  velocidade %d bauds" % [OS.get_name(), GameDef.SERIAL_BAUD],
@@ -7250,11 +7231,11 @@ func _central_dados() -> void:
 	# outro vídeo, outra TV, outra resolução. Sem número, o conserto vira
 	# palpite. Estas quatro linhas são o número — e é o que se manda para
 	# quem for consertar, em vez de "está travado".
-	var caixa_ritmo := Rect2(80, DADOS_RITMO_Y, 920, _altura_da_pilha(4) + 76.0)
+	var caixa_ritmo = Rect2(80, DADOS_RITMO_Y, 920, _altura_da_pilha(4) + 76.0)
 	_secao(caixa_ritmo, "RITMO DA MÁQUINA", Paleta.VERDE)
 	_pilha(caixa_ritmo)
-	var fps := desempenho.fps()
-	var cor_fps := Paleta.VERDE if fps >= 55.0 else (Paleta.AMBAR if fps >= 40.0 else Paleta.VERMELHO)
+	var fps = desempenho.fps()
+	var cor_fps = Paleta.VERDE if fps >= 55.0 else (Paleta.AMBAR if fps >= 40.0 else Paleta.VERMELHO)
 	_linha(
 		"%.0f quadros por segundo  •  pior quadro %.1f ms  •  efeitos em %d%%" % [
 			fps, desempenho.pior_ms(), int(round(desempenho.qualidade * 100.0))
@@ -7263,8 +7244,8 @@ func _central_dados() -> void:
 	)
 	_linha(
 		"%d chamadas de desenho  •  %d primitivas por quadro" % [
-			int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)),
-			int(Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME)),
+			int(Performance.get_monitor(Performance.RENDER_DRAW_CALLS_IN_FRAME)),
+			int(Performance.get_monitor(Performance.RENDER_VERTICES_IN_FRAME)),
 		],
 		17, Paleta.TINTA_LEVE
 	)
@@ -7274,13 +7255,13 @@ func _central_dados() -> void:
 	# para caber na altura e sobra tarja preta dos dois lados: a letra
 	# fica com metade dos pixels e a máquina parece de baixa qualidade
 	# sem nada estar errado no jogo. Escala 1,00 é a TV girada certo.
-	var escala := get_window().get_final_transform().get_scale()
-	var aviso := "" if absf(escala.y - 1.0) < 0.02 else "  ← GIRE A TELA PARA 1080x1920"
+	var escala = get_tree().root.get_final_transform().get_scale()
+	var aviso = "" if abs(escala.y - 1.0) < 0.02 else "  ← GIRE A TELA PARA 1080x1920"
 	_linha(
 		"janela %dx%d  •  escala %.2f%s" % [
-			DisplayServer.window_get_size().x, DisplayServer.window_get_size().y, escala.y, aviso
+			OS.window_size.x, OS.window_size.y, escala.y, aviso
 		],
-		17, Paleta.TINTA_LEVE if aviso.is_empty() else Paleta.AMBAR
+		17, Paleta.TINTA_LEVE if aviso.empty() else Paleta.AMBAR
 	)
 	_linha(
 		"câmera: %s" % (camera_service.status if camera_service != null else "—"),
@@ -7311,7 +7292,7 @@ func _central_dados() -> void:
 		false, Paleta.VERMELHO, 13, faxina.rodando
 	)
 	_botao(BOTOES_SIMPLES["reconectar"], "RECONECTAR", false, Paleta.CIANO, 14)
-	var base_faxina := DADOS_APAGAR_Y + 166.0
+	var base_faxina = DADOS_APAGAR_Y + 166.0
 	_andamento(
 		Rect2(110, base_faxina - 16.0, 860, 10), faxina.progresso(),
 		Paleta.AMBAR if faxina.rodando else Paleta.VERDE
@@ -7320,7 +7301,7 @@ func _central_dados() -> void:
 		faxina.ficha() if faxina.total > 0 else "a pasta guarda a foto de quem já saiu do ranking; o RANKING + FOTOS leva todas",
 		base_faxina + 24.0, 15,
 		Paleta.AMBAR if faxina.rodando else Paleta.TINTA_LEVE,
-		HORIZONTAL_ALIGNMENT_LEFT, 120.0, 860.0
+		Compat.ESQUERDA, 120.0, 860.0
 	)
 
 ## UMA PILHA DE LINHAS DENTRO DE UMA SEÇÃO DA CENTRAL.
@@ -7334,15 +7315,15 @@ func _central_dados() -> void:
 ## Com a pilha, a linha seguinte nasce da anterior e a moldura nasce da
 ## contagem. `tests/test_central_legivel.gd` mede o resultado desenhando
 ## a Central de verdade e cruzando os retângulos de cada texto.
-const PILHA_PASSO := 34.0    # de uma linha de base à seguinte
-const PILHA_TOPO := 40.0     # do topo da moldura até o título da seção
-const PILHA_RODAPE := 20.0   # da última linha até o fim da moldura
+const PILHA_PASSO = 34.0    # de uma linha de base à seguinte
+const PILHA_TOPO = 40.0     # do topo da moldura até o título da seção
+const PILHA_RODAPE = 20.0   # da última linha até o fim da moldura
 
 ## Altura de uma moldura que vai guardar `linhas` linhas além do título.
 func _altura_da_pilha(linhas: int, extra := 0.0) -> float:
 	return PILHA_TOPO + PILHA_PASSO * float(linhas) + PILHA_RODAPE + extra
 
-var _pilha_y := 0.0
+var _pilha_y = 0.0
 
 ## Abre a pilha no título da seção; a primeira `_linha` cai logo abaixo.
 func _pilha(rect: Rect2) -> void:
@@ -7351,7 +7332,7 @@ func _pilha(rect: Rect2) -> void:
 ## Mais uma linha da pilha. Devolve a linha de base usada.
 func _linha(texto: String, tamanho: int, cor: Color) -> float:
 	_pilha_y += PILHA_PASSO
-	_texto(texto, _pilha_y, tamanho, cor, HORIZONTAL_ALIGNMENT_LEFT, 120.0, 860.0)
+	_texto(texto, _pilha_y, tamanho, cor, Compat.ESQUERDA, 120.0, 860.0)
 	return _pilha_y
 
 # ------------------------------------------------------- SACO E MOTOR
@@ -7389,7 +7370,7 @@ func _central_maquina() -> void:
 	)
 	_texto(
 		"O saco desce no START e sobe quando os dois socos terminam. Sem motor, o jogo é exatamente o mesmo.",
-		522.0, 15, Paleta.TINTA_LEVE, HORIZONTAL_ALIGNMENT_LEFT, 120.0, 860.0
+		522.0, 15, Paleta.TINTA_LEVE, Compat.ESQUERDA, 120.0, 860.0
 	)
 
 	# ---- OS DOIS NÚMEROS QUE A PLACA PRECISA CONHECER
@@ -7402,12 +7383,12 @@ func _central_maquina() -> void:
 	# para no meio do caminho toda vez.
 	_texto(
 		"Passado o tempo de curso, a placa DESLIGA o motor sozinha, mesmo sem fim de curso.",
-		826.0, 15, Paleta.TINTA_LEVE, HORIZONTAL_ALIGNMENT_LEFT, 120.0, 860.0
+		826.0, 15, Paleta.TINTA_LEVE, Compat.ESQUERDA, 120.0, 860.0
 	)
 
 	# ---- MANDAR À MÃO, PARA MONTAR E PARA CONSERTAR
 	_secao(Rect2(80, 890, 920, 190), "MANDO À MÃO", Paleta.CIANO)
-	var pode := saco.ligado and link != null and link.is_open()
+	var pode = saco.ligado and link != null and link.is_open()
 	_botao(BOTOES_SIMPLES["motor_desce"], "DESCER", false, Paleta.CIANO, 20, not pode)
 	_botao(BOTOES_SIMPLES["motor_sobe"], "SUBIR", false, Paleta.CIANO, 20, not pode)
 	# PARAR NUNCA FICA DESBOTADO. É o botão de emergência da página, e um
@@ -7417,13 +7398,13 @@ func _central_maquina() -> void:
 	_botao(BOTOES_SIMPLES["motor_para"], "PARAR", false, Paleta.VERMELHO, 20)
 	_texto(
 		"Use com o gabinete aberto para acertar a altura do saco e conferir os fins de curso.",
-		1052.0, 15, Paleta.TINTA_LEVE, HORIZONTAL_ALIGNMENT_LEFT, 120.0, 860.0
+		1052.0, 15, Paleta.TINTA_LEVE, Compat.ESQUERDA, 120.0, 860.0
 	)
 
 	# ---- O QUE ESTÁ ACONTECENDO AGORA
-	var caixa_estado := Rect2(80, SACO_ESTADO_Y, 920, SACO_ESTADO_H)
+	var caixa_estado = Rect2(80, SACO_ESTADO_Y, 920, SACO_ESTADO_H)
 	_secao(caixa_estado, "ONDE O SACO ESTÁ", Paleta.VERDE)
-	var cor_estado := Paleta.TINTA_LEVE
+	var cor_estado = Paleta.TINTA_LEVE
 	if saco.desistiu():
 		cor_estado = Paleta.VERMELHO
 	elif saco.andando():
@@ -7440,7 +7421,7 @@ func _central_maquina() -> void:
 	# fim de um curso e MENTIRA com a função desligada: uma barra cheia
 	# embaixo de "MOTOR DESLIGADO" se lê como "pronto, chegou", quando o
 	# jogo não faz ideia de onde o saco está.
-	var quanto := 0.0
+	var quanto = 0.0
 	if saco.andando():
 		quanto = saco.progresso()
 	elif saco.ligado and saco.posicao != ArduinoProtocol.POS_DESCONHECIDA:
@@ -7481,17 +7462,17 @@ func _central_maquina() -> void:
 		"O jogo desiste depois de %.0f s sem confirmação, em vez de insistir para sempre." % (
 			SacoMotor.FOLGA_DA_CONFIRMACAO_MS / 1000.0
 		),
-		SACO_SOCORRO_Y + 158.0, 15, Paleta.TINTA_LEVE, HORIZONTAL_ALIGNMENT_LEFT, 120.0, 860.0
+		SACO_SOCORRO_Y + 158.0, 15, Paleta.TINTA_LEVE, Compat.ESQUERDA, 120.0, 860.0
 	)
 
 ## Os índices achados, em uma linha. Escrito à mão porque um `map` com
 ## lambda aqui não deixa o GDScript inferir o tipo, e tipo inferido é o
 ## que faz este arquivo compilar rápido.
 func _lista_de_indices(valores: Array) -> String:
-	var partes := PackedStringArray()
+	var partes = PoolStringArray()
 	for v in valores:
 		partes.append(str(v))
-	return ", ".join(partes)
+	return PoolStringArray(partes).join(", ")
 
 ## Manda examinar a instalação da câmera. `instalar` autoriza mexer no
 ## sistema; sem ele o exame só olha e conta.
@@ -7508,9 +7489,9 @@ func _lista_de_indices(valores: Array) -> String:
 ## índice, o back-end e o interpretador. Uma vez por sessão — se o exame
 ## não resolveu, repeti-lo de minuto em minuto não resolve também, e
 ## ainda ocupa a linha de execução no meio das partidas.
-const SOCORRO_ESPERA := 12.0
-var _socorro_relogio := 0.0
-var _socorro_feito := false
+const SOCORRO_ESPERA = 12.0
+var _socorro_relogio = 0.0
+var _socorro_feito = false
 
 func _socorro_da_camera(delta: float) -> void:
 	if _socorro_feito or camera_service == null or medico == null:
@@ -7544,8 +7525,8 @@ func _examinar_camera(resolver: bool) -> void:
 ## exige o técnico repetir à mão o que a máquina acabou de descobrir é
 ## meio relatório.
 func _fim_do_exame() -> void:
-	if medico.indices.is_empty():
-		if camera_enabled and not medico.linhas.is_empty():
+	if medico.indices.empty():
+		if camera_enabled and not medico.linhas.empty():
 			_show_notice(str(medico.linhas[medico.linhas.size() - 1]))
 		return
 	camera_index = int(medico.indices[0])
@@ -7559,17 +7540,17 @@ func _fim_do_exame() -> void:
 ## As cinco marcas em uma linha só: o técnico precisa VER o que vai
 ## apagar antes de apertar ZERAR RANKING.
 func _lista_do_ranking(rect: Rect2) -> void:
-	var largura := (rect.size.x - 4.0 * 10.0) / 5.0
+	var largura = (rect.size.x - 4.0 * 10.0) / 5.0
 	for i in range(5):
-		var celula := Rect2(rect.position + Vector2(i * (largura + 10.0), 0.0), Vector2(largura, rect.size.y))
-		var cor := _cor_da_posicao(i + 1)
-		var tem := i < ranking.size()
+		var celula = Rect2(rect.position + Vector2(i * (largura + 10.0), 0.0), Vector2(largura, rect.size.y))
+		var cor = _cor_da_posicao(i + 1)
+		var tem = i < ranking.size()
 		_cartao(celula, Paleta.tinta_clara(cor, 0.14) if tem else Paleta.VAZIO, Paleta.CARTAO_BORDA, 1.0, 0.0)
-		_texto("%dº" % (i + 1), celula.position.y + 26.0, 13, Color(Paleta.para_texto(cor)), HORIZONTAL_ALIGNMENT_CENTER, celula.position.x, celula.size.x)
+		_texto("%dº" % (i + 1), celula.position.y + 26.0, 13, Color(Paleta.para_texto(cor)), Compat.CENTRO, celula.position.x, celula.size.x)
 		_texto(
 			"%04d" % RankingStore.score_at(ranking, i) if tem else "—", celula.position.y + 62.0, 22,
 			Paleta.TINTA if tem else Paleta.TINTA_LEVE,
-			HORIZONTAL_ALIGNMENT_CENTER, celula.position.x, celula.size.x
+			Compat.CENTRO, celula.position.x, celula.size.x
 		)
 
 ## Uma seção da Central: moldura e título, sempre no mesmo lugar em
@@ -7578,35 +7559,35 @@ func _secao(rect: Rect2, titulo: String, cor := Paleta.MARINHO) -> void:
 	# A seção mais baixa da página é o que define até onde a rolagem vai.
 	# Medir aqui, e não numa tabela de alturas, é o que faz a rolagem
 	# continuar certa quando alguém mover uma seção daqui a seis meses.
-	central_fundo = maxf(central_fundo, rect.end.y)
+	central_fundo = max(central_fundo, rect.end.y)
 	_cartao(rect, Paleta.tinta_clara(Paleta.MARINHO, 0.045), Paleta.CARTAO_BORDA, 1.0, 0.0)
 	# Tarja colorida na lateral: com sete seções empilhadas, é o que deixa
 	# o técnico achar a que procura sem ler todos os títulos.
 	draw_rect(Rect2(rect.position, Vector2(8.0, rect.size.y)), cor)
-	_texto(titulo, rect.position.y + 40.0, 16, Paleta.para_texto(cor), HORIZONTAL_ALIGNMENT_LEFT, rect.position.x + 40.0, rect.size.x - 80.0)
+	_texto(titulo, rect.position.y + 40.0, 16, Paleta.para_texto(cor), Compat.ESQUERDA, rect.position.x + 40.0, rect.size.x - 80.0)
 
 ## Um par − / + com o valor no meio e a legenda embaixo. Os retângulos
 ## saem de `PASSOS`, os mesmos que o clique consulta — texto e área de
 ## toque não têm como divergir.
 func _stepper(chave: String, valor: String, legenda: String, accent: Color) -> void:
-	var visor := _passo_visor(chave)
+	var visor = _passo_visor(chave)
 	_cartao(visor, Paleta.CARTAO, Paleta.CARTAO_BORDA, 1.0, 0.0)
 	_botao(_passo_menos(chave), "−", false, accent, 26)
 	_botao(_passo_mais(chave), "+", false, accent, 26)
 	_texto_cabendo(valor, visor.position.y + visor.size.y * 0.68, 30, Paleta.TINTA, visor.size.x - 12.0, visor.position.x + 6.0)
 	var r: Rect2 = PASSOS[chave]
-	_texto(legenda, r.end.y + 28.0, 15, Paleta.TINTA_FRACA, HORIZONTAL_ALIGNMENT_CENTER, r.position.x, r.size.x)
+	_texto(legenda, r.end.y + 28.0, 15, Paleta.TINTA_FRACA, Compat.CENTRO, r.position.x, r.size.x)
 
 ## O seletor do Arduino mostra porta, modo e busca como um único componente.
 ## A lógica e as áreas de toque continuam sendo exatamente as do stepper.
 func _seletor_porta_refinado() -> void:
 	var r: Rect2 = PASSOS["porta"]
-	var visor := _passo_visor("porta")
+	var visor = _passo_visor("porta")
 	# A COR E A ANIMAÇÃO VÊM DA FASE, e não de procurar palavras dentro
 	# do texto da tela. Ver `fase_serial`.
-	var fase := fase_serial()
-	var procurando := fase in [FaseSerial.PROCURANDO, FaseSerial.OUVINDO]
-	var cor := Paleta.AMBAR
+	var fase = fase_serial()
+	var procurando = fase in [FaseSerial.PROCURANDO, FaseSerial.OUVINDO]
+	var cor = Paleta.AMBAR
 	match fase:
 		FaseSerial.LIGADA:
 			cor = Paleta.VERDE if _sensor_ligado() else Paleta.CIANO
@@ -7617,29 +7598,29 @@ func _seletor_porta_refinado() -> void:
 		FaseSerial.SEM_CAMINHO:
 			cor = Paleta.VERMELHO
 
-	_cartao(r.grow(7.0), Color("0d0915"), Color(cor, 0.42), 1.0, 1.5)
-	draw_rect(Rect2(r.position.x - 7.0, r.position.y + 10.0, 3.0, r.size.y - 20.0), Color(cor, 0.90))
+	_cartao(r.grow(7.0), Color("0d0915"), Compat.cor(cor, 0.42), 1.0, 1.5)
+	draw_rect(Rect2(r.position.x - 7.0, r.position.y + 10.0, 3.0, r.size.y - 20.0), Compat.cor(cor, 0.90))
 	_botao(_passo_menos("porta"), "‹", false, cor, 27)
 	_botao(_passo_mais("porta"), "›", false, cor, 27)
-	_cartao(visor, Color("140e1d"), Color(cor, 0.22), 1.0, 0.0)
+	_cartao(visor, Color("140e1d"), Compat.cor(cor, 0.22), 1.0, 0.0)
 
-	var centro := Vector2(visor.position.x + 27.0, visor.get_center().y)
+	var centro = Vector2(visor.position.x + 27.0, visor.get_center().y)
 	# A COMEMORAÇÃO: um anel que abre a partir da lâmpada no instante em
 	# que a placa responde. Dura um segundo e meio e serve a uma coisa
 	# só — quem estava olhando para o conector, e não para a tela, vê
 	# pelo canto do olho que a máquina achou.
-	var festa := clampf(1.0 - (animation_time - _placa_achada_em) / 1.5, 0.0, 1.0)
+	var festa = clamp(1.0 - (animation_time - _placa_achada_em) / 1.5, 0.0, 1.0)
 	if festa > 0.0:
-		var onda := ease(1.0 - festa, 0.4)
+		var onda = ease(1.0 - festa, 0.4)
 		draw_arc(centro, 9.0 + onda * 18.0, 0.0, TAU, 28,
-			Color(Paleta.VERDE, festa * 0.75), 2.0 + festa * 1.5, true)
-	draw_circle(centro, 5.0 + festa * 3.0, Color(cor, 0.20 + festa * 0.5), true, -1.0, true)
-	draw_circle(centro, 2.4, cor, true, -1.0, true)
+			Compat.cor(Paleta.VERDE, festa * 0.75), 2.0 + festa * 1.5, true)
+	Compat.circulo(self, centro, 5.0 + festa * 3.0, Compat.cor(cor, 0.20 + festa * 0.5), true, -1.0, true)
+	Compat.circulo(self, centro, 2.4, cor, true, -1.0, true)
 	if procurando:
-		var inicio := fmod(animation_time * 3.2, TAU)
-		draw_arc(centro, 9.0, inicio, inicio + 1.75, 16, Color(cor, 0.82), 1.2, true)
+		var inicio = fmod(animation_time * 3.2, TAU)
+		draw_arc(centro, 9.0, inicio, inicio + 1.75, 16, Compat.cor(cor, 0.82), 1.2, true)
 
-	var porta := porta_configurada if not porta_configurada.is_empty() else "AUTO"
+	var porta = porta_configurada if not porta_configurada.empty() else "AUTO"
 	# O NOME DA PORTA E A LEGENDA DIVIDIAM UM VISOR DE 64 PX, a 16 px um
 	# do outro, com o nome em corpo 25: a legenda entrava pela barriga
 	# das letras de cima e nenhuma das duas se lia. Não era questão de
@@ -7655,16 +7636,16 @@ func _seletor_porta_refinado() -> void:
 	# cego do teste.
 	_texto_cabendo(porta, visor.position.y + 43.0, 25, Paleta.TINTA, visor.size.x - 72.0, visor.position.x + 46.0)
 
-	draw_circle(Vector2(126.0, 1452.0), 4.0, cor, true, -1.0, true)
+	Compat.circulo(self, Vector2(126.0, 1452.0), 4.0, cor, true, -1.0, true)
 	_texto_cabendo(serial_status, 1459.0, 14, Paleta.para_texto(cor), 822.0, 140.0)
 	_texto(
 		(
 			"BUSCA AUTOMÁTICA — reconecta sozinho"
-			if porta_configurada.is_empty()
+			if porta_configurada.empty()
 			else "PORTA PREFERENCIAL — reconecta sozinho"
 		),
 		r.end.y + 27.0, 13, Paleta.TINTA_FRACA,
-		HORIZONTAL_ALIGNMENT_CENTER, r.position.x, r.size.x
+		Compat.CENTRO, r.position.x, r.size.x
 	)
 
 ## A RÉGUA DOS OITO NÍVEIS, na largura de cada um.
@@ -7674,26 +7655,26 @@ func _seletor_porta_refinado() -> void:
 ## quinto da escala, e é vendo isso que o técnico entende por que quase
 ## ninguém chega ao topo, em vez de achar que a máquina está quebrada.
 func _regua_dos_niveis(rect: Rect2) -> void:
-	var teto := float(GameDef.SCORE_MAX + 1)
+	var teto = float(GameDef.SCORE_MAX + 1)
 	for nivel in ScoreTier.NIVEIS:
-		var x0 := rect.position.x + rect.size.x * (float(nivel["min"]) / teto)
-		var x1 := rect.position.x + rect.size.x * (float(int(nivel["max"]) + 1) / teto)
+		var x0 = rect.position.x + rect.size.x * (float(nivel["min"]) / teto)
+		var x1 = rect.position.x + rect.size.x * (float(int(nivel["max"]) + 1) / teto)
 		draw_rect(Rect2(x0, rect.position.y, x1 - x0, rect.size.y), nivel["cor"] as Color)
 		if x1 - x0 > 96.0:
 			# Preto sobre cor clara, branco sobre cor escura. A cor do
 			# nível é dado de projeto e vai de creme a azul-acinzentado:
 			# um contraste fixo apagaria metade dos nomes.
 			var cor: Color = nivel["cor"]
-			var tinta := Color.BLACK if cor.get_luminance() > 0.55 else Color.WHITE
+			var tinta = Color.black if cor.get_luminance() > 0.55 else Color.white
 			_texto(
 				str(nivel["nome"]), rect.position.y + rect.size.y * 0.70, 14, tinta,
-				HORIZONTAL_ALIGNMENT_CENTER, x0, x1 - x0
+				Compat.CENTRO, x0, x1 - x0
 			)
 	draw_rect(rect, Paleta.CARTAO_BORDA, false, 2.0)
 	# O teto da escala fica marcado à direita: é o único ponto da régua
 	# que uma pessoa pode alcançar e não é uma faixa, é um alvo.
-	_texto("9999", rect.end.y + 22.0, 15, Paleta.CREME, HORIZONTAL_ALIGNMENT_RIGHT, rect.position.x, rect.size.x)
-	_texto("0000", rect.end.y + 22.0, 15, Paleta.TINTA_FRACA, HORIZONTAL_ALIGNMENT_LEFT, rect.position.x, rect.size.x)
+	_texto("9999", rect.end.y + 22.0, 15, Paleta.CREME, Compat.DIREITA, rect.position.x, rect.size.x)
+	_texto("0000", rect.end.y + 22.0, 15, Paleta.TINTA_FRACA, Compat.ESQUERDA, rect.position.x, rect.size.x)
 
 ## Retângulo de cantos redondos. O Godot só desenha retângulo de canto
 ## vivo, e canto vivo em peça grande destoa do resto da tela — a placa,
@@ -7701,10 +7682,10 @@ func _regua_dos_niveis(rect: Rect2) -> void:
 func _placa(rect: Rect2, raio: float, cor: Color) -> void:
 	Traco.poligono(self, _contorno_arredondado(rect, raio), cor)
 
-func _contorno_arredondado(rect: Rect2, raio: float) -> PackedVector2Array:
-	var r := minf(raio, minf(rect.size.x, rect.size.y) * 0.5)
-	var pontos := PackedVector2Array()
-	var cantos := [
+func _contorno_arredondado(rect: Rect2, raio: float) -> PoolVector2Array:
+	var r = min(raio, min(rect.size.x, rect.size.y) * 0.5)
+	var pontos = PoolVector2Array()
+	var cantos = [
 		[Vector2(rect.end.x - r, rect.position.y + r), -PI * 0.5],
 		[Vector2(rect.end.x - r, rect.end.y - r), 0.0],
 		[Vector2(rect.position.x + r, rect.end.y - r), PI * 0.5],
@@ -7714,16 +7695,16 @@ func _contorno_arredondado(rect: Rect2, raio: float) -> PackedVector2Array:
 		var meio: Vector2 = c[0]
 		var a0: float = c[1]
 		for i in range(9):
-			var a := a0 + float(i) / 8.0 * PI * 0.5
+			var a = a0 + float(i) / 8.0 * PI * 0.5
 			pontos.append(meio + Vector2(cos(a), sin(a)) * r)
 	return pontos
 
-func _photo_texture(path: String) -> Texture2D:
-	if path.is_empty():
+func _photo_texture(path: String) -> Texture:
+	if path.empty():
 		return null
 	if _photo_cache.has(path):
-		return _photo_cache[path] as Texture2D
-	if not FileAccess.file_exists(path):
+		return _photo_cache[path] as Texture
+	if not Compat.existe(path):
 		return null
 	# NÃO DECODIFICADA AINDA: melhor um quadro sem foto (o contorno de
 	# `_draw_avatar`) do que travar o quadro atual para decodificar na
@@ -7742,17 +7723,17 @@ func _photo_texture(path: String) -> Texture2D:
 ## marcar este caminho como "em andamento" para sempre e nunca mais
 ## tentar de novo.
 func _decodificar_foto(path: String) -> void:
-	var imagem: Variant = false
-	if FileAccess.file_exists(path):
-		var candidata := Image.new()
-		if candidata.load(ProjectSettings.globalize_path(path)) == OK and not candidata.is_empty():
+	var imagem = false
+	if Compat.existe(path):
+		var candidata = Image.new()
+		if candidata.load(ProjectSettings.globalize_path(path)) == OK and not candidata.empty():
 			# As fotos são miniaturas na tabela. Limita o upload e a memória
 			# sem alterar o arquivo original; o resize ocorre no worker.
-			var maior := maxi(candidata.get_width(), candidata.get_height())
+			var maior = int(max(candidata.get_width(), candidata.get_height()))
 			if maior > 384:
-				var fator := 384.0 / float(maior)
-				candidata.resize(maxi(1, int(candidata.get_width() * fator)),
-					maxi(1, int(candidata.get_height() * fator)), Image.INTERPOLATE_BILINEAR)
+				var fator = 384.0 / float(maior)
+				candidata.resize(int(max(1, int(candidata.get_width() * fator))),
+					int(max(1, int(candidata.get_height() * fator))), Image.INTERPOLATE_BILINEAR)
 			imagem = candidata
 	_mutex_fotos.lock()
 	_fotos_decodificadas[path] = imagem
@@ -7761,10 +7742,10 @@ func _decodificar_foto(path: String) -> void:
 ## Põe uma foto na fila de decodificação, uma vez só por caminho.
 var _fotos_em_andamento: Dictionary = {}
 func _agendar_decodificacao(path: String) -> void:
-	if path.is_empty() or _photo_cache.has(path) or _fotos_em_andamento.has(path):
+	if path.empty() or _photo_cache.has(path) or _fotos_em_andamento.has(path):
 		return
 	_fotos_em_andamento[path] = true
-	WorkerThreadPool.add_task(_decodificar_foto.bind(path))
+	Compat.tarefa(self, "_decodificar_foto", [path])
 
 ## Chamada assim que uma pontuação entra no ranking: põe as fotos que
 ## ainda faltam no cache a caminho, com vários segundos de folga antes
@@ -7781,35 +7762,35 @@ func _prewarm_fotos_do_ranking() -> void:
 ## pedir essa foto de novo.
 func _colher_fotos_decodificadas() -> void:
 	_mutex_fotos.lock()
-	if _fotos_decodificadas.is_empty():
+	if _fotos_decodificadas.empty():
 		_mutex_fotos.unlock()
 		return
 	# A decodificação já acontece fora da linha principal; criar todas as
 	# texturas prontas no mesmo quadro apenas transferia a travada para a
 	# GPU. Publica uma por quadro e mantém as demais na fila.
-	var path := str(_fotos_decodificadas.keys()[0])
+	var path = str(_fotos_decodificadas.keys()[0])
 	var imagem = _fotos_decodificadas[path]
 	_fotos_decodificadas.erase(path)
 	_mutex_fotos.unlock()
 	_fotos_em_andamento.erase(path)
 	if imagem is Image:
-		_photo_cache[path] = ImageTexture.create_from_image(imagem)
+		_photo_cache[path] = Compat.textura(imagem)
 
-func _draw_texture_cover(texture: Texture2D, rect: Rect2, alpha: float, mirror := false) -> void:
+func _draw_texture_cover(texture: Texture, rect: Rect2, alpha: float, mirror := false) -> void:
 	if texture == null:
 		return
-	var source_size := texture.get_size()
+	var source_size = texture.get_size()
 	if source_size.x <= 0.0 or source_size.y <= 0.0:
 		return
-	var source := Rect2(Vector2.ZERO, source_size)
-	var source_aspect := source_size.x / source_size.y
-	var target_aspect := rect.size.x / rect.size.y
+	var source = Rect2(Vector2.ZERO, source_size)
+	var source_aspect = source_size.x / source_size.y
+	var target_aspect = rect.size.x / rect.size.y
 	if source_aspect > target_aspect:
-		var wanted_width := source_size.y * target_aspect
+		var wanted_width = source_size.y * target_aspect
 		source.position.x = (source_size.x - wanted_width) * 0.5
 		source.size.x = wanted_width
 	else:
-		var wanted_height := source_size.x / target_aspect
+		var wanted_height = source_size.x / target_aspect
 		source.position.y = (source_size.y - wanted_height) * 0.5
 		source.size.y = wanted_height
 	if mirror:
@@ -7835,10 +7816,10 @@ func _draw_texture_cover(texture: Texture2D, rect: Rect2, alpha: float, mirror :
 ## mesma cor do resto da moldura. Presente o bastante para não virar
 ## buraco, discreto o bastante para não competir com nada.
 func _draw_avatar(rect: Rect2, alpha: float) -> void:
-	draw_rect(rect, Color("120920", 0.70 * alpha))
-	var center := rect.get_center()
-	var unit := minf(rect.size.x, rect.size.y)
-	var tom := Color("50367d", 0.55 * alpha)
+	draw_rect(rect, Compat.cor("120920", 0.70 * alpha))
+	var center = rect.get_center()
+	var unit = min(rect.size.x, rect.size.y)
+	var tom = Compat.cor("50367d", 0.55 * alpha)
 
 	# Só o traço: cabeça e ombros em linha, sem massa.
 	draw_arc(center + Vector2(0.0, -unit * 0.10), unit * 0.13, 0.0, TAU, 28, tom, unit * 0.035, true)
@@ -7848,21 +7829,21 @@ func _draw_avatar(rect: Rect2, alpha: float) -> void:
 	)
 
 	# Cantoneiras de enquadramento, como as de um visor de câmera.
-	var margem := unit * 0.10
-	var braco := unit * 0.14
+	var margem = unit * 0.10
+	var braco = unit * 0.14
 	for sx in [-1.0, 1.0]:
 		for sy in [-1.0, 1.0]:
-			var canto := center + Vector2(sx * (rect.size.x * 0.5 - margem), sy * (rect.size.y * 0.5 - margem))
-			draw_line(canto, canto - Vector2(sx * braco, 0.0), Color(Paleta.AMBAR, 0.55 * alpha), 4.0, true)
-			draw_line(canto, canto - Vector2(0.0, sy * braco), Color(Paleta.AMBAR, 0.55 * alpha), 4.0, true)
+			var canto = center + Vector2(sx * (rect.size.x * 0.5 - margem), sy * (rect.size.y * 0.5 - margem))
+			draw_line(canto, canto - Vector2(sx * braco, 0.0), Compat.cor(Paleta.AMBAR, 0.55 * alpha), 4.0, true)
+			draw_line(canto, canto - Vector2(0.0, sy * braco), Compat.cor(Paleta.AMBAR, 0.55 * alpha), 4.0, true)
 
 func _draw_player_photo(rect: Rect2, path: String, alpha: float) -> void:
-	var texture := _photo_texture(path)
+	var texture = _photo_texture(path)
 	if texture == null:
 		_draw_avatar(rect, alpha)
 	else:
 		_draw_texture_cover(texture, rect, alpha)
-	draw_rect(rect, Color(Paleta.CIANO, alpha), false, 3.0)
+	draw_rect(rect, Compat.cor(Paleta.CIANO, alpha), false, 3.0)
 
 ## O aviso de operação ocupa o rodapé, e não o topo: no topo ele cairia
 ## em cima do cabeçalho, e no meio disputaria com o número.
@@ -7884,7 +7865,7 @@ func _draw_alertas_graves() -> void:
 	# dela, e a própria Central já mostra o mesmo defeito por extenso.
 	if central_aberta:
 		return
-	var recados: Array[String] = []
+	var recados: Array = []
 	if not Versao.acentos_inteiros():
 		recados.append(Versao.recado_do_estrago())
 	if link != null and not link.available():
@@ -7896,18 +7877,18 @@ func _draw_alertas_graves() -> void:
 		recados.append("SEM CÂMERA — O JOGO SEGUE SEM FOTO  •  " + camera_service.motivo_curto())
 	# Câmera é tratada na tela da pose com linguagem comum. O rodapé do jogo
 	# nunca expõe DLL, pacote, backend ou instruções de manutenção ao jogador.
-	if recados.is_empty():
+	if recados.empty():
 		return
-	var altura := 34.0 * float(recados.size()) + 16.0
-	var caixa := Rect2(40.0, 1920.0 - altura - 8.0, 1000.0, altura)
+	var altura = 34.0 * float(recados.size()) + 16.0
+	var caixa = Rect2(40.0, 1920.0 - altura - 8.0, 1000.0, altura)
 	# Placa escura com letra âmbar: vermelho em cima do rodapé vermelho
 	# some — o aviso tem de saltar do fundo, não se misturar a ele.
-	draw_rect(caixa, Color("0c0615", 0.94))
+	draw_rect(caixa, Compat.cor("0c0615", 0.94))
 	draw_rect(caixa, Paleta.AMBAR, false, 2.0)
 	for i in range(recados.size()):
 		_texto(
 			recados[i], caixa.position.y + 26.0 + float(i) * 34.0, 17, Paleta.AMBAR,
-			HORIZONTAL_ALIGNMENT_CENTER, caixa.position.x, caixa.size.x
+			Compat.CENTRO, caixa.position.x, caixa.size.x
 		)
 
 ## UMA BARRA DE ANDAMENTO. `quanto` vai de 0 a 1.
@@ -7917,7 +7898,7 @@ func _draw_alertas_graves() -> void:
 ## se o operador espera ou desliga a máquina no botão.
 func _andamento(rect: Rect2, quanto: float, accent: Color) -> void:
 	_cartao(rect, Paleta.VAZIO, Paleta.CARTAO_BORDA, 1.0, 0.0)
-	var cheio := clampf(quanto, 0.0, 1.0) * rect.size.x
+	var cheio = clamp(quanto, 0.0, 1.0) * rect.size.x
 	if cheio > 1.0:
 		draw_rect(Rect2(rect.position, Vector2(cheio, rect.size.y)), accent)
 
@@ -7929,41 +7910,42 @@ func _andamento(rect: Rect2, quanto: float, accent: Color) -> void:
 ## desenho das barras de vida — usado no START, nos painéis dos socos e na
 ## placa de créditos, para a tela inteira falar uma língua só.
 ## `acesa` (0..1) enche o fundo com a cor (o painel "chamando").
+func _forma_da_placa(r: Rect2, inc: float, g: float) -> PoolVector2Array:
+	return PoolVector2Array([
+		Vector2(r.position.x + inc - g, r.position.y - g), Vector2(r.end.x + g, r.position.y - g),
+		Vector2(r.end.x - inc + g, r.end.y + g), Vector2(r.position.x - g, r.end.y + g),
+	])
+
 func _placa_arcade(r: Rect2, cor: Color, alpha := 1.0, acesa := 0.0) -> void:
 	if alpha <= 0.01:
 		return
-	var inc := minf(22.0, r.size.y * 0.22)
-	var forma := func(g: float) -> PackedVector2Array:
-		return PackedVector2Array([
-			Vector2(r.position.x + inc - g, r.position.y - g), Vector2(r.end.x + g, r.position.y - g),
-			Vector2(r.end.x - inc + g, r.end.y + g), Vector2(r.position.x - g, r.end.y + g),
-		])
-	var ouro := ArenaQuadro.OURO
-	var ouro_e := ArenaQuadro.OURO_ESC
-	draw_colored_polygon(forma.call(12.0), Color(0, 0, 0, 0.45 * alpha))
-	draw_polygon(forma.call(6.0), PackedColorArray([
-		Color(ouro, alpha), Color(ouro, alpha), Color(ouro_e, alpha), Color(ouro_e, alpha)]))
-	var topo := Color("241440").lerp(cor, 0.55 * acesa)
-	var base := Color("0c0615").lerp(cor.darkened(0.45), 0.55 * acesa)
-	draw_polygon(forma.call(0.0), PackedColorArray([
-		Color(topo, alpha), Color(topo, alpha), Color(base, alpha), Color(base, alpha)]))
+	var inc = min(22.0, r.size.y * 0.22)
+	var ouro = ArenaQuadro.OURO
+	var ouro_e = ArenaQuadro.OURO_ESC
+	draw_colored_polygon(_forma_da_placa(r, inc, 12.0), Color(0, 0, 0, 0.45 * alpha))
+	draw_polygon(_forma_da_placa(r, inc, 6.0), PoolColorArray([
+		Compat.cor(ouro, alpha), Compat.cor(ouro, alpha), Compat.cor(ouro_e, alpha), Compat.cor(ouro_e, alpha)]))
+	var topo = Color("241440").linear_interpolate(cor, 0.55 * acesa)
+	var base = Color("0c0615").linear_interpolate(cor.darkened(0.45), 0.55 * acesa)
+	draw_polygon(_forma_da_placa(r, inc, 0.0), PoolColorArray([
+		Compat.cor(topo, alpha), Compat.cor(topo, alpha), Compat.cor(base, alpha), Compat.cor(base, alpha)]))
 	# vidro: faixa clara na metade de cima
-	var meio := r.position.y + r.size.y * 0.46
-	var d := inc * (meio - r.position.y) / r.size.y
-	draw_polygon(PackedVector2Array([
+	var meio = r.position.y + r.size.y * 0.46
+	var d = inc * (meio - r.position.y) / r.size.y
+	draw_polygon(PoolVector2Array([
 		Vector2(r.position.x + inc, r.position.y), Vector2(r.end.x, r.position.y),
 		Vector2(r.end.x - d, meio), Vector2(r.position.x + inc - d, meio),
-	]), PackedColorArray([Color(1, 1, 1, 0.14 * alpha), Color(1, 1, 1, 0.05 * alpha),
+	]), PoolColorArray([Color(1, 1, 1, 0.14 * alpha), Color(1, 1, 1, 0.05 * alpha),
 		Color(1, 1, 1, 0.0), Color(1, 1, 1, 0.0)]))
-	var contorno: PackedVector2Array = forma.call(0.0)
+	var contorno: PoolVector2Array = _forma_da_placa(r, inc, 0.0)
 	contorno.append(contorno[0])
-	draw_polyline(contorno, Color(cor, 0.95 * alpha), 3.0, true)
+	draw_polyline(contorno, Compat.cor(cor, 0.95 * alpha), 3.0, true)
 
 func _cartao(rect: Rect2, fundo_c: Color, borda: Color, alpha := 1.0, largura_borda := 2.0) -> void:
-	draw_rect(Rect2(rect.position + Vector2(0, 4.0), rect.size), Color(Paleta.SOMBRA, Paleta.SOMBRA.a * alpha))
-	draw_rect(rect, Color(fundo_c, fundo_c.a * alpha))
+	draw_rect(Rect2(rect.position + Vector2(0, 4.0), rect.size), Compat.cor(Paleta.SOMBRA, Paleta.SOMBRA.a * alpha))
+	draw_rect(rect, Compat.cor(fundo_c, fundo_c.a * alpha))
 	if largura_borda > 0.0:
-		draw_rect(rect, Color(borda, borda.a * alpha), false, largura_borda)
+		draw_rect(rect, Compat.cor(borda, borda.a * alpha), false, largura_borda)
 
 ## Botão: colorido e cheio quando ativo, branco com borda colorida quando
 ## não. Num tema claro é o PREENCHIMENTO que marca o estado ligado —
@@ -7974,14 +7956,14 @@ func _cartao(rect: Rect2, fundo_c: Color, borda: Color, alpha := 1.0, largura_bo
 ## cara de sempre, o operador clica de novo, e de novo, e conclui que a
 ## máquina travou — bem na hora em que ela está trabalhando.
 func _botao(rect: Rect2, texto: String, ativo: bool, accent: Color, tamanho: int, desligado := false) -> void:
-	var cor := Paleta.tinta_clara(accent, 0.45) if desligado else accent
-	var fundo_c := cor if ativo else Paleta.CARTAO
-	var tinta := Paleta.texto_sobre(fundo_c, Paleta.CARTAO if ativo else Paleta.para_texto(cor))
+	var cor = Paleta.tinta_clara(accent, 0.45) if desligado else accent
+	var fundo_c = cor if ativo else Paleta.CARTAO
+	var tinta = Paleta.texto_sobre(fundo_c, Paleta.CARTAO if ativo else Paleta.para_texto(cor))
 	if desligado:
 		tinta = Paleta.TINTA_LEVE
 	draw_rect(Rect2(rect.position + Vector2(0, 3.0), rect.size), Paleta.SOMBRA)
 	draw_rect(rect, fundo_c)
-	draw_rect(rect, Color(cor, 0.9), false, 2.0)
+	draw_rect(rect, Compat.cor(cor, 0.9), false, 2.0)
 	_texto_cabendo(
 		texto, rect.position.y + rect.size.y * 0.68, tamanho, tinta,
 		rect.size.x - 20.0, rect.position.x + 10.0
@@ -8025,33 +8007,33 @@ func _icone(nome: String, centro: Vector2, raio: float, cor: Color) -> void:
 ## páginas, liga isto e falha se dois retângulos se cruzarem.
 ##
 ## Ela fica DESLIGADA no jogo e não custa nada: uma comparação por texto.
-var auditoria_de_layout := false
+var auditoria_de_layout = false
 ## Liga enquanto o MIOLO que rola está sendo desenhado. O cabeçalho e o
 ## rodapé da Central são repintados opacos por cima dele: uma linha que
 ## caia fora da janela não é lida por ninguém, e acusá-la seria apontar
 ## um defeito que não existe — ao mesmo tempo em que os botões do rodapé,
 ## esses sim sempre visíveis, precisam continuar sendo medidos.
-var _auditando_o_miolo := false
-var auditoria: Array[Dictionary] = []
+var _auditando_o_miolo = false
+var auditoria: Array = []
 
 func _anotar_texto(
 	texto: String, y: float, corpo: int, alinhamento: int, x: float, largura: float
 ) -> void:
-	if texto.strip_edges().is_empty():
+	if texto.strip_edges().empty():
 		return
-	var medida := fonte_texto.get_string_size(texto, alinhamento, largura, corpo)
-	var esquerda := x
-	if alinhamento == HORIZONTAL_ALIGNMENT_CENTER:
+	var medida = Compat.medida(fonte_texto, texto, corpo)
+	var esquerda = x
+	if alinhamento == Compat.CENTRO:
 		esquerda = x + (largura - medida.x) * 0.5
-	elif alinhamento == HORIZONTAL_ALIGNMENT_RIGHT:
+	elif alinhamento == Compat.DIREITA:
 		esquerda = x + largura - medida.x
 	# `y` é a LINHA DE BASE, e não o topo: o retângulo sobe pelo ascendente
 	# e desce pelo descendente. Tratar `y` como topo — o erro natural —
 	# daria uma caixa deslocada para baixo por quase um corpo inteiro, e a
 	# auditoria acusaria sobreposições que não existem enquanto deixaria
 	# passar as que existem.
-	var acima := fonte_texto.get_ascent(corpo)
-	var abaixo := fonte_texto.get_descent(corpo)
+	var acima = Compat.ascent(fonte_texto, corpo)
+	var abaixo = fonte_texto.get_descent(corpo)
 	if _auditando_o_miolo and (y - acima < CENTRAL_TOPO or y + abaixo > CENTRAL_BASE):
 		# Fora da janela que rola: as faixas opacas cobrem esta linha
 		# inteira. Ela volta à vista quando o operador rolar a página, e
@@ -8064,12 +8046,12 @@ func _anotar_texto(
 
 func _texto(
 	texto: String, y: float, tamanho: int, cor: Color,
-	alinhamento := HORIZONTAL_ALIGNMENT_CENTER, x := MARGEM, largura := LARGURA_UTIL
+	alinhamento := Compat.CENTRO, x := MARGEM, largura := LARGURA_UTIL
 ) -> void:
-	var corpo := _corpo(tamanho)
+	var corpo = _corpo(tamanho)
 	if auditoria_de_layout:
 		_anotar_texto(texto, y, corpo, alinhamento, x, largura)
-	draw_string(fonte_texto, Vector2(x, y), texto, alinhamento, largura, corpo, cor)
+	Compat.texto(self, fonte_texto, Vector2(x, y), texto, alinhamento, largura, corpo, cor)
 
 ## COMPENSAÇÃO DE ALTURA ENTRE AS DUAS LETRAS.
 ##
@@ -8081,7 +8063,7 @@ func _texto(
 ##
 ## Este fator devolve a altura: 0,720 / 0,688. Ele NÃO é um "deixa maior
 ## porque ficou pequeno" — é a conta que faz 26 continuar valendo 26.
-const CAIXA_LEITURA := 1.047
+const CAIXA_LEITURA = 1.047
 
 ## O PISO DO CORPO DE LETRA.
 ##
@@ -8094,7 +8076,7 @@ const CAIXA_LEITURA := 1.047
 ## Quem pede menos que o piso recebe o piso. É por isso que existe um
 ## piso e não uma revisão de cada chamada: com quarenta lugares pedindo
 ## tamanho, a próxima linha escrita com 14 voltaria a ser ilegível.
-const CORPO_MINIMO := 20
+const CORPO_MINIMO = 20
 
 ## A ESCALA TIPOGRÁFICA — E POR QUE ELA PRECISA EXISTIR.
 ##
@@ -8120,27 +8102,27 @@ const CORPO_MINIMO := 20
 ## tamanhos, e uma linha nova escrita com um número solto continua caindo
 ## na escala sozinha — que é o único jeito de isto não se desfazer na
 ## próxima alteração.
-const ESCALA := [20, 25, 31, 39, 48, 60, 75, 94, 118]
+const ESCALA = [20, 25, 31, 39, 48, 60, 75, 94, 118]
 
 func _corpo(tamanho: int) -> int:
-	var pedido := tamanho if fonte_texto == fonte else int(round(float(tamanho) * CAIXA_LEITURA))
-	return _encaixar_na_escala(maxi(CORPO_MINIMO, pedido))
+	var pedido = tamanho if fonte_texto == fonte else int(round(float(tamanho) * CAIXA_LEITURA))
+	return _encaixar_na_escala(int(max(CORPO_MINIMO, pedido)))
 
 ## O degrau mais próximo, por distância relativa — em tipografia o que o
 ## olho compara é a RAZÃO entre dois tamanhos, não a diferença: de 20 para
 ## 25 é o mesmo salto que de 75 para 94.
 func _encaixar_na_escala(tamanho: int) -> int:
 	var melhor: int = ESCALA[0]
-	var menor_erro := 1.0e30
+	var menor_erro = 1.0e30
 	for degrau in ESCALA:
-		var erro: float = absf(log(float(tamanho) / float(degrau)))
+		var erro: float = abs(log(float(tamanho) / float(degrau)))
 		if erro < menor_erro:
 			menor_erro = erro
 			melhor = degrau
 	# Acima do maior degrau a escala não manda: o placar herói e os
 	# números gigantes do impacto são desenhados no tamanho que couber na
 	# largura da tela, e encaixá-los aqui os encolheria à toa.
-	return maxi(melhor, tamanho) if tamanho > int(ESCALA[ESCALA.size() - 1]) else melhor
+	return int(max(melhor, tamanho)) if tamanho > int(ESCALA[ESCALA.size() - 1]) else melhor
 
 ## O CACHE DE `_tamanho_que_cabe`.
 ##
@@ -8162,15 +8144,15 @@ func _encaixar_na_escala(tamanho: int) -> int:
 ## uma entrada por número de placar diferente para sempre: numa arcada o
 ## conjunto de textos é pequeno e se repete, então limpar de vez em quando
 ## custa perto de nada.
-const CACHE_TAMANHO_TETO := 400
+const CACHE_TAMANHO_TETO = 400
 var _cache_tamanho: Dictionary = {}
 
 ## O maior corpo, até `tamanho_max`, em que o texto ainda cabe na
 ## largura. Sem isso, "PESO-PESADO" a 96 px sai pelos dois lados da tela
 ## e "FRACO!" fica pequeno demais no mesmo lugar.
-func _tamanho_que_cabe(texto: String, tamanho_max: int, largura: float, letra: Font = null) -> int:
-	var usada: Font = letra if letra != null else fonte
-	var chave := [texto, tamanho_max, largura, usada]
+func _tamanho_que_cabe(texto: String, tamanho_max: int, largura: float, letra: Resource = null) -> int:
+	var usada: Resource = letra if letra != null else fonte
+	var chave = [texto, tamanho_max, largura, usada]
 	var em_cache = _cache_tamanho.get(chave)
 	if em_cache != null:
 		return em_cache
@@ -8179,8 +8161,8 @@ func _tamanho_que_cabe(texto: String, tamanho_max: int, largura: float, letra: F
 	# "PONTOS" a 30 px nunca precisou encolher, e pedia a mesma busca de
 	# quem precisa. Medir uma vez no teto e só então decidir resolve o
 	# caso comum com UMA chamada, não quarenta.
-	var tamanho := tamanho_max
-	var medido := usada.get_string_size(texto, HORIZONTAL_ALIGNMENT_LEFT, -1, tamanho).x
+	var tamanho = tamanho_max
+	var medido = Compat.medida(usada, texto, tamanho).x
 	if medido > largura and medido > 0.0:
 		# NÃO COUBE: em vez de descer de dois em dois a partir do teto, a
 		# largura medida dá uma ESTIMATIVA direta de quanto encolher — a
@@ -8189,14 +8171,14 @@ func _tamanho_que_cabe(texto: String, tamanho_max: int, largura: float, letra: F
 		# inteira por poucas chamadas, e o efeito é o mesmo de sempre:
 		# encolhido só o necessário para caber.
 		tamanho = int(floor(float(tamanho_max) * largura / medido))
-		tamanho = clampi(tamanho, 10, tamanho_max)
+		tamanho = int(clamp(tamanho, 10, tamanho_max))
 		tamanho -= tamanho % 2
 		# O chute pode errar para os dois lados (a fonte não é
 		# perfeitamente linear), então o ajuste fino cobre os dois: sobe
 		# se o chute encolheu demais, desce se ainda não coube.
-		while tamanho < tamanho_max and usada.get_string_size(texto, HORIZONTAL_ALIGNMENT_LEFT, -1, tamanho + 2).x <= largura:
+		while tamanho < tamanho_max and Compat.medida(usada, texto, tamanho + 2).x <= largura:
 			tamanho += 2
-		while tamanho > 10 and usada.get_string_size(texto, HORIZONTAL_ALIGNMENT_LEFT, -1, tamanho).x > largura:
+		while tamanho > 10 and Compat.medida(usada, texto, tamanho).x > largura:
 			tamanho -= 2
 
 	if _cache_tamanho.size() >= CACHE_TAMANHO_TETO:
@@ -8219,11 +8201,11 @@ func _tamanho_que_cabe(texto: String, tamanho_max: int, largura: float, letra: F
 ## cor de destaque — a luz que a letra joga no que está atrás dela.
 func _letreiro(
 	texto: String, pos: Vector2, tamanho: int, cor: Color,
-	halo := Color(0, 0, 0, 0), letra: Font = null
+	halo := Color(0, 0, 0, 0), letra: Resource = null
 ) -> void:
-	var usada: Font = letra if letra != null else fonte
+	var usada: Resource = letra if letra != null else fonte
 	if halo.a > 0.001:
-		draw_string_outline(usada, pos, texto, HORIZONTAL_ALIGNMENT_LEFT, -1, tamanho, int(tamanho * 0.34), halo)
+		Compat.contorno(self, usada, pos, texto, Compat.ESQUERDA, -1, tamanho, int(tamanho * 0.34), halo)
 	# O CONTORNO ACOMPANHA O CORPO DA LETRA, e não o tamanho pedido.
 	#
 	# Um contorno de 17% do corpo é o que dá presença a PUNCH a 144 px.
@@ -8231,17 +8213,14 @@ func _letreiro(
 	# lado de um traço que tem três de largura: o contorno come a letra e
 	# sobra a mancha. Abaixo de 34 px o contorno passa a ser fino e fixo,
 	# apenas o bastante para descolar a letra do fundo.
-	var grossura := maxi(6, int(tamanho * 0.17)) if tamanho >= 34 else maxi(3, int(tamanho * 0.11))
-	draw_string_outline(
-		usada, pos, texto, HORIZONTAL_ALIGNMENT_LEFT, -1, tamanho,
-		grossura, Color(Paleta.CONTORNO, cor.a)
-	)
+	var grossura = int(max(6, int(tamanho * 0.17))) if tamanho >= 34 else int(max(3, int(tamanho * 0.11)))
+	Compat.contorno(self, usada, pos, texto, Compat.ESQUERDA, -1, tamanho, grossura, Compat.cor(Paleta.CONTORNO, cor.a))
 	# O realce de topo também é coisa de letra grande: a 22 px ele vira
 	# uma segunda cópia deslocada meio pixel, que é a definição de borrão.
 	if tamanho >= 34:
-		var realce := Color(cor.lightened(0.42), cor.a)
-		draw_string(usada, pos - Vector2(0.0, tamanho * 0.055), texto, HORIZONTAL_ALIGNMENT_LEFT, -1, tamanho, realce)
-	draw_string(usada, pos, texto, HORIZONTAL_ALIGNMENT_LEFT, -1, tamanho, cor)
+		var realce = Compat.cor(cor.lightened(0.42), cor.a)
+		Compat.texto(self, usada, pos - Vector2(0.0, tamanho * 0.055), texto, Compat.ESQUERDA, -1, tamanho, realce)
+	Compat.texto(self, usada, pos, texto, Compat.ESQUERDA, -1, tamanho, cor)
 
 ## OS TRÊS PAPÉIS DE TEXTO DA TELA DE JOGO.
 ##
@@ -8267,8 +8246,8 @@ func _letreiro(
 ## permite subir o corpo dos dois papéis sem que nada estoure a linha: a
 ## tela ganha letra maior E linha mais curta ao mesmo tempo, que é o que
 ## faltava para ler de longe.
-const CORPO_ROTULO := 31
-const CORPO_APOIO := 25
+const CORPO_ROTULO = 31
+const CORPO_APOIO = 25
 
 func _rotulo(texto: String, y: float, cor: Color) -> void:
 	_letreiro_centrado(texto, y, _corpo(CORPO_ROTULO), cor, fonte_texto)
@@ -8289,7 +8268,7 @@ func _marca_da_casa(y: float, altura: float, alpha := 1.0) -> void:
 	if logo == null:
 		# Sem o arquivo, a frase volta — uma abertura sem marca nenhuma
 		# seria pior do que uma abertura com a marca escrita.
-		_texto("LAZER & SPORT GAMES", y + altura * 0.72, 28, Color(Paleta.CIANO, alpha))
+		_texto("LAZER & SPORT GAMES", y + altura * 0.72, 28, Compat.cor(Paleta.CIANO, alpha))
 		return
 	Logos.desenhar(self, "lazersport", Vector2(540.0, y + altura * 0.5), altura, alpha)
 
@@ -8302,44 +8281,43 @@ func _marca_da_casa(y: float, altura: float, alpha := 1.0) -> void:
 ## A MARCA LATERAL É DESENHADA POR ÚLTIMO (em `_draw`, depois de efeitos e
 ## partículas): aqui só se anota onde ela vai. Nada passa por cima dela, e
 ## ela nunca fica menor que 90 px — abaixo disso a marca vira borrão.
-var _marca_pedida := {}
+var _marca_pedida = {}
 
 func _marca_lateral(y: float, alpha := 0.85, altura := 96.0) -> void:
-	_marca_pedida = {"y": y, "alpha": alpha, "altura": maxf(altura, 90.0)}
+	_marca_pedida = {"y": y, "alpha": alpha, "altura": max(altura, 90.0)}
 
 func _draw_marca_pedida() -> void:
-	if _marca_pedida.is_empty():
+	if _marca_pedida.empty():
 		return
 	var altura: float = _marca_pedida["altura"]
 	# Canto de baixo à direita, dentro da tela, com margem.
-	var y := minf(float(_marca_pedida["y"]), TELA.y - altura - 14.0)
+	var y = min(float(_marca_pedida["y"]), TELA.y - altura - 14.0)
 	Logos.desenhar(self, "lazersport", Vector2(1040.0, y), altura, float(_marca_pedida["alpha"]), 1)
 	_marca_pedida = {}
 
 ## Letreiro centrado na largura útil, sem encolher: o corpo dos rótulos é
 ## fixo de propósito, e um rótulo que não cabe é um rótulo comprido
 ## demais, não um rótulo que precisa diminuir.
-func _letreiro_centrado(texto: String, y: float, tamanho: int, cor: Color, letra: Font = null) -> void:
-	var usada: Font = letra if letra != null else fonte
-	var medida := usada.get_string_size(texto, HORIZONTAL_ALIGNMENT_LEFT, -1, tamanho)
+func _letreiro_centrado(texto: String, y: float, tamanho: int, cor: Color, letra: Resource = null) -> void:
+	var usada: Resource = letra if letra != null else fonte
+	var medida = Compat.medida(usada, texto, tamanho)
 	_letreiro(texto, Vector2(540.0 - medida.x * 0.5, y), tamanho, cor, Color(0, 0, 0, 0), usada)
 
 ## Letreiro centrado numa largura, encolhendo até caber.
 func _texto_intro(texto: String, y: float, tamanho_visual: float, corpo_fixo: int, cor: Color, x := 60.0) -> void:
 	# Rasteriza sempre o mesmo corpo. Só os vértices mudam durante o pouso.
-	var fator := tamanho_visual / float(corpo_fixo)
-	var base := Transform2D(0.0, Vector2.ONE * zoom_impacto, 0.0,
-		_deslocamento + ALVO_DO_SOCO - ALVO_DO_SOCO * zoom_impacto)
-	var local := Transform2D(0.0, Vector2.ONE * fator, 0.0, Vector2(x + 480.0, y))
+	var fator = tamanho_visual / float(corpo_fixo)
+	var base = Compat.t2d(0.0, Vector2.ONE * zoom_impacto, 0.0, _deslocamento + ALVO_DO_SOCO - ALVO_DO_SOCO * zoom_impacto)
+	var local = Compat.t2d(0.0, Vector2.ONE * fator, 0.0, Vector2(x + 480.0, y))
 	draw_set_transform_matrix(base * local)
-	var medida := fonte.get_string_size(texto, HORIZONTAL_ALIGNMENT_LEFT, -1, corpo_fixo)
-	_letreiro(texto, Vector2(-medida.x * 0.5, 0.0), corpo_fixo, cor, Color(cor, cor.a * 0.28))
+	var medida = Compat.medida(fonte, texto, corpo_fixo)
+	_letreiro(texto, Vector2(-medida.x * 0.5, 0.0), corpo_fixo, cor, Compat.cor(cor, cor.a * 0.28))
 	draw_set_transform_matrix(base)
 
 func _texto_arcade(texto: String, y: float, tamanho_max: int, cor: Color, largura: float, x := MARGEM) -> void:
-	var tamanho := _tamanho_que_cabe(texto, tamanho_max, largura * 0.94)
-	var medida := fonte.get_string_size(texto, HORIZONTAL_ALIGNMENT_LEFT, -1, tamanho)
-	_letreiro(texto, Vector2(x + (largura - medida.x) * 0.5, y), tamanho, cor, Color(cor, 0.28))
+	var tamanho = _tamanho_que_cabe(texto, tamanho_max, largura * 0.94)
+	var medida = Compat.medida(fonte, texto, tamanho)
+	_letreiro(texto, Vector2(x + (largura - medida.x) * 0.5, y), tamanho, cor, Compat.cor(cor, 0.28))
 
 ## A AUDITORIA PRECISA VER ESTA FUNÇÃO TAMBÉM.
 ##
@@ -8349,9 +8327,7 @@ func _texto_arcade(texto: String, y: float, tamanho_max: int, cor: Color, largur
 ## defeito que isso escondeu foi na página nova — o botão TENTAR DE NOVO
 ## cobrindo, por inteiro, a linha que diz onde o saco está.
 func _texto_cabendo(texto: String, y: float, tamanho_max: int, cor: Color, largura: float, x := MARGEM) -> void:
-	var corpo := _tamanho_que_cabe(texto, _corpo(tamanho_max), largura, fonte_texto)
-	draw_string(
-		fonte_texto, Vector2(x, y), texto, HORIZONTAL_ALIGNMENT_CENTER, largura, corpo, cor
-	)
+	var corpo = _tamanho_que_cabe(texto, _corpo(tamanho_max), largura, fonte_texto)
+	Compat.texto(self, fonte_texto, Vector2(x, y), texto, Compat.CENTRO, largura, corpo, cor)
 	if auditoria_de_layout:
-		_anotar_texto(texto, y, corpo, HORIZONTAL_ALIGNMENT_CENTER, x, largura)
+		_anotar_texto(texto, y, corpo, Compat.CENTRO, x, largura)

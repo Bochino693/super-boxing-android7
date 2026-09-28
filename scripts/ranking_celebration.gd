@@ -1,5 +1,5 @@
 class_name RankingCelebration
-extends RefCounted
+extends Reference
 
 ## Uma colocação não é só um número: ela define o tamanho da cerimônia.
 ## Manter as quatro receitas aqui impede que 1º e 10º voltem a compartilhar
@@ -45,4 +45,4 @@ static func para(posicao: int) -> Dictionary:
 	return {}
 
 static func valida(posicao: int) -> bool:
-	return not para(posicao).is_empty()
+	return not para(posicao).empty()

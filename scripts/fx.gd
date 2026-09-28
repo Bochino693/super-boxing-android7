@@ -1,5 +1,5 @@
 class_name PunchFX
-extends RefCounted
+extends Reference
 
 ## EFEITOS 2D: faíscas, brasas, raios, estilhaços, poeira e confete.
 ##
@@ -20,7 +20,7 @@ enum Tipo { FAISCA, BRASA, CHUVA, RAIO, ESTILHACO, POEIRA, CONFETE }
 
 ## Por tipo: textura, quantas partículas por emissor, quantos emissores,
 ## vida (s), gravidade (px/s²), amortecimento, escala, aditivo, camada.
-const RECEITAS := {
+const RECEITAS = {
 	Tipo.FAISCA: {"tex": "faisca", "lote": 10, "banco": 14, "vida": 0.85, "grav": 420.0,
 		"amort": 520.0, "escala": [0.55, 1.10], "soma": true, "alinha": true},
 	Tipo.BRASA: {"tex": "faisca", "lote": 12, "banco": 18, "vida": 1.45, "grav": 700.0,
@@ -41,23 +41,28 @@ var vigia: Desempenho = null
 
 var _frente: Node2D = null
 var _fundo: Node2D = null
-var _bancos := {}          # Tipo -> Array[CPUParticles2D]
-var _proximo := {}         # Tipo -> índice do próximo emissor
+var _bancos = {}          # Tipo -> Array
+var _proximo = {}         # Tipo -> índice do próximo emissor
 var _chuva_confete: CPUParticles2D = null
-var _chuva_confete_ate := 0.0
-var _brisas := {}          # nome -> CPUParticles2D
-var _rampas := {}          # hash das cores -> Gradient
-var _ondas: Array[Dictionary] = []
-var _relogio := 0.0
-var _aquecendo := 0
+var _chuva_confete_ate = 0.0
+var _brisas = {}          # nome -> CPUParticles2D
+var _rampas = {}          # hash das cores -> Gradient
+var _ondas: Array = []
+var _relogio = 0.0
+var _aquecendo = 0
 
-static var _texturas := {}
+## Estado compartilhado (as `static var` do Godot 4): um `const` com
+## dicionário é único para a classe e pode ser alterado.
+const _E = {
+	"_texturas": {},
+	"_anel": null,
+}
 
 
-static func _textura(nome: String) -> Texture2D:
-	if not _texturas.has(nome):
-		_texturas[nome] = load("res://assets/fx/%s.png" % nome)
-	return _texturas[nome]
+static func _textura(nome: String) -> Texture:
+	if not _E._texturas.has(nome):
+		_E._texturas[nome] = load("res://assets/fx/%s.png" % nome)
+	return _E._texturas[nome]
 
 
 ## Cria as camadas e todos os emissores. Chamar uma vez, no `_ready` de
@@ -68,7 +73,7 @@ func montar(pai: CanvasItem, z_frente := 1, z_fundo := -1) -> void:
 	_frente = _camada(pai, "EfeitosFrente", z_frente)
 	_fundo = _camada(pai, "EfeitosFundo", z_fundo)
 	for tipo in RECEITAS:
-		var banco: Array[CPUParticles2D] = []
+		var banco: Array = []
 		for i in range(int(RECEITAS[tipo]["banco"])):
 			# O confete é só do ranking: mora no fundo, atrás dos cartões.
 			banco.append(_emissor(tipo, _fundo if tipo == Tipo.CONFETE else _frente))
@@ -85,21 +90,21 @@ func montar(pai: CanvasItem, z_frente := 1, z_fundo := -1) -> void:
 	_chuva_confete.direction = Vector2(0.0, 1.0)
 	_chuva_confete.spread = 18.0
 	_chuva_confete.gravity = Vector2(0.0, 150.0)
-	_chuva_confete.damping_min = 4.0
-	_chuva_confete.damping_max = 12.0
+	Compat.faixa_min(_chuva_confete, "damping", 4.0)
+	Compat.faixa_max(_chuva_confete, "damping", 12.0)
 
 
 static func _camada(pai: CanvasItem, nome: String, z: int) -> Node2D:
-	var camada := Node2D.new()
+	var camada = Node2D.new()
 	camada.name = nome
-	camada.z_index = z
+	Compat.z(camada, z)
 	pai.add_child(camada)
 	return camada
 
 
-func _emissor(tipo: Tipo, camada: Node2D) -> CPUParticles2D:
+func _emissor(tipo: int, camada: Node2D) -> CPUParticles2D:
 	var r: Dictionary = RECEITAS[tipo]
-	var p := CPUParticles2D.new()
+	var p = CPUParticles2D.new()
 	p.emitting = false
 	p.visible = false
 	p.one_shot = true
@@ -112,20 +117,19 @@ func _emissor(tipo: Tipo, camada: Node2D) -> CPUParticles2D:
 	# junto com a tela.
 	p.local_coords = true
 	p.texture = _textura(str(r["tex"]))
-	p.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	p.gravity = Vector2(0.0, float(r["grav"]))
-	p.damping_min = float(r["amort"]) * 0.6
-	p.damping_max = float(r["amort"])
-	p.scale_amount_min = float(r["escala"][0])
-	p.scale_amount_max = float(r["escala"][1])
-	p.particle_flag_align_y = bool(r["alinha"])
+	Compat.faixa_min(p, "damping", float(r["amort"]) * 0.6)
+	Compat.faixa_max(p, "damping", float(r["amort"]))
+	Compat.faixa_min(p, "scale_amount", float(r["escala"][0]))
+	Compat.faixa_max(p, "scale_amount", float(r["escala"][1]))
+	p.flag_align_y = bool(r["alinha"])
 	p.spread = 180.0
-	var some := Gradient.new()
+	var some = Gradient.new()
 	some.set_color(0, Color(1, 1, 1, 1))
 	some.set_color(1, Color(1, 1, 1, 0))
 	some.add_point(0.7, Color(1, 1, 1, 0.85))
 	p.color_ramp = some
-	var mat := CanvasItemMaterial.new()
+	var mat = CanvasItemMaterial.new()
 	if bool(r["soma"]):
 		mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
 	if tipo == Tipo.CONFETE:
@@ -133,30 +137,30 @@ func _emissor(tipo: Tipo, camada: Node2D) -> CPUParticles2D:
 		mat.particles_anim_h_frames = 8
 		mat.particles_anim_v_frames = 1
 		mat.particles_anim_loop = true
-		p.anim_speed_min = 3.0
-		p.anim_speed_max = 7.0
-		p.anim_offset_max = 1.0
-		p.angle_min = 0.0
-		p.angle_max = 360.0
-		p.angular_velocity_min = -260.0
-		p.angular_velocity_max = 260.0
-		var papel := Gradient.new()
+		Compat.faixa_min(p, "anim_speed", 3.0)
+		Compat.faixa_max(p, "anim_speed", 7.0)
+		Compat.faixa_max(p, "anim_offset", 1.0)
+		Compat.faixa_min(p, "angle", 0.0)
+		Compat.faixa_max(p, "angle", 360.0)
+		Compat.faixa_min(p, "angular_velocity", -260.0)
+		Compat.faixa_max(p, "angular_velocity", 260.0)
+		var papel = Gradient.new()
 		papel.set_color(0, Color(1, 1, 1, 1))
 		papel.set_color(1, Color(1, 1, 1, 0))
 		papel.add_point(0.85, Color(1, 1, 1, 1))
 		p.color_ramp = papel
 	elif tipo in [Tipo.RAIO, Tipo.ESTILHACO]:
-		p.angle_min = 0.0
-		p.angle_max = 360.0
-		p.angular_velocity_min = -300.0
-		p.angular_velocity_max = 300.0
+		Compat.faixa_min(p, "angle", 0.0)
+		Compat.faixa_max(p, "angle", 360.0)
+		Compat.faixa_min(p, "angular_velocity", -300.0)
+		Compat.faixa_max(p, "angular_velocity", 300.0)
 	elif tipo == Tipo.POEIRA:
-		var cresce := Curve.new()
+		var cresce = Curve.new()
 		cresce.add_point(Vector2(0.0, 0.55))
 		cresce.add_point(Vector2(1.0, 1.25))
 		p.scale_amount_curve = cresce
 	if tipo in [Tipo.FAISCA, Tipo.BRASA, Tipo.CHUVA]:
-		var afina := Curve.new()
+		var afina = Curve.new()
 		afina.add_point(Vector2(0.0, 1.0))
 		afina.add_point(Vector2(1.0, 0.35))
 		p.scale_amount_curve = afina
@@ -169,7 +173,7 @@ func _emissor(tipo: Tipo, camada: Node2D) -> CPUParticles2D:
 func limpar() -> void:
 	_ondas.clear()
 	for banco in _bancos.values():
-		for p: CPUParticles2D in banco:
+		for p in banco:
 			p.emitting = false
 			p.visible = false
 	if _chuva_confete != null:
@@ -178,7 +182,7 @@ func limpar() -> void:
 
 
 func vivo() -> bool:
-	return not _ondas.is_empty()
+	return not _ondas.empty()
 
 
 ## A frente acompanha o tremor e o zoom da tela, como o resto do desenho.
@@ -191,18 +195,18 @@ func seguir(origem: Vector2, escala: Vector2) -> void:
 func atualizar(delta: float) -> void:
 	_relogio += delta
 	for k in range(_ondas.size() - 1, -1, -1):
-		var o := _ondas[k]
+		var o = _ondas[k]
 		o["tempo"] = float(o["tempo"]) + delta
 		if float(o["tempo"]) >= float(o["duracao"]):
-			_ondas.remove_at(k)
+			_ondas.remove(k)
 	if _chuva_confete != null and _chuva_confete.emitting and _relogio > _chuva_confete_ate:
 		_chuva_confete.emitting = false
 	if _aquecendo > 0:
 		_aquecendo -= 1
 		if _aquecendo == 0:
 			limpar()
-			_frente.modulate = Color.WHITE
-			_fundo.modulate = Color.WHITE
+			_frente.modulate = Color.white
+			_fundo.modulate = Color.white
 
 
 ## Dispara um lote de cada tipo quase invisível: compila o shader das
@@ -212,67 +216,71 @@ func aquecer() -> void:
 		return
 	_frente.modulate = Color(1, 1, 1, 0.004)
 	_fundo.modulate = Color(1, 1, 1, 0.004)
-	var meio := Vector2(540.0, 960.0)
+	var meio = Vector2(540.0, 960.0)
 	for tipo in RECEITAS:
-		_disparar(tipo, meio, 1, Color.WHITE, 300.0)
-	chuva_de_confete(1080.0, 10, [Color.WHITE])
+		_disparar(tipo, meio, 1, Color.white, 300.0)
+	chuva_de_confete(1080.0, 10, [Color.white])
 	_aquecendo = 4
 
 
 func desenhar(tela: CanvasItem) -> void:
-	if _ondas.is_empty():
+	if _ondas.empty():
 		return
-	var anel := _malha_do_anel()
+	var anel = _malha_do_anel()
+	var base_v: PoolVector2Array = anel["v"]
+	var base_a: PoolRealArray = anel["a"]
 	for o in _ondas:
 		var t: float = float(o["tempo"]) / float(o["duracao"])
-		var raio: float = lerpf(float(o["raio_inicial"]), float(o["raio_final"]), ease(t, 0.35))
+		var raio: float = lerp(float(o["raio_inicial"]), float(o["raio_final"]), ease(t, 0.35))
 		var cor: Color = o["cor"]
 		cor.a *= (1.0 - t) * (1.0 - t)
-		tela.draw_mesh(anel, null, Transform2D(0.0, Vector2(raio, raio), 0.0, o["centro"]), cor)
+		# No Godot 3 (OpenGL ES 2.0) `draw_mesh` não desenha em 2D: os
+		# mesmos triângulos vão direto ao servidor de desenho, já na escala.
+		var centro: Vector2 = o["centro"]
+		var pontos = PoolVector2Array()
+		var cores = PoolColorArray()
+		for i in range(base_v.size()):
+			pontos.append(centro + base_v[i] * raio)
+			cores.append(Color(cor.r, cor.g, cor.b, cor.a * base_a[i]))
+		VisualServer.canvas_item_add_triangle_array(tela.get_canvas_item(), anel["i"], pontos, cores)
 
 
 ## Anel de raio 1 feito de triângulos, com borda que some para dentro e
 ## para fora. Desenhado com escala, preenche só os pixels do anel — um
 ## quadrado com textura de anel preencheria a tela inteira a cada onda.
-static var _anel: ArrayMesh = null
 
-static func _malha_do_anel() -> ArrayMesh:
-	if _anel != null:
-		return _anel
-	const LADOS := 96
-	const RAIOS := [0.86, 0.955, 1.0]
-	const ALFAS := [0.0, 1.0, 0.0]
-	var v := PackedVector2Array()
-	var c := PackedColorArray()
-	var idx := PackedInt32Array()
+static func _malha_do_anel() -> Dictionary:
+	if _E._anel != null:
+		return _E._anel
+	var LADOS = 96
+	var RAIOS = [0.86, 0.955, 1.0]
+	var ALFAS = [0.0, 1.0, 0.0]
+	var v = PoolVector2Array()
+	var c = PoolRealArray()
+	var idx = PoolIntArray()
 	for i in range(LADOS):
-		var dir := Vector2.from_angle(float(i) / float(LADOS) * TAU)
+		var dir = polar2cartesian(1.0, float(i) / float(LADOS) * TAU)
 		for k in range(3):
 			v.append(dir * float(RAIOS[k]))
-			c.append(Color(1, 1, 1, float(ALFAS[k])))
+			c.append(float(ALFAS[k]))
 	for i in range(LADOS):
-		var a := i * 3
-		var b := ((i + 1) % LADOS) * 3
+		var a = i * 3
+		var b = ((i + 1) % LADOS) * 3
 		for k in range(2):
-			idx.append_array([a + k, b + k, b + k + 1, a + k, b + k + 1, a + k + 1])
-	var arrays := []
-	arrays.resize(Mesh.ARRAY_MAX)
-	arrays[Mesh.ARRAY_VERTEX] = v
-	arrays[Mesh.ARRAY_COLOR] = c
-	arrays[Mesh.ARRAY_INDEX] = idx
-	_anel = ArrayMesh.new()
-	_anel.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-	return _anel
+			for n in [a + k, b + k, b + k + 1, a + k, b + k + 1, a + k + 1]:
+				idx.append(n)
+	_E._anel = {"v": v, "a": c, "i": idx}
+	return _E._anel
 
 
 # ------------------------------------------------------------ disparo
-func _quantos_lotes(tipo: Tipo, pedido: int) -> int:
-	var n := pedido if vigia == null else vigia.quantas(pedido)
-	var lote := int(RECEITAS[tipo]["lote"])
-	return clampi(int(ceil(float(n) / float(lote))), 1, int(RECEITAS[tipo]["banco"]))
+func _quantos_lotes(tipo: int, pedido: int) -> int:
+	var n = pedido if vigia == null else vigia.quantas(pedido)
+	var lote = int(RECEITAS[tipo]["lote"])
+	return int(clamp(int(ceil(float(n) / float(lote))), 1, int(RECEITAS[tipo]["banco"])))
 
 
-func _proximo_emissor(tipo: Tipo) -> CPUParticles2D:
+func _proximo_emissor(tipo: int) -> CPUParticles2D:
 	var banco: Array = _bancos[tipo]
 	var i: int = _proximo[tipo]
 	_proximo[tipo] = (i + 1) % banco.size()
@@ -281,14 +289,14 @@ func _proximo_emissor(tipo: Tipo) -> CPUParticles2D:
 
 func _rampa(cores: Array) -> Gradient:
 	# Uma cor sorteada por partícula: degraus constantes, um por cor.
-	var chave := hash(cores)
+	var chave = hash(cores)
 	if _rampas.has(chave):
 		return _rampas[chave]
-	var g := Gradient.new()
+	var g = Gradient.new()
 	g.interpolation_mode = Gradient.GRADIENT_INTERPOLATE_CONSTANT
-	var n := maxi(cores.size(), 1)
-	g.offsets = PackedFloat32Array([0.0])
-	g.colors = PackedColorArray([cores[0] if not cores.is_empty() else Color.WHITE])
+	var n = int(max(cores.size(), 1))
+	g.offsets = PoolRealArray([0.0])
+	g.colors = PoolColorArray([cores[0] if not cores.empty() else Color.white])
 	for i in range(1, n):
 		g.add_point(float(i) / float(n), cores[i])
 	_rampas[chave] = g
@@ -298,18 +306,18 @@ func _rampa(cores: Array) -> Gradient:
 ## Configura e solta `lotes` emissores do tipo, no ponto. `cor` tinge; se
 ## `cores` vier, cada partícula sorteia uma delas.
 func _disparar(
-	tipo: Tipo, onde: Vector2, lotes: int, cor: Color, forca: float,
+	tipo: int, onde: Vector2, lotes: int, cor: Color, forca: float,
 	cores: Array = [], direcao := Vector2.ZERO, abertura := 180.0, espalhar := 0.0
 ) -> void:
 	if _frente == null:
 		return
 	for _i in range(lotes):
-		var p := _proximo_emissor(tipo)
+		var p = _proximo_emissor(tipo)
 		p.position = onde
 		p.color = cor
-		p.color_initial_ramp = _rampa(cores) if not cores.is_empty() else null
-		p.initial_velocity_min = forca * 0.30
-		p.initial_velocity_max = forca
+		p.color_initial_ramp = _rampa(cores) if not cores.empty() else null
+		Compat.faixa_min(p, "initial_velocity", forca * 0.30)
+		Compat.faixa_max(p, "initial_velocity", forca)
 		p.direction = direcao if direcao != Vector2.ZERO else Vector2.RIGHT
 		p.spread = abertura
 		if espalhar > 0.0:
@@ -325,7 +333,7 @@ func _disparar(
 func onda(centro: Vector2, raio_inicial: float, raio_final: float, cor: Color, _espessura: float = 8.0, duracao: float = 0.7) -> void:
 	_ondas.append({
 		"centro": centro, "raio_inicial": raio_inicial, "raio_final": raio_final,
-		"cor": cor, "duracao": maxf(0.05, duracao), "tempo": 0.0,
+		"cor": cor, "duracao": max(0.05, duracao), "tempo": 0.0,
 	})
 
 
@@ -334,7 +342,7 @@ func faiscas(centro: Vector2, quantidade: int, cor: Color, forca: float = 1000.0
 
 
 func explosao(centro: Vector2, quantidade: int, cores: Array, forca: float = 1100.0) -> void:
-	_disparar(Tipo.BRASA, centro, _quantos_lotes(Tipo.BRASA, quantidade), Color.WHITE, forca, cores, Vector2.ZERO, 180.0, 40.0)
+	_disparar(Tipo.BRASA, centro, _quantos_lotes(Tipo.BRASA, quantidade), Color.white, forca, cores, Vector2.ZERO, 180.0, 40.0)
 
 
 func raios(centro: Vector2, quantidade: int, cor: Color, forca: float = 780.0) -> void:
@@ -354,23 +362,23 @@ func chuva_de_brasas(largura: float, quantidade: int, cores: Array) -> void:
 	if _frente == null:
 		return
 	for _i in range(_quantos_lotes(Tipo.CHUVA, quantidade)):
-		var p := _proximo_emissor(Tipo.CHUVA)
+		var p = _proximo_emissor(Tipo.CHUVA)
 		p.position = Vector2(largura * 0.5, -120.0)
 		p.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
 		p.emission_rect_extents = Vector2(largura * 0.5, 120.0)
-		p.color = Color.WHITE
+		p.color = Color.white
 		p.color_initial_ramp = _rampa(cores)
 		p.direction = Vector2.DOWN
 		p.spread = 8.0
-		p.initial_velocity_min = 480.0
-		p.initial_velocity_max = 900.0
+		Compat.faixa_min(p, "initial_velocity", 480.0)
+		Compat.faixa_max(p, "initial_velocity", 900.0)
 		p.visible = true
 		p.restart()
 
 
 ## Canhão de confete: sai do ponto para cima, abre e cai girando.
 func confete(centro: Vector2, quantidade: int, cores: Array, forca: float = 900.0) -> void:
-	_disparar(Tipo.CONFETE, centro, _quantos_lotes(Tipo.CONFETE, quantidade), Color.WHITE, forca * 1.25, cores, Vector2.UP, 24.0, 30.0)
+	_disparar(Tipo.CONFETE, centro, _quantos_lotes(Tipo.CONFETE, quantidade), Color.white, forca * 1.25, cores, Vector2.UP, 24.0, 30.0)
 
 
 ## Chuva contínua de confete (por trás dos cartões). Cada chamada mantém
@@ -380,9 +388,9 @@ func chuva_de_confete(largura: float, _quantidade: int, cores: Array, intensidad
 		return
 	_chuva_confete.position.x = largura * 0.5
 	_chuva_confete.color_initial_ramp = _rampa(cores)
-	var escala := clampf(intensidade, 0.35, 1.4)
-	_chuva_confete.initial_velocity_min = 90.0 * escala
-	_chuva_confete.initial_velocity_max = 220.0 * escala
+	var escala = clamp(intensidade, 0.35, 1.4)
+	Compat.faixa_min(_chuva_confete, "initial_velocity", 90.0 * escala)
+	Compat.faixa_max(_chuva_confete, "initial_velocity", 220.0 * escala)
 	_chuva_confete_ate = _relogio + 0.45
 	if not _chuva_confete.emitting:
 		_chuva_confete.visible = true
@@ -391,7 +399,7 @@ func chuva_de_confete(largura: float, _quantidade: int, cores: Array, intensidad
 
 func fogos(centro: Vector2, cores: Array) -> void:
 	var cor: Color = cores[randi() % cores.size()]
-	onda(centro, 6.0, randf_range(120.0, 210.0), Color(cor, 0.55), 5.0, 0.55)
+	onda(centro, 6.0, rand_range(120.0, 210.0), Compat.cor(cor, 0.55), 5.0, 0.55)
 	faiscas(centro, 40, cor, 780.0)
 
 
@@ -406,15 +414,15 @@ func brisa(nome: String, area: Rect2, cor: Color, por_segundo := 3.0, ligada := 
 		p.one_shot = false
 		p.explosiveness = 0.0
 		p.lifetime = 3.2
-		p.amount = maxi(2, int(ceil(por_segundo * 3.2)))
+		p.amount = int(max(2, int(ceil(por_segundo * 3.2))))
 		p.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
 		p.direction = Vector2.UP
 		p.spread = 35.0
-		p.initial_velocity_min = 20.0
-		p.initial_velocity_max = 70.0
+		Compat.faixa_min(p, "initial_velocity", 20.0)
+		Compat.faixa_max(p, "initial_velocity", 70.0)
 		p.gravity = Vector2(0.0, -18.0)
-		p.damping_min = 0.0
-		p.damping_max = 6.0
+		Compat.faixa_min(p, "damping", 0.0)
+		Compat.faixa_max(p, "damping", 6.0)
 		_brisas[nome] = p
 	p.position = area.get_center()
 	p.emission_rect_extents = area.size * 0.5

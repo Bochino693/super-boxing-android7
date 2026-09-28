@@ -1,32 +1,38 @@
-SUPER BOXING - VERSAO TV BOX S905L (ANDROID 7.1) - BUILD 92
+SUPER BOXING - VERSAO TV BOX S905L (ANDROID 7.1) - BUILD 93
 ===========================================================
 
 PARA QUAL MAQUINA E ESTA VERSAO
 -------------------------------
 TV Box Amlogic S905L, 1 GB de RAM, 8 GB, Android 7.1 (as 80 placas).
-E o mesmo jogo da build 91 (Godot 4.6.1), com um perfil leve:
-- 30 quadros por segundo FIXOS (liso, sem oscilar).
-- A arena 3D e desenhada em resolucao interna menor e ampliada na tela.
-- Sem as duas luzes coloridas de recorte e sem antisserrilhado 3D.
-- Pele do lutador no material padrao (mesma pintura, menos conta).
-- Texturas do lutador limitadas a 1024 e fundo comprimido na placa de
-  video (menos memoria).
-- Metade das particulas 3D do golpe e da poeira.
-Tudo isso fica num arquivo so: scripts\perfil.gd.
+
+POR QUE GODOT 3.6 (e nao 4.6)
+-----------------------------
+A placa de video da S905L (Mali-450) so tem OpenGL ES 2.0. Todo Godot 4
+exige OpenGL ES 3.0: por isso a build 92 abria e fechava nessa placa.
+Esta versao e o MESMO jogo passado para o Godot 3.6.2, o ultimo Godot que
+desenha em OpenGL ES 2.0. Continua igual: regras, pontuacao, telas,
+Central Tecnica, lutador 3D (mesmo corpo, poses, expressoes e nocaute),
+arena, torcida, sons, Arduino, camera, ranking com foto e os .bat.
+
+O que muda por dentro (voce nao ve na tela):
+- As particulas do golpe sao calculadas no processador (a Mali-450 nao
+  faz particula na placa de video).
+- As fotos do ranking sao gravadas em PNG (o Godot 3 nao grava JPEG).
+- Os efeitos animados recebem os relogios prontos: a placa calcula em
+  meia precisao e, sem isso, a animacao "engasgaria" depois de minutos.
+- Perfil leve da S905L (scripts\perfil.gd): 30 quadros fixos, arena em
+  resolucao interna menor, sem as luzes coloridas de recorte, metade das
+  particulas 3D, texturas do lutador em 1024 comprimidas na placa.
 
 O APK tem outro nome de pacote (com.lazersport.superboxing), entao pode
-ficar instalado junto com o Punch Challenge das outras maquinas.
+ficar instalado junto com o Punch Challenge das outras maquinas. Se a
+build 92 (a que fechava) estiver instalada, a 93 instala por cima.
 
 ANTES DE INSTALAR NAS 80: TESTE EM UMA
 --------------------------------------
-O Godot 4 precisa de placa de video com OpenGL ES 3.0. Para conferir a
-placa, com a TV Box no ADB, rode no PC:
-  C:\AndroidSdk\platform-tools\adb.exe shell dumpsys SurfaceFlinger | findstr GLES
-Se aparecer "OpenGL ES 3.x", o jogo roda. Se aparecer so "OpenGL ES 2.0",
-o jogo avisa que a placa de video nao e compativel e fecha - fotografe
-essa linha e mande.
 Na tela de carregamento aparece, no canto de baixo,
-"BUILD 92 - S905L - Android 7.1".
+"BUILD 93 - S905L - Android 7.1". Jogue uma partida inteira, abra a
+Central Tecnica e confira camera e Arduino antes de passar para as outras.
 
 ATUALIZAR E GERAR O APK (um clique so)
 --------------------------------------
@@ -41,13 +47,15 @@ GERAR O APK (sem baixar nada)
    no fim aparece  SUCESSO  (ou  FALHA  com o motivo).
 3. O APK fica em:  build\android\SuperBoxing.apk
 
-Precisa no PC (o mesmo de sempre):
-  - Godot 4.6.1 (em Downloads ou Documentos, ou aberto)
-  - Android SDK em C:\AndroidSdk
-  - Java 17 e internet (na primeira vez baixa os modelos do Godot)
+Precisa no PC:
+  - Android SDK em C:\AndroidSdk (o mesmo de sempre)
+  - Java 17 (o mesmo de sempre)
+  - internet na primeira vez: o .bat baixa SOZINHO o Godot 3.6.2 (~40 MB)
+    e os modelos de exportacao dele (~600 MB). Nao precisa instalar nada.
+    O Godot 4.6.1 que voce ja tem continua servindo para as outras maquinas.
 
 Se o plugin USB nao compilar, a janela avisa e o APK sai assim mesmo,
-com o plugin que ja estava na pasta.
+com o plugin pronto que vem no projeto (android\plugins).
 
 INSTALAR NA TV BOX
 ------------------

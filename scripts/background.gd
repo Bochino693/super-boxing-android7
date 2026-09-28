@@ -42,22 +42,22 @@ const ArcadeStage = preload("res://scripts/presentation/arcade_stage.gd")
 
 ## Onde o refletor aponta, em fração da tela. Combina com o centro do
 ## saco definido em `scenes/main.tscn`.
-const FOCO := Vector2(0.481, 0.29)
+const FOCO = Vector2(0.481, 0.29)
 ## Altura do piso, em fração da tela.
-const HORIZONTE := 0.58
+const HORIZONTE = 0.58
 
-var tempo := 0.0
-var fx := PunchFX.new()
+var tempo = 0.0
+var fx = PunchFX.new()
 ## Tonalidade do veredito: tinge a tela inteira após o golpe.
-var matiz := Color(0, 0, 0, 0)
+var matiz = Color(0, 0, 0, 0)
 
 ## O cenário parado. Um `Control` filho, atrás deste, que só volta a
 ## desenhar quando o tamanho da tela muda.
 var _parado: Control = null
-var _tamanho_desenhado := Vector2.ZERO
+var _tamanho_desenhado = Vector2.ZERO
 
 func _ready() -> void:
-	set_anchors_preset(Control.PRESET_FULL_RECT)
+	set_anchors_preset(Control.PRESET_WIDE)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	# ESTE NÓ NÃO TEM MAIS `_process`. Quem o adianta é `main.gd`, no
 	# mesmo passo do jogo inteiro.
@@ -66,24 +66,24 @@ func _ready() -> void:
 	# As duas camadas de efeito ficam ACIMA do cenário (z relativo).
 	fx.montar(self, 1, 1)
 
-## O FUNDO SE MEXE NA PLACA DE VÍDEO (`fundo_vivo.gdshader`): a arte do
+## O FUNDO SE MEXE NA PLACA DE VÍDEO (`fundo_vivo.shader`): a arte do
 ## gabinete respira, a luz corre pelos riscos e um relâmpago acende de vez
 ## em quando. Nenhum pixel é redesenhado pelo processador.
 var _vivo: ShaderMaterial = null
 
 func _montar_camada_parada() -> void:
-	var arte := TextureRect.new()
+	var arte = TextureRect.new()
 	arte.name = "Parado"
 	# Atrás de tudo o que este nó desenha, e sem receber clique: é
 	# cenário, não interface.
-	arte.z_index = -1
+	Compat.z(arte, -1)
 	arte.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	arte.set_anchors_preset(Control.PRESET_FULL_RECT)
+	arte.set_anchors_preset(Control.PRESET_WIDE)
 	arte.texture = ArcadeStage.FUNDO
-	arte.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	arte.expand = true
 	arte.stretch_mode = TextureRect.STRETCH_SCALE
 	_vivo = ShaderMaterial.new()
-	_vivo.shader = load("res://shaders/fundo_vivo.gdshader")
+	_vivo.shader = load("res://shaders/fundo_vivo.shader")
 	arte.material = _vivo
 	_parado = arte
 	add_child(_parado)
@@ -91,7 +91,7 @@ func _montar_camada_parada() -> void:
 ## Quanto o fundo se mexe: 1 na abertura, menos durante a luta.
 func vida(valor: float) -> void:
 	if _vivo != null:
-		_vivo.set_shader_parameter("forca", valor)
+		_vivo.set_shader_param("forca", valor)
 	# NA LUTA O FUNDO FICA PARADO: ele está quase todo atrás da arena, e o
 	# shader de tela cheia (1080x1920 pixels, todo quadro) era trabalho da
 	# placa de vídeo que ninguém via. Na abertura ele volta a se mexer.
@@ -100,19 +100,25 @@ func vida(valor: float) -> void:
 
 ## O PASSO VEM DE FORA. Ver o cabeçalho.
 func avancar(passo: float) -> void:
+	if _vivo != null:
+		var agora = Compat.agora()
+		_vivo.set_shader_param("fase_a", Plane(
+			Compat.fase(agora, 0.21), Compat.fase(agora, 0.13), Compat.fase(agora, 0.11), Compat.fase(agora, 1.6)))
+		_vivo.set_shader_param("fase_b", Plane(
+			Compat.fase(agora, 0.9), Compat.sorteio(floor(agora * 0.45)), Compat.fracao(agora, 0.45), 0.0))
 	tempo += passo
 	fx.atualizar(passo)
 	# O cenário parado só é refeito quando a janela muda de tamanho — o
 	# que, num gabinete, acontece zero vez por noite.
-	if _parado != null and size != _tamanho_desenhado:
-		_tamanho_desenhado = size
+	if _parado != null and rect_size != _tamanho_desenhado:
+		_tamanho_desenhado = rect_size
 		# A poeira do palco é um emissor contínuo do motor, e não um
 		# sorteio por quadro em script.
 		fx.brisa(
-			"palco", Rect2(size.x * 0.25, size.y * HORIZONTE - 10.0, size.x * 0.5, 20.0),
+			"palco", Rect2(rect_size.x * 0.25, rect_size.y * HORIZONTE - 10.0, rect_size.x * 0.5, 20.0),
 			Color(1.0, 0.86, 0.55, 0.40), 2.5
 		)
-	queue_redraw()
+	update()
 
 func _draw() -> void:
 	# O CENÁRIO MORA AQUI, e não no nó raiz.
@@ -130,4 +136,4 @@ func _draw() -> void:
 	ArcadeStage.background_animado(self, tempo)
 	fx.desenhar(self)
 	if matiz.a > 0.001:
-		draw_rect(Rect2(Vector2.ZERO, size), matiz)
+		draw_rect(Rect2(Vector2.ZERO, rect_size), matiz)

@@ -1,14 +1,13 @@
 [remap]
 
 importer="wav"
-type="AudioStreamWAV"
-uid="uid://dy7m5p03xuihw"
-path="res://.godot/imported/torcida_incentivo.wav-df034ab501a5582dbddd9b4d31f517a5.sample"
+type="AudioStreamSample"
+path="res://.import/torcida_incentivo.wav-df034ab501a5582dbddd9b4d31f517a5.sample"
 
 [deps]
 
 source_file="res://assets/audio/arcade/torcida_incentivo.wav"
-dest_files=["res://.godot/imported/torcida_incentivo.wav-df034ab501a5582dbddd9b4d31f517a5.sample"]
+dest_files=[ "res://.import/torcida_incentivo.wav-df034ab501a5582dbddd9b4d31f517a5.sample" ]
 
 [params]
 
@@ -21,4 +20,4 @@ edit/normalize=false
 edit/loop_mode=0
 edit/loop_begin=0
 edit/loop_end=-1
-compress/mode=2
+compress/mode=1

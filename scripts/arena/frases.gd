@@ -1,5 +1,5 @@
 class_name ArenaFrases
-extends RefCounted
+extends Reference
 
 ## O QUE A MÁQUINA GRITA QUANDO O SOCO ACERTA.
 ##
@@ -22,7 +22,7 @@ extends RefCounted
 ## trocando de texto. Mesma semente, mesma frase, o tempo todo em que ela
 ## estiver na tela.
 
-const GOLPES := {
+const GOLPES = {
 	"LEVE": [
 		"ELE NEM PISCOU!",
 		"ISSO FOI UM CUMPRIMENTO",
@@ -75,7 +75,7 @@ const GOLPES := {
 
 ## O que a arena diz enquanto o punho não vem. Provocação, não instrução:
 ## a instrução já está escrita logo acima, em letra grande.
-const ESPERA := [
+const ESPERA = [
 	"ELE ESTÁ TE ESPERANDO…",
 	"MIRE NO QUEIXO",
 	"MOSTRE O QUE VOCÊ TEM",
@@ -85,7 +85,7 @@ const ESPERA := [
 
 ## Quando o lutador vai à lona, a frase é uma só e é grande: é o momento
 ## do jogo, não mais um comentário.
-const NOCAUTE := [
+const NOCAUTE = [
 	"NOCAUTE!",
 	"ELE FOI À LONA!",
 	"CONTA ATÉ DEZ!",
@@ -93,7 +93,7 @@ const NOCAUTE := [
 
 ## O estado do adversário, lido do medidor de dano. É o texto das barras
 ## laterais — sem ele, duas colunas coloridas não dizem o que medem.
-const DANOS := [
+const DANOS = [
 	{"ate": 0.001, "texto": "INTEIRO"},
 	{"ate": 0.25,  "texto": "MARCADO"},
 	{"ate": 0.55,  "texto": "ABALADO"},
@@ -102,9 +102,9 @@ const DANOS := [
 ]
 
 static func _sortear(lista: Array, semente: int) -> String:
-	if lista.is_empty():
+	if lista.empty():
 		return ""
-	return str(lista[absi(semente) % lista.size()])
+	return str(lista[int(abs(semente)) % lista.size()])
 
 static func de_golpe(id_do_nivel: String, semente: int) -> String:
 	return _sortear(GOLPES.get(id_do_nivel, GOLPES["BOM"]), semente)
@@ -123,7 +123,7 @@ static func de_dano(dano: float) -> String:
 
 
 ## QUANDO QUEM BATEU PERDEU: o lutador tira onda e a frase acompanha.
-const DERROTA := [
+const DERROTA = [
 	"ELE ESTÁ RINDO DE VOCÊ!",
 	"A TORCIDA VAIOU • REVANCHE?",
 	"FOI SÓ ISSO? ELE QUER MAIS",

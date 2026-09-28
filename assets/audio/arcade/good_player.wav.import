@@ -1,14 +1,13 @@
 [remap]
 
 importer="wav"
-type="AudioStreamWAV"
-uid="uid://dqgivj6uofgjt"
-path="res://.godot/imported/good_player.wav-a8e3c47933c81c067d5e35ff0d7e9e25.sample"
+type="AudioStreamSample"
+path="res://.import/good_player.wav-a8e3c47933c81c067d5e35ff0d7e9e25.sample"
 
 [deps]
 
 source_file="res://assets/audio/arcade/good_player.wav"
-dest_files=["res://.godot/imported/good_player.wav-a8e3c47933c81c067d5e35ff0d7e9e25.sample"]
+dest_files=[ "res://.import/good_player.wav-a8e3c47933c81c067d5e35ff0d7e9e25.sample" ]
 
 [params]
 
@@ -21,4 +20,4 @@ edit/normalize=false
 edit/loop_mode=0
 edit/loop_begin=0
 edit/loop_end=-1
-compress/mode=2
+compress/mode=1

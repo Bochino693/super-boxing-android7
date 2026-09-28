@@ -1,14 +1,13 @@
 [remap]
 
 importer="wav"
-type="AudioStreamWAV"
-uid="uid://c0biw03trb3mj"
-path="res://.godot/imported/torcida_top10.wav-99aa0c25d68e4e37fb89f3e064525e9a.sample"
+type="AudioStreamSample"
+path="res://.import/torcida_top10.wav-99aa0c25d68e4e37fb89f3e064525e9a.sample"
 
 [deps]
 
 source_file="res://assets/audio/arcade/torcida_top10.wav"
-dest_files=["res://.godot/imported/torcida_top10.wav-99aa0c25d68e4e37fb89f3e064525e9a.sample"]
+dest_files=[ "res://.import/torcida_top10.wav-99aa0c25d68e4e37fb89f3e064525e9a.sample" ]
 
 [params]
 
@@ -21,4 +20,4 @@ edit/normalize=false
 edit/loop_mode=0
 edit/loop_begin=0
 edit/loop_end=-1
-compress/mode=2
+compress/mode=1

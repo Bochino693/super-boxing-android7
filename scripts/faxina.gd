@@ -1,5 +1,5 @@
 class_name Faxina
-extends RefCounted
+extends Reference
 
 ## APAGAR AS FOTOS SEM PARAR O JOGO.
 ##
@@ -29,20 +29,20 @@ extends RefCounted
 ## Quantos arquivos por quadro. Oito remoções custam bem menos de um
 ## milissegundo num disco comum e menos de três no pior HD mecânico que
 ## ainda aparece em gabinete — cabe com folga no orçamento de 16 ms.
-const POR_QUADRO := 8
+const POR_QUADRO = 8
 
-var total := 0
-var feitas := 0
-var rodando := false
+var total = 0
+var feitas = 0
+var rodando = false
 
-var _fila: PackedStringArray = PackedStringArray()
-var _erros := 0
+var _fila: PoolStringArray = PoolStringArray()
+var _erros = 0
 
 ## Abre a faxina com a lista JÁ TIRADA da pasta. A lista é um retrato do
 ## instante do clique, de propósito: uma foto tirada DEPOIS do reset é
 ## de uma partida nova e não tem nada a ver com o que se mandou apagar.
-func comecar(arquivos: PackedStringArray) -> void:
-	_fila = arquivos.duplicate()
+func comecar(arquivos: PoolStringArray) -> void:
+	_fila = PoolStringArray(arquivos)
 	total = _fila.size()
 	feitas = 0
 	_erros = 0
@@ -53,9 +53,9 @@ func comecar(arquivos: PackedStringArray) -> void:
 func passo(orcamento := POR_QUADRO) -> void:
 	if not rodando:
 		return
-	var restam := orcamento
+	var restam = orcamento
 	while restam > 0 and feitas < total:
-		var caminho := _fila[feitas]
+		var caminho = _fila[feitas]
 		feitas += 1
 		restam -= 1
 		if not RankingStore.delete_photo(caminho):
@@ -71,7 +71,7 @@ func passo(orcamento := POR_QUADRO) -> void:
 func progresso() -> float:
 	if total <= 0:
 		return 1.0
-	return clampf(float(feitas) / float(total), 0.0, 1.0)
+	return clamp(float(feitas) / float(total), 0.0, 1.0)
 
 ## A linha que a Central mostra.
 func ficha() -> String:

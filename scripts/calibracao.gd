@@ -1,5 +1,5 @@
 class_name Calibracao
-extends RefCounted
+extends Reference
 
 ## A CONTA DO ASSISTENTE DE CALIBRAÇÃO.
 ##
@@ -36,19 +36,19 @@ extends RefCounted
 ## exatamente com o outro limite que o firmware já aplica sozinho.
 
 ## Quantos golpes de cada tipo o assistente pede.
-const AMOSTRAS := 5
+const AMOSTRAS = 5
 
 ## Percentis usados. O piso vem da parte de baixo dos golpes fracos; o
 ## teto, da parte de cima dos fortes.
-const PERCENTIL_PISO := 0.20
-const PERCENTIL_TETO := 0.80
+const PERCENTIL_PISO = 0.20
+const PERCENTIL_TETO = 0.80
 
 ## Folga aplicada depois dos percentis.
 ##
 ## O piso desce um pouco mais: quem bate fraco tem de ver ALGUM ponto,
 ## senão acha que a máquina não registrou e vai embora achando que
 ## quebrou.
-const FOLGA_PISO := 0.85
+const FOLGA_PISO = 0.85
 
 ## O TETO SOBE BASTANTE MAIS DO QUE SUBIA — 22% em vez de 8%.
 ##
@@ -63,7 +63,7 @@ const FOLGA_PISO := 0.85
 ## impressionante, comemorado, e ainda com o topo da escala por
 ## conquistar. É o ponto em que a máquina fica justa nas duas pontas ao
 ## mesmo tempo.
-const FOLGA_TETO := 1.22
+const FOLGA_TETO = 1.22
 
 ## ONDE FICA O SOCO DE REFERÊNCIA, entre o golpe fraco típico e o forte
 ## típico. A curva paga exatamente 5000 nele.
@@ -73,20 +73,20 @@ const FOLGA_TETO := 1.22
 ## teste. A média real do salão fica acima do meio entre as duas
 ## demonstrações, e ancorar no meio geométrico tornaria a máquina
 ## generosa demais com quem mal encostou.
-const REFERENCIA_ENTRE := 0.62
+const REFERENCIA_ENTRE = 0.62
 
 ## O valor num percentil de uma lista, por interpolação linear.
 static func percentil(valores: Array, p: float) -> float:
-	if valores.is_empty():
+	if valores.empty():
 		return 0.0
-	var ordenados := valores.duplicate()
+	var ordenados = valores.duplicate()
 	ordenados.sort()
 	if ordenados.size() == 1:
 		return float(ordenados[0])
-	var pos := clampf(p, 0.0, 1.0) * float(ordenados.size() - 1)
-	var i := int(floor(pos))
-	var j := mini(i + 1, ordenados.size() - 1)
-	return lerpf(float(ordenados[i]), float(ordenados[j]), pos - float(i))
+	var pos = clamp(p, 0.0, 1.0) * float(ordenados.size() - 1)
+	var i = int(floor(pos))
+	var j = int(min(i + 1, ordenados.size() - 1))
+	return lerp(float(ordenados[i]), float(ordenados[j]), pos - float(i))
 
 ## A SUGESTÃO COMPLETA.
 ##
@@ -102,8 +102,8 @@ static func percentil(valores: Array, p: float) -> float:
 static func sugerir(
 	fracos: Array, fortes: Array, ruido: float, largura_m := 0.020
 ) -> Dictionary:
-	var piso := percentil(fracos, PERCENTIL_PISO) * FOLGA_PISO
-	var teto := percentil(fortes, PERCENTIL_TETO) * FOLGA_TETO
+	var piso = percentil(fracos, PERCENTIL_PISO) * FOLGA_PISO
+	var teto = percentil(fortes, PERCENTIL_TETO) * FOLGA_TETO
 
 	# O teto tem de ficar acima do piso com folga de verdade. Se os dois
 	# grupos saíram parecidos — porque quem calibrou bateu igual nas duas
@@ -114,15 +114,15 @@ static func sugerir(
 	# O SOCO DE REFERÊNCIA sai das duas demonstrações, e não de uma
 	# fração da faixa: a faixa já tem as folgas dentro dela, e ancorar
 	# numa fração dela seria ancorar na folga.
-	var referencia := lerpf(
+	var referencia = lerp(
 		percentil(fracos, 0.5), percentil(fortes, 0.5), REFERENCIA_ENTRE
 	)
 
-	var cfg := ScoreCurve.sanitize(
+	var cfg = ScoreCurve.sanitize(
 		piso, teto, ScoreCurve.DEFAULT_CONTRASTE, ScoreCurve.DEFAULT_DEAD_ZONE, referencia
 	)
-	var pulso := ArduinoProtocol.pulso_minimo_ms(largura_m, float(cfg["max_speed"]))
-	var janela := ArduinoProtocol.janela_medivel(largura_m, pulso)
+	var pulso = ArduinoProtocol.pulso_minimo_ms(largura_m, float(cfg["max_speed"]))
+	var janela = ArduinoProtocol.janela_medivel(largura_m, pulso)
 	return {
 		"vmin": cfg["min_speed"],
 		"vmax": cfg["max_speed"],

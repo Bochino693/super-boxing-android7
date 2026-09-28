@@ -1,14 +1,13 @@
 [remap]
 
 importer="wav"
-type="AudioStreamWAV"
-uid="uid://c0f001jbmvpgu"
-path="res://.godot/imported/win.wav-2abaae3bd2f9540bccdb35a018819dee.sample"
+type="AudioStreamSample"
+path="res://.import/win.wav-2abaae3bd2f9540bccdb35a018819dee.sample"
 
 [deps]
 
 source_file="res://assets/audio/arcade/win.wav"
-dest_files=["res://.godot/imported/win.wav-2abaae3bd2f9540bccdb35a018819dee.sample"]
+dest_files=[ "res://.import/win.wav-2abaae3bd2f9540bccdb35a018819dee.sample" ]
 
 [params]
 
@@ -21,4 +20,4 @@ edit/normalize=false
 edit/loop_mode=0
 edit/loop_begin=0
 edit/loop_end=-1
-compress/mode=2
+compress/mode=1

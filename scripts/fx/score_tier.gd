@@ -1,5 +1,5 @@
 class_name ScoreTier
-extends RefCounted
+extends Reference
 
 ## OS OITO NÍVEIS DE GOLPE, E O QUE CADA UM FAZ A TELA FAZER.
 ##
@@ -20,9 +20,9 @@ extends RefCounted
 
 ## O teto da escala. Só um golpe que alcance ou passe a velocidade
 ## máxima calibrada, depois de validado, chega aqui.
-const PERFEITO := 9999
+const PERFEITO = 9999
 
-const NIVEIS := [
+const NIVEIS = [
 	{
 		"id": "LEVE", "min": 0, "max": 1799,
 		"nome": "IMPACTO LEVE",
@@ -116,14 +116,14 @@ const NIVEIS := [
 ## O nível de uma pontuação. Nunca devolve vazio: acima do teto cai no
 ## último, abaixo do piso cai no primeiro.
 static func de(pontos: int) -> Dictionary:
-	var p := clampi(pontos, 0, PERFEITO)
+	var p = int(clamp(pontos, 0, PERFEITO))
 	for nivel in NIVEIS:
 		if p <= int(nivel["max"]):
 			return nivel
 	return NIVEIS[NIVEIS.size() - 1]
 
 static func indice_de(pontos: int) -> int:
-	var p := clampi(pontos, 0, PERFEITO)
+	var p = int(clamp(pontos, 0, PERFEITO))
 	for i in range(NIVEIS.size()):
 		if p <= int(NIVEIS[i]["max"]):
 			return i
@@ -138,9 +138,9 @@ static func cor_de(pontos: int) -> Color:
 ## O quanto o golpe avançou DENTRO do seu nível, de 0 a 1. É o que deixa
 ## dois nocautes diferentes lerem diferente sem inventar mais níveis.
 static func avanco_no_nivel(pontos: int) -> float:
-	var nivel := de(pontos)
-	var piso := int(nivel["min"])
-	var teto := int(nivel["max"])
+	var nivel = de(pontos)
+	var piso = int(nivel["min"])
+	var teto = int(nivel["max"])
 	if teto <= piso:
 		return 1.0
-	return clampf(float(pontos - piso) / float(teto - piso), 0.0, 1.0)
+	return clamp(float(pontos - piso) / float(teto - piso), 0.0, 1.0)

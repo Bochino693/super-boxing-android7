@@ -1,5 +1,5 @@
 class_name AutoEscala
-extends RefCounted
+extends Reference
 
 ## A MÁQUINA APRENDE A FAIXA DO PRÓPRIO GABINETE.
 ##
@@ -68,35 +68,35 @@ extends RefCounted
 ## uma imposição.
 
 ## Quantos socos a memória guarda.
-const JANELA := 240
+const JANELA = 240
 
 ## Abaixo disto ela não opina. Doze socos são seis rodadas — o bastante
 ## para uma tendência existir, pouco o bastante para a máquina se ajeitar
 ## ainda na primeira meia hora de uso.
-const MINIMO_PARA_VALER := 12
+const MINIMO_PARA_VALER = 12
 
 ## Quanto da distância até o alvo cada atualização percorre.
-const PASSO_MAXIMO := 0.12
+const PASSO_MAXIMO = 0.12
 
 ## Os percentis de cada âncora.
-const P_MINIMO := 0.05
+const P_MINIMO = 0.05
 ## O SOCO DE REFERÊNCIA (o que paga 5000) é o do percentil 42: um soco
 ## comum, bem dado, chega lá. No percentil 70 sete em cada dez socos
 ## ficavam abaixo de 5000 e a máquina parecia "sempre fraca".
-const P_REFERENCIA := 0.42
-const P_MAXIMO := 0.97
+const P_REFERENCIA = 0.42
+const P_MAXIMO = 0.97
 
 ## Folgas depois do percentil. O piso desce (quem bate fraco precisa ver
 ## algum ponto) e o teto sobe (9999 tem de continuar sendo conquistado, e
 ## não entregue ao melhor soco já medido).
 ## O piso também vai para a placa como limite de descarte: com folga
 ## pequena, soco mais leve nem era aceito ("o sensor quase não aciona").
-const FOLGA_PISO := 0.55
-const FOLGA_TETO := 1.12
+const FOLGA_PISO = 0.55
+const FOLGA_TETO = 1.12
 
 ## A memória, em m/s, do mais antigo para o mais novo.
-var socos: PackedFloat32Array = PackedFloat32Array()
-var ligada := true
+var socos: PoolRealArray = PoolRealArray()
+var ligada = true
 
 ## Um soco aceito entra na memória. Só isso — a régua não muda aqui, para
 ## que um soco nunca altere a régua que ele mesmo está usando.
@@ -105,7 +105,8 @@ func registrar(velocidade: float) -> void:
 		return
 	socos.append(velocidade)
 	if socos.size() > JANELA:
-		socos = socos.slice(socos.size() - JANELA)
+		while socos.size() > JANELA:
+			socos.remove(0)
 
 func quantos() -> int:
 	return socos.size()
@@ -114,15 +115,15 @@ func pronta() -> bool:
 	return ligada and socos.size() >= MINIMO_PARA_VALER
 
 ## O percentil de uma lista já ordenada, por interpolação linear.
-static func percentil(ordenados: PackedFloat32Array, p: float) -> float:
-	if ordenados.is_empty():
+static func percentil(ordenados: PoolRealArray, p: float) -> float:
+	if ordenados.empty():
 		return 0.0
 	if ordenados.size() == 1:
 		return ordenados[0]
-	var pos := clampf(p, 0.0, 1.0) * float(ordenados.size() - 1)
-	var i := int(floor(pos))
-	var j := mini(i + 1, ordenados.size() - 1)
-	return lerpf(ordenados[i], ordenados[j], pos - float(i))
+	var pos = clamp(p, 0.0, 1.0) * float(ordenados.size() - 1)
+	var i = int(floor(pos))
+	var j = int(min(i + 1, ordenados.size() - 1))
+	return lerp(ordenados[i], ordenados[j], pos - float(i))
 
 ## A RÉGUA QUE A MEMÓRIA PEDE, sem nenhum limite de passo aplicado.
 ## Separada para a Central poder MOSTRAR o alvo ao lado do valor em uso —
@@ -130,11 +131,11 @@ static func percentil(ordenados: PackedFloat32Array, p: float) -> float:
 func alvo() -> Dictionary:
 	if socos.size() < MINIMO_PARA_VALER:
 		return {}
-	var ordenados := socos.duplicate()
+	var ordenados = Array(socos)
 	ordenados.sort()
-	var piso := percentil(ordenados, P_MINIMO) * FOLGA_PISO
-	var teto := percentil(ordenados, P_MAXIMO) * FOLGA_TETO
-	var meio := percentil(ordenados, P_REFERENCIA)
+	var piso = percentil(ordenados, P_MINIMO) * FOLGA_PISO
+	var teto = percentil(ordenados, P_MAXIMO) * FOLGA_TETO
+	var meio = percentil(ordenados, P_REFERENCIA)
 	# O teto tem de ficar acima do piso com folga real. Numa máquina em
 	# que todo mundo bate igual, os três percentis saem colados e a
 	# escala inteira colapsaria numa faixa de nada.
@@ -149,18 +150,18 @@ func alvo() -> Dictionary:
 func passo(vmin_atual: float, vref_atual: float, vmax_atual: float) -> Dictionary:
 	if not pronta():
 		return {}
-	var destino := alvo()
-	if destino.is_empty():
+	var destino = alvo()
+	if destino.empty():
 		return {}
-	var novo_min := lerpf(vmin_atual, float(destino["vmin"]), PASSO_MAXIMO)
-	var novo_ref := lerpf(vref_atual, float(destino["vref"]), PASSO_MAXIMO)
-	var novo_max := lerpf(vmax_atual, float(destino["vmax"]), PASSO_MAXIMO)
+	var novo_min = lerp(vmin_atual, float(destino["vmin"]), PASSO_MAXIMO)
+	var novo_ref = lerp(vref_atual, float(destino["vref"]), PASSO_MAXIMO)
+	var novo_max = lerp(vmax_atual, float(destino["vmax"]), PASSO_MAXIMO)
 	# Mudança pequena demais não vale uma gravação em disco: numa máquina
 	# já ajustada isto roda a cada rodada, a noite inteira.
 	if (
-		absf(novo_min - vmin_atual) < 0.01
-		and absf(novo_ref - vref_atual) < 0.01
-		and absf(novo_max - vmax_atual) < 0.01
+		abs(novo_min - vmin_atual) < 0.01
+		and abs(novo_ref - vref_atual) < 0.01
+		and abs(novo_max - vmax_atual) < 0.01
 	):
 		return {}
 	return {"vmin": novo_min, "vref": novo_ref, "vmax": novo_max}
@@ -171,20 +172,21 @@ func passo(vmin_atual: float, vref_atual: float, vmax_atual: float) -> Dictionar
 func para_salvar() -> Dictionary:
 	return {"ligada": ligada, "socos": Array(socos)}
 
-func carregar(dados: Variant) -> void:
+func carregar(dados) -> void:
 	if not (dados is Dictionary):
 		return
 	var d: Dictionary = dados
 	ligada = bool(d.get("ligada", true))
-	socos = PackedFloat32Array()
+	socos = PoolRealArray()
 	for v in d.get("socos", []):
-		var f := float(v)
+		var f = float(v)
 		# Lixo no arquivo não entra: uma velocidade absurda gravada por
 		# uma versão anterior deslocaria a régua inteira sem explicação.
 		if f > 0.0 and f < 60.0:
 			socos.append(f)
 	if socos.size() > JANELA:
-		socos = socos.slice(socos.size() - JANELA)
+		while socos.size() > JANELA:
+			socos.remove(0)
 
 func esquecer() -> void:
-	socos = PackedFloat32Array()
+	socos = PoolRealArray()

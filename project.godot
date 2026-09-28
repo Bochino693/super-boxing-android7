@@ -6,51 +6,293 @@
 ;   [section] ; section goes between []
 ;   param=value ; assign values to parameters
 
-config_version=5
+config_version=4
 
-[animation]
-
-compatibility/default_parent_skeleton_in_mesh_instance_3d=true
+_global_script_classes=[ {
+"base": "SerialLink",
+"class": "AndroidUsbSerialLink",
+"language": "GDScript",
+"path": "res://scripts/serial/android_usb_serial_link.gd"
+}, {
+"base": "Reference",
+"class": "ArduinoProtocol",
+"language": "GDScript",
+"path": "res://scripts/arduino_protocol.gd"
+}, {
+"base": "Viewport",
+"class": "Arena3D",
+"language": "GDScript",
+"path": "res://scripts/arena/arena3d.gd"
+}, {
+"base": "Reference",
+"class": "ArenaFrases",
+"language": "GDScript",
+"path": "res://scripts/arena/frases.gd"
+}, {
+"base": "Reference",
+"class": "ArenaQuadro",
+"language": "GDScript",
+"path": "res://scripts/arena/quadro.gd"
+}, {
+"base": "Node",
+"class": "AudioBank",
+"language": "GDScript",
+"path": "res://scripts/audio_bank.gd"
+}, {
+"base": "Reference",
+"class": "AutoEscala",
+"language": "GDScript",
+"path": "res://scripts/auto_escala.gd"
+}, {
+"base": "Reference",
+"class": "Calibracao",
+"language": "GDScript",
+"path": "res://scripts/calibracao.gd"
+}, {
+"base": "Node",
+"class": "CameraDoctor",
+"language": "GDScript",
+"path": "res://scripts/camera_doctor.gd"
+}, {
+"base": "Node",
+"class": "CameraService",
+"language": "GDScript",
+"path": "res://scripts/camera_service.gd"
+}, {
+"base": "Reference",
+"class": "Compat",
+"language": "GDScript",
+"path": "res://scripts/compat.gd"
+}, {
+"base": "Reference",
+"class": "Desempenho",
+"language": "GDScript",
+"path": "res://scripts/desempenho.gd"
+}, {
+"base": "Reference",
+"class": "Diario",
+"language": "GDScript",
+"path": "res://scripts/diario.gd"
+}, {
+"base": "Reference",
+"class": "Faxina",
+"language": "GDScript",
+"path": "res://scripts/faxina.gd"
+}, {
+"base": "Reference",
+"class": "GameDef",
+"language": "GDScript",
+"path": "res://scripts/game_def.gd"
+}, {
+"base": "Reference",
+"class": "Icones",
+"language": "GDScript",
+"path": "res://scripts/icones.gd"
+}, {
+"base": "Reference",
+"class": "ImpactDirector",
+"language": "GDScript",
+"path": "res://scripts/fx/impact_director.gd"
+}, {
+"base": "Control",
+"class": "LedFrame",
+"language": "GDScript",
+"path": "res://scripts/led_frame.gd"
+}, {
+"base": "Control",
+"class": "Letreiro",
+"language": "GDScript",
+"path": "res://scripts/letreiro.gd"
+}, {
+"base": "Reference",
+"class": "Logos",
+"language": "GDScript",
+"path": "res://scripts/logos.gd"
+}, {
+"base": "Spatial",
+"class": "Lutador3D",
+"language": "GDScript",
+"path": "res://scripts/arena/lutador.gd"
+}, {
+"base": "Lutador3D",
+"class": "LutadorBoxeador3D",
+"language": "GDScript",
+"path": "res://scripts/arena/lutador_boxeador.gd"
+}, {
+"base": "SerialLink",
+"class": "NullSerialLink",
+"language": "GDScript",
+"path": "res://scripts/serial/null_serial_link.gd"
+}, {
+"base": "Reference",
+"class": "Paleta",
+"language": "GDScript",
+"path": "res://scripts/paleta.gd"
+}, {
+"base": "Reference",
+"class": "Perfil",
+"language": "GDScript",
+"path": "res://scripts/perfil.gd"
+}, {
+"base": "Reference",
+"class": "Porteiro",
+"language": "GDScript",
+"path": "res://scripts/porteiro.gd"
+}, {
+"base": "Control",
+"class": "PunchBackground",
+"language": "GDScript",
+"path": "res://scripts/background.gd"
+}, {
+"base": "Reference",
+"class": "PunchFX",
+"language": "GDScript",
+"path": "res://scripts/fx.gd"
+}, {
+"base": "Reference",
+"class": "RankingCelebration",
+"language": "GDScript",
+"path": "res://scripts/ranking_celebration.gd"
+}, {
+"base": "Reference",
+"class": "RankingStore",
+"language": "GDScript",
+"path": "res://scripts/ranking_store.gd"
+}, {
+"base": "Reference",
+"class": "Ritmo",
+"language": "GDScript",
+"path": "res://scripts/ritmo.gd"
+}, {
+"base": "Reference",
+"class": "SacoMotor",
+"language": "GDScript",
+"path": "res://scripts/saco_motor.gd"
+}, {
+"base": "Reference",
+"class": "ScoreCurve",
+"language": "GDScript",
+"path": "res://scripts/score_curve.gd"
+}, {
+"base": "Reference",
+"class": "ScoreTier",
+"language": "GDScript",
+"path": "res://scripts/fx/score_tier.gd"
+}, {
+"base": "Reference",
+"class": "SerialLink",
+"language": "GDScript",
+"path": "res://scripts/serial/serial_link.gd"
+}, {
+"base": "Reference",
+"class": "SettingsStore",
+"language": "GDScript",
+"path": "res://scripts/settings_store.gd"
+}, {
+"base": "Reference",
+"class": "StatisticsStore",
+"language": "GDScript",
+"path": "res://scripts/statistics_store.gd"
+}, {
+"base": "Reference",
+"class": "Traco",
+"language": "GDScript",
+"path": "res://scripts/traco.gd"
+}, {
+"base": "Reference",
+"class": "Versao",
+"language": "GDScript",
+"path": "res://scripts/versao.gd"
+} ]
+_global_script_class_icons={
+"AndroidUsbSerialLink": "",
+"ArduinoProtocol": "",
+"Arena3D": "",
+"ArenaFrases": "",
+"ArenaQuadro": "",
+"AudioBank": "",
+"AutoEscala": "",
+"Calibracao": "",
+"CameraDoctor": "",
+"CameraService": "",
+"Compat": "",
+"Desempenho": "",
+"Diario": "",
+"Faxina": "",
+"GameDef": "",
+"Icones": "",
+"ImpactDirector": "",
+"LedFrame": "",
+"Letreiro": "",
+"Logos": "",
+"Lutador3D": "",
+"LutadorBoxeador3D": "",
+"NullSerialLink": "",
+"Paleta": "",
+"Perfil": "",
+"Porteiro": "",
+"PunchBackground": "",
+"PunchFX": "",
+"RankingCelebration": "",
+"RankingStore": "",
+"Ritmo": "",
+"SacoMotor": "",
+"ScoreCurve": "",
+"ScoreTier": "",
+"SerialLink": "",
+"SettingsStore": "",
+"StatisticsStore": "",
+"Traco": "",
+"Versao": ""
+}
 
 [application]
 
 config/name="Super Boxing"
 run/main_scene="res://scenes/carregador.tscn"
-config/features=PackedStringArray("4.6", "GL Compatibility")
-boot_splash/bg_color=Color(0.0627, 0.0353, 0.1137, 1)
 boot_splash/image="res://assets/branding/abertura_tvbox.png"
+boot_splash/bg_color=Color( 0.0627, 0.0353, 0.1137, 1 )
 config/icon="res://assets/icon.png"
-config/quit_on_go_back=false
 config/auto_accept_quit=false
+config/quit_on_go_back=false
+
+[audio]
+
+default_bus_layout=""
+
+[debug]
+
+gdscript/warnings/enable=false
 
 [display]
 
-window/size/viewport_width=1920
-window/size/viewport_height=1080
-window/size/mode=3
-window/stretch/mode="canvas_items"
-vsync/vsync_mode=2
+window/size/width=1920
+window/size/height=1080
+window/size/fullscreen=true
+window/handheld/orientation="sensor_landscape"
+window/stretch/mode="2d"
+window/stretch/aspect="keep"
 
 [editor_plugins]
 
-enabled=PackedStringArray("PunchUsbSerial")
+enabled=PoolStringArray(  )
 
 [input]
 
 cabinet_start={
 "deadzone": 0.2,
-"events": [Object(InputEventJoypadButton,"resource_local_to_scene":false,"resource_name":"","device":-1,"button_index":6,"pressure":0.0,"pressed":true,"script":null)
-]
+"events": [ Object(InputEventJoypadButton,"resource_local_to_scene":false,"resource_name":"","device":-1,"button_index":6,"pressure":0.0,"pressed":true,"script":null)
+ ]
 }
 cabinet_credit={
 "deadzone": 0.2,
-"events": [Object(InputEventJoypadButton,"resource_local_to_scene":false,"resource_name":"","device":-1,"button_index":4,"pressure":0.0,"pressed":true,"script":null)
-]
+"events": [ Object(InputEventJoypadButton,"resource_local_to_scene":false,"resource_name":"","device":-1,"button_index":4,"pressure":0.0,"pressed":true,"script":null)
+ ]
 }
 
 [physics]
 
-common/physics_ticks_per_second=20
+common/physics_fps=20
 
 [punch]
 
@@ -58,12 +300,15 @@ debug_simulation=false
 
 [rendering]
 
-textures/canvas_textures/default_texture_filter=3
-renderer/rendering_method="gl_compatibility"
-renderer/rendering_method.mobile="gl_compatibility"
-textures/vram_compression/import_etc2_astc=true
-textures/default_filters/anisotropic_filtering_level=0
-anti_aliasing/quality/msaa_2d=0
-anti_aliasing/quality/msaa_3d=0
-limits/opengl/max_lights_per_object=4
-environment/defaults/default_clear_color=Color(0.0627, 0.0353, 0.1137, 1)
+quality/driver/driver_name="GLES2"
+quality/driver/fallback_to_gles2=true
+vram_compression/import_etc=true
+vram_compression/import_etc2=false
+quality/directional_shadow/size=1024
+quality/shadow_atlas/size=1024
+quality/reflections/texture_array_reflections=false
+quality/reflections/high_quality_ggx=false
+quality/shading/force_vertex_shading.mobile=false
+quality/filters/anisotropic_filter_level=1
+environment/default_clear_color=Color( 0.0627, 0.0353, 0.1137, 1 )
+quality/depth/hdr=false

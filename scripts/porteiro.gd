@@ -1,5 +1,5 @@
 class_name Porteiro
-extends RefCounted
+extends Reference
 
 ## AS JANELAS DE PERMISSÃO DO ANDROID, UMA DE CADA VEZ.
 ##
@@ -18,44 +18,48 @@ extends RefCounted
 ## terminar de fechar a janela antes de mexer de novo.
 
 ## Quanto esperar depois que o foco volta (ms).
-const RESPIRO_MS := 900
+const RESPIRO_MS = 900
 ## Sem Arduino à vista por este tempo, a câmera não espera mais por ele.
-const PACIENCIA_DO_ARDUINO_MS := 15000
+const PACIENCIA_DO_ARDUINO_MS = 15000
 
-static var _foco := true
-static var _foco_voltou_ms := 0
-static var _foco_perdido_ms := 0
+## Estado compartilhado (as `static var` do Godot 4): um `const` com
+## dicionário é único para a classe e pode ser alterado.
+const _E = {
+	"_foco": true,
+	"_foco_voltou_ms": 0,
+	"_foco_perdido_ms": 0,
+	"_arduino_resolvido": false,
+	"_inicio_ms": -1,
+}
 ## SEM FOCO POR MAIS QUE ISTO, SEGUE A VIDA. Algumas TV Boxes não avisam
 ## o jogo quando o foco volta; esperar o aviso para sempre deixava câmera
 ## e Arduino parados. Janela de verdade na frente dura poucos segundos.
-const FOCO_PERDIDO_MAXIMO_MS := 6000
-static var _arduino_resolvido := false
-static var _inicio_ms := -1
+const FOCO_PERDIDO_MAXIMO_MS = 6000
 
 static func foco(tem: bool) -> void:
-	if tem and not _foco:
-		_foco_voltou_ms = Time.get_ticks_msec()
-	if not tem and _foco:
-		_foco_perdido_ms = Time.get_ticks_msec()
-	_foco = tem
+	if tem and not _E._foco:
+		_E._foco_voltou_ms = Time.get_ticks_msec()
+	if not tem and _E._foco:
+		_E._foco_perdido_ms = Time.get_ticks_msec()
+	_E._foco = tem
 
 ## Pode mexer em USB e em câmera agora?
 static func livre() -> bool:
-	var agora := Time.get_ticks_msec()
-	if not _foco:
-		return agora - _foco_perdido_ms >= FOCO_PERDIDO_MAXIMO_MS
-	return agora - _foco_voltou_ms >= RESPIRO_MS
+	var agora = Time.get_ticks_msec()
+	if not _E._foco:
+		return agora - _E._foco_perdido_ms >= FOCO_PERDIDO_MAXIMO_MS
+	return agora - _E._foco_voltou_ms >= RESPIRO_MS
 
 ## O Arduino respondeu (ou o jogo desistiu de esperar por ele).
 static func arduino_resolvido() -> void:
-	_arduino_resolvido = true
+	_E._arduino_resolvido = true
 
 ## É a vez da câmera?
 static func vez_da_camera() -> bool:
 	if not livre():
 		return false
-	if _arduino_resolvido or OS.get_name() != "Android":
+	if _E._arduino_resolvido or OS.get_name() != "Android":
 		return true
-	if _inicio_ms < 0:
-		_inicio_ms = Time.get_ticks_msec()
-	return Time.get_ticks_msec() - _inicio_ms >= PACIENCIA_DO_ARDUINO_MS
+	if _E._inicio_ms < 0:
+		_E._inicio_ms = Time.get_ticks_msec()
+	return Time.get_ticks_msec() - _E._inicio_ms >= PACIENCIA_DO_ARDUINO_MS

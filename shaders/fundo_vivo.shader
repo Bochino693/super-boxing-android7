@@ -5,24 +5,32 @@ shader_type canvas_item;
 //   • de tempos em tempos um relâmpago acende os raios brancos.
 // `forca` 1 na abertura; mais baixo durante a luta (o fundo não disputa
 // atenção com a arena).
+//
+// OS RELÓGIOS VÊM PRONTOS (ver `background.gd`): a placa de vídeo da S905L
+// (Mali-450) faz a conta do pixel em meia precisão, e o TIME crescendo
+// passaria a andar aos pulos depois de alguns minutos. Cada fase chega já
+// dentro de uma volta (0..2π) e o sorteio do relâmpago já feito.
 uniform float forca = 1.0;
+// x: zoom (0,21/s)  y: deriva x (0,13/s)  z: deriva y (0,11/s)  w: riscos (1,6/s)
+uniform vec4 fase_a = vec4(0.0);
+// x: riscos largos (0,9/s)  y: sorte do relâmpago  z: fase do relâmpago
+uniform vec4 fase_b = vec4(0.0);
 
 void fragment() {
-	float z = 1.02 + 0.016 * sin(TIME * 0.21);
-	vec2 c = vec2(0.5, 0.47) + vec2(sin(TIME * 0.13), cos(TIME * 0.11)) * 0.007;
+	float z = 1.02 + 0.016 * sin(fase_a.x);
+	vec2 c = vec2(0.5, 0.47) + vec2(sin(fase_a.y), cos(fase_a.z)) * 0.007;
 	vec2 uv = c + (UV - c) / z;
 	vec3 base = texture(TEXTURE, uv).rgb;
 	float lum = dot(base, vec3(0.3, 0.5, 0.2));
 	vec2 p = UV * vec2(1.0, 1.78);
-	float s1 = 0.5 + 0.5 * sin(dot(p, vec2(0.79, -0.62)) * 9.0 - TIME * 1.6);
+	float s1 = 0.5 + 0.5 * sin(dot(p, vec2(0.79, -0.62)) * 9.0 - fase_a.w);
 	s1 *= s1; s1 *= s1; s1 *= s1;
-	float s2 = 0.5 + 0.5 * sin(dot(p, vec2(0.62, 0.79)) * 5.0 + TIME * 0.9);
+	float s2 = 0.5 + 0.5 * sin(dot(p, vec2(0.62, 0.79)) * 5.0 + fase_b.x);
 	s2 *= s2; s2 *= s2; s2 *= s2; s2 *= s2;
 	float riscos = smoothstep(0.07, 0.32, lum);
 	vec3 cor = base * (1.0 + (s1 * 1.5 + s2 * 0.7) * riscos * forca);
-	float janela = floor(TIME * 0.45);
-	float sorte = fract(sin(janela * 12.9898) * 43758.5453);
-	float fase = fract(TIME * 0.45);
+	float sorte = fase_b.y;
+	float fase = fase_b.z;
 	float flash = step(0.6, sorte) * exp(-fase * 8.0) * (0.65 + 0.35 * sin(fase * 80.0));
 	float branco = smoothstep(0.35, 0.75, min(base.r, min(base.g, base.b)) * 1.6);
 	cor += vec3(0.55, 0.72, 1.0) * flash * (branco * 1.5 + 0.06) * forca;

@@ -1,14 +1,13 @@
 [remap]
 
 importer="wav"
-type="AudioStreamWAV"
-uid="uid://n25ngx6guhn1"
-path="res://.godot/imported/ranking_neutral_2.wav-66e25cc7783581e11de87d9daa9e75f9.sample"
+type="AudioStreamSample"
+path="res://.import/ranking_neutral_2.wav-66e25cc7783581e11de87d9daa9e75f9.sample"
 
 [deps]
 
 source_file="res://assets/audio/arcade/ranking_neutral_2.wav"
-dest_files=["res://.godot/imported/ranking_neutral_2.wav-66e25cc7783581e11de87d9daa9e75f9.sample"]
+dest_files=[ "res://.import/ranking_neutral_2.wav-66e25cc7783581e11de87d9daa9e75f9.sample" ]
 
 [params]
 
@@ -21,4 +20,4 @@ edit/normalize=false
 edit/loop_mode=0
 edit/loop_begin=0
 edit/loop_end=-1
-compress/mode=2
+compress/mode=1

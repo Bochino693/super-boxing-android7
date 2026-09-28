@@ -1,14 +1,13 @@
 [remap]
 
 importer="wav"
-type="AudioStreamWAV"
-uid="uid://bxyja74yqxiqi"
-path="res://.godot/imported/not_supress.wav-30cf83b4b76a37d53a8c9ca0e179c965.sample"
+type="AudioStreamSample"
+path="res://.import/not_supress.wav-30cf83b4b76a37d53a8c9ca0e179c965.sample"
 
 [deps]
 
 source_file="res://assets/audio/arcade/not_supress.wav"
-dest_files=["res://.godot/imported/not_supress.wav-30cf83b4b76a37d53a8c9ca0e179c965.sample"]
+dest_files=[ "res://.import/not_supress.wav-30cf83b4b76a37d53a8c9ca0e179c965.sample" ]
 
 [params]
 
@@ -21,4 +20,4 @@ edit/normalize=false
 edit/loop_mode=0
 edit/loop_begin=0
 edit/loop_end=-1
-compress/mode=2
+compress/mode=1

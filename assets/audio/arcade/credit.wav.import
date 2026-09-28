@@ -1,14 +1,13 @@
 [remap]
 
 importer="wav"
-type="AudioStreamWAV"
-uid="uid://chvwu4d1cxb4n"
-path="res://.godot/imported/credit.wav-a983d05e8ab55216058aaec1324fb327.sample"
+type="AudioStreamSample"
+path="res://.import/credit.wav-a983d05e8ab55216058aaec1324fb327.sample"
 
 [deps]
 
 source_file="res://assets/audio/arcade/credit.wav"
-dest_files=["res://.godot/imported/credit.wav-a983d05e8ab55216058aaec1324fb327.sample"]
+dest_files=[ "res://.import/credit.wav-a983d05e8ab55216058aaec1324fb327.sample" ]
 
 [params]
 
@@ -21,4 +20,4 @@ edit/normalize=false
 edit/loop_mode=0
 edit/loop_begin=0
 edit/loop_end=-1
-compress/mode=2
+compress/mode=1

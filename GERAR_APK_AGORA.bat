@@ -4,7 +4,7 @@ title Super Boxing S905L - Gerar APK Android
 cd /d "%~dp0"
 
 echo ============================================================
-echo   SUPER BOXING - BUILD 92 - TV BOX S905L (ANDROID 7.1)
+echo   SUPER BOXING - BUILD 93 - TV BOX S905L (ANDROID 7.1) - GODOT 3.6
 echo   GERA O APK COMPLETO (PLUGIN USB + JOGO)
 echo ============================================================
 echo.

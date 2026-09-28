@@ -1,14 +1,13 @@
 [remap]
 
 importer="wav"
-type="AudioStreamWAV"
-uid="uid://bt0dshb0h2ho8"
-path="res://.godot/imported/lose.wav-e2fa21393fbcbd044583ac6138bf52b5.sample"
+type="AudioStreamSample"
+path="res://.import/lose.wav-e2fa21393fbcbd044583ac6138bf52b5.sample"
 
 [deps]
 
 source_file="res://assets/audio/arcade/lose.wav"
-dest_files=["res://.godot/imported/lose.wav-e2fa21393fbcbd044583ac6138bf52b5.sample"]
+dest_files=[ "res://.import/lose.wav-e2fa21393fbcbd044583ac6138bf52b5.sample" ]
 
 [params]
 
@@ -21,4 +20,4 @@ edit/normalize=false
 edit/loop_mode=0
 edit/loop_begin=0
 edit/loop_end=-1
-compress/mode=2
+compress/mode=1

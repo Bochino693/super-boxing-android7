@@ -1,5 +1,5 @@
 class_name ArduinoProtocol
-extends RefCounted
+extends Reference
 
 ## Protocolo serial da variante optica LM393.
 ## Linhas terminadas em \n, campos separados por vírgula. Mensagens
@@ -9,10 +9,10 @@ extends RefCounted
 ## parse(line) -> Dictionary com ao menos a chave "type".
 ## type == "" significa "linha inválida, ignore".
 static func parse(line: String) -> Dictionary:
-	var parts := line.split(",")
-	if parts.is_empty():
+	var parts = line.split(",")
+	if parts.empty():
 		return {"type": ""}
-	var head := parts[0].strip_edges().to_upper()
+	var head = parts[0].strip_edges().to_upper()
 	match head:
 		"READY":
 			# READY,PUNCH_OPTICAL,V1
@@ -22,14 +22,14 @@ static func parse(line: String) -> Dictionary:
 				"version": parts[2] if parts.size() > 2 else "",
 			}
 		"CALIBRATING":
-			if parts.size() != 2 or not parts[1].is_valid_int():
+			if parts.size() != 2 or not parts[1].is_valid_integer():
 				return {"type": ""}
-			return {"type": "CALIBRATING", "percent": clampi(parts[1].to_int(), 0, 100)}
+			return {"type": "CALIBRATING", "percent": int(clamp(parts[1].to_int(), 0, 100))}
 		"CALIBRATED":
 			if parts.size() != 4:
 				return {"type": ""}
-			var offs := _floats(parts, 1, 3)
-			if offs.is_empty():
+			var offs = _floats(parts, 1, 3)
+			if offs.empty():
 				return {"type": ""}
 			return {"type": "CALIBRATED", "offsets": offs}
 		"PONG":
@@ -38,7 +38,7 @@ static func parse(line: String) -> Dictionary:
 			# PINS,<start>,<credito> — 1 é APERTADO. O estado cru dos dois
 			# pinos, para a Central mostrar ao vivo: se o número não muda
 			# quando o botão é apertado, o problema é antes do firmware.
-			if parts.size() not in [3, 4]:
+			if not parts.size() in [3, 4]:
 				return {"type": ""}
 			return {
 				"type": "PINS",
@@ -49,16 +49,16 @@ static func parse(line: String) -> Dictionary:
 		"BUTTON":
 			if parts.size() != 2:
 				return {"type": ""}
-			var botao := parts[1].strip_edges().to_upper()
-			if botao not in ["START", "CREDIT", "CONFIG"]:
+			var botao = parts[1].strip_edges().to_upper()
+			if not botao in ["START", "CREDIT", "CONFIG"]:
 				return {"type": ""}
 			return {"type": "BUTTON", "button": botao}
 		"TELEMETRY":
 			# TELEMETRY,ax,ay,az,gx,gy,gz,velocidade,pico_g
 			if parts.size() != 9:
 				return {"type": ""}
-			var vals := _floats(parts, 1, 8)
-			if vals.is_empty():
+			var vals = _floats(parts, 1, 8)
+			if vals.empty():
 				return {"type": ""}
 			return {
 				"type": "TELEMETRY",
@@ -71,11 +71,11 @@ static func parse(line: String) -> Dictionary:
 			# HIT,velocidade_pico,aceleracao_pico,duracao_ms,eixo
 			if parts.size() != 5:
 				return {"type": ""}
-			var vals := _floats(parts, 1, 3)
-			if vals.is_empty():
+			var vals = _floats(parts, 1, 3)
+			if vals.empty():
 				return {"type": ""}
-			var eixo := parts[4].strip_edges().to_upper()
-			if eixo not in ["X", "Y", "Z", "O"]:
+			var eixo = parts[4].strip_edges().to_upper()
+			if not eixo in ["X", "Y", "Z", "O"]:
 				return {"type": ""}
 			# Valores impossíveis não viram golpe.
 			if vals[0] < 0.0 or vals[0] > 60.0 or vals[1] < 0.0 or vals[1] > 17.0 or vals[2] <= 0.0 or vals[2] > 5000.0:
@@ -89,8 +89,8 @@ static func parse(line: String) -> Dictionary:
 			# causas diferentes — numa frase que aponta o limiar errado.
 			if parts.size() != 6:
 				return {"type": ""}
-			var nums := _floats(parts, 2, 4)
-			if nums.is_empty():
+			var nums = _floats(parts, 2, 4)
+			if nums.empty():
 				return {"type": ""}
 			return {
 				"type": "REJECT",
@@ -108,8 +108,8 @@ static func parse(line: String) -> Dictionary:
 			# que se confere a olho, sem interpretar nada.
 			if parts.size() != 4:
 				return {"type": ""}
-			var st := _floats(parts, 2, 2)
-			if st.is_empty():
+			var st = _floats(parts, 2, 2)
+			if st.empty():
 				return {"type": ""}
 			return {
 				"type": "STATUS",
@@ -121,14 +121,14 @@ static func parse(line: String) -> Dictionary:
 			# NOISE,<ruido_g>,<ruido_dps> — o piso medido nesta montagem.
 			if parts.size() != 3:
 				return {"type": ""}
-			var nz := _floats(parts, 1, 2)
-			if nz.is_empty():
+			var nz = _floats(parts, 1, 2)
+			if nz.empty():
 				return {"type": ""}
 			return {"type": "NOISE", "noise_g": nz[0], "noise_dps": nz[1]}
 		"SATURATION":
 			if parts.size() != 2:
 				return {"type": ""}
-			var fonte := parts[1].strip_edges().to_upper()
+			var fonte = parts[1].strip_edges().to_upper()
 			if fonte != "ACCEL" and fonte != "GYRO":
 				return {"type": ""}
 			return {"type": "SATURATION", "source": fonte}
@@ -145,13 +145,13 @@ static func parse(line: String) -> Dictionary:
 			if parts.size() != 4:
 				return {"type": ""}
 			for i in range(1, 4):
-				if not parts[i].strip_edges().is_valid_int():
+				if not parts[i].strip_edges().is_valid_integer():
 					return {"type": ""}
 			return {
 				"type": "MOTOR",
-				"estado": clampi(parts[1].strip_edges().to_int(), 0, 2),
-				"posicao": clampi(parts[2].strip_edges().to_int(), 0, 2),
-				"resta_ms": maxi(parts[3].strip_edges().to_int(), 0),
+				"estado": int(clamp(parts[1].strip_edges().to_int(), 0, 2)),
+				"posicao": int(clamp(parts[2].strip_edges().to_int(), 0, 2)),
+				"resta_ms": int(max(parts[3].strip_edges().to_int(), 0)),
 			}
 		"OK":
 			return {"type": "OK", "detail": parts[1].strip_edges().to_upper() if parts.size() > 1 else ""}
@@ -159,7 +159,7 @@ static func parse(line: String) -> Dictionary:
 
 ## Extrai `count` floats a partir do índice `from`. Se qualquer campo
 ## não for float válido, devolve array vazio (mensagem rejeitada).
-static func _floats(parts: PackedStringArray, from: int, count: int) -> Array:
+static func _floats(parts: PoolStringArray, from: int, count: int) -> Array:
 	var out: Array = []
 	for i in range(from, from + count):
 		if i >= parts.size() or not parts[i].strip_edges().is_valid_float():
@@ -181,7 +181,7 @@ static func _floats(parts: PackedStringArray, from: int, count: int) -> Array:
 ## converte em tempo usando a largura da palheta, e é assim que os dois
 ## limites passam a tropeçar exatamente no mesmo soco.
 static func velocidade_teto(max_speed: float) -> float:
-	return maxf(8.0, maxf(max_speed, 0.0) * 2.2)
+	return max(8.0, max(max_speed, 0.0) * 2.2)
 
 ## O PULSO MÍNIMO QUE O FIRMWARE DEVE EXIGIR, em milissegundos.
 ##
@@ -195,9 +195,9 @@ static func velocidade_teto(max_speed: float) -> float:
 ## Por isso ele é DERIVADO, e nunca escolhido a dedo: largura da palheta
 ## e teto calibrado entram, milissegundos saem.
 static func pulso_minimo_ms(flag_width_m: float, max_speed: float) -> float:
-	var largura := clampf(flag_width_m, 0.005, 0.100)
-	var ms := largura / velocidade_teto(max_speed) * 1000.0
-	return clampf(ms, 0.15, 20.0)
+	var largura = clamp(flag_width_m, 0.005, 0.100)
+	var ms = largura / velocidade_teto(max_speed) * 1000.0
+	return clamp(ms, 0.15, 20.0)
 
 ## A JANELA QUE ESTA MONTAGEM CONSEGUE MEDIR, em m/s, dada a largura da
 ## palheta e o pulso mínimo em vigor. A Central mostra isto ao lado dos
@@ -205,22 +205,22 @@ static func pulso_minimo_ms(flag_width_m: float, max_speed: float) -> float:
 ## "mede de 0,07 a 11,4 m/s" diz tudo, e diz na hora se a faixa de
 ## pontuação cabe dentro do que o sensor enxerga.
 static func janela_medivel(flag_width_m: float, min_pulse_ms: float) -> Vector2:
-	var largura := clampf(flag_width_m, 0.005, 0.100)
-	var rapida := largura / (clampf(min_pulse_ms, 0.15, 20.0) / 1000.0)
+	var largura = clamp(flag_width_m, 0.005, 0.100)
+	var rapida = largura / (clamp(min_pulse_ms, 0.15, 20.0) / 1000.0)
 	# 300 ms é o `PULSO_MAX_US` do firmware: mais lento que isso ele
 	# descarta como `SUSTENTADO` — a palheta parou dentro da fenda.
-	var lenta := largura / 0.300
+	var lenta = largura / 0.300
 	return Vector2(lenta, rapida)
 
 static func build_config(
 	polarity: String, flag_width_m: float, min_speed: float, min_pulse_ms: float, max_speed := 0.0
 ) -> String:
-	var eixo := polarity.to_upper()
-	if eixo not in ["A", "H", "L"]:
+	var eixo = polarity.to_upper()
+	if not eixo in ["A", "H", "L"]:
 		eixo = "A"
-	var raio := clampf(flag_width_m, 0.005, 0.100)
-	var vmin := clampf(min_speed, 0.1, 20.0)
-	var amin := clampf(min_pulse_ms, 0.15, 20.0)
+	var raio = clamp(flag_width_m, 0.005, 0.100)
+	var vmin = clamp(min_speed, 0.1, 20.0)
+	var amin = clamp(min_pulse_ms, 0.15, 20.0)
 	if max_speed <= 0.0:
 		return "CONFIG,%s,%.3f,%.2f,%.2f" % [eixo, raio, vmin, amin]
 	# O QUINTO CAMPO É O TETO DAS FITAS DE LED.
@@ -230,7 +230,7 @@ static func build_config(
 	# nos décimos de segundo entre o golpe e o primeiro `LEDS` do jogo.
 	# É opcional nos dois lados: firmware novo aceita CONFIG de quatro
 	# campos, e este método só manda o quinto quando ele existe.
-	var vmax := clampf(max_speed, vmin + 0.5, 40.0)
+	var vmax = clamp(max_speed, vmin + 0.5, 40.0)
 	return "CONFIG,%s,%.3f,%.2f,%.2f,%.2f" % [eixo, raio, vmin, amin, vmax]
 
 ## A ALTURA DA COLUNA DE LED, em por mil.
@@ -240,7 +240,7 @@ static func build_config(
 ## faz a máquina parecer uma peça só, em vez de um monitor com uma fita
 ## pendurada do lado.
 static func build_leds(fracao: float) -> String:
-	return "LEDS,%d" % clampi(int(round(clampf(fracao, 0.0, 1.0) * 1000.0)), 0, 1000)
+	return "LEDS,%d" % int(clamp(int(round(clamp(fracao, 0.0, 1.0) * 1000.0)), 0, 1000))
 
 
 # ====================================================================
@@ -249,12 +249,12 @@ static func build_leds(fracao: float) -> String:
 
 ## Os três estados que o firmware relata, e os três lugares onde o saco
 ## pode estar. Os números são o protocolo; os nomes são para gente.
-const MOTOR_PARADO := 0
-const MOTOR_DESCENDO := 1
-const MOTOR_SUBINDO := 2
-const POS_DESCONHECIDA := 0
-const POS_EM_CIMA := 1
-const POS_EM_BAIXO := 2
+const MOTOR_PARADO = 0
+const MOTOR_DESCENDO = 1
+const MOTOR_SUBINDO = 2
+const POS_DESCONHECIDA = 0
+const POS_EM_CIMA = 1
+const POS_EM_BAIXO = 2
 
 static func nome_do_estado(estado: int) -> String:
 	match estado:
@@ -271,7 +271,7 @@ static func nome_da_posicao(posicao: int) -> String:
 ## `sentido` é "DESCE", "SOBE" ou "PARA". Qualquer outra coisa vira
 ## "PARA": num comando que liga um motor, o padrão seguro é desligar.
 static func build_motor(sentido: String) -> String:
-	var s := sentido.strip_edges().to_upper()
+	var s = sentido.strip_edges().to_upper()
 	if s != "DESCE" and s != "SOBE" and s != "ESTADO":
 		s = "PARA"
 	return "MOTOR,%s" % s
@@ -282,5 +282,5 @@ static func build_motor(sentido: String) -> String:
 ## ter sido gravada e não foi.
 static func build_motor_config(curso_ms: int, pausa_ms: int, fim_de_curso: bool) -> String:
 	return "MOTOR,CONFIG,%d,%d,%d" % [
-		clampi(curso_ms, 200, 15000), clampi(pausa_ms, 50, 2000), 1 if fim_de_curso else 0
+		int(clamp(curso_ms, 200, 15000)), int(clamp(pausa_ms, 50, 2000)), 1 if fim_de_curso else 0
 	]

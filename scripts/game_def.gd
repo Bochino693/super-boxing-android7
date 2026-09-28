@@ -1,5 +1,5 @@
 class_name GameDef
-extends RefCounted
+extends Reference
 
 ## Definições compartilhadas do Punch Challenge: estados, faixas de golpe
 ## e constantes de jogo. Sem estado — só tipos e funções puras.
@@ -18,18 +18,18 @@ enum Faixa { FRACA, MEDIA, FORTE }
 
 ## O teto da escala, o mesmo do último nível. Um número só, para nunca
 ## haver uma tela mostrando 999 e outra 9999.
-const SCORE_MAX := ScoreTier.PERFEITO
-const CREDITOS_MAX := 99
-const SERIAL_BAUD := 115200
+const SCORE_MAX = ScoreTier.PERFEITO
+const CREDITOS_MAX = 99
+const SERIAL_BAUD = 115200
 ## QUANTO A MÁQUINA ESPERA PELO SOCO.
 ##
 ## Eram oito segundos, e ao fim deles a rodada morria com o crédito já
 ## gasto: quem hesitou pagou e não jogou. Agora a espera é longa, e o
 ## fim dela DEVOLVE o crédito — o limite existe só para a máquina não
 ## passar a tarde armada se a pessoa foi embora, nunca para cobrar.
-const ESPERA_DO_SOCO := 90.0
+const ESPERA_DO_SOCO = 90.0
 ## A partir daqui a tela avisa que vai voltar, com o relógio à mostra.
-const AVISO_DE_VOLTA := 15.0
+const AVISO_DE_VOLTA = 15.0
 ## O RITMO DA JOGADA É OUTRO DO RITMO DA COMEMORAÇÃO.
 ##
 ## São dois momentos com donos diferentes. Do soco até o número na tela,
@@ -51,25 +51,25 @@ const AVISO_DE_VOLTA := 15.0
 ## Meio segundo de subida é o tempo de ler quatro dígitos correndo e
 ## ainda ver o último assentar. Abaixo disso o número aparece pronto e
 ## some a graça; acima, vira espera.
-const CONTAGEM_DURACAO := 0.52
-const IMPACTO_DURACAO := 0.26 ## Estado MEASURING: flash + onda de choque.
-const RESULTADO_TIMEOUT := 12.0
+const CONTAGEM_DURACAO = 0.52
+const IMPACTO_DURACAO = 0.26 ## Estado MEASURING: flash + onda de choque.
+const RESULTADO_TIMEOUT = 12.0
 
 
 ## Cor de cada faixa, usada pela moldura de LEDs, pelo medidor e pelo
 ## veredito ao mesmo tempo — a tela inteira fala a mesma cor. Sai da
 ## paleta, e não de um hexadecimal solto aqui, para o tema mudar de uma
 ## vez em vez de mudar por partes.
-const COR_FRACA := Color("8697b4")
-const COR_MEDIA := Paleta.AMBAR
-const COR_FORTE := Paleta.VERMELHO
+const COR_FRACA = Color("8697b4")
+const COR_MEDIA = Paleta.AMBAR
+const COR_FORTE = Paleta.VERMELHO
 
 
 
 ## A faixa grossa de uma pontuação, lida do nível: os dois primeiros
 ## níveis são fracos, os dois seguintes médios, os quatro últimos fortes.
-static func faixa_de(pontos: int) -> Faixa:
-	var i := ScoreTier.indice_de(pontos)
+static func faixa_de(pontos: int) -> int:
+	var i = ScoreTier.indice_de(pontos)
 	if i >= 4:
 		return Faixa.FORTE
 	if i >= 2:
@@ -77,7 +77,7 @@ static func faixa_de(pontos: int) -> Faixa:
 	return Faixa.FRACA
 
 ## Cor da faixa — a mesma que tinge moldura, medidor e fundo.
-static func cor_da_faixa(faixa: Faixa) -> Color:
+static func cor_da_faixa(faixa: int) -> Color:
 	match faixa:
 		Faixa.FORTE:
 			return COR_FORTE
@@ -91,8 +91,8 @@ static func cor_da_faixa(faixa: Faixa) -> Color:
 ## este soco vale", porque a tela, a moldura, o som e a estatística
 ## precisam concordar. O que mudou é a origem: agora vem do nível.
 static func classificar(pontos: int) -> Dictionary:
-	var nivel := ScoreTier.de(pontos)
-	var faixa := faixa_de(pontos)
+	var nivel = ScoreTier.de(pontos)
+	var faixa = faixa_de(pontos)
 	return {
 		"faixa": faixa,
 		"nivel": nivel,

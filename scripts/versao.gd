@@ -1,5 +1,5 @@
 class_name Versao
-extends RefCounted
+extends Reference
 
 ## O CARIMBO DA BUILD.
 ##
@@ -12,9 +12,9 @@ extends RefCounted
 ## NUMERO em um e escreva em NOTA o que mudou. Um carimbo que não sobe
 ## mente, e um carimbo que mente é pior do que carimbo nenhum.
 
-const NUMERO := 92
-const DATA := "28/09/2026"
-const NOTA := "versão para a TV Box S905L (1 GB, Android 7.1): 30 quadros fixos, arena em resolução interna menor, sem luzes de recorte, pele no material padrão, texturas do lutador em 1024"
+const NUMERO = 93
+const DATA = "28/09/2026"
+const NOTA = "versão Godot 3.6 (OpenGL ES 2.0) para a TV Box S905L: o mesmo jogo, as mesmas telas e o mesmo lutador; 30 quadros fixos e arena em resolução interna menor"
 
 ## Rodapé da abertura: cabe em uma linha discreta.
 static func curta() -> String:
@@ -50,7 +50,7 @@ static func longa() -> String:
 ## duplamente codificado, cada letra acentuada virou DUAS, e a mesma
 ## palavra passa a ter cinco. Um `length()` responde na hora, sem
 ## precisar comparar com nada.
-const PROVA := "ção"
+const PROVA = "ção"
 
 static func acentos_inteiros() -> bool:
 	return PROVA.length() == 3

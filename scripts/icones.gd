@@ -1,5 +1,5 @@
 class_name Icones
-extends RefCounted
+extends Reference
 
 ## Ícones desenhados em código.
 ##
@@ -14,8 +14,8 @@ extends RefCounted
 
 ## Troféu — o recorde da casa.
 static func trofeu(ci: CanvasItem, centro: Vector2, raio: float, cor: Color) -> void:
-	var r := raio
-	var taca := PackedVector2Array([
+	var r = raio
+	var taca = PoolVector2Array([
 		centro + Vector2(-r * 0.52, -r * 0.80),
 		centro + Vector2(r * 0.52, -r * 0.80),
 		centro + Vector2(r * 0.40, -r * 0.06),
@@ -37,9 +37,9 @@ static func trofeu(ci: CanvasItem, centro: Vector2, raio: float, cor: Color) -> 
 
 ## Cinturão de campeão — a conquista máxima da luta.
 static func cinturao(ci: CanvasItem, centro: Vector2, raio: float, cor: Color) -> void:
-	var r := raio
-	var couro := cor.darkened(0.72)
-	var faixa := PackedVector2Array([
+	var r = raio
+	var couro = cor.darkened(0.72)
+	var faixa = PoolVector2Array([
 		centro + Vector2(-r, -r * 0.28), centro + Vector2(-r * 0.46, -r * 0.42),
 		centro + Vector2(-r * 0.30, -r * 0.30), centro + Vector2(r * 0.30, -r * 0.30),
 		centro + Vector2(r * 0.46, -r * 0.42), centro + Vector2(r, -r * 0.28),
@@ -48,9 +48,9 @@ static func cinturao(ci: CanvasItem, centro: Vector2, raio: float, cor: Color) -
 		centro + Vector2(-r * 0.46, r * 0.42), centro + Vector2(-r, r * 0.28),
 	])
 	Traco.poligono(ci, faixa, couro)
-	ci.draw_circle(centro, r * 0.50, cor.darkened(0.20), true, -1.0, true)
+	Compat.circulo(ci, centro, r * 0.50, cor.darkened(0.20), true, -1.0, true)
 	ci.draw_arc(centro, r * 0.50, 0.0, TAU, 36, cor, r * 0.10, true)
-	ci.draw_circle(centro, r * 0.30, cor, true, -1.0, true)
+	Compat.circulo(ci, centro, r * 0.30, cor, true, -1.0, true)
 	# Luva em relevo no centro deixa inequívoco que é prêmio de luta.
 	luva_vulto(ci, centro, r * 0.22, couro)
 
@@ -65,7 +65,7 @@ static func cinturao(ci: CanvasItem, centro: Vector2, raio: float, cor: Color) -
 ## poucos vértices escalado para virar contorno ganha bicos. Os dois
 ## riscos brancos (vinco dos dedos e faixa do punho) terminam a leitura.
 static func luva(ci: CanvasItem, centro: Vector2, raio: float, cor: Color) -> void:
-	var r := raio
+	var r = raio
 	_massa_da_luva(ci, centro, r, r * 0.10, cor.darkened(0.45))
 	_massa_da_luva(ci, centro, r, 0.0, cor)
 	ci.draw_line(
@@ -88,8 +88,8 @@ static func luva_vulto(ci: CanvasItem, centro: Vector2, raio: float, cor: Color)
 
 ## Punho, palma, dedão e cano da luva, todos crescidos de `folga`.
 static func _massa_da_luva(ci: CanvasItem, centro: Vector2, r: float, folga: float, cor: Color) -> void:
-	ci.draw_circle(centro + Vector2(r * 0.10, -r * 0.26), r * 0.64 + folga, cor, true, -1.0, true)
-	ci.draw_circle(centro + Vector2(-r * 0.58, r * 0.02), r * 0.30 + folga, cor, true, -1.0, true)
+	Compat.circulo(ci, centro + Vector2(r * 0.10, -r * 0.26), r * 0.64 + folga, cor, true, -1.0, true)
+	Compat.circulo(ci, centro + Vector2(-r * 0.58, r * 0.02), r * 0.30 + folga, cor, true, -1.0, true)
 	_caixa_redonda(ci, Rect2(
 		centro + Vector2(-r * 0.54 - folga, -r * 0.30 - folga),
 		Vector2(r * 1.12 + folga * 2.0, r * 0.56 + folga * 2.0)
@@ -100,8 +100,8 @@ static func _massa_da_luva(ci: CanvasItem, centro: Vector2, r: float, folga: flo
 	), r * 0.16, cor)
 
 static func _caixa_redonda(ci: CanvasItem, rect: Rect2, raio: float, cor: Color) -> void:
-	var r := minf(raio, minf(rect.size.x, rect.size.y) * 0.5)
-	var pontos := PackedVector2Array()
+	var r = min(raio, min(rect.size.x, rect.size.y) * 0.5)
+	var pontos = PoolVector2Array()
 	for c in [
 		[Vector2(rect.end.x - r, rect.position.y + r), -PI * 0.5],
 		[Vector2(rect.end.x - r, rect.end.y - r), 0.0],
@@ -111,7 +111,7 @@ static func _caixa_redonda(ci: CanvasItem, rect: Rect2, raio: float, cor: Color)
 		var meio: Vector2 = c[0]
 		var a0: float = c[1]
 		for i in range(7):
-			var a := a0 + float(i) / 6.0 * PI * 0.5
+			var a = a0 + float(i) / 6.0 * PI * 0.5
 			pontos.append(meio + Vector2(cos(a), sin(a)) * r)
 	Traco.poligono(ci, pontos, cor)
 
@@ -121,10 +121,10 @@ static func _caixa_redonda(ci: CanvasItem, rect: Rect2, raio: float, cor: Color)
 ## dois anéis concêntricos com um miolo são a mesma figura, e a tela
 ## acaba com dois ícones idênticos dizendo coisas diferentes.
 static func ficha(ci: CanvasItem, centro: Vector2, raio: float, cor: Color) -> void:
-	var r := raio
-	ci.draw_circle(centro, r * 0.88, cor, true, -1.0, true)
+	var r = raio
+	Compat.circulo(ci, centro, r * 0.88, cor, true, -1.0, true)
 	for i in range(8):
-		var a := float(i) / 8.0 * TAU + PI / 8.0
+		var a = float(i) / 8.0 * TAU + PI / 8.0
 		ci.draw_line(
 			centro + Vector2(cos(a), sin(a)) * r * 0.66,
 			centro + Vector2(cos(a), sin(a)) * r * 0.95,
@@ -135,10 +135,10 @@ static func ficha(ci: CanvasItem, centro: Vector2, raio: float, cor: Color) -> v
 
 ## Raio — potência e o passo do soco.
 static func raio_eletrico(ci: CanvasItem, centro: Vector2, raio: float, cor: Color) -> void:
-	var r := raio
+	var r = raio
 	Traco.poligono(
 		ci,
-		PackedVector2Array([
+		PoolVector2Array([
 			centro + Vector2(r * 0.20, -r * 0.90),
 			centro + Vector2(-r * 0.55, r * 0.14),
 			centro + Vector2(-r * 0.05, r * 0.14),
@@ -151,22 +151,22 @@ static func raio_eletrico(ci: CanvasItem, centro: Vector2, raio: float, cor: Col
 
 ## Estrela de cinco pontas — recorde novo, destaque.
 static func estrela(ci: CanvasItem, centro: Vector2, raio: float, cor: Color) -> void:
-	var pontos := PackedVector2Array()
+	var pontos = PoolVector2Array()
 	for i in range(10):
-		var a := -PI * 0.5 + float(i) * PI / 5.0
-		var r := raio if i % 2 == 0 else raio * 0.45
+		var a = -PI * 0.5 + float(i) * PI / 5.0
+		var r = raio if i % 2 == 0 else raio * 0.45
 		pontos.append(centro + Vector2(cos(a), sin(a)) * r)
 	Traco.poligono(ci, pontos, cor)
 
 ## Boneco — o lugar da foto de quem ainda não foi fotografado. Sem ele o
 ## quadro sem foto vira um buraco, e buraco parece defeito, não "vaga".
 static func avatar(ci: CanvasItem, centro: Vector2, raio: float, cor: Color) -> void:
-	var r := raio
-	ci.draw_circle(centro + Vector2(0.0, -r * 0.40), r * 0.40, cor, true, -1.0, true)
+	var r = raio
+	Compat.circulo(ci, centro + Vector2(0.0, -r * 0.40), r * 0.40, cor, true, -1.0, true)
 	# Ombros: meia elipse cortada na altura do queixo.
-	var ombros := PackedVector2Array()
+	var ombros = PoolVector2Array()
 	for i in range(21):
-		var a := PI + float(i) / 20.0 * PI
+		var a = PI + float(i) / 20.0 * PI
 		ombros.append(centro + Vector2(cos(a) * r * 0.80, r * 0.66 + sin(a) * r * 0.56))
 	ombros.append(centro + Vector2(r * 0.80, r * 0.80))
 	ombros.append(centro + Vector2(-r * 0.80, r * 0.80))
@@ -176,7 +176,7 @@ static func avatar(ci: CanvasItem, centro: Vector2, raio: float, cor: Color) -> 
 static func alvo(ci: CanvasItem, centro: Vector2, raio: float, cor: Color) -> void:
 	ci.draw_arc(centro, raio * 0.82, 0.0, TAU, 44, cor, raio * 0.18, true)
 	ci.draw_arc(centro, raio * 0.44, 0.0, TAU, 32, cor, raio * 0.16, true)
-	ci.draw_circle(centro, raio * 0.14, cor, true, -1.0, true)
+	Compat.circulo(ci, centro, raio * 0.14, cor, true, -1.0, true)
 
 ## Botão de arcade visto de cima — o passo do START.
 ##
@@ -184,10 +184,10 @@ static func alvo(ci: CanvasItem, centro: Vector2, raio: float, cor: Color) -> vo
 ## tons parecidos, um dentro do outro, leem como uma bolha só. É o
 ## degrau de tom que faz o olho enxergar um botão de apertar.
 static func botao(ci: CanvasItem, centro: Vector2, raio: float, cor: Color) -> void:
-	var r := raio
-	ci.draw_circle(centro, r * 0.95, cor.darkened(0.45), true, -1.0, true)
+	var r = raio
+	Compat.circulo(ci, centro, r * 0.95, cor.darkened(0.45), true, -1.0, true)
 	ci.draw_arc(centro, r * 0.95, 0.0, TAU, 44, cor.darkened(0.65), r * 0.10, true)
-	ci.draw_circle(centro - Vector2(0.0, r * 0.05), r * 0.64, cor, true, -1.0, true)
+	Compat.circulo(ci, centro - Vector2(0.0, r * 0.05), r * 0.64, cor, true, -1.0, true)
 	ci.draw_arc(
 		centro - Vector2(0.0, r * 0.05), r * 0.40,
 		PI * 1.08, PI * 1.78, 20, Color(1, 1, 1, 0.75), r * 0.16, true

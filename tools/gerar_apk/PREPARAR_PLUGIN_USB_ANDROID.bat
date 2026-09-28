@@ -3,6 +3,10 @@ setlocal
 rem Script interno: quem chama e o GERAR_APK_AGORA.bat (na raiz).
 cd /d "%~dp0..\.."
 
+if not exist "android\build\libs\release\godot-lib.release.aar" (
+  echo ERRO: o modelo Android do Godot 3.6.2 ainda nao foi extraido em android\build.
+  exit /b 1
+)
 if not exist "tools\android_usb_plugin\gradlew.bat" (
   echo ERRO: fonte do plugin USB nao encontrado.
   exit /b 1
@@ -36,19 +40,15 @@ if exist "tools\android_usb_plugin\plugin\demo" (
   exit /b 1
 )
 
-echo [2/3] Instalando addon no projeto Godot...
-if not exist "addons\PunchUsbSerial\bin\debug" mkdir "addons\PunchUsbSerial\bin\debug"
-if not exist "addons\PunchUsbSerial\bin\release" mkdir "addons\PunchUsbSerial\bin\release"
-copy /y "tools\android_usb_plugin\plugin\export_scripts_template\export_plugin.gd" "addons\PunchUsbSerial\export_plugin.gd" >nul
-copy /y "tools\android_usb_plugin\plugin\export_scripts_template\plugin.cfg" "addons\PunchUsbSerial\plugin.cfg" >nul
-copy /y "tools\android_usb_plugin\plugin\build\outputs\aar\PunchUsbSerial-debug.aar" "addons\PunchUsbSerial\bin\debug\PunchUsbSerial-debug.aar" >nul
-copy /y "tools\android_usb_plugin\plugin\build\outputs\aar\PunchUsbSerial-release.aar" "addons\PunchUsbSerial\bin\release\PunchUsbSerial-release.aar" >nul
-
-if not exist "addons\PunchUsbSerial\bin\release\PunchUsbSerial-release.aar" (
+echo [2/3] Instalando o plugin no projeto Godot 3...
+rem Godot 3: o plugin mora em android\plugins (o .aar e o .gdap que o
+rem descreve). O .gdap ja vem pronto no projeto.
+if not exist "android\plugins" mkdir "android\plugins"
+if not exist "tools\android_usb_plugin\plugin\build\outputs\aar\PunchUsbSerial-release.aar" (
   echo ERRO: o AAR release nao foi gerado.
   exit /b 1
 )
+copy /y "tools\android_usb_plugin\plugin\build\outputs\aar\PunchUsbSerial-release.aar" "android\plugins\PunchUsbSerial-release.aar" >nul
 
 echo [3/3] Plugin pronto.
-echo Abra o projeto no Godot 4.6.1, instale o modelo Android e exporte o preset Android.
 exit /b 0

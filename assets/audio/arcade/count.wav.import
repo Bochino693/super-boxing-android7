@@ -1,14 +1,13 @@
 [remap]
 
 importer="wav"
-type="AudioStreamWAV"
-uid="uid://bb24tnhutashx"
-path="res://.godot/imported/count.wav-0657591ab9a62a690e6972019c563a10.sample"
+type="AudioStreamSample"
+path="res://.import/count.wav-0657591ab9a62a690e6972019c563a10.sample"
 
 [deps]
 
 source_file="res://assets/audio/arcade/count.wav"
-dest_files=["res://.godot/imported/count.wav-0657591ab9a62a690e6972019c563a10.sample"]
+dest_files=[ "res://.import/count.wav-0657591ab9a62a690e6972019c563a10.sample" ]
 
 [params]
 
@@ -21,4 +20,4 @@ edit/normalize=false
 edit/loop_mode=0
 edit/loop_begin=0
 edit/loop_end=-1
-compress/mode=2
+compress/mode=1

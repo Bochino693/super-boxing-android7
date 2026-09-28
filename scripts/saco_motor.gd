@@ -1,5 +1,5 @@
 class_name SacoMotor
-extends RefCounted
+extends Reference
 
 ## O MOTOR QUE BAIXA E LEVANTA O SACO — o lado do jogo.
 ##
@@ -45,26 +45,26 @@ enum Onde { EM_CIMA, EM_BAIXO }
 ## Se a placa não confirmar dentro do curso inteiro mais uma folga, o
 ## jogo para de insistir e diz que não sabe onde o saco está. Insistir
 ## para sempre é o laço infinito com outro nome.
-const FOLGA_DA_CONFIRMACAO_MS := 2500
+const FOLGA_DA_CONFIRMACAO_MS = 2500
 
 ## O intervalo mínimo entre dois pedidos IGUAIS. Existe para o caso de a
 ## placa reiniciar no meio do curso e perder o comando: o jogo repete uma
 ## vez por segundo, e não sessenta.
-const REPETIR_A_CADA_MS := 1000
+const REPETIR_A_CADA_MS = 1000
 
-var ligado := false
-var curso_ms := 3500
-var pausa_ms := 350
-var fim_de_curso := true
+var ligado = false
+var curso_ms = 3500
+var pausa_ms = 350
+var fim_de_curso = true
 
-var estado := ArduinoProtocol.MOTOR_PARADO
-var posicao := ArduinoProtocol.POS_DESCONHECIDA
-var resta_ms := 0
+var estado = ArduinoProtocol.MOTOR_PARADO
+var posicao = ArduinoProtocol.POS_DESCONHECIDA
+var resta_ms = 0
 
 var _querido: int = Onde.EM_CIMA
-var _pedido_em_ms := 0
-var _ultimo_envio_ms := 0
-var _desistiu := false
+var _pedido_em_ms = 0
+var _ultimo_envio_ms = 0
+var _desistiu = false
 ## UMA INTENÇÃO NOVA SAI NA HORA, e esta bandeira é o que garante isso.
 ##
 ## Antes o "já mandei há pouco?" era uma subtração de relógios com
@@ -73,7 +73,7 @@ var _desistiu := false
 ## primeiros mil milissegundos de vida do processo, portanto, o primeiro
 ## comando do motor era engolido pelo próprio intervalo de repetição.
 ## Uma bandeira diz o que a conta não sabia dizer.
-var _mandar_ja := false
+var _mandar_ja = false
 
 ## O que o jogo chama. Não manda nada por si: só registra a intenção.
 func quero(onde: int) -> void:
@@ -90,13 +90,13 @@ func quero(onde: int) -> void:
 func passo() -> String:
 	if not ligado or _desistiu:
 		return ""
-	var alvo := (
+	var alvo = (
 		ArduinoProtocol.POS_EM_BAIXO if _querido == Onde.EM_BAIXO
 		else ArduinoProtocol.POS_EM_CIMA
 	)
 	if posicao == alvo and estado == ArduinoProtocol.MOTOR_PARADO:
 		return ""
-	var agora := Time.get_ticks_msec()
+	var agora = Time.get_ticks_msec()
 	# DESISTIR É PARTE DO PROJETO. Passado o curso inteiro mais a folga
 	# sem a placa confirmar, o jogo para de pedir e passa a dizer que não
 	# sabe onde o saco está — que é a verdade. Continuar mandando seria
@@ -151,7 +151,7 @@ func desistiu() -> bool:
 func progresso() -> float:
 	if estado == ArduinoProtocol.MOTOR_PARADO or curso_ms <= 0:
 		return 1.0
-	return clampf(1.0 - float(resta_ms) / float(curso_ms), 0.0, 1.0)
+	return clamp(1.0 - float(resta_ms) / float(curso_ms), 0.0, 1.0)
 
 ## Uma frase pronta para a tela, e ela nunca mente: quando o jogo não
 ## sabe onde o saco está, ela diz isso.
@@ -174,6 +174,6 @@ func para_salvar() -> Dictionary:
 
 func carregar(dados: Dictionary) -> void:
 	ligado = bool(dados.get("ligado", false))
-	curso_ms = clampi(int(dados.get("curso_ms", 3500)), 200, 15000)
-	pausa_ms = clampi(int(dados.get("pausa_ms", 350)), 50, 2000)
+	curso_ms = int(clamp(int(dados.get("curso_ms", 3500)), 200, 15000))
+	pausa_ms = int(clamp(int(dados.get("pausa_ms", 350)), 50, 2000))
 	fim_de_curso = bool(dados.get("fim_de_curso", true))

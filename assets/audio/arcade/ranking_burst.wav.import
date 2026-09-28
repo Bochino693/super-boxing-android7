@@ -1,14 +1,13 @@
 [remap]
 
 importer="wav"
-type="AudioStreamWAV"
-uid="uid://dpfw4erj3783u"
-path="res://.godot/imported/ranking_burst.wav-1f947c340f705595d8cb6563df389734.sample"
+type="AudioStreamSample"
+path="res://.import/ranking_burst.wav-1f947c340f705595d8cb6563df389734.sample"
 
 [deps]
 
 source_file="res://assets/audio/arcade/ranking_burst.wav"
-dest_files=["res://.godot/imported/ranking_burst.wav-1f947c340f705595d8cb6563df389734.sample"]
+dest_files=[ "res://.import/ranking_burst.wav-1f947c340f705595d8cb6563df389734.sample" ]
 
 [params]
 
@@ -21,4 +20,4 @@ edit/normalize=false
 edit/loop_mode=0
 edit/loop_begin=0
 edit/loop_end=-1
-compress/mode=2
+compress/mode=1

@@ -1,28 +1,30 @@
 class_name SerialLink
-extends RefCounted
+extends Reference
 
 ## Interface serial da edição Android/TV Box. O Arduino é acessado pelo
 ## USB Host do Android (`AndroidUsbSerialLink`); fora do Android não há
 ## caminho e a Central diz isso.
 
-signal line_received(line: String)
-signal opened(port: String)
-signal closed(port: String)
+signal line_received(line)
+signal opened(port)
+signal closed(port)
 
-const CAMINHO_ANDROID_USB := "android_usb"
-const CAMINHO_NENHUM := "nenhuma"
+const CAMINHO_ANDROID_USB = "android_usb"
+const CAMINHO_NENHUM = "nenhuma"
 
-static func create_best() -> SerialLink:
+static func create_best() -> Reference:
 	# O singleton só existe no APK; aceitar ele fora do Android permite
 	# testar o motor de conexão com um plugin simulado na bancada.
 	if OS.get_name() == "Android" or Engine.has_singleton("PunchUsbSerial"):
-		var usb := AndroidUsbSerialLink.new()
+		# No Godot 3 a classe mãe não pode citar as filhas pelo nome (dependência
+		# circular): as filhas vêm pelo caminho do arquivo.
+		var usb = load("res://scripts/serial/android_usb_serial_link.gd").new()
 		if usb.available():
 			return usb
-		var vazio := NullSerialLink.new()
+		var vazio = load("res://scripts/serial/null_serial_link.gd").new()
 		vazio.explicar(usb.motivo_da_falta())
 		return vazio
-	var fora_do_android := NullSerialLink.new()
+	var fora_do_android = load("res://scripts/serial/null_serial_link.gd").new()
 	fora_do_android.explicar("esta edicao usa USB Host do Android; execute-a numa TV Box Android")
 	return fora_do_android
 
@@ -41,11 +43,11 @@ func descricao() -> String:
 func motivo_da_falta() -> String:
 	return ""
 
-func list_ports() -> PackedStringArray:
-	return PackedStringArray()
+func list_ports() -> PoolStringArray:
+	return PoolStringArray()
 
-func portas_promissoras() -> PackedStringArray:
-	return PackedStringArray()
+func portas_promissoras() -> PoolStringArray:
+	return PoolStringArray()
 
 func open_port(_port: String, _baud: int = GameDef.SERIAL_BAUD) -> bool:
 	return false

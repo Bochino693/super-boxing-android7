@@ -1,6 +1,6 @@
-extends RefCounted
+extends Reference
 ## Catálogo único dos arquivos sonoros. AudioBank cuida da reprodução.
-const FALLBACK := {
+const FALLBACK = {
 	"credit": "res://assets/audio/credit.wav",
 	"start": "res://assets/audio/start.wav",
 	"count": "res://assets/audio/count.wav",
@@ -19,7 +19,7 @@ const FALLBACK := {
 ## Sons que existem só como arquivo em `assets/audio/arcade/` e não têm
 ## um par no FALLBACK. Os oito níveis entram aqui: eles nasceram já na
 ## mesa nova e nunca tiveram versão antiga.
-const EXTRA := [
+const EXTRA = [
 	"music", "shutter", "ranking", "score_loop",
 	"ranking_neutral_1", "ranking_neutral_2", "ranking_neutral_3",
 	"ranking_burst", "disconnect_alert",
@@ -40,8 +40,8 @@ const EXTRA := [
 	# Vozes especiais da rodada de dois golpes.
 	"not_supress", "good_player",
 ]
-const LOOPS := ["music", "charge", "score_loop"]
-const ROOT := "res://assets/audio/arcade/"
+const LOOPS = ["music", "charge", "score_loop"]
+const ROOT = "res://assets/audio/arcade/"
 
 static func path_for(cue: String) -> String:
 	return ROOT + cue + ".wav"
@@ -59,7 +59,7 @@ static func path_for(cue: String) -> String:
 ##   SFX     o resto.
 ##
 ## Um som que não aparecer aqui vai para SFX.
-const BARRAMENTOS := {
+const BARRAMENTOS = {
 	"music": "Music",
 	"hit": "Impact", "subgrave": "Impact", "couro": "Impact",
 	"nivel_leve": "Impact", "nivel_bom": "Impact", "nivel_forte": "Impact",
@@ -72,7 +72,7 @@ const BARRAMENTOS := {
 	"count": "UI", "go": "UI", "tick": "UI",
 	"shutter": "UI", "armado": "UI", "round_bell": "UI",
 }
-const BARRAMENTO_PADRAO := "SFX"
+const BARRAMENTO_PADRAO = "SFX"
 
 static func bus_for(cue: String) -> String:
 	return str(BARRAMENTOS.get(cue, BARRAMENTO_PADRAO))

@@ -1,4 +1,3 @@
-import com.android.build.gradle.internal.tasks.factory.dependsOn
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -49,7 +48,10 @@ android {
 }
 
 dependencies {
-    implementation("org.godotengine:godot:4.6.1.stable")
+    // GODOT 3.6: a biblioteca do motor não está no Maven. Ela vem do modelo
+    // Android do próprio projeto (android/build/libs), que o GERAR_APK extrai
+    // antes de compilar este plugin. Só para compilar: o APK já a tem.
+    compileOnly(fileTree(mapOf("dir" to "../../../android/build/libs/release", "include" to listOf("godot-lib*.aar"))))
     implementation("com.github.mik3y:usb-serial-for-android:3.11.0")
     implementation("com.github.jiangdongguo.AndroidUSBCamera:libausbc:3.2.7")
     implementation("com.github.jiangdongguo.AndroidUSBCamera:libuvc:3.2.7")

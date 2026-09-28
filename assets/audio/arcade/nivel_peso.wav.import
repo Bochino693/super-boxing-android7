@@ -1,14 +1,13 @@
 [remap]
 
 importer="wav"
-type="AudioStreamWAV"
-uid="uid://bhvlomebfcrwh"
-path="res://.godot/imported/nivel_peso.wav-4fa3489c5e5af7c298a3906ba091cade.sample"
+type="AudioStreamSample"
+path="res://.import/nivel_peso.wav-4fa3489c5e5af7c298a3906ba091cade.sample"
 
 [deps]
 
 source_file="res://assets/audio/arcade/nivel_peso.wav"
-dest_files=["res://.godot/imported/nivel_peso.wav-4fa3489c5e5af7c298a3906ba091cade.sample"]
+dest_files=[ "res://.import/nivel_peso.wav-4fa3489c5e5af7c298a3906ba091cade.sample" ]
 
 [params]
 
@@ -21,4 +20,4 @@ edit/normalize=false
 edit/loop_mode=0
 edit/loop_begin=0
 edit/loop_end=-1
-compress/mode=2
+compress/mode=1

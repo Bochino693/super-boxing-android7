@@ -7,7 +7,7 @@ extends SerialLink
 ## quem está na frente dela precisa saber disso e por quê. É só para isso
 ## que este backend guarda uma frase.
 
-var _motivo := ""
+var _motivo = ""
 
 func nome_do_caminho() -> String:
 	return SerialLink.CAMINHO_NENHUM

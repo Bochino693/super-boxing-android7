@@ -1,14 +1,13 @@
 [remap]
 
 importer="wav"
-type="AudioStreamWAV"
-uid="uid://c3hfaw51gxnxx"
-path="res://.godot/imported/torcida_festa.wav-2eba04af1802c9a91605772fc51958cf.sample"
+type="AudioStreamSample"
+path="res://.import/torcida_festa.wav-2eba04af1802c9a91605772fc51958cf.sample"
 
 [deps]
 
 source_file="res://assets/audio/arcade/torcida_festa.wav"
-dest_files=["res://.godot/imported/torcida_festa.wav-2eba04af1802c9a91605772fc51958cf.sample"]
+dest_files=[ "res://.import/torcida_festa.wav-2eba04af1802c9a91605772fc51958cf.sample" ]
 
 [params]
 
@@ -21,4 +20,4 @@ edit/normalize=false
 edit/loop_mode=0
 edit/loop_begin=0
 edit/loop_end=-1
-compress/mode=2
+compress/mode=1

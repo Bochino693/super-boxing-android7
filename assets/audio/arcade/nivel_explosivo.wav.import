@@ -1,14 +1,13 @@
 [remap]
 
 importer="wav"
-type="AudioStreamWAV"
-uid="uid://cwa6mujs5rkqq"
-path="res://.godot/imported/nivel_explosivo.wav-2819f8a9c0ba0591c44b9313e88fd93f.sample"
+type="AudioStreamSample"
+path="res://.import/nivel_explosivo.wav-2819f8a9c0ba0591c44b9313e88fd93f.sample"
 
 [deps]
 
 source_file="res://assets/audio/arcade/nivel_explosivo.wav"
-dest_files=["res://.godot/imported/nivel_explosivo.wav-2819f8a9c0ba0591c44b9313e88fd93f.sample"]
+dest_files=[ "res://.import/nivel_explosivo.wav-2819f8a9c0ba0591c44b9313e88fd93f.sample" ]
 
 [params]
 
@@ -21,4 +20,4 @@ edit/normalize=false
 edit/loop_mode=0
 edit/loop_begin=0
 edit/loop_end=-1
-compress/mode=2
+compress/mode=1

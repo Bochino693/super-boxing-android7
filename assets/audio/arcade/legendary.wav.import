@@ -1,14 +1,13 @@
 [remap]
 
 importer="wav"
-type="AudioStreamWAV"
-uid="uid://tvmdd2uxrxrt"
-path="res://.godot/imported/legendary.wav-fa04f0c6265c958582f8ada52335b847.sample"
+type="AudioStreamSample"
+path="res://.import/legendary.wav-fa04f0c6265c958582f8ada52335b847.sample"
 
 [deps]
 
 source_file="res://assets/audio/arcade/legendary.wav"
-dest_files=["res://.godot/imported/legendary.wav-fa04f0c6265c958582f8ada52335b847.sample"]
+dest_files=[ "res://.import/legendary.wav-fa04f0c6265c958582f8ada52335b847.sample" ]
 
 [params]
 
@@ -21,4 +20,4 @@ edit/normalize=false
 edit/loop_mode=0
 edit/loop_begin=0
 edit/loop_end=-1
-compress/mode=2
+compress/mode=1

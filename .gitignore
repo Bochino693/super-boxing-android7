@@ -34,3 +34,8 @@ final_project/
 # Gerador do boxeador: cache do Anny e prévias das texturas.
 tools/.cache_boxeador.npz
 tools/.previa_*.jpg
+
+# Godot 3.6 (versão S905L): cache de importação e o modelo Android que o
+# GERAR_APK extrai sozinho (android\build e o arquivo com a versão dele).
+.import/
+android/.build_version

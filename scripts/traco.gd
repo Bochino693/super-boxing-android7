@@ -1,5 +1,5 @@
 class_name Traco
-extends RefCounted
+extends Reference
 
 ## BORDA LISA NUM DESENHO QUE NÃO TEM ANTISSERRILHADO.
 ##
@@ -20,12 +20,20 @@ extends RefCounted
 ##
 ## Um pixel é o número certo: mais que isso engorda a figura, menos que
 ## isso não cobre a escada inteira.
-const BORDA := 1.0
+const BORDA = 1.0
 
 ## CHAVE DE MEDIÇÃO. Desligada, `poligono` vira `draw_colored_polygon`
 ## puro — é o que permite medir quanto custa o antisserrilhado sem
 ## desfazer o código todo. Nunca fica falsa numa build de salão.
-static var suavizar := true
+## Estado compartilhado (as `static var` do Godot 4): um `const` com
+## dicionário é único para a classe e pode ser alterado.
+const _E = {
+	"suavizar": true,
+	"qualidade": 1.0,
+}
+
+static func definir_qualidade(valor: float) -> void:
+	_E.qualidade = valor
 
 ## ABAIXO DESTE TAMANHO, A BORDA LISA NÃO SE VÊ — E CUSTA.
 ##
@@ -37,30 +45,30 @@ static var suavizar := true
 ##
 ## Doze pixels é o ponto em que a escada começa a aparecer numa forma
 ## parada. Abaixo disso, o polígono vai cru.
-const MENOR_QUE_SUAVIZA := 12.0
+const MENOR_QUE_SUAVIZA = 12.0
 
 ## Polígono cheio com a aresta lisa.
-static func poligono(ci: CanvasItem, pontos: PackedVector2Array, cor: Color) -> void:
+static func poligono(ci: CanvasItem, pontos: PoolVector2Array, cor: Color) -> void:
 	ci.draw_colored_polygon(pontos, cor)
-	if suavizar and _vale_suavizar(pontos):
+	if _E.suavizar and _vale_suavizar(pontos):
 		contorno(ci, pontos, cor)
 
-static func _vale_suavizar(pontos: PackedVector2Array) -> bool:
+static func _vale_suavizar(pontos: PoolVector2Array) -> bool:
 	if pontos.size() < 3:
 		return false
-	var menor := pontos[0]
-	var maior := pontos[0]
+	var menor = pontos[0]
+	var maior = pontos[0]
 	for ponto in pontos:
-		menor = menor.min(ponto)
-		maior = maior.max(ponto)
-	var caixa := maior - menor
-	return maxf(caixa.x, caixa.y) >= MENOR_QUE_SUAVIZA
+		menor = Compat.vmin(menor, ponto)
+		maior = Compat.vmax(maior, ponto)
+	var caixa = maior - menor
+	return max(caixa.x, caixa.y) >= MENOR_QUE_SUAVIZA
 
 ## Só o contorno — para quem já desenhou o miolo de outro jeito.
-static func contorno(ci: CanvasItem, pontos: PackedVector2Array, cor: Color, espessura := BORDA) -> void:
+static func contorno(ci: CanvasItem, pontos: PoolVector2Array, cor: Color, espessura := BORDA) -> void:
 	if pontos.size() < 3:
 		return
-	var fecho := pontos.duplicate()
+	var fecho = PoolVector2Array(pontos)
 	fecho.append(pontos[0])
 	ci.draw_polyline(fecho, cor, espessura, true)
 
@@ -92,10 +100,9 @@ static func contorno(ci: CanvasItem, pontos: PackedVector2Array, cor: Color, esp
 ##      de um anel que vive quatro décimos de segundo é invisível ao lado
 ##      da animação engasgada que ela custa.
 ##
-## `qualidade` é o mesmo número do vigia de `Desempenho`, entregue uma
+## `_E.qualidade` é o mesmo número do vigia de `Desempenho`, entregue uma
 ## vez por quadro em `main.gd`, como já acontece com o cenário, a moldura
 ## e as partículas.
-static var qualidade := 1.0
 
 ## CÍRCULO TEM DE SER CÍRCULO. Com corda de 20 px e borda crua na TV
 ## Box, o anel de "carregando" (raio 26) saía com 6 a 12 lados e degraus:
@@ -103,11 +110,11 @@ static var qualidade := 1.0
 ## corda de 6 px (o olho não separa mais os lados) e a borda lisa fica
 ## SEMPRE ligada: ela custa uma faixa fina de triângulos a mais, nada perto
 ## do que custava o degrau na cara de quem joga.
-const CORDA := 6.0
+const CORDA = 6.0
 
 static func segmentos(raio: float) -> int:
-	var ideal := int(TAU * maxf(raio, 1.0) / CORDA)
-	return clampi(ideal, 32, 192)
+	var ideal = int(TAU * max(raio, 1.0) / CORDA)
+	return int(clamp(ideal, 32, 192))
 
 ## Um anel inteiro, com o custo proporcional ao tamanho dele.
 static func arco(
@@ -123,6 +130,6 @@ static func setor(
 	ci: CanvasItem, centro: Vector2, raio: float, de: float, ate: float,
 	cor: Color, espessura: float
 ) -> void:
-	var fatia := absf(ate - de) / TAU
-	var passos := maxi(12, int(ceil(segmentos(raio) * fatia)))
+	var fatia = abs(ate - de) / TAU
+	var passos = int(max(12, int(ceil(segmentos(raio) * fatia))))
 	ci.draw_arc(centro, raio, de, ate, passos, cor, espessura, true)

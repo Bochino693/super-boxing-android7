@@ -1,5 +1,5 @@
 class_name Ritmo
-extends RefCounted
+extends Reference
 
 ## O PASSO DO JOGO — E POR QUE ELE NÃO É MAIS O TEMPO DO QUADRO.
 ##
@@ -58,7 +58,7 @@ extends RefCounted
 ## Acima disto o quadro é um soluço, não um ritmo. Um quarto de segundo
 ## por quadro é 4 fps: nenhuma tela do jogo custa isso nem no pior
 ## aparelho, então quando aparece é sempre outra coisa.
-const TETO_DO_SOLUCO := 0.25
+const TETO_DO_SOLUCO = 0.25
 
 ## E ABAIXO DISTO TAMBÉM NÃO É UM QUADRO.
 ##
@@ -74,21 +74,21 @@ const TETO_DO_SOLUCO := 0.25
 ## deixou o relógio do jogo travado no piso do `clampf` — o jogo continua
 ## desenhando e nada mais se move, que é o pior defeito possível porque
 ## não parece defeito: parece a máquina ter travado.
-const PISO_DO_QUADRO := 0.001
+const PISO_DO_QUADRO = 0.001
 
 ## O passo entregue nunca passa disto. Mesmo num aparelho que roda a 8
 ## quadros por segundo o jogo avança em fatias que ainda dá para desenhar.
-const PASSO_MAXIMO := 0.10
+const PASSO_MAXIMO = 0.10
 
 ## Quantos quadros entram na média. Seis é curto o bastante para
 ## acompanhar uma mudança real de carga em um décimo de segundo, e longo
 ## o bastante para apagar o chiado de medição.
-const JANELA := 6
+const JANELA = 6
 
 ## A que distância de um múltiplo do vsync o quadro ainda conta como
 ## sendo aquele múltiplo. Um milissegundo: maior que o ruído típico do
 ## relógio, menor que a diferença entre dois múltiplos vizinhos.
-const TOLERANCIA_DO_ENCAIXE := 0.0010
+const TOLERANCIA_DO_ENCAIXE = 0.0010
 
 ## Quanto da dívida é devolvido por quadro, em fração.
 ##
@@ -98,24 +98,24 @@ const TOLERANCIA_DO_ENCAIXE := 0.0010
 ## Um sétimo zera uma dívida de um quadro em cerca de treze quadros — um
 ## quinto de segundo —, o que é rápido para o relógio e lento para o
 ## olho, que é exatamente o que se quer.
-const DEVOLUCAO := 0.14
+const DEVOLUCAO = 0.14
 ## A dívida nunca passa de um quadro inteiro. Acima disso não é mais
 ## atraso a recuperar: é uma queda de desempenho, e essa o jogo aceita
 ## andando mais devagar, não correndo atrás.
-const DIVIDA_MAXIMA := 0.020
+const DIVIDA_MAXIMA = 0.020
 
-var _tempos: Array[float] = []
-var _soma := 0.0
-var _ultimo_bom := 1.0 / 60.0
-var _divida := 0.0
+var _tempos: Array = []
+var _soma = 0.0
+var _ultimo_bom = 1.0 / 60.0
+var _divida = 0.0
 ## O intervalo de um quadro de tela, em segundos. `_medir_tela` o
 ## descobre; 60 Hz é só o palpite inicial.
-var _vsync := 1.0 / 60.0
+var _vsync = 1.0 / 60.0
 
 ## Quantos quadros do relógio da tela couberam no último passo. Serve
 ## para diagnóstico na Central: um número que fica pulando entre 1 e 2 é
 ## a assinatura exata do 60/30/60/30.
-var quadros_de_tela := 1.0
+var quadros_de_tela = 1.0
 
 func _init() -> void:
 	medir_tela()
@@ -123,7 +123,7 @@ func _init() -> void:
 ## O RELÓGIO DA TELA. Vem do sistema; quando ele não sabe responder — e
 ## num TV Box ele às vezes não sabe —, 60 Hz é o palpite que erra menos.
 func medir_tela() -> void:
-	var hz := DisplayServer.screen_get_refresh_rate(DisplayServer.SCREEN_OF_MAIN_WINDOW)
+	var hz = OS.get_screen_refresh_rate()
 	if hz > 20.0 and hz < 400.0:
 		_vsync = 1.0 / hz
 	else:
@@ -141,24 +141,24 @@ func passo(delta: float) -> float:
 		return _ultimo_bom
 
 	# 2. O ENCAIXE NO VSYNC.
-	var encaixado := _encaixar(delta)
+	var encaixado = _encaixar(delta)
 
 	# 3. A MÉDIA CURTA.
 	_tempos.append(encaixado)
 	_soma += encaixado
 	if _tempos.size() > JANELA:
 		_soma -= _tempos[0]
-		_tempos.remove_at(0)
-	var media := _soma / float(_tempos.size())
+		_tempos.remove(0)
+	var media = _soma / float(_tempos.size())
 
 	# A DÍVIDA. O que o relógio real andou a mais (ou a menos) do que o
 	# jogo andou fica guardado e volta em fatias.
-	_divida = clampf(_divida + (delta - media), -DIVIDA_MAXIMA, DIVIDA_MAXIMA)
-	var acerto := _divida * DEVOLUCAO
+	_divida = clamp(_divida + (delta - media), -DIVIDA_MAXIMA, DIVIDA_MAXIMA)
+	var acerto = _divida * DEVOLUCAO
 	_divida -= acerto
 
-	var resultado := clampf(media + acerto, 0.0001, PASSO_MAXIMO)
-	quadros_de_tela = delta / maxf(_vsync, 0.0001)
+	var resultado = clamp(media + acerto, 0.0001, PASSO_MAXIMO)
+	quadros_de_tela = delta / max(_vsync, 0.0001)
 	_ultimo_bom = resultado
 	return resultado
 
@@ -176,7 +176,7 @@ func recomecar() -> void:
 ## módulo existe para tirar.
 func _encaixar(delta: float) -> float:
 	for n in [1, 2, 3, 4]:
-		var alvo := _vsync * float(n)
-		if absf(delta - alvo) <= TOLERANCIA_DO_ENCAIXE:
+		var alvo = _vsync * float(n)
+		if abs(delta - alvo) <= TOLERANCIA_DO_ENCAIXE:
 			return alvo
 	return delta

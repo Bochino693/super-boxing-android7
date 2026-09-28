@@ -13,17 +13,17 @@ extends SerialLink
 ##
 ## Com um plugin antigo (sem `pollSerial`) cai no caminho de antes.
 
-const FECHADA := 0
-const ABRINDO := 1
-const ABERTA := 2
+const FECHADA = 0
+const ABRINDO = 1
+const ABERTA = 2
 
 var _plugin: Object = null
-var _motivo := "plugin PunchUsbSerial nao foi carregado"
-var _assincrono := false
-var _estado := FECHADA
-var _porta := ""
-var _porta_pedida := ""
-var _portas := PackedStringArray()
+var _motivo = "plugin PunchUsbSerial nao foi carregado"
+var _assincrono = false
+var _estado = FECHADA
+var _porta = ""
+var _porta_pedida = ""
+var _portas = PoolStringArray()
 
 func _init() -> void:
 	if Engine.has_singleton("PunchUsbSerial"):
@@ -53,14 +53,14 @@ func motivo_da_falta() -> String:
 	return _motivo + " — gere o APK com Gradle e o addon habilitado"
 
 ## A lista vem do cache do plugin (a enumeração roda lá, em segundo plano).
-func list_ports() -> PackedStringArray:
+func list_ports() -> PoolStringArray:
 	if _plugin == null:
-		return PackedStringArray()
-	var texto := str(_plugin.call("listPorts"))
-	_portas = PackedStringArray(texto.split("\n", false)) if not texto.is_empty() else PackedStringArray()
+		return PoolStringArray()
+	var texto = str(_plugin.call("listPorts"))
+	_portas = PoolStringArray(texto.split("\n", false)) if not texto.empty() else PoolStringArray()
 	return _portas
 
-func portas_promissoras() -> PackedStringArray:
+func portas_promissoras() -> PoolStringArray:
 	return _portas
 
 func open_port(port: String, baud: int = GameDef.SERIAL_BAUD) -> bool:
@@ -77,7 +77,7 @@ func open_port(port: String, baud: int = GameDef.SERIAL_BAUD) -> bool:
 	else:
 		_estado = ABERTA
 		_porta = port
-		opened.emit(port)
+		emit_signal("opened", port)
 	return true
 
 func aguardando_permissao() -> bool:
@@ -103,42 +103,42 @@ func poll() -> void:
 	if not _assincrono:
 		_poll_antigo()
 		return
-	var lote := str(_plugin.call("pollSerial"))
-	var linhas := lote.split("\n", false)
-	if linhas.is_empty():
+	var lote = str(_plugin.call("pollSerial"))
+	var linhas = lote.split("\n", false)
+	if linhas.empty():
 		return
-	var cabeca := linhas[0].split("|", true, 1)
-	var erro := cabeca[1] if cabeca.size() > 1 else ""
-	if not erro.is_empty():
+	var cabeca = linhas[0].split("|", true, 1)
+	var erro = cabeca[1] if cabeca.size() > 1 else ""
+	if not erro.empty():
 		_motivo = erro
 	_mudar_estado(int(cabeca[0]))
 	for i in range(1, linhas.size()):
-		var limpa := linhas[i].strip_edges()
-		if not limpa.is_empty():
-			line_received.emit(limpa)
+		var limpa = linhas[i].strip_edges()
+		if not limpa.empty():
+			emit_signal("line_received", limpa)
 
 func _poll_antigo() -> void:
 	if _estado == ABERTA and not bool(_plugin.call("isOpen")):
 		_mudar_estado(FECHADA)
-	var lote := str(_plugin.call("pollLines"))
+	var lote = str(_plugin.call("pollLines"))
 	for linha in lote.split("\n", false):
-		var limpa := str(linha).strip_edges()
-		if not limpa.is_empty():
-			line_received.emit(limpa)
+		var limpa = str(linha).strip_edges()
+		if not limpa.empty():
+			emit_signal("line_received", limpa)
 
 func _mudar_estado(novo: int) -> void:
 	if novo == _estado:
 		return
-	var antes := _estado
+	var antes = _estado
 	_estado = novo
 	if novo == ABERTA:
 		_motivo = ""
 		_porta = _porta_pedida
-		opened.emit(_porta)
+		emit_signal("opened", _porta)
 	elif novo == FECHADA and antes != FECHADA:
-		var porta := _porta if not _porta.is_empty() else _porta_pedida
+		var porta = _porta if not _porta.empty() else _porta_pedida
 		_porta = ""
-		closed.emit(porta)
+		emit_signal("closed", porta)
 
 func encerrar() -> void:
 	close_port()

@@ -1,14 +1,13 @@
 [remap]
 
 importer="wav"
-type="AudioStreamWAV"
-uid="uid://btg6la8j7tha4"
-path="res://.godot/imported/torcida_vaia.wav-f74f21508f32d676ccf8daf190d5c16e.sample"
+type="AudioStreamSample"
+path="res://.import/torcida_vaia.wav-f74f21508f32d676ccf8daf190d5c16e.sample"
 
 [deps]
 
 source_file="res://assets/audio/arcade/torcida_vaia.wav"
-dest_files=["res://.godot/imported/torcida_vaia.wav-f74f21508f32d676ccf8daf190d5c16e.sample"]
+dest_files=[ "res://.import/torcida_vaia.wav-f74f21508f32d676ccf8daf190d5c16e.sample" ]
 
 [params]
 
@@ -21,4 +20,4 @@ edit/normalize=false
 edit/loop_mode=0
 edit/loop_begin=0
 edit/loop_end=-1
-compress/mode=2
+compress/mode=1
