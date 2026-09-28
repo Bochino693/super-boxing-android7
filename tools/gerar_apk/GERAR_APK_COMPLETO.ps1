@@ -111,6 +111,21 @@ if ($Removidos -gt 0) {
     Write-Host "      Sobras de versoes antigas removidas desta pasta: $Removidos." -ForegroundColor Yellow
 }
 
+# PASTAS QUE NAO SAO DO JOGO (fotos, backups, downloads guardados aqui):
+# o Godot importaria e poria no APK tudo o que achasse nelas, e um arquivo
+# estragado ali virava erro na exportacao. Um .gdignore faz o Godot ignorar
+# a pasta; nada dela e apagado nem mexido.
+$PastasDoJogo = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
+foreach ($Item in $DaBuild) { if ($Item.Contains('\')) { [void]$PastasDoJogo.Add($Item.Split('\')[0]) } }
+foreach ($Pasta in (Get-ChildItem -LiteralPath $Raiz -Directory -Force -ErrorAction SilentlyContinue)) {
+    if ($PastasDoJogo.Contains($Pasta.Name) -or @('.git', '.import', 'build') -contains $Pasta.Name) { continue }
+    $Marca = Join-Path $Pasta.FullName ".gdignore"
+    if (-not (Test-Path -LiteralPath $Marca)) {
+        [System.IO.File]::WriteAllText($Marca, "")
+        Write-Host "      Pasta que nao e do jogo, ignorada pelo Godot: $($Pasta.Name)" -ForegroundColor Yellow
+    }
+}
+
 # Os scripts que fazem a geracao sao desta build (carimbo SUPERBOXING_BUILD).
 $Carimbados = @("GERAR_APK_AGORA.bat", "tools\gerar_apk\EXPORTAR_APK_ANDROID.bat", "tools\gerar_apk\RECOMPILAR_PLUGIN_USB.bat")
 $Misturados = @()
