@@ -86,6 +86,8 @@ $Guardadas = "sobras_de_versoes_antigas"
 $PastasDoPC = @('.git', '.import', 'build', 'android\build', $Guardadas,
     'tools\android_usb_plugin\.gradle', 'tools\android_usb_plugin\build', 'tools\android_usb_plugin\plugin\build')
 $PastasDoPC += $Aninhadas
+# Arquivos que os proprios .bat criam neste PC (nao vem no zip).
+$ArquivosDoPC = @('android\.build_version', 'tools\android_usb_plugin\local.properties', 'CAMERA_RELATORIO.txt')
 # As pastas do jogo (as que aparecem na lista da build): dentro delas,
 # qualquer arquivo fora da lista e sobra de versao antiga. Na raiz, so os
 # tipos de arquivo do jogo; o resto (seus arquivos) fica onde esta.
@@ -108,7 +110,7 @@ foreach ($Arquivo in (Get-ChildItem -LiteralPath $Raiz -Recurse -File -Force -Er
     $Rel = $Arquivo.FullName.Substring($RaizBarra.Length)
     $DoPC = $false
     foreach ($Pasta in $PastasDoPC) { if ($Rel.StartsWith($Pasta + '\', [StringComparison]::OrdinalIgnoreCase)) { $DoPC = $true; break } }
-    if ($DoPC -or $DaBuild.Contains($Rel) -or $Arquivo.Name -eq ".gdignore") { continue }
+    if ($DoPC -or $DaBuild.Contains($Rel) -or $Arquivo.Name -eq ".gdignore" -or $ArquivosDoPC -contains $Rel) { continue }
     $NaPastaDoJogo = $Rel.Contains('\') -and $PastasDoJogo.Contains($Rel.Split('\')[0])
     if ($NaPastaDoJogo -or ($ExtensoesDeJogo -contains $Arquivo.Extension.ToLower())) {
         Guardar-Sobra $Arquivo.FullName $Rel
