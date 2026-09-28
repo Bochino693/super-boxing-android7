@@ -204,6 +204,13 @@ CAMISAS = [(214, 30, 48), (30, 76, 200), (250, 200, 30), (238, 238, 242),
            (0, 170, 200), (200, 40, 140), (90, 96, 110), (150, 20, 30)]
 CAMISAS[3] = (196, 196, 204)  # branco de ginásio, não branco de estúdio
 PLACAS = ["KO!", "VAI!", "10", "UAU", "POW", "#1"]
+## O ENCOSTO DA ARQUIBANCADA: da fração ASSENTO da faixa até o pé dela, uma
+## faixa opaca na frente de cada fileira. O shader da arena deixa esse
+## trecho PARADO (as pessoas pulam atrás dele) — tem de ser o mesmo número
+## de `ASSENTO_DA_TORCIDA` em `scripts/arena/arena3d.gd`. Sem ele cada
+## pessoa era uma barra que terminava num corte reto no pé da fileira.
+ASSENTO = 0.80
+ENCOSTO = (40, 28, 62)
 ESCALA = 2  # desenha no dobro e reduz: bordas lisas, sem serrilhado
 
 
@@ -240,7 +247,7 @@ def _pessoa(dbx, dcx, x, y0, y1, ww, cw):
             d.ellipse([x + cab_r * 0.6, cab_y - cab_r * 0.2, x + cab_r * 1.4, cab_y + cab_r * 1.3], fill=_cor(cabelo))
         # tronco: ombros largos, afina na cintura; camisa com sombra embaixo
         d.polygon([(x - ww * 0.52, ombro - ww * 0.05), (x + ww * 0.52, ombro - ww * 0.05),
-                   (x + ww * 0.49, y1 + 4), (x - ww * 0.49, y1 + 4)], fill=_cor(camisa))
+                   (x + ww * 0.49, y1 - 1), (x - ww * 0.49, y1 - 1)], fill=_cor(camisa))
         d.ellipse([x - ww * 0.56, ombro - ww * 0.14, x - ww * 0.20, ombro + ww * 0.22], fill=_cor(camisa))
         d.ellipse([x + ww * 0.20, ombro - ww * 0.14, x + ww * 0.56, ombro + ww * 0.22], fill=_cor(camisa))
         if listra:
@@ -342,6 +349,16 @@ def plateia():
             x = (c + 0.5) * cw + rng.uniform(-0.04, 0.04) * cw
             ww = cw * rng.uniform(0.84, 0.90)
             _pessoa(db, dc, x, y0 * ESCALA, y1 * ESCALA, ww, cw)
+        # o encosto na frente da fileira, igual nas duas versões
+        ya = (y0 + (y1 - y0) * ASSENTO) * ESCALA
+        yb = y1 * ESCALA
+        for d in (db, dc):
+            d.rectangle([0, ya, L, yb], fill=_cor(ENCOSTO))
+            for c in range(colunas):
+                xa, xb = c * cw + cw * 0.06, (c + 1) * cw - cw * 0.06
+                d.rounded_rectangle([xa, ya + ESCALA * 2, xb, yb], radius=cw * 0.10, fill=_cor(ENCOSTO, 1.35))
+            # o friso de cima pega a luz do ringue
+            d.rectangle([0, ya, L, ya + ESCALA * 2], fill=_cor(ENCOSTO, 2.4))
     saidas = []
     for img in (baixo, cima):
         a = np.asarray(img).astype(np.float32) / 255.0
@@ -361,7 +378,8 @@ def plateia():
             faixa = (np.arange(A) >= y0 * ESCALA) & (np.arange(A) < y1 * ESCALA)
             dentro = (yy[faixa] - y0 / 512) / ((y1 - y0) / 512)
             # o corpo mergulha na sombra da fileira da frente
-            luz[faixa] = nevoa * (0.22 + 0.78 * np.clip(1.15 - dentro * 1.15, 0.0, 1.0) ** 1.3)
+            luz[faixa] = nevoa * np.where(dentro >= ASSENTO, 0.62,
+                                          0.22 + 0.78 * np.clip(1.15 - dentro * 1.15, 0.0, 1.0) ** 1.3)
         brilho = luz * pocas * (0.62 + 0.38 * volume)
         cor = cor * brilho[..., None]
         # névoa do ginásio: as fileiras do fundo puxam para o roxo

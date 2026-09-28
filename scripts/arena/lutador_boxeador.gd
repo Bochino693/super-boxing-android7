@@ -245,7 +245,7 @@ func montar() -> void:
 	_preparar_ossos()
 	for m in Compat.filhos_do_tipo(_modelo, "MeshInstance"):
 		var mi = m as MeshInstance
-		if not ModoSeguro.seguro() and _do_avesso(mi):
+		if _do_avesso(mi):
 			_avessos.append(mi)
 		_malhas.append(mi)
 		mi.cast_shadow = GeometryInstance.SHADOW_CASTING_SETTING_OFF
@@ -294,7 +294,8 @@ func montar() -> void:
 			# Casca fina (calção, cinturão, friso): duas faces. Luvas e botas
 			# são sólidos fechados e ficam com uma.
 			var casca = mi.name in ["Calcao", "Cinturao", "Friso", "Placa"]
-			var chave = [base, casca]
+			var avesso = mi in _avessos
+			var chave = [base, casca, avesso]
 			if not feitos.has(chave):
 				var novo = base.duplicate() as SpatialMaterial
 				var luva = mi.name.begins_with("Luva")
@@ -305,6 +306,9 @@ func montar() -> void:
 					# o vermelho vivo da cor de vértice estourava no lado
 					# iluminado: um pouco mais escuro, a forma aparece.
 					novo.albedo_color = Color(0.72, 0.72, 0.72)
+				if avesso and not casca:
+					# Peça do avesso (`_do_avesso`): mostra a face de fora.
+					novo.params_cull_mode = SpatialMaterial.CULL_FRONT
 				feitos[chave] = novo
 			mi.set_surface_material(k, feitos[chave])
 	_mat_clarao = SpatialMaterial.new()

@@ -102,49 +102,82 @@ void fragment() {
 }
 """
 
-## A torcida da build 97 (conta do relógio no pixel), para o modo seguro.
+## A TORCIDA DA S905L: o mesmo tipo de shader da build 97 (tudo no pixel,
+## sem nada no vértice), com três correções:
+##   • O ENCOSTO da arquibancada (faixa de baixo de cada fileira, ver
+##     `tools/gerar_torcida.py`) fica PARADO: as pessoas pulam e balançam
+##     atrás dele. Antes cada pessoa era uma barra que acabava num corte
+##     reto, e o pé da faixa esticava em listras quando alguém pulava.
+##   • FOLGA em cima da fileira: quem pula não perde a cabeça na borda.
+##   • O movimento some na borda de cada coluna: sem a linha fina que o
+##     salto de uma coluna para a outra desenhava entre as pessoas.
+## E o RITMO vem pronto do processador, como fração de 0 a 1
+## (`_fases_da_torcida`): a Mali-450 faz a conta do pixel em meia
+## precisão, e `sin(tempo * 9)` com o relógio correndo andava aos saltos.
 const SHADER_TORCIDA_SEGURA = """
 shader_type spatial;
 render_mode unshaded, cull_disabled, depth_draw_never;
 uniform sampler2D baixo : hint_albedo;
 uniform sampler2D cima : hint_albedo;
 uniform float agito = 0.0;
-uniform float tempo = 0.0;
 uniform float acende = 1.0;
 // A FILEIRA: quantas pessoas (uma por coluna) e em que faixa da imagem.
 uniform float colunas = 40.0;
 uniform float v0 = 0.0;
 uniform float v1 = 1.0;
 uniform float semente = 0.0;
+// folga em cima (fração da faixa) e onde começa o encosto parado
+uniform float folga = 0.12;
+uniform float assento = 0.80;
+// o ritmo: quatro velocidades de cada movimento, frações de 0 a 1
+uniform vec4 f_respira = vec4(0.0);
+uniform vec4 f_pulo = vec4(0.0);
+uniform vec4 f_balanco = vec4(0.0);
+uniform vec4 f_braco = vec4(0.0);
+uniform float f_ola = 0.0;
+uniform float tique = 0.0;
+
+// Uma das quatro velocidades, pelo sorteio da pessoa.
+vec4 escolhe(float r) {
+	float a = step(0.25, r);
+	float b = step(0.50, r);
+	float c = step(0.75, r);
+	return vec4(1.0 - a, a - b, b - c, c);
+}
+
 void fragment() {
-	// CADA COLUNA É UMA PESSOA INTEIRA: ela pula, balança e levanta os
-	// braços junta — nada de metade de corpo indo para um lado.
+	// CADA COLUNA É UMA PESSOA INTEIRA.
 	float col = floor(UV.x * colunas);
-	// Sorteio por coluna com números PEQUENOS: a placa de vídeo da S905L
-	// faz a conta do pixel em meia precisão, e o `sin(x * 78.2) * 43758`
-	// de costume vira sempre o mesmo número nela.
+	// Sorteio por coluna com números PEQUENOS (meia precisão).
 	float r = fract(sin(col * 0.731 + semente * 1.37) * 47.53);
 	float r2 = fract(sin(col * 1.279 + semente * 0.71) * 31.17);
 	float vida = 0.60 + agito * 0.40;
-	float respira = sin(tempo * (1.6 + r2 * 1.4) + r * 6.2831) * 0.012 * vida;
-	float pulo = max(0.0, sin(tempo * (3.0 + r * 3.6 + agito * 3.0) + r * 6.2831));
+	float respira = sin(6.2831 * (dot(f_respira, escolhe(r2)) + r)) * 0.012 * vida;
+	float pulo = max(0.0, sin(6.2831 * (dot(f_pulo, escolhe(r)) + r)));
 	pulo *= step(0.35 - agito * 0.3, r2) * (0.03 + 0.07 * agito);
+	float balanco = sin(6.2831 * (dot(f_balanco, escolhe(fract(r * 3.7))) + r * 1.43)) * 0.035 * vida;
 	float dentro = fract(UV.x * colunas);
-	// balanço de lado, dentro da própria coluna
-	dentro = clamp(dentro + sin(tempo * (1.1 + r) + r * 9.0) * 0.05 * vida, 0.0, 1.0);
-	float y = UV.y + respira + pulo;
-	vec2 uv = vec2((col + dentro) / colunas, mix(v0, v1, clamp(y, 0.004, 0.996)));
+	// altura dentro da faixa: negativa na folga de cima
+	float yb = UV.y * (1.0 + folga) - folga;
+	float parado = step(assento, yb);
+	float anda = smoothstep(0.0, 0.08, dentro) * (1.0 - smoothstep(0.92, 1.0, dentro)) * (1.0 - parado);
+	float x = clamp(dentro + balanco * anda, 0.0, 1.0);
+	// quem sobe mostra um pouco mais da camisa acima do encosto
+	float y = mix(min(yb + (respira + pulo) * anda, assento - 0.004), yb, parado);
+	vec2 uv = vec2((col + x) / colunas, mix(v0, v1, clamp(y, 0.004, 0.996)));
 	vec4 a = texture(baixo, uv);
 	vec4 b = texture(cima, uv);
 	// braços para o alto em ONDA ("ola") e, no golpe, todo mundo
-	float ola = 0.5 + 0.5 * sin(UV.x * 7.0 - tempo * 1.7 + semente);
-	float braco = 0.5 + 0.5 * sin(tempo * (2.4 + r * 2.0) + r * 12.0);
+	float ola = 0.5 + 0.5 * sin(UV.x * 7.0 - 6.2831 * f_ola + semente);
+	float braco = 0.5 + 0.5 * sin(6.2831 * (dot(f_braco, escolhe(r2)) + r * 1.91));
 	float mao = step(0.55, braco * (0.35 + 0.65 * ola) + agito * 0.5) * step(0.25 - agito * 0.2, r);
 	vec4 c = mix(a, b, mao);
+	// acima da faixa (a folga) é ar
+	c.a *= step(0.0, y);
 	// flash de celular: um pontinho na mão de alguém, de vez em quando
-	float celular = step(0.985, fract(sin(col * 1.2989 + fract(floor(tempo * 2.2 + r * 7.0) * 0.137) * 37.0 + semente) * 53.71)) * c.a;
-	vec2 celula = vec2(dentro - 0.5, (UV.y - 0.30) * 5.0);
-	celular *= 1.0 - smoothstep(0.04, 0.12, length(celula));
+	float celular = step(0.985, fract(sin(col * 1.2989 + fract((tique + floor(r * 7.0)) * 0.137) * 37.0 + semente) * 53.71)) * c.a;
+	vec2 celula = vec2(x - 0.5, (y - 0.30) * 5.0);
+	celular *= (1.0 - smoothstep(0.04, 0.12, length(celula))) * (1.0 - parado);
 	ALBEDO = c.rgb * acende * (1.0 + agito * 0.35) + vec3(0.9, 0.95, 1.0) * celular * 1.2;
 	ALPHA = c.a * (0.86 + 0.14 * agito);
 }
@@ -184,6 +217,17 @@ void fragment() {
 
 const ModoSeguro = preload("res://scripts/modo_seguro.gd")
 const ARENA_ESCALA_SEGURA = 0.55
+## A torcida da S905L (`SHADER_TORCIDA_SEGURA`): folga em cima da fileira e
+## onde começa o encosto (o mesmo `ASSENTO` de `tools/gerar_torcida.py`).
+const FOLGA_DA_TORCIDA = 0.12
+const ASSENTO_DA_TORCIDA = 0.80
+## As quatro velocidades de cada movimento (voltas por segundo).
+const RITMO_RESPIRA = [0.25, 0.32, 0.40, 0.48]
+const RITMO_PULO = [0.50, 0.65, 0.80, 0.95]
+const RITMO_BALANCO = [0.17, 0.22, 0.27, 0.33]
+const RITMO_BRACO = [0.38, 0.48, 0.58, 0.70]
+var _fase_pulo = [0.0, 0.31, 0.62, 0.87]
+var _relogio_da_torcida = -1.0
 
 ## A luz do lutador de uma passada, na mesma escala da luz da arena.
 const LUZ_DO_LUTADOR = 0.52
@@ -414,12 +458,18 @@ func _montar_fundo() -> void:
 			_mats_torcida.append(mat)
 			var altura = 2.5 * (float(fl[2]) - float(fl[1])) / 512.0
 			var quad: Mesh = null
+			var onde: Vector3 = fl[3]
 			if segura:
+				# A folga de cima para quem pula: o pé da fileira fica onde
+				# estava, o quadro cresce só para cima.
 				quad = QuadMesh.new()
-				(quad as QuadMesh).size = Vector2(10.0, altura)
+				(quad as QuadMesh).size = Vector2(10.0, altura * (1.0 + FOLGA_DA_TORCIDA))
+				onde += Vector3(0.0, altura * FOLGA_DA_TORCIDA * 0.5, 0.0)
+				mat.set_shader_param("folga", FOLGA_DA_TORCIDA)
+				mat.set_shader_param("assento", ASSENTO_DA_TORCIDA)
 			else:
 				quad = _malha_da_fileira(int(fl[0]), 10.0, altura, float(k) * 3.3)
-			var mi = _peca(quad, mat, fl[3])
+			var mi = _peca(quad, mat, onde)
 			_mundo.remove_child(mi)
 			_gente.add_child(mi)
 		_mat_torcida = _mats_torcida[0]
@@ -1143,7 +1193,9 @@ func _luzes() -> void:
 	_mat_fundo.set_shader_param("agito", _agito)
 	# A torcida faz as contas do relógio no vértice (32 bits): o relógio dela
 	# dá a volta só a cada ~10 min, e a volta é um instante só.
-	var tempo_da_torcida = tempo_curto if ModoSeguro.seguro() else fposmod(_relogio, TAU * 100.0)
+	var tempo_da_torcida = fposmod(_relogio, TAU * 100.0)
+	if ModoSeguro.seguro():
+		_fases_da_torcida()
 	for mat in _mats_torcida:
 		(mat as ShaderMaterial).set_shader_param("acende", acende)
 		(mat as ShaderMaterial).set_shader_param("tempo", tempo_da_torcida)
@@ -1158,6 +1210,35 @@ func _luzes() -> void:
 		var mat = f.material_override as SpatialMaterial
 		mat.albedo_color.a = 0.20 + _publico * 0.35 + _clarao * 0.25 + _agito * 0.25
 		f.rotation.z += sin(_relogio * 2.6 + float(i)) * 0.25 * _agito
+
+
+## O RITMO DA TORCIDA, pronto: cada movimento em quatro velocidades, como
+## fração da volta (0 a 1). A conta com o relógio grande é feita aqui, em
+## 64 bits; a placa de vídeo só recebe números pequenos. O pulo acelera com
+## o agito sem dar tranco: a fase é somada quadro a quadro.
+func _fases_da_torcida() -> void:
+	var dt = 0.0 if _relogio_da_torcida < 0.0 else clamp(_relogio - _relogio_da_torcida, 0.0, 0.25)
+	_relogio_da_torcida = _relogio
+	for k in 4:
+		_fase_pulo[k] = fposmod(_fase_pulo[k] + dt * (RITMO_PULO[k] + _agito * 0.48), 1.0)
+	var respira = _quatro_fases(RITMO_RESPIRA)
+	var balanco = _quatro_fases(RITMO_BALANCO)
+	var braco = _quatro_fases(RITMO_BRACO)
+	var pulo = Color(_fase_pulo[0], _fase_pulo[1], _fase_pulo[2], _fase_pulo[3])
+	var ola = fposmod(_relogio * 1.7 / TAU, 1.0)
+	var tique = fposmod(floor(_relogio * 2.2), 64.0)
+	for mat in _mats_torcida:
+		var m = mat as ShaderMaterial
+		m.set_shader_param("f_respira", respira)
+		m.set_shader_param("f_pulo", pulo)
+		m.set_shader_param("f_balanco", balanco)
+		m.set_shader_param("f_braco", braco)
+		m.set_shader_param("f_ola", ola)
+		m.set_shader_param("tique", tique)
+
+func _quatro_fases(ritmo: Array) -> Color:
+	return Color(fposmod(_relogio * ritmo[0], 1.0), fposmod(_relogio * ritmo[1], 1.0),
+		fposmod(_relogio * ritmo[2], 1.0), fposmod(_relogio * ritmo[3], 1.0))
 
 
 func _piscar() -> void:

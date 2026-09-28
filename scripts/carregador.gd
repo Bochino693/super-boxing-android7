@@ -610,7 +610,7 @@ func _desenhar() -> void:
 		t.draw_rect(aviso, Compat.cor("ffb000", aparece), false, 2.0)
 		Compat.texto(t, _fonte, Vector2(aviso.position.x, 1826.0), "A ÚLTIMA ABERTURA PAROU EM:", Compat.CENTRO, aviso.size.x, 24, Compat.cor("ffb000", aparece))
 		Compat.texto(t, _fonte, Vector2(aviso.position.x + 12.0, 1864.0), travou, Compat.CENTRO, aviso.size.x - 24.0, 26, Compat.cor("ffffff", aparece))
-	Compat.texto(t, _fonte, Vector2(0.0, 1906.0), "BUILD %d  •  %s%s" % [Versao.NUMERO, Perfil.NOME, "  •  VISUAL SEGURO" if ModoSeguro.seguro() else ""], Compat.DIREITA, 1060.0, 18, Compat.cor("8f86b8", 0.7 * aparece))
+	Compat.texto(t, _fonte, Vector2(0.0, 1906.0), "BUILD %d  •  %s%s" % [Versao.NUMERO, Perfil.NOME, "  •  VISUAL SEGURO" if ModoSeguro.voltou_sozinho() else ""], Compat.DIREITA, 1060.0, 18, Compat.cor("8f86b8", 0.7 * aparece))
 
 
 ## Retângulo com as pontas totalmente redondas, borda lisa, com gradiente

@@ -32,6 +32,10 @@ const _E = {
 }
 
 static func seguro() -> bool:
+	# Visual novo desligado no perfil: sempre o desenho da build 97, sem
+	# tentativa nenhuma.
+	if not Perfil.VISUAL_NOVO:
+		return true
 	if not _E.decidido:
 		_decidir()
 	return _E.seguro
@@ -57,8 +61,14 @@ static func _decidir() -> void:
 	cfg.save(ARQUIVO)
 	print("SUPERBOXING visual: %s" % ("SEGURO (build 97)" if seguro else "NOVO"))
 
+## Caiu com o visual novo e voltou sozinho para o seguro?
+static func voltou_sozinho() -> bool:
+	return Perfil.VISUAL_NOVO and seguro()
+
 ## O visual novo rodou o bastante: não é mais suspeito.
 static func firmou() -> void:
+	if not Perfil.VISUAL_NOVO:
+		return
 	if not _E.decidido:
 		_decidir()
 	if _E.seguro or _E.firmado:

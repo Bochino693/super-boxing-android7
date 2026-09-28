@@ -43,6 +43,13 @@ const LUZES_DE_RECORTE = false
 ## A pele com shader próprio (luz que atravessa, suor, poros) calcula a luz
 ## pixel a pixel. Aqui o lutador usa o material padrão, com a mesma pintura.
 const PELE_DETALHADA = false
+## O VISUAL NOVO (lutador de uma passada com as luzes de palco, torcida
+## animada no vértice, arena em 0,70) DESLIGADO NESTA PLACA. Nas builds 98
+## e 99 a TV Box caía no fim do carregamento (99%), exatamente quando tudo
+## é desenhado pela primeira vez; a 97, com o desenho de sempre, rodava.
+## Desligado, o jogo desenha EXATAMENTE como a build 97 (ver
+## `modo_seguro.gd`). O código fica para testar numa placa com cabo.
+const VISUAL_NOVO = false
 ## O lutador inteiro num shader próprio de uma passada só, com as luzes de
 ## recorte rosa e azul do jogo original calculadas no próprio material
 ## (ver `shaders/lutador_leve.shader`). Mais bonito E mais leve que o
