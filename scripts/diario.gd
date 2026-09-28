@@ -47,6 +47,8 @@ static func inicio() -> void:
 static func marca(etapa: String) -> void:
 	if not _E._aberto or _E._pronto:
 		return
+	# Também no logcat (etiqueta "godot"), para ver a etapa pelo cabo USB.
+	print("SUPERBOXING %.1fs %s" % [float(Time.get_ticks_msec() - _E._inicio_ms) / 1000.0, etapa])
 	var f = Compat.abrir(ARQUIVO, File.READ_WRITE)
 	if f == null:
 		return

@@ -52,3 +52,9 @@ const TETO_INICIAL = "MEDIO"
 ## segundo a prévia continua viva e a conversão de imagem sai da frente do
 ## jogo.
 const CAMERA_CONTAGEM_MS = 125
+
+## Carregar, na abertura, TODAS as imagens e sons da pasta `assets` (no PC
+## evita a primeira leitura do disco no meio do jogo). Na S905L, com 1 GB,
+## isso punha na memória ao mesmo tempo coisas que o jogo nunca mostra e o
+## Android derrubava o launcher: só a cena do jogo é carregada.
+const PRECARREGAR_TUDO = false

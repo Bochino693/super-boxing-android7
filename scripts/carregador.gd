@@ -154,8 +154,14 @@ func _ready() -> void:
 func _iniciar_carga() -> void:
 	_mudar(Fase.CARREGANDO)
 	_pedir(CENA_DO_JOGO)
-	for pasta in PASTAS:
-		_listar(pasta)
+	# Na TV Box de 1 GB (ver `Perfil.PRECARREGAR_TUDO`) só a cena do jogo é
+	# carregada aqui: o que ela usa vem junto, e o ensaio do aquecimento
+	# passa por todas as telas. Carregar a pasta inteira punha na memória, ao
+	# mesmo tempo, imagens que o jogo nunca mostra (os logos em todos os
+	# tamanhos) — e o Android derrubava o launcher para abrir espaço.
+	if Perfil.PRECARREGAR_TUDO:
+		for pasta in PASTAS:
+			_listar(pasta)
 	_total = _pendentes.size()
 
 
@@ -390,6 +396,9 @@ func _process(delta: float) -> void:
 			if _fase_tempo >= SUMIR_SEGUNDOS:
 				_mudar(Fase.PRONTO)
 				_camada.queue_free()
+				# O jogo já segura o que usa: o resto do que o carregador
+				# guardou sai da memória.
+				_guardados.clear()
 				set_process(false)
 				return
 	# A barra corre atrás do progresso real, sem saltos. O passo por quadro
@@ -403,39 +412,23 @@ func _process(delta: float) -> void:
 
 
 ## A CARGA EM PEDAÇOS. O Godot 3 não tem a carga em segundo plano do 4:
-## cada recurso é lido por `load_interactive`, e cada quadro gasta no
-## máximo `CARGA_MS_POR_QUADRO` nisso — a barra anda e a tela não congela.
+## os recursos são lidos um a um e cada quadro gasta no máximo
+## `CARGA_MS_POR_QUADRO` nisso — a barra anda e a tela não congela.
 const CARGA_MS_POR_QUADRO = 14
 var _carga_indice = 0
-var _carga_atual: ResourceInteractiveLoader = null
 
 func _acompanhar_carga() -> void:
+	# `ResourceLoader.load` (e não `load_interactive`): o recurso entra no
+	# cache com o MESMO nome que o jogo usa. Com o carregamento interativo o
+	# Godot 3 o registrava pelo nome interno do cache, e o jogo carregava a
+	# mesma imagem DE NOVO — tudo ficava em dobro na memória.
 	var inicio = OS.get_ticks_msec()
-	while OS.get_ticks_msec() - inicio < CARGA_MS_POR_QUADRO:
-		if _carga_atual == null:
-			if _carga_indice >= _pendentes.size():
-				break
-			_carga_atual = ResourceLoader.load_interactive(_pendentes[_carga_indice])
-			if _carga_atual == null:
-				# Falhou: não trava a abertura por um arquivo ruim.
-				_carga_indice += 1
-				continue
-		var estado = _carga_atual.poll()
-		if estado == ERR_FILE_EOF:
-			# Guardar a referência mantém o recurso no cache: o `load()` do
-			# jogo encontra tudo pronto e não lê o disco de novo.
-			var recurso = _carga_atual.get_resource()
-			if recurso != null:
-				_guardados.append(recurso)
-			_carga_atual = null
-			_carga_indice += 1
-		elif estado != OK:
-			_carga_atual = null
-			_carga_indice += 1
-	var parcial = 0.0
-	if _carga_atual != null and _carga_atual.get_stage_count() > 0:
-		parcial = float(_carga_atual.get_stage()) / float(_carga_atual.get_stage_count())
-	_progresso = 0.85 * ((float(_carga_indice) + parcial) / float(int(max(1, _total))))
+	while OS.get_ticks_msec() - inicio < CARGA_MS_POR_QUADRO and _carga_indice < _pendentes.size():
+		var recurso = ResourceLoader.load(_pendentes[_carga_indice])
+		if recurso != null:
+			_guardados.append(recurso)
+		_carga_indice += 1
+	_progresso = 0.85 * (float(_carga_indice) / float(int(max(1, _total))))
 	if _carga_indice >= _pendentes.size():
 		_mudar(Fase.MONTANDO)
 		_progresso = 0.87

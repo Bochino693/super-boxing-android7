@@ -193,9 +193,15 @@ static func z(item: CanvasItem, valor: int) -> void:
 
 
 ## `content_scale` da janela do Godot 4: o quadro lógico e o modo de
-## esticar ficam na árvore no Godot 3.
+## esticar ficam na árvore no Godot 3. Na TV Box o quadro 1920x1080 cobre a
+## tela inteira: numa saída 16:9 é igual ao KEEP, e se o sistema entregar uma
+## superfície um pouco diferente (barra de navegação, overscan) não sobra
+## faixa preta.
 static func enquadrar(arvore: SceneTree, tamanho: Vector2) -> void:
-	arvore.set_screen_stretch(SceneTree.STRETCH_MODE_2D, SceneTree.STRETCH_ASPECT_KEEP, tamanho)
+	var aspecto = SceneTree.STRETCH_ASPECT_KEEP
+	if OS.get_name() == "Android":
+		aspecto = SceneTree.STRETCH_ASPECT_IGNORE
+	arvore.set_screen_stretch(SceneTree.STRETCH_MODE_2D, aspecto, tamanho)
 
 
 static func randi_range(de: int, ate: int) -> int:

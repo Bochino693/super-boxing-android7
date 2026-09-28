@@ -1,4 +1,4 @@
-SUPER BOXING - VERSAO TV BOX S905L (ANDROID 7.1) - BUILD 96
+SUPER BOXING - VERSAO TV BOX S905L (ANDROID 7.1) - BUILD 97
 ===========================================================
 
 PARA QUAL MAQUINA E ESTA VERSAO
@@ -26,12 +26,23 @@ O que muda por dentro (voce nao ve na tela):
 
 O APK tem outro nome de pacote (com.lazersport.superboxing), entao pode
 ficar instalado junto com o Punch Challenge das outras maquinas. Se a
-build 92, 93, 94 ou 95 estiver instalada, a 96 instala por cima.
+build 92 a 96 estiver instalada, a 97 instala por cima.
+
+O QUE A BUILD 97 CORRIGE
+------------------------
+- Travava na tela de carregamento e o Android fechava o jogo/o launcher:
+  a TV Box de 1 GB ficava sem memoria. Agora o carregamento nao le mais o
+  jogo inteiro de uma vez (le so o que a tela usa), cada arquivo e lido
+  uma vez so, as fontes usam poucos tamanhos padrao e as imagens grandes
+  sao comprimidas na placa. Memoria de imagens na abertura: de 131 MB
+  para 52 MB. O visual continua o mesmo.
+- Nao preenchia a tela inteira: o jogo agora ocupa a tela toda (sem a
+  margem das barras do Android e sem faixa preta).
 
 ANTES DE INSTALAR NAS 80: TESTE EM UMA
 --------------------------------------
 Na tela de carregamento aparece, no canto de baixo,
-"BUILD 96 - S905L - Android 7.1". Jogue uma partida inteira, abra a
+"BUILD 97 - S905L - Android 7.1". Jogue uma partida inteira, abra a
 Central Tecnica e confira camera e Arduino antes de passar para as outras.
 
 GERAR O APK
@@ -44,7 +55,7 @@ GERAR O APK
    nao sao do jogo sao ignoradas pelo Godot. Se faltar arquivo, ele avisa.
 2. Clique duas vezes em  GERAR_APK_AGORA.bat
 3. Espere. A janela mostra cada passo e NAO fecha sozinha: no fim aparece
-   "APK GERADO E CONFERIDO - build 96, sem erros" (ou FALHA com o motivo).
+   "APK GERADO E CONFERIDO - build 97, sem erros" (ou FALHA com o motivo).
 4. O APK fica em:  build\android\SuperBoxing.apk
 
 Precisa no PC:
@@ -64,7 +75,7 @@ plugin USB dentro.
 ATUALIZAR PELO GITHUB
 ---------------------
 O ATUALIZAR_E_GERAR.bat baixa a versao do GitHub e gera o APK. O GitHub
-hoje ainda tem a build 92 (Godot 4): enquanto a build 96 nao for para la,
+hoje ainda tem a build 92 (Godot 4): enquanto a build 97 nao for para la,
 use o GERAR_APK_AGORA.bat da pasta do zip (o ATUALIZAR avisa e para).
 
 INSTALAR NA TV BOX
@@ -101,6 +112,12 @@ O jogo grava cada etapa da abertura. Se travar, desligue e ligue: JA NA
 TELA DE CARREGAMENTO aparece, embaixo, uma caixa amarela
 "A ULTIMA ABERTURA PAROU EM: ...". Fotografe essa caixa e mande - ela diz
 exatamente onde parou.
+
+Se mesmo assim travar ou fechar, com a TV Box ligada no PC pelo ADB
+clique duas vezes em  ABERTURA_TVBOX.bat  (ou ABERTURA_TVBOX.bat
+192.168.0.50 pela rede). Ele abre o jogo, espera 60 s e grava
+ABERTURA_RELATORIO.txt com cada etapa, a memoria e o erro do Android.
+Mande esse arquivo.
 
 O resto dos arquivos (scripts internos) esta em tools\gerar_apk - nao
 precisa abrir.

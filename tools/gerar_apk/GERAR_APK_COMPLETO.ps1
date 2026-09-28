@@ -13,7 +13,7 @@ Set-Location $Raiz
 # (SUPERBOXING_BUILD=...): se a pasta tiver arquivos de builds diferentes
 # misturados (zip novo extraido por cima de um velho), a geracao para aqui,
 # antes de fazer qualquer coisa.
-$Build = 96
+$Build = 97
 $VersaoGodot = "3.6.2"
 $VersaoModelos = "3.6.2.stable"
 $UrlBase = "https://github.com/godotengine/godot/releases/download/3.6.2-stable"
@@ -87,7 +87,7 @@ $PastasDoPC = @('.git', '.import', 'build', 'android\build', $Guardadas,
     'tools\android_usb_plugin\.gradle', 'tools\android_usb_plugin\build', 'tools\android_usb_plugin\plugin\build')
 $PastasDoPC += $Aninhadas
 # Arquivos que os proprios .bat criam neste PC (nao vem no zip).
-$ArquivosDoPC = @('android\.build_version', 'tools\android_usb_plugin\local.properties', 'CAMERA_RELATORIO.txt')
+$ArquivosDoPC = @('android\.build_version', 'tools\android_usb_plugin\local.properties', 'CAMERA_RELATORIO.txt', 'ABERTURA_RELATORIO.txt')
 # As pastas do jogo (as que aparecem na lista da build): dentro delas,
 # qualquer arquivo fora da lista e sobra de versao antiga. Na raiz, so os
 # tipos de arquivo do jogo; o resto (seus arquivos) fica onde esta.
@@ -321,6 +321,79 @@ if ($ManifestoTexto -notmatch "SUPERBOXING_TV_BOX") {
     [System.IO.File]::WriteAllText($Manifesto, $ManifestoTexto, (New-Object System.Text.UTF8Encoding($false)))
     Write-Host "      Manifesto: TV Box (Leanback + inicio)." -ForegroundColor Green
 }
+
+# TELA CHEIA: a Activity do modelo do Godot 3 deixa uma margem para as barras
+# do sistema e o tema dela nao e de tela cheia. Esta versao da Activity ocupa
+# a tela inteira da TV Box (escrita sempre, para nunca ficar a antiga).
+$Atividade = Join-Path $AndroidBuildDir "src\com\godot\game\GodotApp.java"
+if (-not (Test-Path -LiteralPath (Split-Path $Atividade -Parent))) {
+    throw "O modelo Android nao tem src\com\godot\game. Apague a pasta android\build e rode de novo."
+}
+$AtividadeTexto = @'
+// SUPERBOXING_TELA_CHEIA: escrito pelo GERAR_APK_COMPLETO.ps1.
+// TV Box Android 7.1: o jogo ocupa a tela inteira, sem barra de sistema e
+// sem margem reservada para ela.
+package com.godot.game;
+
+import org.godotengine.godot.FullScreenGodotApp;
+
+import android.os.Build;
+import android.os.Bundle;
+import android.view.View;
+import android.view.WindowInsets;
+import android.view.WindowManager;
+
+public class GodotApp extends FullScreenGodotApp {
+	private static final int TELA_CHEIA = View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+			| View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+			| View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+			| View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+			| View.SYSTEM_UI_FLAG_FULLSCREEN
+			| View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
+
+	@Override
+	public void onCreate(Bundle savedInstanceState) {
+		setTheme(R.style.GodotAppMainTheme);
+		super.onCreate(savedInstanceState);
+		getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN
+				| WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+		View area = findViewById(org.godotengine.godot.R.id.godot_fragment_container);
+		if (area != null) {
+			area.setPadding(0, 0, 0, 0);
+			if (Build.VERSION.SDK_INT >= 20) {
+				area.setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() {
+					@Override
+					public WindowInsets onApplyWindowInsets(View v, WindowInsets insets) {
+						v.setPadding(0, 0, 0, 0);
+						return insets;
+					}
+				});
+			}
+		}
+		telaCheia();
+	}
+
+	@Override
+	protected void onResume() {
+		super.onResume();
+		telaCheia();
+	}
+
+	@Override
+	public void onWindowFocusChanged(boolean hasFocus) {
+		super.onWindowFocusChanged(hasFocus);
+		if (hasFocus) {
+			telaCheia();
+		}
+	}
+
+	private void telaCheia() {
+		getWindow().getDecorView().setSystemUiVisibility(TELA_CHEIA);
+	}
+}
+'@
+[System.IO.File]::WriteAllText($Atividade, $AtividadeTexto.Replace("`r`n", "`n"), (New-Object System.Text.UTF8Encoding($false)))
+Write-Host "      Activity: tela cheia." -ForegroundColor Green
 
 # O POM antigo do AUSBC aponta para dois artefatos opcionais que existiam no
 # JCenter e nao sao usados pela captura UVC do jogo. A exclusao precisa

@@ -147,11 +147,20 @@ def opcoes_de_importacao():
         if eh_3d:
             # Comprimida na placa de vídeo (ETC na TV Box), com mipmaps. O
             # lutador em 1024, como na versão do Godot 4.
-            limite = 1024 if "lutador3d" in rel else 0
+            # Tudo em no máximo 1024: a arena é desenhada numa janela de
+            # ~550x780, e a torcida em 2048 só gastava memória.
+            limite = 1024
             texto = IMPORT_TEXTURA.format(caminho=rel, modo=2, mipmaps="true", limite=limite, normal=0)
         else:
-            texto = IMPORT_TEXTURA.format(caminho=rel, modo=0, limite=0, normal=0,
-                                          mipmaps="true" if (rel in MIPMAPS_2D or fx) else "false")
+            # 2D SEM MIPMAPS (menos as partículas, que já têm lados em
+            # potência de 2): no OpenGL ES 2.0 da Mali-450 o Godot 3 estica
+            # para potência de 2 a imagem de tamanho qualquer que tenha
+            # mipmaps — o logo de 1400x823 virava 2048x1024 e dobrava de
+            # memória. Foto sem transparência (o fundo) vai comprimida na
+            # placa de vídeo: 6 MB viram 1 MB.
+            sem_alfa = rel.endswith(".jpg")
+            texto = IMPORT_TEXTURA.format(caminho=rel, modo=2 if sem_alfa else 0, limite=0, normal=0,
+                                          mipmaps="true" if fx else "false")
         Path(arq + ".import").write_text(texto, encoding="utf-8")
     for arq in sorted(glob.glob(str(RAIZ / "assets/**/*.wav"), recursive=True)):
         rel = str(Path(arq).relative_to(RAIZ)).replace("\\", "/")
