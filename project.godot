@@ -1,0 +1,69 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[animation]
+
+compatibility/default_parent_skeleton_in_mesh_instance_3d=true
+
+[application]
+
+config/name="Super Boxing"
+run/main_scene="res://scenes/carregador.tscn"
+config/features=PackedStringArray("4.6", "GL Compatibility")
+boot_splash/bg_color=Color(0.0627, 0.0353, 0.1137, 1)
+boot_splash/image="res://assets/branding/abertura_tvbox.png"
+config/icon="res://assets/icon.png"
+config/quit_on_go_back=false
+config/auto_accept_quit=false
+
+[display]
+
+window/size/viewport_width=1920
+window/size/viewport_height=1080
+window/size/mode=3
+window/stretch/mode="canvas_items"
+vsync/vsync_mode=2
+
+[editor_plugins]
+
+enabled=PackedStringArray("PunchUsbSerial")
+
+[input]
+
+cabinet_start={
+"deadzone": 0.2,
+"events": [Object(InputEventJoypadButton,"resource_local_to_scene":false,"resource_name":"","device":-1,"button_index":6,"pressure":0.0,"pressed":true,"script":null)
+]
+}
+cabinet_credit={
+"deadzone": 0.2,
+"events": [Object(InputEventJoypadButton,"resource_local_to_scene":false,"resource_name":"","device":-1,"button_index":4,"pressure":0.0,"pressed":true,"script":null)
+]
+}
+
+[physics]
+
+common/physics_ticks_per_second=20
+
+[punch]
+
+debug_simulation=false
+
+[rendering]
+
+textures/canvas_textures/default_texture_filter=3
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+textures/vram_compression/import_etc2_astc=true
+textures/default_filters/anisotropic_filtering_level=0
+anti_aliasing/quality/msaa_2d=0
+anti_aliasing/quality/msaa_3d=0
+limits/opengl/max_lights_per_object=4
+environment/defaults/default_clear_color=Color(0.0627, 0.0353, 0.1137, 1)

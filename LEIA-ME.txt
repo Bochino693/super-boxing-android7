@@ -1,0 +1,88 @@
+SUPER BOXING - VERSAO TV BOX S905L (ANDROID 7.1) - BUILD 92
+===========================================================
+
+PARA QUAL MAQUINA E ESTA VERSAO
+-------------------------------
+TV Box Amlogic S905L, 1 GB de RAM, 8 GB, Android 7.1 (as 80 placas).
+E o mesmo jogo da build 91 (Godot 4.6.1), com um perfil leve:
+- 30 quadros por segundo FIXOS (liso, sem oscilar).
+- A arena 3D e desenhada em resolucao interna menor e ampliada na tela.
+- Sem as duas luzes coloridas de recorte e sem antisserrilhado 3D.
+- Pele do lutador no material padrao (mesma pintura, menos conta).
+- Texturas do lutador limitadas a 1024 e fundo comprimido na placa de
+  video (menos memoria).
+- Metade das particulas 3D do golpe e da poeira.
+Tudo isso fica num arquivo so: scripts\perfil.gd.
+
+O APK tem outro nome de pacote (com.lazersport.superboxing), entao pode
+ficar instalado junto com o Punch Challenge das outras maquinas.
+
+ANTES DE INSTALAR NAS 80: TESTE EM UMA
+--------------------------------------
+O Godot 4 precisa de placa de video com OpenGL ES 3.0. Para conferir a
+placa, com a TV Box no ADB, rode no PC:
+  C:\AndroidSdk\platform-tools\adb.exe shell dumpsys SurfaceFlinger | findstr GLES
+Se aparecer "OpenGL ES 3.x", o jogo roda. Se aparecer so "OpenGL ES 2.0",
+o jogo avisa que a placa de video nao e compativel e fecha - fotografe
+essa linha e mande.
+Na tela de carregamento aparece, no canto de baixo,
+"BUILD 92 - S905L - Android 7.1".
+
+ATUALIZAR E GERAR O APK (um clique so)
+--------------------------------------
+Clique duas vezes em  ATUALIZAR_E_GERAR.bat : ele baixa a versao nova do
+GitHub (sem o erro "Your local changes would be overwritten") e ja gera o
+APK. Nao precisa mais digitar "git pull".
+
+GERAR O APK (sem baixar nada)
+-----------------------------
+1. Clique duas vezes em  GERAR_APK_AGORA.bat
+2. Espere. A janela mostra cada passo e NAO fecha sozinha:
+   no fim aparece  SUCESSO  (ou  FALHA  com o motivo).
+3. O APK fica em:  build\android\SuperBoxing.apk
+
+Precisa no PC (o mesmo de sempre):
+  - Godot 4.6.1 (em Downloads ou Documentos, ou aberto)
+  - Android SDK em C:\AndroidSdk
+  - Java 17 e internet (na primeira vez baixa os modelos do Godot)
+
+Se o plugin USB nao compilar, a janela avisa e o APK sai assim mesmo,
+com o plugin que ja estava na pasta.
+
+INSTALAR NA TV BOX
+------------------
+Pela USB/rede com ADB: clique duas vezes em  INSTALAR_NA_TVBOX.bat
+(ele instala por cima, sem apagar ranking e ajustes, e ja libera a camera).
+Ou copie o SuperBoxing.apk para a TV Box e instale por la.
+
+PRIMEIRA VEZ NA TV BOX
+----------------------
+As permissoes vem LOGO NO INICIO, antes da barra andar, uma de cada vez:
+  1. CAMERA   -> Permitir
+  2. ARDUINO  -> MARQUE "USAR POR PADRAO" e toque OK. Marcado, o Android
+                grava e nao pergunta mais. Sem permitir, o jogo pergunta
+                de novo (o Arduino e obrigatorio).
+  3. WEBCAM USB -> so aparece se o Android pedir; marque a caixa e OK
+Depois disso a barra carrega e o jogo NAO abre mais nenhuma janela.
+A camera abre sozinha e se religa se parar. O jogo tenta os dois caminhos
+do Android (camera do sistema e Camera2/webcam externa), um de cada vez,
+ate vir imagem. Se nao vier, a linha "SEM CAMERA" embaixo da tela diz o
+motivo (PLUGIN: ... ou CAMERA2: ...) - fotografe e mande.
+
+CAMERA NAO APARECE? UM COMANDO SO
+---------------------------------
+Com a TV Box ligada no PC pelo ADB (USB ou rede), clique duas vezes em
+  CAMERA_TVBOX.bat          (ou CAMERA_TVBOX.bat 192.168.0.50 pela rede)
+Ele libera a camera para o jogo, abre o jogo, espera 90 s e grava
+CAMERA_RELATORIO.txt com tudo o que a TV Box enxerga (USB, cameras,
+permissoes e cada tentativa do jogo). Mande esse arquivo.
+
+SE A ABERTURA TRAVAR
+--------------------
+O jogo grava cada etapa da abertura. Se travar, desligue e ligue: JA NA
+TELA DE CARREGAMENTO aparece, embaixo, uma caixa amarela
+"A ULTIMA ABERTURA PAROU EM: ...". Fotografe essa caixa e mande - ela diz
+exatamente onde parou.
+
+O resto dos arquivos (scripts internos) esta em tools\gerar_apk - nao
+precisa abrir.

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+	<uses-feature android:name="android.hardware.usb.host" android:required="true"/>
+	<uses-feature android:name="android.hardware.camera.any" android:required="false"/>
+	<uses-feature android:name="android.hardware.camera.external" android:required="false"/>
+	<uses-permission android:name="android.permission.CAMERA"/>
+
+    <application android:resizeableActivity="true" android:hardwareAccelerated="true">
+        <!--
+        PERMISSÃO USB UMA VEZ SÓ, SEM MEXER NA TELA DO GODOT.
+
+        Uma atividade própria e invisível atende o encaixe do Arduino e da
+        webcam. No primeiro encaixe o Android oferece "Usar por padrão";
+        marcado, a permissão fica guardada para o aplicativo inteiro e o
+        jogo não pergunta mais. A atividade só abre (ou traz para frente) o
+        jogo e fecha na hora.
+
+        Não se declara nada sobre com.godot.game.GodotApp aqui: o modelo
+        Android do Godot já marca aquela atividade com regras próprias de
+        mesclagem, e mesclar por cima quebrava a exportação.
+        -->
+        <activity
+            android:name="com.lazersport.punch.usbserial.UsbAttachActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter>
+                <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
+            </intent-filter>
+            <meta-data
+                android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED"
+                android:resource="@xml/punch_usb_devices" />
+        </activity>
+        <!--
+        Plugin metadata:
+
+        - In the `android:name` attribute, the `org.godotengine.plugin.v2` prefix
+        is required so Godot can recognize the project as a valid Godot
+        Android plugin. The plugin name following the prefix should match the value
+        of the plugin name returned by the plugin initializer.
+
+        - The `android:value` attribute should be the classpath to the plugin
+        initializer.
+        -->
+        <meta-data
+            android:name="org.godotengine.plugin.v2.${godotPluginName}"
+            android:value="${godotPluginPackageName}.GodotAndroidPlugin"/>
+    </application>
+
+</manifest>
