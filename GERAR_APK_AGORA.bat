@@ -1,0 +1,27 @@
+@echo off
+setlocal
+title Super Boxing S905L - Gerar APK Android
+cd /d "%~dp0"
+
+echo ============================================================
+echo   SUPER BOXING - BUILD 92 - TV BOX S905L (ANDROID 7.1)
+echo   GERA O APK COMPLETO (PLUGIN USB + JOGO)
+echo ============================================================
+echo.
+
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0tools\gerar_apk\GERAR_APK_COMPLETO.ps1"
+if errorlevel 1 (
+  echo.
+  echo FALHA: o APK nao foi criado. Fotografe esta janela inteira.
+  echo Nao copie os sinais PS, ^>^> ou mensagens de erro como comandos.
+  pause
+  exit /b 1
+)
+
+echo.
+echo SUCESSO. APK criado em:
+echo %~dp0build\android\SuperBoxing.apk
+echo.
+echo Agora conecte a TV Box e use INSTALAR_NA_TVBOX.bat.
+pause
+exit /b 0
