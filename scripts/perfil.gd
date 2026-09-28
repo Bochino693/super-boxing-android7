@@ -29,9 +29,11 @@ const FPS_FOLGADO = 29.5
 const QUADRO_CRITICO_MS = 48.0
 
 ## A janela 3D (a arena) é desenhada nesta fração da resolução lógica e
-## ampliada no quadro: 1008 × 1422 → 554 × 782. É o que mais pesa na placa
-## de vídeo, e ampliada ela continua nítida a 2 metros da tela.
-const ARENA_ESCALA = 0.55
+## ampliada no quadro: 1008 × 1422 → 706 × 995. Em 0,55 (554 × 782) o
+## lutador e a torcida saíam borrados; o lutador agora é desenhado numa
+## passada só (`LUTADOR_LEVE`) e a torcida faz as contas no vértice, e a
+## folga que isso abriu na placa de vídeo foi para a nitidez.
+const ARENA_ESCALA = 0.70
 ## Antisserrilhado da arena: desligado (a ampliação já suaviza as bordas).
 const ARENA_MSAA = false
 ## As duas luzes coloridas de recorte (rosa e azul) redesenham o lutador
@@ -41,6 +43,11 @@ const LUZES_DE_RECORTE = false
 ## A pele com shader próprio (luz que atravessa, suor, poros) calcula a luz
 ## pixel a pixel. Aqui o lutador usa o material padrão, com a mesma pintura.
 const PELE_DETALHADA = false
+## O lutador inteiro num shader próprio de uma passada só, com as luzes de
+## recorte rosa e azul do jogo original calculadas no próprio material
+## (ver `shaders/lutador_leve.shader`). Mais bonito E mais leve que o
+## material padrão com uma luz.
+const LUTADOR_LEVE = true
 ## Fração das partículas 3D do golpe e da poeira da lona.
 const PARTICULAS_3D = 0.5
 

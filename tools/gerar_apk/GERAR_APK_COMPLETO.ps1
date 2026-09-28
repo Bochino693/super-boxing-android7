@@ -13,7 +13,7 @@ Set-Location $Raiz
 # (SUPERBOXING_BUILD=...): se a pasta tiver arquivos de builds diferentes
 # misturados (zip novo extraido por cima de um velho), a geracao para aqui,
 # antes de fazer qualquer coisa.
-$Build = 97
+$Build = 98
 $VersaoGodot = "3.6.2"
 $VersaoModelos = "3.6.2.stable"
 $UrlBase = "https://github.com/godotengine/godot/releases/download/3.6.2-stable"
@@ -331,8 +331,9 @@ if (-not (Test-Path -LiteralPath (Split-Path $Atividade -Parent))) {
 }
 $AtividadeTexto = @'
 // SUPERBOXING_TELA_CHEIA: escrito pelo GERAR_APK_COMPLETO.ps1.
-// TV Box Android 7.1: o jogo ocupa a tela inteira, sem barra de sistema e
-// sem margem reservada para ela.
+// TV Box Android 7.1: o jogo ocupa a tela inteira, sem barra de sistema,
+// sem margem reservada para ela e tambem na area de "overscan" que o
+// Android da TV deixa preta em volta da imagem.
 package com.godot.game;
 
 import org.godotengine.godot.FullScreenGodotApp;
@@ -356,7 +357,10 @@ public class GodotApp extends FullScreenGodotApp {
 		setTheme(R.style.GodotAppMainTheme);
 		super.onCreate(savedInstanceState);
 		getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN
-				| WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+				| WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+				| WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
+				| WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
+				| WindowManager.LayoutParams.FLAG_LAYOUT_IN_OVERSCAN);
 		View area = findViewById(org.godotengine.godot.R.id.godot_fragment_container);
 		if (area != null) {
 			area.setPadding(0, 0, 0, 0);
@@ -394,6 +398,29 @@ public class GodotApp extends FullScreenGodotApp {
 '@
 [System.IO.File]::WriteAllText($Atividade, $AtividadeTexto.Replace("`r`n", "`n"), (New-Object System.Text.UTF8Encoding($false)))
 Write-Host "      Activity: tela cheia." -ForegroundColor Green
+
+# O tema da janela tambem de tela cheia, inclusive na area de overscan da TV
+# (a moldura preta que algumas TV Boxes deixam em volta da imagem).
+$Temas = Join-Path $AndroidBuildDir "res\values\themes.xml"
+$TemasTexto = [System.IO.File]::ReadAllText($Temas)
+if ($TemasTexto -notmatch "SUPERBOXING_TELA_CHEIA") {
+    $TemaPrincipal = '<style name="GodotAppMainTheme" parent="@android:style/Theme.Black.NoTitleBar"/>'
+    if (-not $TemasTexto.Contains($TemaPrincipal)) {
+        throw "O tema do modelo Android mudou (res\values\themes.xml). Apague a pasta android\build e rode de novo."
+    }
+    $TemaNovo = @'
+<!-- SUPERBOXING_TELA_CHEIA -->
+	<style name="GodotAppMainTheme" parent="@android:style/Theme.Black.NoTitleBar.Fullscreen">
+		<item name="android:windowOverscan">true</item>
+		<item name="android:windowBackground">@android:color/black</item>
+	</style>
+'@
+    $TemasTexto = $TemasTexto.Replace($TemaPrincipal, $TemaNovo.Trim().Replace("`r`n", "`n"))
+    $TemasTexto = $TemasTexto.Replace('<item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>',
+        "<item name=`"android:windowLayoutInDisplayCutoutMode`">shortEdges</item>`n`t`t<item name=`"android:windowOverscan`">true</item>")
+    [System.IO.File]::WriteAllText($Temas, $TemasTexto, (New-Object System.Text.UTF8Encoding($false)))
+    Write-Host "      Tema: tela cheia (com overscan)." -ForegroundColor Green
+}
 
 # O POM antigo do AUSBC aponta para dois artefatos opcionais que existiam no
 # JCenter e nao sao usados pela captura UVC do jogo. A exclusao precisa

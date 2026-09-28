@@ -44,6 +44,8 @@ extends Node
 ## única pista que resolveria em um minuto. `_diagnostico_da_plataforma`
 ## existe para isso — dizer qual dos três aconteceu.
 
+const Lembranca = preload("res://scripts/lembranca_usb.gd")
+
 const PHOTO_DIR = "user://ranking_photos"
 const THUMB_SIZE = 640
 const VIDA_MAXIMA_MS = 10000
@@ -271,24 +273,18 @@ func _ligar_servidor() -> void:
 		CameraServer.connect("camera_feed_removed", self, "_on_camera_feeds_updated")
 
 # ------------------------------------------------------------------
-# A CAÇADA DA CÂMERA NO ANDROID — dois caminhos, um de cada vez, sem parar.
+# A CAÇADA DA CÂMERA NO ANDROID.
 #
 # PONTE: o plugin (API clássica do Android; UVC direta pela USB de reserva).
-#   É o caminho quando o Android mostra a webcam como câmera "clássica".
-# SERVIDOR: o CameraServer do Godot (Camera2). Muitas TV Boxes só mostram
-#   a webcam USB ali, como "câmera externa" — era por ele que a câmera
-#   abria na build 80, e as builds seguintes o deixaram de fora.
-#
-# Começa pelo caminho que o próprio Android indica (câmera clássica → PONTE;
-# nenhuma → SERVIDOR). Sem imagem, troca para o outro, e assim por diante
-# até vir vídeo: a câmera sempre é encontrada, seja qual for a TV Box. A
-# troca só acontece na tela de espera, nunca na foto ou no soco. Cada troca
-# fica anotada no `Diario`.
+# SERVIDOR: o CameraServer do Godot. No Godot 4 ele lia a Camera2; nesta
+#   versão (Godot 3.6) ele não existe no Android e só sobra para quando o
+#   plugin falta. Com o plugin, a caçada vai direto para a PONTE e fica
+#   nela: o vigia (`_vigiar_webcam_android`) insiste até vir vídeo,
+#   recomeçando do zero quando a abertura falha. Cada passo fica anotado
+#   no `Diario`.
 enum Caca { NENHUMA, PONTE, SERVIDOR }
 var _caca = Caca.NENHUMA
 var _caca_desde_ms = 0
-const CACA_PONTE_MS = 15000
-const CACA_SERVIDOR_MS = 12000
 
 ## Cada passo da câmera vai para o diário da abertura E para o logcat do
 ## Android (etiqueta "godot"): o CAMERA_TVBOX.bat junta tudo num relatório.
@@ -300,36 +296,24 @@ func _servidor_proibido() -> bool:
 	return OS.get_name() == "Android" and _caca != Caca.SERVIDOR
 
 func _cacar_camera_android(agora: int) -> void:
-	if _android_bridge == null and _caca == Caca.NENHUMA:
-		_mudar_caca(Caca.SERVIDOR, agora, "sem plugin")
-		return
 	if _caca == Caca.NENHUMA:
-		# A contagem do plugin sai em segundo plano: dá 1,5 s para ela.
-		if _caca_desde_ms == 0:
-			_caca_desde_ms = agora
-			# O RELATÓRIO COMPLETO, uma vez: o que o Android vê de câmera,
-			# de USB e de permissão — vai para o logcat.
-			if _ponte_tem("getCameraReport"):
-				for linha in str(_android_bridge.call("getCameraReport")).split("\n", false):
-					print("[CAMERA] relatorio: ", linha)
-		var classicas = int(_android_bridge.call("getSystemCameraCount")) if _ponte_tem("getSystemCameraCount") else 0
-		if classicas > 0:
-			_mudar_caca(Caca.PONTE, agora, "%d camera(s) classica(s)" % classicas)
-		elif agora - _caca_desde_ms >= 1500:
-			_mudar_caca(Caca.SERVIDOR, agora, "nenhuma camera classica")
+		if _android_bridge == null:
+			_mudar_caca(Caca.SERVIDOR, agora, "sem plugin")
+			return
+		# O RELATÓRIO COMPLETO, uma vez: o que o Android vê de câmera,
+		# de USB e de permissão — vai para o logcat.
+		if _ponte_tem("getCameraReport"):
+			for linha in str(_android_bridge.call("getCameraReport")).split("\n", false):
+				print("[CAMERA] relatorio: ", linha)
+		# GODOT 3: O CAMERASERVER NÃO EXISTE NO ANDROID (só no Godot 4.4
+		# em diante). A caçada antiga trocava para ele depois de alguns
+		# segundos sem vídeo — e, na troca, DESLIGAVA a câmera do plugin
+		# que ainda estava abrindo. Era por isso que a webcam do gabinete
+		# às vezes não pegava. Aqui a ponte é o único caminho, e fica.
+		_mudar_caca(Caca.PONTE, agora, "unico caminho no Godot 3")
 		return
 	if ao_vivo():
 		_caca_desde_ms = agora  # com vídeo, fica onde está
-		return
-	var paciencia = CACA_PONTE_MS if _caca == Caca.PONTE else CACA_SERVIDOR_MS
-	if agora - _caca_desde_ms < paciencia or not janelas_liberadas:
-		return
-	if _caca == Caca.PONTE:
-		_mudar_caca(Caca.SERVIDOR, agora, "plugin sem video")
-	elif _android_bridge != null:
-		_mudar_caca(Caca.PONTE, agora, "CameraServer sem video")
-	else:
-		_caca_desde_ms = agora
 
 func _mudar_caca(nova: int, agora: int, porque: String) -> void:
 	_caca = nova
@@ -404,7 +388,11 @@ func _requisitar_webcam_usb_android(forcar := false) -> void:
 		return
 	# Com câmera do sistema (o caso das TV Boxes), a webcam não precisa de
 	# permissão USB nenhuma: só abrir. Pedir a USB aqui abria janelas à toa.
-	if _ponte_tem_camera():
+	# E a contagem do sistema dá ZERO enquanto a câmera está recusando
+	# abrir (ocupada, ainda subindo): por isso vale também o que já se viu
+	# nesta sessão e nas anteriores — a webcam do gabinete é do sistema, e
+	# a janela USB não aparece por causa de uma recusa passageira.
+	if _ponte_tem_camera() or _webcam_do_sistema():
 		_android_bridge.call("startUvcCamera")
 		return
 	# A janela USB da webcam é pedida no carregamento. Aqui (webcam
@@ -413,6 +401,14 @@ func _requisitar_webcam_usb_android(forcar := false) -> void:
 	if not janelas_liberadas:
 		return
 	var agora = Time.get_ticks_msec()
+	# NUNCA LOGO DEPOIS DO BOOT NEM NUMA RECUSA PASSAGEIRA. Nos primeiros
+	# segundos o serviço de câmera do Android ainda conta zero, e enquanto
+	# a câmera do sistema recusa abrir o plugin também diz zero: nas duas
+	# situações a webcam É do sistema e a janela USB seria à toa.
+	if agora - _caca_desde_ms < ESPERA_ANTES_DA_JANELA_USB_MS:
+		return
+	if _ponte_tem("getUvcStatus") and _abertura_falhou(str(_android_bridge.call("getUvcStatus"))):
+		return
 	if not forcar and agora < _proxima_permissao_usb_ms:
 		return
 	_proxima_permissao_usb_ms = agora + 5000
@@ -487,11 +483,27 @@ func _vigiar_webcam_android(agora: int) -> void:
 	# AINDA SEM VÍDEO NENHUM: só insiste em abrir, sem parar antes. Parar
 	# uma câmera que nem abriu zerava o estado do plugin e fazia a próxima
 	# abertura voltar vazia — era o ciclo em que ela nunca abria sozinha.
+	_webcam_do_sistema()
 	if not _uvc_teve_video:
+		var situacao = str(_android_bridge.call("getUvcStatus")) if _ponte_tem("getUvcStatus") else ""
+		# A CÂMERA RECUSOU (ocupada pela abertura anterior, serviço de
+		# câmera ainda subindo depois do boot, webcam que caiu): o plugin
+		# guarda a falha e não tenta de novo sozinho. Soltar zera a falha;
+		# a próxima volta abre do zero. Sem vídeo por muito tempo, mesmo
+		# sem falha dita, faz o mesmo.
+		var recusou = _abertura_falhou(situacao)
+		var demorou = _sem_video_desde_ms > 0 and agora - _sem_video_desde_ms > SEM_VIDEO_REABRIR_MS
+		if recusou or demorou:
+			_registro("reabrindo do zero (%s)" % situacao)
+			_android_bridge.call("stopUvcCamera")
+			_sem_video_desde_ms = agora
+			_uvc_proximo_religar_ms = agora + 1500
+			return
+		if _sem_video_desde_ms == 0:
+			_sem_video_desde_ms = agora
 		_uvc_proximo_religar_ms = agora + 3000
 		_android_bridge.call("startUvcCamera")
-		if _ponte_tem("getUvcStatus"):
-			_registro("" + str(_android_bridge.call("getUvcStatus")))
+		_registro(situacao)
 		_requisitar_webcam_usb_android(true)
 		return
 	if _uvc_parada:
@@ -506,6 +518,38 @@ func _vigiar_webcam_android(agora: int) -> void:
 		if _uvc_teve_video:
 			status = "CÂMERA DESCONECTADA — RECONECTE A WEBCAM"
 			estado = Estado.SUBINDO
+
+## Sem vídeo desde quando (0 = ainda não começou a esperar).
+var _sem_video_desde_ms = 0
+const SEM_VIDEO_REABRIR_MS = 20000
+## Sem nenhuma câmera do sistema por este tempo, a webcam só existe como
+## aparelho USB: aí sim a janela USB dela pode aparecer.
+const ESPERA_ANTES_DA_JANELA_USB_MS = 20000
+## A webcam já apareceu como câmera do sistema nesta sessão.
+var _classica_vista = false
+
+func _abertura_falhou(situacao: String) -> bool:
+	var s = situacao.to_upper()
+	for palavra in ["NÃO ABRIU", "FALHOU", "CAIU", "ERRO"]:
+		if palavra in s:
+			return true
+	return false
+
+## A webcam do gabinete é uma câmera do sistema (API clássica)? Vale o
+## que se viu agora e o que ficou guardado de aberturas anteriores.
+func _webcam_do_sistema() -> bool:
+	if _classica_vista:
+		return true
+	if _android_bridge != null and _ponte_tem("getSystemCameraCount") \
+			and int(_android_bridge.call("getSystemCameraCount")) > 0:
+		_classica_vista = true
+		Lembranca.guardar(Lembranca.CAMERA_DO_SISTEMA)
+		return true
+	# O guardado vale enquanto a caçada é nova: se a webcam foi trocada por
+	# uma que o Android não mostra como câmera, depois de 45 s sem vídeo a
+	# janela USB volta a ser possível (é o único caminho para essa webcam).
+	return Lembranca.sabe(Lembranca.CAMERA_DO_SISTEMA) \
+		and Time.get_ticks_msec() - _caca_desde_ms < 45000
 
 func _iniciar_uvc_android() -> void:
 	if OS.get_name() != "Android" or _android_bridge == null:
@@ -542,8 +586,9 @@ func _amostrar_uvc_android(agora: int) -> bool:
 		return false
 	_uvc_quadro_ms = agora
 	_uvc_teve_video = true
+	_sem_video_desde_ms = 0
 	var imagem = Compat.imagem(largura, altura, false, Image.FORMAT_RGBA8, dados)
-	if imagem == null or imagem.empty():
+	if imagem == null or imagem.is_empty():
 		return false
 	if _uvc_texture == null or _uvc_texture.get_width() != largura or _uvc_texture.get_height() != altura:
 		_uvc_texture = Compat.textura(imagem)
@@ -866,7 +911,7 @@ func _amostrar_quadro() -> void:
 	if _texture == null:
 		return
 	var imagem = _texture.get_data()
-	if imagem == null or imagem.empty():
+	if imagem == null or imagem.is_empty():
 		return
 	_registrar_quadro(imagem, Time.get_ticks_msec())
 	if estado != Estado.ACESA:
@@ -924,6 +969,7 @@ func procurar_de_novo() -> void:
 		_caca_desde_ms = 0
 		_uvc_teve_video = false
 		_uvc_proximo_religar_ms = 0
+		_sem_video_desde_ms = 0
 		_permissoes_conferidas_ms = 0
 	_descobrir_cameras(true)
 
@@ -1015,7 +1061,7 @@ func _nota_da_imagem(imagem: Image) -> float:
 	return float(_medir_quadro(imagem)["nota"])
 
 func _medir_quadro(imagem: Image) -> Dictionary:
-	if imagem == null or imagem.empty() or imagem.get_width() < 8 or imagem.get_height() < 8:
+	if imagem == null or imagem.is_empty() or imagem.get_width() < 8 or imagem.get_height() < 8:
 		return {"nota": -1.0, "assinatura": 0}
 	var claro = 0.0
 	var escuro = 1.0
@@ -1035,7 +1081,7 @@ func _medir_quadro(imagem: Image) -> Dictionary:
 	return {"nota": claro - escuro, "assinatura": assinatura}
 
 func _registrar_quadro(imagem: Image, agora: int) -> void:
-	if imagem == null or imagem.empty():
+	if imagem == null or imagem.is_empty():
 		return
 	var medida = _medir_quadro(imagem)
 	var assinatura = int(medida["assinatura"])
@@ -1076,7 +1122,7 @@ func capture_photo() -> String:
 	_melhor_imagem = null
 	_melhor_nota = -1.0
 	_obturador_teve_vida = false
-	if image == null or image.empty():
+	if image == null or image.is_empty():
 		status = "CÂMERA SEM IMAGEM — %s" % motivo_curto()
 		return ""
 	if _nota_da_imagem(image) <= 0.0:

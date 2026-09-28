@@ -369,7 +369,7 @@ static func imagem_vazia(largura: int, altura: int, mipmaps: bool, formato: int)
 
 static func textura(img: Image) -> ImageTexture:
 	var t = ImageTexture.new()
-	if img != null and not img.empty():
+	if img != null and not img.is_empty():
 		t.create_from_image(img, Texture.FLAG_FILTER)
 	return t
 

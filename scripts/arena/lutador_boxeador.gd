@@ -244,6 +244,7 @@ func montar() -> void:
 	_preparar_ossos()
 	for m in Compat.filhos_do_tipo(_modelo, "MeshInstance"):
 		var mi = m as MeshInstance
+		_desvirar(mi)
 		_malhas.append(mi)
 		mi.cast_shadow = GeometryInstance.SHADOW_CASTING_SETTING_OFF
 		if mi.name == "Pele":
@@ -301,9 +302,129 @@ func montar() -> void:
 	_mat_clarao.flags_unshaded = true
 	_mat_clarao.params_blend_mode = SpatialMaterial.BLEND_MODE_ADD
 	_mat_clarao.albedo_color = Color.black
+	if Perfil.LUTADOR_LEVE:
+		_trocar_por_materiais_leves()
 	_pronto = true
 	_reiniciar_corpo()
 	_tocar("idle")
+
+
+## PEÇA DO AVESSO. No `boxeador.glb` a luva e a bota ESQUERDAS vieram com
+## os triângulos na ordem contrária à das outras peças (espelhadas no
+## modelo sem virar as faces). O Godot descartava a face de fora e
+## desenhava a de dentro: a luva aparecia com uma faixa escura e a cor
+## "errada", a bota sem forma. Aqui a peça é conferida pelo próprio
+## desenho — a normal de cada triângulo contra a ordem dos vértices — e,
+## se estiver do avesso, os triângulos são virados uma vez, na carga.
+func _desvirar(mi: MeshInstance) -> void:
+	var malha = mi.mesh as ArrayMesh
+	if malha == null or malha.get_surface_count() != 1:
+		return
+	if malha.surface_get_primitive_type(0) != Mesh.PRIMITIVE_TRIANGLES:
+		return
+	var arrays = malha.surface_get_arrays(0)
+	var v: PoolVector3Array = arrays[Mesh.ARRAY_VERTEX]
+	var nn: PoolVector3Array = arrays[Mesh.ARRAY_NORMAL]
+	var idx: PoolIntArray = arrays[Mesh.ARRAY_INDEX]
+	if v.empty() or nn.empty() or idx.size() < 3:
+		return
+	# Uma amostra basta: numa peça do avesso são praticamente todos.
+	var avesso = 0
+	var certo = 0
+	var passo = int(max(3, (idx.size() / 3 / 200) * 3))
+	var i = 0
+	while i + 2 < idx.size():
+		var p0 = v[idx[i]]
+		var face = (v[idx[i + 1]] - p0).cross(v[idx[i + 2]] - p0)
+		# No Godot a face da frente gira no sentido horário.
+		if face.dot(nn[idx[i]] + nn[idx[i + 1]] + nn[idx[i + 2]]) > 0.0:
+			avesso += 1
+		else:
+			certo += 1
+		i += passo
+	if avesso <= certo * 4:
+		return
+	for k in range(0, idx.size() - 2, 3):
+		var t = idx[k + 1]
+		idx[k + 1] = idx[k + 2]
+		idx[k + 2] = t
+	arrays[Mesh.ARRAY_INDEX] = idx
+	var formas = malha.surface_get_blend_shape_arrays(0)
+	var material = malha.surface_get_material(0)
+	var nova = ArrayMesh.new()
+	for k in malha.get_blend_shape_count():
+		nova.add_blend_shape(malha.get_blend_shape_name(k))
+	nova.blend_shape_mode = malha.blend_shape_mode
+	nova.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays, formas)
+	nova.surface_set_material(0, material)
+	mi.mesh = nova
+
+
+## O LUTADOR NUMA PASSADA SÓ (ver `shaders/lutador_leve.shader` e
+## `Perfil.LUTADOR_LEVE`): cada material do corpo vira o mesmo shader,
+## com a pintura, a aspereza e o metal da peça. A luz principal chega
+## pronta a cada quadro (`luz`), e o clarão e o dano são números no
+## próprio material — sem a segunda passada do clarão por cima.
+const SHADER_LEVE = "res://shaders/lutador_leve.shader"
+var _mats_leves = []
+var _mat_leve_pele: ShaderMaterial = null
+var _clarao_pintado = -1.0
+
+func _trocar_por_materiais_leves() -> void:
+	if not ResourceLoader.exists(SHADER_LEVE):
+		return
+	var frente: Shader = load(SHADER_LEVE)
+	# As cascas finas (calção, cinturão) são vistas dos dois lados.
+	var dois_lados = Shader.new()
+	dois_lados.code = frente.code.replace("cull_back", "cull_disabled")
+	var feitos = {}
+	for mi in _malhas:
+		if mi.mesh == null:
+			continue
+		for k in mi.mesh.get_surface_count():
+			var base = mi.get_surface_material(k) as SpatialMaterial
+			if base == null:
+				base = mi.mesh.surface_get_material(k) as SpatialMaterial
+			if base == null:
+				continue
+			if not feitos.has(base):
+				var m = ShaderMaterial.new()
+				m.shader = dois_lados if base.params_cull_mode == SpatialMaterial.CULL_DISABLED else frente
+				m.set_shader_param("tom", base.albedo_color)
+				if base.albedo_texture != null:
+					m.set_shader_param("pintura", base.albedo_texture)
+					m.set_shader_param("tem_pintura", 1.0)
+				var eh_pele = mi == _pele
+				if eh_pele and base.normal_enabled and base.normal_texture != null:
+					m.set_shader_param("relevo", base.normal_texture)
+					m.set_shader_param("tem_relevo", 1.0)
+					m.set_shader_param("relevo_forca", 1.15)
+				m.set_shader_param("aspereza", clamp(base.roughness, 0.0, 1.0))
+				m.set_shader_param("metal", clamp(base.metallic, 0.0, 1.0))
+				m.set_shader_param("pele", 1.0 if eh_pele else 0.0)
+				# Couro da luva: menos recorte (estourava num vermelho chapado).
+				if mi.name.begins_with("Luva") or mi.name.begins_with("Bota"):
+					m.set_shader_param("rim_forca", 0.16)
+				if mi.name.begins_with("Luva"):
+					# Couro fosco: o brilho branco sobre o vermelho puxava
+					# para o rosa.
+					m.set_shader_param("aspereza", max(base.roughness, 0.66))
+				elif mi.name == "Cabelo":
+					m.set_shader_param("rim_forca", 0.30)
+				if eh_pele:
+					_mat_leve_pele = m
+				feitos[base] = m
+				_mats_leves.append(m)
+			mi.set_surface_material(k, feitos[base])
+
+
+## A luz principal da arena, no espaço da câmera, e a cor do ambiente.
+func luz(direcao: Vector3, cor: Color, forca: float, ambiente: Color) -> void:
+	for m in _mats_leves:
+		m.set_shader_param("luz_dir", direcao)
+		m.set_shader_param("luz_cor", cor)
+		m.set_shader_param("luz_forca", forca)
+		m.set_shader_param("ambiente", ambiente)
 
 
 const SHADER_PELE = "res://shaders/pele.shader"
@@ -1585,6 +1706,16 @@ func _pintar() -> void:
 	# O clarão do golpe é um calor na pele, não um lençol branco: com 0,5
 	# o corpo inteiro "estourava" e perdia forma no quadro do impacto.
 	var brilho = clamp(_clarao, 0.0, 1.0) * 0.28
+	if not _mats_leves.empty():
+		if abs(brilho - _clarao_pintado) > 0.004:
+			_clarao_pintado = brilho
+			for m in _mats_leves:
+				m.set_shader_param("clarao", brilho)
+		var dl = clamp(dano, 0.0, 1.0)
+		if _mat_leve_pele != null and abs(dl - _dano_pintado) > 0.01:
+			_dano_pintado = dl
+			_mat_leve_pele.set_shader_param("dano", dl)
+		return
 	_mat_clarao.albedo_color = Color(1.0, 0.62, 0.45) * brilho
 	var ligado = brilho > 0.01
 	for mi in _malhas:

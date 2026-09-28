@@ -172,6 +172,21 @@ func _iniciar_carga() -> void:
 ## tela do carregador — nada pesado pausado no meio, nada aberto à toa — e
 ## o jogo, depois, já encontra tudo autorizado: nenhuma janela no meio da
 ## abertura nem da partida.
+##
+## UMA VEZ SÓ. O que foi autorizado fica guardado (`lembranca_usb.gd`).
+## Numa abertura nova, o Arduino e a webcam já autorizados antes NÃO
+## abrem janela: o jogo espera alguns segundos o próprio Android devolver
+## a permissão (com "Usar por padrão" marcado, ele a dá sozinho no boot).
+## Só se ela não voltar — negada, ou aparelho trocado — a janela aparece.
+## A permissão da CÂMERA o Android guarda sozinho: só é pedida se faltar.
+const Lembranca = preload("res://scripts/lembranca_usb.gd")
+## Quanto esperar o Android devolver uma permissão já dada antes (s).
+const ESPERA_DA_PERMISSAO_GUARDADA = 10.0
+## Quanto esperar a contagem das câmeras do sistema (s).
+const ESPERA_DA_CAMERA_DO_SISTEMA = 6.0
+var _proxima_consulta = 0.0
+var _arduino_guardado = null
+
 enum Perm { CAMERA, ARDUINO, WEBCAM, FIM }
 var _perm = Perm.CAMERA
 var _perm_pedido = false
@@ -265,9 +280,23 @@ func _passo_do_arduino() -> void:
 			_proxima_permissao()
 		return
 	var porta = lista.split("\n")[0].strip_edges()
+	# JÁ AUTORIZADO NUMA ABERTURA ANTERIOR: `openPort` abriria a janela na
+	# hora se a permissão ainda não tiver voltado. Primeiro espera o
+	# Android devolvê-la — consultando sem janela nenhuma.
+	if _arduino_guardado == null:
+		_arduino_guardado = Lembranca.sabe(Lembranca.ARDUINO)
+	if _arduino_guardado and _arduino_tentativas == 0 \
+			and _relogio - _perm_t0 < ESPERA_DA_PERMISSAO_GUARDADA:
+		if _relogio < _proxima_consulta:
+			return
+		_proxima_consulta = _relogio + 0.5
+		if not Lembranca.porta_tem_permissao(plugin, porta):
+			_perm_texto = "CONECTANDO O ARDUINO"
+			return
 	Diario.marca("PERMISSOES: arduino %s" % porta)
 	if bool(plugin.call("openPort", porta, GameDef.SERIAL_BAUD)):
 		plugin.call("closePort")
+		Lembranca.guardar(Lembranca.ARDUINO)
 		Diario.marca("PERMISSOES: arduino ok")
 		_proxima_permissao()
 		return
@@ -297,23 +326,40 @@ func _passo_da_webcam() -> void:
 	var plugin = Engine.get_singleton("PunchUsbSerial")
 	if _perm_pedido:
 		if _respondida():
-			Diario.marca("PERMISSOES: webcam respondida")
+			var depois = str(plugin.call("getUsbCameraStatus"))
+			if "AUTORIZADA" in depois:
+				Lembranca.guardar(Lembranca.WEBCAM_USB)
+			Diario.marca("PERMISSOES: webcam respondida (%s)" % depois)
 			_proxima_permissao()
 		return
-	# A contagem das câmeras do sistema sai em segundo plano no plugin:
-	# pergunta agora e dá um instante para a resposta chegar.
+	# A WEBCAM DO GABINETE JÁ ABRIU PELO SISTEMA ANTES: a permissão CAMERA
+	# basta, e a janela USB da webcam nunca mais é necessária.
+	if Lembranca.sabe(Lembranca.CAMERA_DO_SISTEMA):
+		Diario.marca("PERMISSOES: webcam pelo sistema (guardado)")
+		_proxima_permissao()
+		return
+	# A contagem das câmeras do sistema sai em segundo plano no plugin, e
+	# logo depois do boot o serviço de câmera do Android demora a responder:
+	# espera por ela antes de concluir que a webcam só existe como USB.
 	var sistema = int(plugin.call("getSystemCameraCount"))
 	if sistema > 0:
+		Lembranca.guardar(Lembranca.CAMERA_DO_SISTEMA)
 		Diario.marca("PERMISSOES: webcam pelo sistema (%d)" % sistema)
 		_proxima_permissao()
 		return
 	_perm_texto = "PROCURANDO A CÂMERA"
-	if _relogio - _perm_t0 < 1.5:
+	if _relogio - _perm_t0 < ESPERA_DA_CAMERA_DO_SISTEMA:
 		return
 	var situacao = str(plugin.call("getUsbCameraStatus"))
+	if "AUTORIZADA" in situacao:
+		Lembranca.guardar(Lembranca.WEBCAM_USB)
 	if not "AGUARDANDO" in situacao:
 		Diario.marca("PERMISSOES: webcam (%s)" % situacao)
 		_proxima_permissao()
+		return
+	# Autorizada antes: espera o Android devolver, sem janela.
+	if Lembranca.sabe(Lembranca.WEBCAM_USB) \
+			and _relogio - _perm_t0 < ESPERA_DA_CAMERA_DO_SISTEMA + ESPERA_DA_PERMISSAO_GUARDADA:
 		return
 	_perm_pedido = true
 	_perm_t0 = _relogio

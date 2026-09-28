@@ -12,9 +12,9 @@ extends Reference
 ## NUMERO em um e escreva em NOTA o que mudou. Um carimbo que não sobe
 ## mente, e um carimbo que mente é pior do que carimbo nenhum.
 
-const NUMERO = 97
+const NUMERO = 98
 const DATA = "28/09/2026"
-const NOTA = "versão Godot 3.6 (OpenGL ES 2.0) para a TV Box S905L: abertura com menos da metade da memória e tela cheia; o mesmo jogo, as mesmas telas e o mesmo lutador"
+const NOTA = "versão Godot 3.6 (OpenGL ES 2.0) para a TV Box S905L: câmera sempre abrindo, permissões uma vez só, tela cheia sem borda, lutador e torcida redesenhados e arena mais nítida"
 
 ## Rodapé da abertura: cabe em uma linha discreta.
 static func curta() -> String:

@@ -43,6 +43,11 @@ echo [3/3] Gravando o relatorio...
 "%ADB%" shell getprop ro.board.platform >> "%SAIDA%" 2>&1
 "%ADB%" shell wm size >> "%SAIDA%" 2>&1
 >> "%SAIDA%" echo.
+>> "%SAIDA%" echo ===== TELA (bordas pretas: overscan do Android ou posicao da tela da TV Box)
+"%ADB%" shell wm density >> "%SAIDA%" 2>&1
+"%ADB%" shell "dumpsys window displays | grep -i -E 'overscan|init=|cur=|app=' | head -10" >> "%SAIDA%" 2>&1
+"%ADB%" shell "cat /sys/class/display/mode /sys/class/graphics/fb0/window_axis /sys/class/graphics/fb0/free_scale_axis /sys/class/video/axis 2>&1" >> "%SAIDA%" 2>&1
+>> "%SAIDA%" echo.
 >> "%SAIDA%" echo ===== VERSAO INSTALADA
 "%ADB%" shell "dumpsys package %PKG% | grep -i -E 'versionName|versionCode'" >> "%SAIDA%" 2>&1
 >> "%SAIDA%" echo.

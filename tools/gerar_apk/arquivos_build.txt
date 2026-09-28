@@ -9,6 +9,7 @@ CAMERA_TVBOX.bat
 GERAR_APK_AGORA.bat
 INSTALAR_NA_TVBOX.bat
 LEIA-ME.txt
+TELA_CHEIA_TVBOX.bat
 android/plugins/PunchUsbSerial-release.aar
 android/plugins/PunchUsbSerial.gdap
 arduino/punch_sensor/punch_sensor.ino
@@ -300,6 +301,7 @@ scripts/fx/score_tier.gd
 scripts/game_def.gd
 scripts/icones.gd
 scripts/led_frame.gd
+scripts/lembranca_usb.gd
 scripts/letreiro.gd
 scripts/logos.gd
 scripts/main.gd
@@ -322,6 +324,7 @@ scripts/versao.gd
 shaders/brilho_letras.shader
 shaders/escudo_vivo.shader
 shaders/fundo_vivo.shader
+shaders/lutador_leve.shader
 shaders/pele.shader
 tools/android_usb_plugin/.gdignore
 tools/android_usb_plugin/build.gradle.kts
