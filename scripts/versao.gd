@@ -14,7 +14,7 @@ extends Reference
 
 const NUMERO = 97
 const DATA = "28/09/2026"
-const NOTA = "versão Godot 3.6 (OpenGL ES 2.0) para a TV Box S905L: o mesmo jogo, as mesmas telas e o mesmo lutador; 30 quadros fixos e arena em resolução interna menor"
+const NOTA = "versão Godot 3.6 (OpenGL ES 2.0) para a TV Box S905L: abertura com menos da metade da memória e tela cheia; o mesmo jogo, as mesmas telas e o mesmo lutador"
 
 ## Rodapé da abertura: cabe em uma linha discreta.
 static func curta() -> String:
