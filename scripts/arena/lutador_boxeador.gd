@@ -27,6 +27,7 @@ extends Lutador3D
 ##      volta sozinha, o tronco que balança, a guarda que abre.
 
 const MODELO = "res://assets/lutador3d/boxeador.glb"
+const ModoSeguro = preload("res://scripts/modo_seguro.gd")
 const MESCLA_EXPR = 7.0
 
 ## Base de luta (espaço do esqueleto, metros do modelo): pé esquerdo à
@@ -244,16 +245,24 @@ func montar() -> void:
 	_preparar_ossos()
 	for m in Compat.filhos_do_tipo(_modelo, "MeshInstance"):
 		var mi = m as MeshInstance
-		_desvirar(mi)
+		if not ModoSeguro.seguro() and _do_avesso(mi):
+			_avessos.append(mi)
 		_malhas.append(mi)
 		mi.cast_shadow = GeometryInstance.SHADOW_CASTING_SETTING_OFF
 		if mi.name == "Pele":
 			_pele = mi
+	# EXPRESSÕES SÓ ONDE A PLACA DEFORMA O CORPO. A Mali-450 não lê textura
+	# no vértice, e o Godot 3 então deforma o corpo no processador — onde
+	# não há expressão (blend shape). Mexer nelas assim só enchia o logcat
+	# de erro a cada quadro, gastando o processador da TV Box.
+	var corpo_na_placa = not VisualServer.has_os_feature("skinning_fallback") \
+		and not ProjectSettings.get_setting("rendering/quality/skinning/force_software_skinning")
 	if _pele != null:
-		for k in _pele.mesh.get_blend_shape_count():
-			var nome = str(_pele.mesh.get_blend_shape_name(k))
-			_expr[nome] = k
-			_expr_valor[nome] = 0.0
+		if corpo_na_placa:
+			for k in _pele.mesh.get_blend_shape_count():
+				var nome = str(_pele.mesh.get_blend_shape_name(k))
+				_expr[nome] = k
+				_expr_valor[nome] = 0.0
 		var mat = _pele.mesh.surface_get_material(0) as SpatialMaterial
 		if mat != null:
 			_mat_pele = mat.duplicate() as SpatialMaterial
@@ -302,7 +311,7 @@ func montar() -> void:
 	_mat_clarao.flags_unshaded = true
 	_mat_clarao.params_blend_mode = SpatialMaterial.BLEND_MODE_ADD
 	_mat_clarao.albedo_color = Color.black
-	if Perfil.LUTADOR_LEVE:
+	if Perfil.LUTADOR_LEVE and not ModoSeguro.seguro():
 		_trocar_por_materiais_leves()
 	_pronto = true
 	_reiniciar_corpo()
@@ -313,21 +322,28 @@ func montar() -> void:
 ## os triângulos na ordem contrária à das outras peças (espelhadas no
 ## modelo sem virar as faces). O Godot descartava a face de fora e
 ## desenhava a de dentro: a luva aparecia com uma faixa escura e a cor
-## "errada", a bota sem forma. Aqui a peça é conferida pelo próprio
-## desenho — a normal de cada triângulo contra a ordem dos vértices — e,
-## se estiver do avesso, os triângulos são virados uma vez, na carga.
-func _desvirar(mi: MeshInstance) -> void:
-	var malha = mi.mesh as ArrayMesh
+## "errada", a bota sem forma. A peça é conferida pelo próprio desenho —
+## a normal de cada triângulo contra a ordem dos vértices — e a do avesso
+## ganha um material que descarta a face da FRENTE (`cull_front`): a de
+## fora aparece, com a luz certa.
+##
+## A MALHA NÃO É REFEITA. Refazer a malha em tempo de jogo (a build 98
+## fazia) corrompe a memória quando o corpo é deformado pelo processador
+## — o caso da Mali-450 — e a TV Box caía.
+var _avessos = []
+
+func _do_avesso(mi: MeshInstance) -> bool:
+	var malha = mi.mesh
 	if malha == null or malha.get_surface_count() != 1:
-		return
+		return false
 	if malha.surface_get_primitive_type(0) != Mesh.PRIMITIVE_TRIANGLES:
-		return
+		return false
 	var arrays = malha.surface_get_arrays(0)
 	var v: PoolVector3Array = arrays[Mesh.ARRAY_VERTEX]
 	var nn: PoolVector3Array = arrays[Mesh.ARRAY_NORMAL]
 	var idx: PoolIntArray = arrays[Mesh.ARRAY_INDEX]
 	if v.empty() or nn.empty() or idx.size() < 3:
-		return
+		return false
 	# Uma amostra basta: numa peça do avesso são praticamente todos.
 	var avesso = 0
 	var certo = 0
@@ -342,22 +358,7 @@ func _desvirar(mi: MeshInstance) -> void:
 		else:
 			certo += 1
 		i += passo
-	if avesso <= certo * 4:
-		return
-	for k in range(0, idx.size() - 2, 3):
-		var t = idx[k + 1]
-		idx[k + 1] = idx[k + 2]
-		idx[k + 2] = t
-	arrays[Mesh.ARRAY_INDEX] = idx
-	var formas = malha.surface_get_blend_shape_arrays(0)
-	var material = malha.surface_get_material(0)
-	var nova = ArrayMesh.new()
-	for k in malha.get_blend_shape_count():
-		nova.add_blend_shape(malha.get_blend_shape_name(k))
-	nova.blend_shape_mode = malha.blend_shape_mode
-	nova.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays, formas)
-	nova.surface_set_material(0, material)
-	mi.mesh = nova
+	return avesso > certo * 4
 
 
 ## O LUTADOR NUMA PASSADA SÓ (ver `shaders/lutador_leve.shader` e
@@ -373,10 +374,25 @@ var _clarao_pintado = -1.0
 func _trocar_por_materiais_leves() -> void:
 	if not ResourceLoader.exists(SHADER_LEVE):
 		return
-	var frente: Shader = load(SHADER_LEVE)
+	var com_relevo: Shader = load(SHADER_LEVE)
+	# SEM TANGENTE PARA QUEM NÃO TEM RELEVO. Na Mali-450 o corpo é
+	# deformado pelo processador, e o Godot 3 só deforma a peça cujo
+	# material lê TANGENT se a malha tiver tangentes — luvas, botas,
+	# cabelo e calção não têm, e sumiam. Só a pele (que tem) usa o relevo.
+	var codigo = com_relevo.code
+	var de = codigo.find("// RELEVO>")
+	var ate = codigo.find("// <RELEVO")
+	if de < 0 or ate < de:
+		return
+	codigo = codigo.substr(0, de) + codigo.substr(ate + len("// <RELEVO"))
+	var frente = Shader.new()
+	frente.code = codigo
 	# As cascas finas (calção, cinturão) são vistas dos dois lados.
 	var dois_lados = Shader.new()
-	dois_lados.code = frente.code.replace("cull_back", "cull_disabled")
+	dois_lados.code = codigo.replace("cull_back", "cull_disabled")
+	# As peças do avesso (`_do_avesso`) mostram a face de fora assim.
+	var do_avesso = Shader.new()
+	do_avesso.code = codigo.replace("cull_back", "cull_front")
 	var feitos = {}
 	for mi in _malhas:
 		if mi.mesh == null:
@@ -387,15 +403,25 @@ func _trocar_por_materiais_leves() -> void:
 				base = mi.mesh.surface_get_material(k) as SpatialMaterial
 			if base == null:
 				continue
-			if not feitos.has(base):
+			var avesso = mi in _avessos
+			var chave = [base, avesso]
+			if not feitos.has(chave):
 				var m = ShaderMaterial.new()
-				m.shader = dois_lados if base.params_cull_mode == SpatialMaterial.CULL_DISABLED else frente
+				var eh_pele = mi == _pele
+				if eh_pele and base.normal_enabled and base.normal_texture != null \
+						and mi.mesh.surface_get_format(k) & Mesh.ARRAY_FORMAT_TANGENT:
+					m.shader = com_relevo
+				elif base.params_cull_mode == SpatialMaterial.CULL_DISABLED:
+					m.shader = dois_lados
+				elif avesso:
+					m.shader = do_avesso
+				else:
+					m.shader = frente
 				m.set_shader_param("tom", base.albedo_color)
 				if base.albedo_texture != null:
 					m.set_shader_param("pintura", base.albedo_texture)
 					m.set_shader_param("tem_pintura", 1.0)
-				var eh_pele = mi == _pele
-				if eh_pele and base.normal_enabled and base.normal_texture != null:
+				if m.shader == com_relevo:
 					m.set_shader_param("relevo", base.normal_texture)
 					m.set_shader_param("tem_relevo", 1.0)
 					m.set_shader_param("relevo_forca", 1.15)
@@ -413,9 +439,9 @@ func _trocar_por_materiais_leves() -> void:
 					m.set_shader_param("rim_forca", 0.30)
 				if eh_pele:
 					_mat_leve_pele = m
-				feitos[base] = m
+				feitos[chave] = m
 				_mats_leves.append(m)
-			mi.set_surface_material(k, feitos[base])
+			mi.set_surface_material(k, feitos[chave])
 
 
 ## A luz principal da arena, no espaço da câmera, e a cor do ambiente.

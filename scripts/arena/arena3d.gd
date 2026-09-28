@@ -101,6 +101,54 @@ void fragment() {
 	ALPHA = c.a * (0.86 + 0.14 * agito);
 }
 """
+
+## A torcida da build 97 (conta do relógio no pixel), para o modo seguro.
+const SHADER_TORCIDA_SEGURA = """
+shader_type spatial;
+render_mode unshaded, cull_disabled, depth_draw_never;
+uniform sampler2D baixo : hint_albedo;
+uniform sampler2D cima : hint_albedo;
+uniform float agito = 0.0;
+uniform float tempo = 0.0;
+uniform float acende = 1.0;
+// A FILEIRA: quantas pessoas (uma por coluna) e em que faixa da imagem.
+uniform float colunas = 40.0;
+uniform float v0 = 0.0;
+uniform float v1 = 1.0;
+uniform float semente = 0.0;
+void fragment() {
+	// CADA COLUNA É UMA PESSOA INTEIRA: ela pula, balança e levanta os
+	// braços junta — nada de metade de corpo indo para um lado.
+	float col = floor(UV.x * colunas);
+	// Sorteio por coluna com números PEQUENOS: a placa de vídeo da S905L
+	// faz a conta do pixel em meia precisão, e o `sin(x * 78.2) * 43758`
+	// de costume vira sempre o mesmo número nela.
+	float r = fract(sin(col * 0.731 + semente * 1.37) * 47.53);
+	float r2 = fract(sin(col * 1.279 + semente * 0.71) * 31.17);
+	float vida = 0.60 + agito * 0.40;
+	float respira = sin(tempo * (1.6 + r2 * 1.4) + r * 6.2831) * 0.012 * vida;
+	float pulo = max(0.0, sin(tempo * (3.0 + r * 3.6 + agito * 3.0) + r * 6.2831));
+	pulo *= step(0.35 - agito * 0.3, r2) * (0.03 + 0.07 * agito);
+	float dentro = fract(UV.x * colunas);
+	// balanço de lado, dentro da própria coluna
+	dentro = clamp(dentro + sin(tempo * (1.1 + r) + r * 9.0) * 0.05 * vida, 0.0, 1.0);
+	float y = UV.y + respira + pulo;
+	vec2 uv = vec2((col + dentro) / colunas, mix(v0, v1, clamp(y, 0.004, 0.996)));
+	vec4 a = texture(baixo, uv);
+	vec4 b = texture(cima, uv);
+	// braços para o alto em ONDA ("ola") e, no golpe, todo mundo
+	float ola = 0.5 + 0.5 * sin(UV.x * 7.0 - tempo * 1.7 + semente);
+	float braco = 0.5 + 0.5 * sin(tempo * (2.4 + r * 2.0) + r * 12.0);
+	float mao = step(0.55, braco * (0.35 + 0.65 * ola) + agito * 0.5) * step(0.25 - agito * 0.2, r);
+	vec4 c = mix(a, b, mao);
+	// flash de celular: um pontinho na mão de alguém, de vez em quando
+	float celular = step(0.985, fract(sin(col * 1.2989 + fract(floor(tempo * 2.2 + r * 7.0) * 0.137) * 37.0 + semente) * 53.71)) * c.a;
+	vec2 celula = vec2(dentro - 0.5, (UV.y - 0.30) * 5.0);
+	celular *= 1.0 - smoothstep(0.04, 0.12, length(celula));
+	ALBEDO = c.rgb * acende * (1.0 + agito * 0.35) + vec3(0.9, 0.95, 1.0) * celular * 1.2;
+	ALPHA = c.a * (0.86 + 0.14 * agito);
+}
+"""
 const SHADER_FUNDO = """
 shader_type spatial;
 render_mode unshaded;
@@ -133,6 +181,9 @@ void fragment() {
 	ALBEDO = texture(tex, uv).rgb * acende;
 }
 """
+
+const ModoSeguro = preload("res://scripts/modo_seguro.gd")
+const ARENA_ESCALA_SEGURA = 0.55
 
 ## A luz do lutador de uma passada, na mesma escala da luz da arena.
 const LUZ_DO_LUTADOR = 0.52
@@ -335,7 +386,8 @@ func _montar_fundo() -> void:
 	# A GENTE da plateia, em silhueta, na frente do fundo pintado.
 	if ResourceLoader.exists(TEX_TORCIDA_BAIXO) and ResourceLoader.exists(TEX_TORCIDA_CIMA):
 		var sh2 = Shader.new()
-		sh2.code = SHADER_TORCIDA
+		var segura = ModoSeguro.seguro()
+		sh2.code = SHADER_TORCIDA_SEGURA if segura else SHADER_TORCIDA
 		var baixo: Texture = load(TEX_TORCIDA_BAIXO)
 		var cima: Texture = load(TEX_TORCIDA_CIMA)
 		# TRÊS FILEIRAS, cada uma no seu plano (a de trás mais alta e mais
@@ -360,7 +412,13 @@ func _montar_fundo() -> void:
 			mat.set_shader_param("v1", float(fl[2]) / 512.0)
 			mat.set_shader_param("semente", float(k) * 3.3)
 			_mats_torcida.append(mat)
-			var quad = _malha_da_fileira(int(fl[0]), 10.0, 2.5 * (float(fl[2]) - float(fl[1])) / 512.0, float(k) * 3.3)
+			var altura = 2.5 * (float(fl[2]) - float(fl[1])) / 512.0
+			var quad: Mesh = null
+			if segura:
+				quad = QuadMesh.new()
+				(quad as QuadMesh).size = Vector2(10.0, altura)
+			else:
+				quad = _malha_da_fileira(int(fl[0]), 10.0, altura, float(k) * 3.3)
 			var mi = _peca(quad, mat, fl[3])
 			_mundo.remove_child(mi)
 			_gente.add_child(mi)
@@ -724,7 +782,9 @@ func _aplicar_tamanho() -> void:
 	# resolução lógica e ampliada no quadro (ver `Perfil.ARENA_ESCALA`).
 	# Nunca muda no meio da luta — trocar o tamanho realoca a imagem, e no
 	# quadro da troca o lutador sumia.
-	var novo = Vector2((TELA_LOGICA * Perfil.ARENA_ESCALA).round())
+	# No modo seguro, o tamanho da build 97 (ver `modo_seguro.gd`).
+	var escala = ARENA_ESCALA_SEGURA if ModoSeguro.seguro() else Perfil.ARENA_ESCALA
+	var novo = Vector2((TELA_LOGICA * escala).round())
 	if size != novo:
 		size = novo
 	msaa = Viewport.MSAA_2X if Perfil.ARENA_MSAA else Viewport.MSAA_DISABLED
@@ -1083,7 +1143,7 @@ func _luzes() -> void:
 	_mat_fundo.set_shader_param("agito", _agito)
 	# A torcida faz as contas do relógio no vértice (32 bits): o relógio dela
 	# dá a volta só a cada ~10 min, e a volta é um instante só.
-	var tempo_da_torcida = fposmod(_relogio, TAU * 100.0)
+	var tempo_da_torcida = tempo_curto if ModoSeguro.seguro() else fposmod(_relogio, TAU * 100.0)
 	for mat in _mats_torcida:
 		(mat as ShaderMaterial).set_shader_param("acende", acende)
 		(mat as ShaderMaterial).set_shader_param("tempo", tempo_da_torcida)

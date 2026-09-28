@@ -1,4 +1,4 @@
-SUPER BOXING - VERSAO TV BOX S905L (ANDROID 7.1) - BUILD 98
+SUPER BOXING - VERSAO TV BOX S905L (ANDROID 7.1) - BUILD 99
 ===========================================================
 
 PARA QUAL MAQUINA E ESTA VERSAO
@@ -26,9 +26,28 @@ O que muda por dentro (voce nao ve na tela):
 
 O APK tem outro nome de pacote (com.lazersport.superboxing), entao pode
 ficar instalado junto com o Punch Challenge das outras maquinas. Se a
-build 92 a 97 estiver instalada, a 98 instala por cima.
+build 92 a 98 estiver instalada, a 99 instala por cima.
 
-O QUE A BUILD 98 CORRIGE
+O QUE A BUILD 99 CORRIGE
+------------------------
+- A 98 NAO RODAVA NA TV BOX. A placa de video da S905L (Mali-450) nao
+  deforma o corpo do lutador sozinha: o Godot 3 faz isso no processador,
+  e nesse modo as pecas sem "tangente" (luvas, botas, cabelo, calcao)
+  sumiam com o sombreamento novo. Corrigido: so a pele usa esse dado.
+  Nesse modo tambem nao ha expressao no rosto, e o jogo tentava mexer
+  nelas a cada quadro, enchendo o sistema de erro (vinha desde a 93).
+- MODO SEGURO AUTOMATICO: o visual novo (lutador com luz de palco,
+  torcida lisa, arena mais nitida) e tentado na abertura. Se a TV Box
+  cair na abertura ou no primeiro minuto e meio de jogo, na abertura
+  seguinte o jogo volta SOZINHO para o desenho da build 97 (que rodava)
+  e nao tenta mais. No rodape da tela de carregamento aparece
+  "VISUAL SEGURO" quando isso acontecer - avise se aparecer.
+  Camera, permissoes e tela cheia sao as mesmas nos dois modos.
+  (Desligar a maquina no primeiro minuto e meio depois de ligar tambem
+  conta como queda: nesse caso ela fica no visual seguro ate a proxima
+  build.)
+
+O QUE A BUILD 98 CORRIGIU
 ------------------------
 - CAMERA: cada quadro da webcam dava erro no jogo (um comando do Godot 4
   que nao existe no Godot 3) e a imagem nunca chegava; a foto do ranking
@@ -68,7 +87,7 @@ O QUE A BUILD 97 CORRIGIU
 ANTES DE INSTALAR NAS 80: TESTE EM UMA
 --------------------------------------
 Na tela de carregamento aparece, no canto de baixo,
-"BUILD 98 - S905L - Android 7.1". Jogue uma partida inteira, abra a
+"BUILD 99 - S905L - Android 7.1". Jogue uma partida inteira, abra a
 Central Tecnica e confira camera e Arduino antes de passar para as outras.
 
 GERAR O APK
@@ -81,7 +100,7 @@ GERAR O APK
    nao sao do jogo sao ignoradas pelo Godot. Se faltar arquivo, ele avisa.
 2. Clique duas vezes em  GERAR_APK_AGORA.bat
 3. Espere. A janela mostra cada passo e NAO fecha sozinha: no fim aparece
-   "APK GERADO E CONFERIDO - build 98, sem erros" (ou FALHA com o motivo).
+   "APK GERADO E CONFERIDO - build 99, sem erros" (ou FALHA com o motivo).
 4. O APK fica em:  build\android\SuperBoxing.apk
 
 Precisa no PC:
@@ -101,7 +120,7 @@ plugin USB dentro.
 ATUALIZAR PELO GITHUB
 ---------------------
 O ATUALIZAR_E_GERAR.bat baixa a versao do GitHub e gera o APK. O GitHub
-hoje ainda tem a build 92 (Godot 4): enquanto a build 98 nao for para la,
+hoje ainda tem a build 92 (Godot 4): enquanto a build 99 nao for para la,
 use o GERAR_APK_AGORA.bat da pasta do zip (o ATUALIZAR avisa e para).
 
 INSTALAR NA TV BOX

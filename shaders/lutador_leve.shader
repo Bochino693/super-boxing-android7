@@ -49,11 +49,16 @@ void fragment() {
 	cor = mix(cor, cor * vec3(1.08, 0.80, 0.76), clamp(dano, 0.0, 1.0) * 0.55 * pele);
 
 	vec3 n = NORMAL;
+	// RELEVO>
+	// (Só a pele usa este trecho: o lutador que tira a variante sem ele.
+	// Material que lê TANGENT obriga a malha a ter tangentes, e na Mali-450
+	// — corpo deformado pelo processador — peça sem tangente SOME.)
 	if (tem_relevo > 0.5) {
 		vec2 m = (texture(relevo, UV).rg * 2.0 - 1.0) * relevo_forca;
 		float mz = sqrt(max(0.0, 1.0 - dot(m, m)));
 		n = normalize(TANGENT * m.x + BINORMAL * m.y + NORMAL * mz);
 	}
+	// <RELEVO
 	vec3 v = normalize(VIEW);
 	vec3 l = normalize(luz_dir);
 	vec3 luz = luz_cor.rgb * luz_forca;

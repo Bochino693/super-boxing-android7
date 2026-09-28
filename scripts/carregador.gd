@@ -116,6 +116,8 @@ var _fonte_numero: Resource
 func _ready() -> void:
 	Diario.inicio()
 	Diario.marca("CARREGADOR: abriu")
+	# Decide AGORA, antes de desenhar qualquer coisa: visual novo ou seguro.
+	Diario.marca("VISUAL: %s" % ("seguro (build 97)" if ModoSeguro.seguro() else "novo"))
 	_configurar_janela()
 	_selo = load("res://assets/branding/selo_lazer.png")
 	_fonte = _carregar_fonte("res://assets/fonts/SairaCondensed-ExtraBold.ttf")
@@ -180,6 +182,7 @@ func _iniciar_carga() -> void:
 ## Só se ela não voltar — negada, ou aparelho trocado — a janela aparece.
 ## A permissão da CÂMERA o Android guarda sozinho: só é pedida se faltar.
 const Lembranca = preload("res://scripts/lembranca_usb.gd")
+const ModoSeguro = preload("res://scripts/modo_seguro.gd")
 ## Quanto esperar o Android devolver uma permissão já dada antes (s).
 const ESPERA_DA_PERMISSAO_GUARDADA = 10.0
 ## Quanto esperar a contagem das câmeras do sistema (s).
@@ -408,6 +411,10 @@ func _pedir(caminho: String) -> void:
 	_pendentes.append(caminho)
 
 
+func _firmar_visual() -> void:
+	ModoSeguro.firmou()
+
+
 func _process(delta: float) -> void:
 	_relogio += delta
 	_fase_tempo += delta
@@ -441,6 +448,9 @@ func _process(delta: float) -> void:
 			_camada_alfa(1.0 - clamp(_fase_tempo / SUMIR_SEGUNDOS, 0.0, 1.0))
 			if _fase_tempo >= SUMIR_SEGUNDOS:
 				_mudar(Fase.PRONTO)
+				# Um minuto e meio de jogo depois da abertura: o visual novo
+				# rodou na placa e deixa de ser suspeito (`modo_seguro.gd`).
+				get_tree().create_timer(ModoSeguro.FIRMA_EM_S).connect("timeout", self, "_firmar_visual")
 				_camada.queue_free()
 				# O jogo já segura o que usa: o resto do que o carregador
 				# guardou sai da memória.
@@ -600,7 +610,7 @@ func _desenhar() -> void:
 		t.draw_rect(aviso, Compat.cor("ffb000", aparece), false, 2.0)
 		Compat.texto(t, _fonte, Vector2(aviso.position.x, 1826.0), "A ÚLTIMA ABERTURA PAROU EM:", Compat.CENTRO, aviso.size.x, 24, Compat.cor("ffb000", aparece))
 		Compat.texto(t, _fonte, Vector2(aviso.position.x + 12.0, 1864.0), travou, Compat.CENTRO, aviso.size.x - 24.0, 26, Compat.cor("ffffff", aparece))
-	Compat.texto(t, _fonte, Vector2(0.0, 1906.0), "BUILD %d  •  %s" % [Versao.NUMERO, Perfil.NOME], Compat.DIREITA, 1060.0, 18, Compat.cor("8f86b8", 0.7 * aparece))
+	Compat.texto(t, _fonte, Vector2(0.0, 1906.0), "BUILD %d  •  %s%s" % [Versao.NUMERO, Perfil.NOME, "  •  VISUAL SEGURO" if ModoSeguro.seguro() else ""], Compat.DIREITA, 1060.0, 18, Compat.cor("8f86b8", 0.7 * aparece))
 
 
 ## Retângulo com as pontas totalmente redondas, borda lisa, com gradiente

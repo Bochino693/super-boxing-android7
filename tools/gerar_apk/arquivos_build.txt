@@ -305,6 +305,7 @@ scripts/lembranca_usb.gd
 scripts/letreiro.gd
 scripts/logos.gd
 scripts/main.gd
+scripts/modo_seguro.gd
 scripts/paleta.gd
 scripts/perfil.gd
 scripts/porteiro.gd
