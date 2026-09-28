@@ -2,15 +2,10 @@
 
 importer="texture"
 type="StreamTexture"
-path="res://.import/ate_o_fim.png-046e05f39ba4567af546e92ff78efd26.stex"
-metadata={
-"vram_texture": false
-}
 
 [deps]
 
 source_file="res://assets/tema/ate_o_fim.png"
-dest_files=[ "res://.import/ate_o_fim.png-046e05f39ba4567af546e92ff78efd26.stex" ]
 
 [params]
 

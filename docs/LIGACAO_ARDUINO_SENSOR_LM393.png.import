@@ -2,15 +2,10 @@
 
 importer="texture"
 type="StreamTexture"
-path="res://.import/LIGACAO_ARDUINO_SENSOR_LM393.png-a563dd0088cdc0fbe5c15ac221eff270.stex"
-metadata={
-"vram_texture": false
-}
 
 [deps]
 
 source_file="res://docs/LIGACAO_ARDUINO_SENSOR_LM393.png"
-dest_files=[ "res://.import/LIGACAO_ARDUINO_SENSOR_LM393.png-a563dd0088cdc0fbe5c15ac221eff270.stex" ]
 
 [params]
 

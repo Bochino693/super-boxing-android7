@@ -2,12 +2,10 @@
 
 importer="wav"
 type="AudioStreamSample"
-path="res://.import/ranking_burst.wav-1f947c340f705595d8cb6563df389734.sample"
 
 [deps]
 
 source_file="res://assets/audio/arcade/ranking_burst.wav"
-dest_files=[ "res://.import/ranking_burst.wav-1f947c340f705595d8cb6563df389734.sample" ]
 
 [params]
 

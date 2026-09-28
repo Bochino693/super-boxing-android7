@@ -2,15 +2,10 @@
 
 importer="texture"
 type="StreamTexture"
-path="res://.import/lazersport_h96.png-fe8135db0412470a839b99ef2a674e51.stex"
-metadata={
-"vram_texture": false
-}
 
 [deps]
 
 source_file="res://assets/logos/lazersport_h96.png"
-dest_files=[ "res://.import/lazersport_h96.png-fe8135db0412470a839b99ef2a674e51.stex" ]
 
 [params]
 

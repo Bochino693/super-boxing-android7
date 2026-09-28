@@ -2,17 +2,10 @@
 
 importer="texture"
 type="StreamTexture"
-path.s3tc="res://.import/facho.png-4ebf521c911b8d67b6cd5b181c368f5d.s3tc.stex"
-path.etc="res://.import/facho.png-4ebf521c911b8d67b6cd5b181c368f5d.etc.stex"
-metadata={
-"imported_formats": [ "s3tc", "etc" ],
-"vram_texture": true
-}
 
 [deps]
 
 source_file="res://assets/arena/facho.png"
-dest_files=[ "res://.import/facho.png-4ebf521c911b8d67b6cd5b181c368f5d.s3tc.stex", "res://.import/facho.png-4ebf521c911b8d67b6cd5b181c368f5d.etc.stex" ]
 
 [params]
 

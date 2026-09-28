@@ -25,15 +25,12 @@ if not exist "android\build\build.gradle" (
 if not exist "build\android" mkdir "build\android"
 if exist "build\android\SuperBoxing.apk" del /q "build\android\SuperBoxing.apk"
 
-rem IMPORTAR ANTES DE EXPORTAR. Com a importacao num passo proprio (e
-rem repetida uma vez, se cair), a exportacao ja encontra tudo pronto.
-rem O modelo 3D e reimportado do zero: uma cena importada antiga guardada em
-rem .import pode apontar para texturas que mudaram.
-if exist ".import" del /q ".import\boxeador.glb-*" 2>nul
-
-echo Importando recursos do projeto...
-"%~1" --no-window --path "%CD%" -e --quit
-"%~1" --no-window --path "%CD%" -e --quit
+rem A IMPORTACAO ACONTECE DENTRO DA EXPORTACAO. O --export do Godot 3 le a
+rem pasta inteira e importa o que falta ANTES de montar o APK (e espera
+rem terminar). Um passo de importacao separado ("-e --quit") fechava o
+rem editor no meio da leitura ("Scan thread aborted").
+rem Nada do cache (.import) e apagado a mao: o Godot 3 reimporta sozinho o
+rem que mudou, e apagar um pedaco dele fazia o Godot reclamar do arquivo.
 
 rem APK DE RELEASE, e nao de depuracao: bibliotecas nativas otimizadas e o
 rem GDScript sem as checagens de depuracao -- mais rapido na TV Box.

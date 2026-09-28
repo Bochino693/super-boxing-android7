@@ -2,12 +2,10 @@
 
 importer="wav"
 type="AudioStreamSample"
-path="res://.import/score_loop.wav-54271a635153fb97f4ea1938840459a9.sample"
 
 [deps]
 
 source_file="res://assets/audio/arcade/score_loop.wav"
-dest_files=[ "res://.import/score_loop.wav-54271a635153fb97f4ea1938840459a9.sample" ]
 
 [params]
 

@@ -2,12 +2,10 @@
 
 importer="scene"
 type="PackedScene"
-path="res://.import/boxeador.glb-3632526fa50c86af4a742df543cd1f6a.scn"
 
 [deps]
 
 source_file="res://assets/lutador3d/boxeador.glb"
-dest_files=[ "res://.import/boxeador.glb-3632526fa50c86af4a742df543cd1f6a.scn" ]
 
 [params]
 

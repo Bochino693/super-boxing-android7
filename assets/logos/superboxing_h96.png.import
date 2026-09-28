@@ -2,15 +2,10 @@
 
 importer="texture"
 type="StreamTexture"
-path="res://.import/superboxing_h96.png-4546afa2e4e40077407ac41c768732cb.stex"
-metadata={
-"vram_texture": false
-}
 
 [deps]
 
 source_file="res://assets/logos/superboxing_h96.png"
-dest_files=[ "res://.import/superboxing_h96.png-4546afa2e4e40077407ac41c768732cb.stex" ]
 
 [params]
 

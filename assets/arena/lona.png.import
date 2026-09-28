@@ -2,17 +2,10 @@
 
 importer="texture"
 type="StreamTexture"
-path.s3tc="res://.import/lona.png-a4c932cb0b2562ff3c9b6ee49b8b03b4.s3tc.stex"
-path.etc="res://.import/lona.png-a4c932cb0b2562ff3c9b6ee49b8b03b4.etc.stex"
-metadata={
-"imported_formats": [ "s3tc", "etc" ],
-"vram_texture": true
-}
 
 [deps]
 
 source_file="res://assets/arena/lona.png"
-dest_files=[ "res://.import/lona.png-a4c932cb0b2562ff3c9b6ee49b8b03b4.s3tc.stex", "res://.import/lona.png-a4c932cb0b2562ff3c9b6ee49b8b03b4.etc.stex" ]
 
 [params]
 

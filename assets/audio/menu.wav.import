@@ -2,12 +2,10 @@
 
 importer="wav"
 type="AudioStreamSample"
-path="res://.import/menu.wav-de54ed9cbf594325d64fc7b093374005.sample"
 
 [deps]
 
 source_file="res://assets/audio/menu.wav"
-dest_files=[ "res://.import/menu.wav-de54ed9cbf594325d64fc7b093374005.sample" ]
 
 [params]
 

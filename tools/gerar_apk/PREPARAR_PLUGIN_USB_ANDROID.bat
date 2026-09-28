@@ -24,7 +24,7 @@ set "ANDROID_SDK_GRADLE=%ANDROID_HOME:\=/%"
 echo [1/3] Compilando driver USB Android...
 if exist "tools\android_usb_plugin\plugin\demo" rmdir /s /q "tools\android_usb_plugin\plugin\demo"
 pushd "tools\android_usb_plugin"
-call gradlew.bat clean assemble --refresh-dependencies
+call gradlew.bat clean assemble --refresh-dependencies --warning-mode none
 if errorlevel 1 (
   popd
   echo ERRO: confira Java 17, Android SDK e a conexao com a internet.

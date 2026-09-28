@@ -2,15 +2,10 @@
 
 importer="texture"
 type="StreamTexture"
-path="res://.import/faisca.png-33c7391abaf76774d9ab9c68c87873c6.stex"
-metadata={
-"vram_texture": false
-}
 
 [deps]
 
 source_file="res://assets/fx/faisca.png"
-dest_files=[ "res://.import/faisca.png-33c7391abaf76774d9ab9c68c87873c6.stex" ]
 
 [params]
 

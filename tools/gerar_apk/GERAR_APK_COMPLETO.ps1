@@ -38,7 +38,7 @@ if (Test-Path $ApkEsperado) {
     Remove-Item -LiteralPath $ApkEsperado -Force
 }
 
-Write-Host "Projeto confirmado: Super Boxing - build 93 - TV Box S905L (Android 7.1) - Godot $VersaoGodot" -ForegroundColor Green
+Write-Host "Projeto confirmado: Super Boxing - build 94 - TV Box S905L (Android 7.1) - Godot $VersaoGodot" -ForegroundColor Green
 
 # ------------------------------------------------------------------
 # ESPACO EM DISCO. Sem espaco o Gradle falha no meio ("Espaco insuficiente

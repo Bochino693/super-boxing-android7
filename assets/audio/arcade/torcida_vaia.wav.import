@@ -2,12 +2,10 @@
 
 importer="wav"
 type="AudioStreamSample"
-path="res://.import/torcida_vaia.wav-f74f21508f32d676ccf8daf190d5c16e.sample"
 
 [deps]
 
 source_file="res://assets/audio/arcade/torcida_vaia.wav"
-dest_files=[ "res://.import/torcida_vaia.wav-f74f21508f32d676ccf8daf190d5c16e.sample" ]
 
 [params]
 

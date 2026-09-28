@@ -2,15 +2,10 @@
 
 importer="texture"
 type="StreamTexture"
-path="res://.import/punch_emblem.svg-ac42eb0ccdf7272cfbb312a1a85e70d8.stex"
-metadata={
-"vram_texture": false
-}
 
 [deps]
 
 source_file="res://assets/branding/punch_emblem.svg"
-dest_files=[ "res://.import/punch_emblem.svg-ac42eb0ccdf7272cfbb312a1a85e70d8.stex" ]
 
 [params]
 

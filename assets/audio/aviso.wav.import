@@ -2,12 +2,10 @@
 
 importer="wav"
 type="AudioStreamSample"
-path="res://.import/error.wav-99844ed22afbc0c517ece11da3662cae.sample"
 
 [deps]
 
-source_file="res://assets/audio/error.wav"
-dest_files=[ "res://.import/error.wav-99844ed22afbc0c517ece11da3662cae.sample" ]
+source_file="res://assets/audio/aviso.wav"
 
 [params]
 

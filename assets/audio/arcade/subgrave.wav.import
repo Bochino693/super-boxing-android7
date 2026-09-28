@@ -2,12 +2,10 @@
 
 importer="wav"
 type="AudioStreamSample"
-path="res://.import/subgrave.wav-716ff2bdcdd5d26a455f6eebcf1769c6.sample"
 
 [deps]
 
 source_file="res://assets/audio/arcade/subgrave.wav"
-dest_files=[ "res://.import/subgrave.wav-716ff2bdcdd5d26a455f6eebcf1769c6.sample" ]
 
 [params]
 

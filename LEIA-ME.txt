@@ -1,4 +1,4 @@
-SUPER BOXING - VERSAO TV BOX S905L (ANDROID 7.1) - BUILD 93
+SUPER BOXING - VERSAO TV BOX S905L (ANDROID 7.1) - BUILD 94
 ===========================================================
 
 PARA QUAL MAQUINA E ESTA VERSAO
@@ -26,12 +26,12 @@ O que muda por dentro (voce nao ve na tela):
 
 O APK tem outro nome de pacote (com.lazersport.superboxing), entao pode
 ficar instalado junto com o Punch Challenge das outras maquinas. Se a
-build 92 (a que fechava) estiver instalada, a 93 instala por cima.
+build 92 ou 93 estiver instalada, a 94 instala por cima.
 
 ANTES DE INSTALAR NAS 80: TESTE EM UMA
 --------------------------------------
 Na tela de carregamento aparece, no canto de baixo,
-"BUILD 93 - S905L - Android 7.1". Jogue uma partida inteira, abra a
+"BUILD 94 - S905L - Android 7.1". Jogue uma partida inteira, abra a
 Central Tecnica e confira camera e Arduino antes de passar para as outras.
 
 ATUALIZAR E GERAR O APK (um clique so)

@@ -2,15 +2,10 @@
 
 importer="texture"
 type="StreamTexture"
-path="res://.import/fumaca.png-8d74c51d13ad9edb93af31f2aba45b99.stex"
-metadata={
-"vram_texture": false
-}
 
 [deps]
 
 source_file="res://assets/fx/fumaca.png"
-dest_files=[ "res://.import/fumaca.png-8d74c51d13ad9edb93af31f2aba45b99.stex" ]
 
 [params]
 

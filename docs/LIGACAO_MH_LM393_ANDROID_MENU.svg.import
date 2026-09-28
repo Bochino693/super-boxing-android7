@@ -2,15 +2,10 @@
 
 importer="texture"
 type="StreamTexture"
-path="res://.import/LIGACAO_MH_LM393_ANDROID_MENU.svg-97db649ac3e805e1910206acea2298a5.stex"
-metadata={
-"vram_texture": false
-}
 
 [deps]
 
 source_file="res://docs/LIGACAO_MH_LM393_ANDROID_MENU.svg"
-dest_files=[ "res://.import/LIGACAO_MH_LM393_ANDROID_MENU.svg-97db649ac3e805e1910206acea2298a5.stex" ]
 
 [params]
 

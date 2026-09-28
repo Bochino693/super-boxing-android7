@@ -2,12 +2,10 @@
 
 importer="wav"
 type="AudioStreamSample"
-path="res://.import/music.wav-4e067c008fd745bec5b1c66fb4876a02.sample"
 
 [deps]
 
 source_file="res://assets/audio/arcade/music.wav"
-dest_files=[ "res://.import/music.wav-4e067c008fd745bec5b1c66fb4876a02.sample" ]
 
 [params]
 

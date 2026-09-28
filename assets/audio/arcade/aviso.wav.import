@@ -2,12 +2,10 @@
 
 importer="wav"
 type="AudioStreamSample"
-path="res://.import/error.wav-2643610ab6dc1f607df0b826cf3993d9.sample"
 
 [deps]
 
-source_file="res://assets/audio/arcade/error.wav"
-dest_files=[ "res://.import/error.wav-2643610ab6dc1f607df0b826cf3993d9.sample" ]
+source_file="res://assets/audio/arcade/aviso.wav"
 
 [params]
 

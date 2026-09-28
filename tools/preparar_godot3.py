@@ -175,8 +175,26 @@ def importacao_do_boxeador():
     p.write_text(t, encoding="utf-8")
 
 
+# ------------------------------------------------------------ 5. .import limpos
+# O .import no repositório NÃO aponta para o cache (.import/). Num PC que
+# nunca abriu o projeto, o endereço de um cache que ainda não existe fazia o
+# Godot 3 reclamar "Cannot open file" de cada som e do boxeador antes de
+# importá-los. Sem o endereço, ele importa do zero, calado.
+def import_sem_cache():
+    for arq in glob.glob(str(RAIZ / "**/*.import"), recursive=True):
+        if "/.import/" in arq.replace("\\", "/"):
+            continue
+        p = Path(arq)
+        t = p.read_text(encoding="utf-8")
+        novo = re.sub(r"(?m)^(path(\.\w+)?|dest_files)=.*\n", "", t)
+        novo = re.sub(r"(?ms)^metadata=\{.*?^\}\n", "", novo)
+        if novo != t:
+            p.write_text(novo, encoding="utf-8")
+
+
 if __name__ == "__main__":
     importacao_do_boxeador()
     glb_com_texturas_externas()
     lados_em_potencia_de_2()
     opcoes_de_importacao()
+    import_sem_cache()

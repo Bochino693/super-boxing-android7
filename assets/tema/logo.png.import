@@ -2,15 +2,10 @@
 
 importer="texture"
 type="StreamTexture"
-path="res://.import/logo.png-3fb981a892ddd2ead840012e9ae0cda6.stex"
-metadata={
-"vram_texture": false
-}
 
 [deps]
 
 source_file="res://assets/tema/logo.png"
-dest_files=[ "res://.import/logo.png-3fb981a892ddd2ead840012e9ae0cda6.stex" ]
 
 [params]
 

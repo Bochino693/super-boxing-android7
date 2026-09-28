@@ -2,15 +2,10 @@
 
 importer="texture"
 type="StreamTexture"
-path="res://.import/Ligacao-Arduino-Sensor-Optico-LM393.svg-7fcb73f8245d8a9174ac9f66b7182594.stex"
-metadata={
-"vram_texture": false
-}
 
 [deps]
 
 source_file="res://docs/Ligacao-Arduino-Sensor-Optico-LM393.svg"
-dest_files=[ "res://.import/Ligacao-Arduino-Sensor-Optico-LM393.svg-7fcb73f8245d8a9174ac9f66b7182594.stex" ]
 
 [params]
 

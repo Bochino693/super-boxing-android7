@@ -2,15 +2,10 @@
 
 importer="texture"
 type="StreamTexture"
-path="res://.import/confete.png-b4d15f74fc956b5a1efc1c551010569c.stex"
-metadata={
-"vram_texture": false
-}
 
 [deps]
 
 source_file="res://assets/fx/confete.png"
-dest_files=[ "res://.import/confete.png-b4d15f74fc956b5a1efc1c551010569c.stex" ]
 
 [params]
 

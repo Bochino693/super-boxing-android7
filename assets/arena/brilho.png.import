@@ -2,17 +2,10 @@
 
 importer="texture"
 type="StreamTexture"
-path.s3tc="res://.import/brilho.png-1d2ab7769a6671411a919149e4748bbf.s3tc.stex"
-path.etc="res://.import/brilho.png-1d2ab7769a6671411a919149e4748bbf.etc.stex"
-metadata={
-"imported_formats": [ "s3tc", "etc" ],
-"vram_texture": true
-}
 
 [deps]
 
 source_file="res://assets/arena/brilho.png"
-dest_files=[ "res://.import/brilho.png-1d2ab7769a6671411a919149e4748bbf.s3tc.stex", "res://.import/brilho.png-1d2ab7769a6671411a919149e4748bbf.etc.stex" ]
 
 [params]
 

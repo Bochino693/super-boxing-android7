@@ -2,15 +2,10 @@
 
 importer="texture"
 type="StreamTexture"
-path="res://.import/estilhaco.png-1c109f80cb97a186fc78c97ac5e56589.stex"
-metadata={
-"vram_texture": false
-}
 
 [deps]
 
 source_file="res://assets/fx/estilhaco.png"
-dest_files=[ "res://.import/estilhaco.png-1c109f80cb97a186fc78c97ac5e56589.stex" ]
 
 [params]
 

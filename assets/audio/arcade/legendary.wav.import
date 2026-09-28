@@ -2,12 +2,10 @@
 
 importer="wav"
 type="AudioStreamSample"
-path="res://.import/legendary.wav-fa04f0c6265c958582f8ada52335b847.sample"
 
 [deps]
 
 source_file="res://assets/audio/arcade/legendary.wav"
-dest_files=[ "res://.import/legendary.wav-fa04f0c6265c958582f8ada52335b847.sample" ]
 
 [params]
 

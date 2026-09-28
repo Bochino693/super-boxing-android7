@@ -2,17 +2,10 @@
 
 importer="texture"
 type="StreamTexture"
-path.s3tc="res://.import/pele_relevo.png-6fff1de211dc3c1d796bf4db7cffec7c.s3tc.stex"
-path.etc="res://.import/pele_relevo.png-6fff1de211dc3c1d796bf4db7cffec7c.etc.stex"
-metadata={
-"imported_formats": [ "s3tc", "etc" ],
-"vram_texture": true
-}
 
 [deps]
 
 source_file="res://assets/lutador3d/pele_relevo.png"
-dest_files=[ "res://.import/pele_relevo.png-6fff1de211dc3c1d796bf4db7cffec7c.s3tc.stex", "res://.import/pele_relevo.png-6fff1de211dc3c1d796bf4db7cffec7c.etc.stex" ]
 
 [params]
 

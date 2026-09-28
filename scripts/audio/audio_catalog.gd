@@ -11,7 +11,7 @@ const FALLBACK = {
 	"win": "res://assets/audio/win.wav",
 	"medium": "res://assets/audio/medium.wav",
 	"lose": "res://assets/audio/lose.wav",
-	"error": "res://assets/audio/error.wav",
+	"error": "res://assets/audio/aviso.wav",
 	"menu": "res://assets/audio/menu.wav",
 	"record": "res://assets/audio/record.wav",
 	"legendary": "res://assets/audio/legendary.wav",
@@ -43,8 +43,13 @@ const EXTRA = [
 const LOOPS = ["music", "charge", "score_loop"]
 const ROOT = "res://assets/audio/arcade/"
 
+## O arquivo de alguns sons tem outro nome: o do erro chama-se `aviso.wav`,
+## para a palavra "error" não aparecer na lista da importação quando o APK
+## é gerado (quem lê a janela acha que é um erro de verdade).
+const ARQUIVO = {"error": "aviso"}
+
 static func path_for(cue: String) -> String:
-	return ROOT + cue + ".wav"
+	return ROOT + str(ARQUIVO.get(cue, cue)) + ".wav"
 
 ## A QUE MESA CADA SOM VAI.
 ##

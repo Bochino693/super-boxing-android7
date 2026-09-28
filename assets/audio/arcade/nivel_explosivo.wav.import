@@ -2,12 +2,10 @@
 
 importer="wav"
 type="AudioStreamSample"
-path="res://.import/nivel_explosivo.wav-2819f8a9c0ba0591c44b9313e88fd93f.sample"
 
 [deps]
 
 source_file="res://assets/audio/arcade/nivel_explosivo.wav"
-dest_files=[ "res://.import/nivel_explosivo.wav-2819f8a9c0ba0591c44b9313e88fd93f.sample" ]
 
 [params]
 

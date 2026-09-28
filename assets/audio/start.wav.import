@@ -2,12 +2,10 @@
 
 importer="wav"
 type="AudioStreamSample"
-path="res://.import/start.wav-19b7b115c272977fc8c4ba700e09f4f5.sample"
 
 [deps]
 
 source_file="res://assets/audio/start.wav"
-dest_files=[ "res://.import/start.wav-19b7b115c272977fc8c4ba700e09f4f5.sample" ]
 
 [params]
 

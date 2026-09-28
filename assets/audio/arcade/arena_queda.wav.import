@@ -2,12 +2,10 @@
 
 importer="wav"
 type="AudioStreamSample"
-path="res://.import/arena_queda.wav-1179a6156ae1d2818b2e785ce282b125.sample"
 
 [deps]
 
 source_file="res://assets/audio/arcade/arena_queda.wav"
-dest_files=[ "res://.import/arena_queda.wav-1179a6156ae1d2818b2e785ce282b125.sample" ]
 
 [params]
 

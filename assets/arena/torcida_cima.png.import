@@ -2,17 +2,10 @@
 
 importer="texture"
 type="StreamTexture"
-path.s3tc="res://.import/torcida_cima.png-ec96a8ade47a99896ead2d3b1197d252.s3tc.stex"
-path.etc="res://.import/torcida_cima.png-ec96a8ade47a99896ead2d3b1197d252.etc.stex"
-metadata={
-"imported_formats": [ "s3tc", "etc" ],
-"vram_texture": true
-}
 
 [deps]
 
 source_file="res://assets/arena/torcida_cima.png"
-dest_files=[ "res://.import/torcida_cima.png-ec96a8ade47a99896ead2d3b1197d252.s3tc.stex", "res://.import/torcida_cima.png-ec96a8ade47a99896ead2d3b1197d252.etc.stex" ]
 
 [params]
 

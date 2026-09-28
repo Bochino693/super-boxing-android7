@@ -2,12 +2,10 @@
 
 importer="wav"
 type="AudioStreamSample"
-path="res://.import/start_negado.wav-8b1159e3945a93a0b5026e0687b74b02.sample"
 
 [deps]
 
 source_file="res://assets/audio/arcade/start_negado.wav"
-dest_files=[ "res://.import/start_negado.wav-8b1159e3945a93a0b5026e0687b74b02.sample" ]
 
 [params]
 

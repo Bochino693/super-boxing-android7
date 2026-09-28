@@ -2,15 +2,10 @@
 
 importer="texture"
 type="StreamTexture"
-path="res://.import/moldura_arena.png-2ab9782cac316fb07a74ab6f6b67b5f9.stex"
-metadata={
-"vram_texture": false
-}
 
 [deps]
 
 source_file="res://assets/tema/moldura_arena.png"
-dest_files=[ "res://.import/moldura_arena.png-2ab9782cac316fb07a74ab6f6b67b5f9.stex" ]
 
 [params]
 
