@@ -12,7 +12,7 @@ extends Reference
 ## NUMERO em um e escreva em NOTA o que mudou. Um carimbo que não sobe
 ## mente, e um carimbo que mente é pior do que carimbo nenhum.
 
-const NUMERO = 95
+const NUMERO = 96
 const DATA = "28/09/2026"
 const NOTA = "versão Godot 3.6 (OpenGL ES 2.0) para a TV Box S905L: o mesmo jogo, as mesmas telas e o mesmo lutador; 30 quadros fixos e arena em resolução interna menor"
 

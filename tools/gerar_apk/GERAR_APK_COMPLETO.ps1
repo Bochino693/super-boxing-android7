@@ -13,7 +13,7 @@ Set-Location $Raiz
 # (SUPERBOXING_BUILD=...): se a pasta tiver arquivos de builds diferentes
 # misturados (zip novo extraido por cima de um velho), a geracao para aqui,
 # antes de fazer qualquer coisa.
-$Build = 95
+$Build = 96
 $VersaoGodot = "3.6.2"
 $VersaoModelos = "3.6.2.stable"
 $UrlBase = "https://github.com/godotengine/godot/releases/download/3.6.2-stable"
@@ -23,50 +23,105 @@ $env:ANDROID_SDK_ROOT = "C:\AndroidSdk"
 $ApkEsperado = Join-Path $Raiz "build\android\SuperBoxing.apk"
 $PluginPronto = Join-Path $Raiz "android\plugins\PunchUsbSerial-release.aar"
 
+# Qualquer falha sai UMA vez, em portugues, sem o bloco tecnico do
+# PowerShell (linha, caractere, CategoryInfo...).
 function Parar([string]$Motivo) {
     Write-Host ""
     Write-Host $Motivo -ForegroundColor Red
-    throw $Motivo
+    exit 1
+}
+trap {
+    Write-Host ""
+    Write-Host $_.Exception.Message -ForegroundColor Red
+    exit 1
 }
 
 # ------------------------------------------------------------------
-# A PASTA E UMA SO VERSAO, INTEIRA. Confere o carimbo de cada arquivo que
-# participa da geracao e do jogo.
+# A PASTA TEM EXATAMENTE OS ARQUIVOS DESTA BUILD.
+#
+# tools\gerar_apk\arquivos_build.txt e a lista de todos os arquivos que
+# vieram no zip. Com ela:
+#   1. se falta algum (zip extraido pela metade), a geracao para e diz qual;
+#   2. arquivo de JOGO que sobrou de uma versao antiga (zip novo extraido por
+#      cima do velho) e APAGADO sozinho: script, cena, shader, configuracao
+#      de importacao, plugin antigo. Um script do Godot 4 esquecido na pasta
+#      e erro na importacao do Godot 3. Imagens, sons, APKs e relatorios
+#      seus nunca sao apagados.
 if (-not (Test-Path -LiteralPath (Join-Path $Raiz "scripts\compat.gd"))) {
     Parar "Esta pasta nao e a versao S905L (Godot 3.6). Pasta atual: $Raiz"
 }
-$Carimbados = @(
-    "GERAR_APK_AGORA.bat",
-    "tools\gerar_apk\EXPORTAR_APK_ANDROID.bat",
-    "tools\gerar_apk\RECOMPILAR_PLUGIN_USB.bat"
-)
-$Misturados = @()
-foreach ($Arquivo in $Carimbados) {
-    $Caminho = Join-Path $Raiz $Arquivo
-    if (-not (Test-Path -LiteralPath $Caminho) -or
-        -not ((Get-Content -LiteralPath $Caminho -Raw) -match "SUPERBOXING_BUILD=$Build\b")) {
-        $Misturados += $Arquivo
+$ListaDaBuild = Join-Path $Scripts "arquivos_build.txt"
+if (-not (Test-Path -LiteralPath $ListaDaBuild)) {
+    Parar "Falta tools\gerar_apk\arquivos_build.txt. Extraia o zip da build $Build de novo (as duas partes)."
+}
+$DaBuild = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
+foreach ($Linha in [System.IO.File]::ReadAllLines($ListaDaBuild)) {
+    if ($Linha.Trim()) { [void]$DaBuild.Add($Linha.Trim().Replace('/', '\')) }
+}
+$Faltando = @($DaBuild | Where-Object { -not (Test-Path -LiteralPath (Join-Path $Raiz $_)) })
+if ($Faltando.Count -gt 0) {
+    Parar ("O ZIP NAO FOI EXTRAIDO INTEIRO. Faltam $($Faltando.Count) arquivo(s), por exemplo:`n  " +
+        (($Faltando | Select-Object -First 8) -join "`n  ") +
+        "`nExtraia as DUAS partes do zip da build $Build (PARTE1 e PARTE2) na mesma pasta.")
+}
+
+# Uma segunda copia do projeto DENTRO desta pasta (zip extraido "aqui"
+# dentro da pasta velha): o Godot a importaria junto. Um .gdignore faz o
+# Godot ignorar a pasta inteira; nada dela e apagado nem mexido.
+$Aninhadas = @()
+foreach ($Sub in (Get-ChildItem -LiteralPath $Raiz -Directory -Recurse -Force -ErrorAction SilentlyContinue)) {
+    if ($Sub.FullName -like "*\.git*") { continue }
+    if (Test-Path -LiteralPath (Join-Path $Sub.FullName "project.godot")) {
+        $Aninhadas += $Sub.FullName.Substring($Raiz.TrimEnd('\').Length + 1)
+        if (-not (Test-Path -LiteralPath (Join-Path $Sub.FullName ".gdignore"))) {
+            [System.IO.File]::WriteAllText((Join-Path $Sub.FullName ".gdignore"), "")
+            Write-Host "      Outra copia do projeto dentro desta pasta, ignorada: $($Sub.FullName)" -ForegroundColor Yellow
+        }
     }
 }
-if (-not ((Get-Content -LiteralPath (Join-Path $Raiz "scripts\versao.gd") -Raw) -match "const NUMERO = $Build\b")) {
-    $Misturados += "scripts\versao.gd"
+
+# Pastas que sao so do PC (resultado, caches, modelo Android): nao entram
+# na comparacao e nao sao mexidas aqui.
+$PastasDoPC = @('.git', '.import', 'build', 'android\build',
+    'tools\android_usb_plugin\.gradle', 'tools\android_usb_plugin\build', 'tools\android_usb_plugin\plugin\build')
+$PastasDoPC += $Aninhadas
+$ExtensoesDeJogo = @('.gd', '.tscn', '.tres', '.gdshader', '.shader', '.uid', '.import', '.cfg',
+    '.gdns', '.gdnlib', '.aar', '.gdap', '.bat', '.ps1', '.kt', '.kts')
+$Removidos = 0
+$RaizBarra = $Raiz.TrimEnd('\') + '\'
+foreach ($Arquivo in (Get-ChildItem -LiteralPath $Raiz -Recurse -File -Force -ErrorAction SilentlyContinue)) {
+    $Rel = $Arquivo.FullName.Substring($RaizBarra.Length)
+    $DoPC = $false
+    foreach ($Pasta in $PastasDoPC) { if ($Rel.StartsWith($Pasta + '\', [StringComparison]::OrdinalIgnoreCase)) { $DoPC = $true; break } }
+    if ($DoPC -or $DaBuild.Contains($Rel)) { continue }
+    if ($ExtensoesDeJogo -contains $Arquivo.Extension.ToLower()) {
+        Remove-Item -LiteralPath $Arquivo.FullName -Force
+        $Removidos++
+    }
 }
-if (-not ((Get-Content -LiteralPath (Join-Path $Raiz "export_presets.cfg") -Raw) -match "(?m)^version/code=$Build\b")) {
-    $Misturados += "export_presets.cfg"
+# A pasta de cache do Godot 4 e o plugin antigo do Godot 4 inteiros.
+foreach ($Velha in @('.godot', 'addons')) {
+    $Caminho = Join-Path $Raiz $Velha
+    if (Test-Path -LiteralPath $Caminho) {
+        Remove-Item -LiteralPath $Caminho -Recurse -Force
+        $Removidos++
+    }
 }
-foreach ($Velho in @("tools\gerar_apk\PREPARAR_PLUGIN_USB_ANDROID.bat", "addons\PunchUsbSerial", ".godot")) {
-    if (Test-Path -LiteralPath (Join-Path $Raiz $Velho)) { $Misturados += "$Velho (sobra de versao antiga)" }
+if ($Removidos -gt 0) {
+    Write-Host "      Sobras de versoes antigas removidas desta pasta: $Removidos." -ForegroundColor Yellow
 }
+
+# Os scripts que fazem a geracao sao desta build (carimbo SUPERBOXING_BUILD).
+$Carimbados = @("GERAR_APK_AGORA.bat", "tools\gerar_apk\EXPORTAR_APK_ANDROID.bat", "tools\gerar_apk\RECOMPILAR_PLUGIN_USB.bat")
+$Misturados = @()
+foreach ($Arquivo in $Carimbados) {
+    if (-not ((Get-Content -LiteralPath (Join-Path $Raiz $Arquivo) -Raw) -match "SUPERBOXING_BUILD=$Build\b")) { $Misturados += $Arquivo }
+}
+if (-not ((Get-Content -LiteralPath (Join-Path $Raiz "scripts\versao.gd") -Raw) -match "const NUMERO = $Build\b")) { $Misturados += "scripts\versao.gd" }
+if (-not ((Get-Content -LiteralPath (Join-Path $Raiz "export_presets.cfg") -Raw) -match "(?m)^version/code=$Build\b")) { $Misturados += "export_presets.cfg" }
 if ($Misturados.Count -gt 0) {
-    Parar ("ARQUIVOS DE VERSOES DIFERENTES MISTURADOS NESTA PASTA:`n  " + ($Misturados -join "`n  ") +
-        "`nExtraia o zip da build $Build numa pasta NOVA e VAZIA e rode o GERAR_APK_AGORA.bat de la.")
-}
-# Uma segunda copia do projeto DENTRO desta pasta (zip extraido "aqui"
-# dentro da pasta velha) confunde quem clica no .bat errado.
-$Aninhado = Get-ChildItem -LiteralPath $Raiz -Directory -ErrorAction SilentlyContinue |
-    Where-Object { Test-Path -LiteralPath (Join-Path $_.FullName "project.godot") } | Select-Object -First 1
-if ($Aninhado) {
-    Parar "Ha outra copia do projeto dentro desta pasta: $($Aninhado.FullName). Extraia o zip numa pasta NOVA e VAZIA."
+    Parar ("Estes arquivos nao sao da build ${Build}:`n  " + ($Misturados -join "`n  ") +
+        "`nExtraia o zip da build $Build de novo, respondendo SIM para substituir tudo.")
 }
 
 $PluginGdap = Join-Path $Raiz "android\plugins\PunchUsbSerial.gdap"

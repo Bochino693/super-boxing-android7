@@ -1,4 +1,4 @@
-SUPER BOXING - VERSAO TV BOX S905L (ANDROID 7.1) - BUILD 95
+SUPER BOXING - VERSAO TV BOX S905L (ANDROID 7.1) - BUILD 96
 ===========================================================
 
 PARA QUAL MAQUINA E ESTA VERSAO
@@ -26,23 +26,24 @@ O que muda por dentro (voce nao ve na tela):
 
 O APK tem outro nome de pacote (com.lazersport.superboxing), entao pode
 ficar instalado junto com o Punch Challenge das outras maquinas. Se a
-build 92, 93 ou 94 estiver instalada, a 95 instala por cima.
+build 92, 93, 94 ou 95 estiver instalada, a 96 instala por cima.
 
 ANTES DE INSTALAR NAS 80: TESTE EM UMA
 --------------------------------------
 Na tela de carregamento aparece, no canto de baixo,
-"BUILD 95 - S905L - Android 7.1". Jogue uma partida inteira, abra a
+"BUILD 96 - S905L - Android 7.1". Jogue uma partida inteira, abra a
 Central Tecnica e confira camera e Arduino antes de passar para as outras.
 
 GERAR O APK
 -----------
-1. Extraia o zip (as duas partes) numa pasta NOVA e VAZIA. Nao extraia por
-   cima de uma versao antiga: arquivos velhos misturados com novos davam
-   mensagens de erro. Se isso acontecer, o .bat avisa e para, dizendo quais
-   arquivos estao misturados.
+1. Extraia o zip (as duas partes). Pode ser numa pasta nova ou por cima da
+   pasta antiga: o .bat compara a pasta com a lista de arquivos da build
+   (tools\gerar_apk\arquivos_build.txt), apaga sozinho o que sobrou de
+   versoes antigas (scripts, cenas, plugin do Godot 4) e avisa se faltar
+   algum arquivo. Imagens, sons, APKs e relatorios seus nunca sao apagados.
 2. Clique duas vezes em  GERAR_APK_AGORA.bat
 3. Espere. A janela mostra cada passo e NAO fecha sozinha: no fim aparece
-   "APK GERADO E CONFERIDO - build 95, sem erros" (ou FALHA com o motivo).
+   "APK GERADO E CONFERIDO - build 96, sem erros" (ou FALHA com o motivo).
 4. O APK fica em:  build\android\SuperBoxing.apk
 
 Precisa no PC:
@@ -62,7 +63,7 @@ plugin USB dentro.
 ATUALIZAR PELO GITHUB
 ---------------------
 O ATUALIZAR_E_GERAR.bat baixa a versao do GitHub e gera o APK. O GitHub
-hoje ainda tem a build 92 (Godot 4): enquanto a build 95 nao for para la,
+hoje ainda tem a build 92 (Godot 4): enquanto a build 96 nao for para la,
 use o GERAR_APK_AGORA.bat da pasta do zip (o ATUALIZAR avisa e para).
 
 INSTALAR NA TV BOX
