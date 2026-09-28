@@ -38,9 +38,10 @@ GERAR O APK
 -----------
 1. Extraia o zip (as duas partes). Pode ser numa pasta nova ou por cima da
    pasta antiga: o .bat compara a pasta com a lista de arquivos da build
-   (tools\gerar_apk\arquivos_build.txt), apaga sozinho o que sobrou de
-   versoes antigas (scripts, cenas, plugin do Godot 4) e avisa se faltar
-   algum arquivo. Imagens, sons, APKs e relatorios seus nunca sao apagados.
+   (tools\gerar_apk\arquivos_build.txt), tira sozinho do projeto o que
+   sobrou de versoes antigas (scripts, cenas, sons, plugin do Godot 4) e
+   guarda tudo em sobras_de_versoes_antigas - nada e apagado. Pastas que
+   nao sao do jogo sao ignoradas pelo Godot. Se faltar arquivo, ele avisa.
 2. Clique duas vezes em  GERAR_APK_AGORA.bat
 3. Espere. A janela mostra cada passo e NAO fecha sozinha: no fim aparece
    "APK GERADO E CONFERIDO - build 96, sem erros" (ou FALHA com o motivo).

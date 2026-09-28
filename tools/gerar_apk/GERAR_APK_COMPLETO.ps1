@@ -82,43 +82,60 @@ foreach ($Sub in (Get-ChildItem -LiteralPath $Raiz -Directory -Recurse -Force -E
 
 # Pastas que sao so do PC (resultado, caches, modelo Android): nao entram
 # na comparacao e nao sao mexidas aqui.
-$PastasDoPC = @('.git', '.import', 'build', 'android\build',
+$Guardadas = "sobras_de_versoes_antigas"
+$PastasDoPC = @('.git', '.import', 'build', 'android\build', $Guardadas,
     'tools\android_usb_plugin\.gradle', 'tools\android_usb_plugin\build', 'tools\android_usb_plugin\plugin\build')
 $PastasDoPC += $Aninhadas
+# As pastas do jogo (as que aparecem na lista da build): dentro delas,
+# qualquer arquivo fora da lista e sobra de versao antiga. Na raiz, so os
+# tipos de arquivo do jogo; o resto (seus arquivos) fica onde esta.
+$PastasDoJogo = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
+foreach ($Item in $DaBuild) { if ($Item.Contains('\')) { [void]$PastasDoJogo.Add($Item.Split('\')[0]) } }
 $ExtensoesDeJogo = @('.gd', '.tscn', '.tres', '.gdshader', '.shader', '.uid', '.import', '.cfg',
     '.gdns', '.gdnlib', '.aar', '.gdap', '.bat', '.ps1', '.kt', '.kts')
+# NADA E APAGADO: as sobras sao MOVIDAS para sobras_de_versoes_antigas (que o
+# Godot ignora), com o mesmo caminho de antes.
+function Guardar-Sobra([string]$Caminho, [string]$Rel) {
+    $Destino = Join-Path (Join-Path $Raiz $Guardadas) $Rel
+    New-Item -ItemType Directory -Path (Split-Path $Destino) -Force | Out-Null
+    if (Test-Path -LiteralPath $Destino) { Remove-Item -LiteralPath $Destino -Recurse -Force }
+    Move-Item -LiteralPath $Caminho -Destination $Destino -Force
+    [System.IO.File]::WriteAllText((Join-Path (Join-Path $Raiz $Guardadas) ".gdignore"), "")
+}
 $Removidos = 0
 $RaizBarra = $Raiz.TrimEnd('\') + '\'
 foreach ($Arquivo in (Get-ChildItem -LiteralPath $Raiz -Recurse -File -Force -ErrorAction SilentlyContinue)) {
     $Rel = $Arquivo.FullName.Substring($RaizBarra.Length)
     $DoPC = $false
     foreach ($Pasta in $PastasDoPC) { if ($Rel.StartsWith($Pasta + '\', [StringComparison]::OrdinalIgnoreCase)) { $DoPC = $true; break } }
-    if ($DoPC -or $DaBuild.Contains($Rel)) { continue }
-    if ($ExtensoesDeJogo -contains $Arquivo.Extension.ToLower()) {
-        Remove-Item -LiteralPath $Arquivo.FullName -Force
+    if ($DoPC -or $DaBuild.Contains($Rel) -or $Arquivo.Name -eq ".gdignore") { continue }
+    $NaPastaDoJogo = $Rel.Contains('\') -and $PastasDoJogo.Contains($Rel.Split('\')[0])
+    if ($NaPastaDoJogo -or ($ExtensoesDeJogo -contains $Arquivo.Extension.ToLower())) {
+        Guardar-Sobra $Arquivo.FullName $Rel
         $Removidos++
     }
 }
-# A pasta de cache do Godot 4 e o plugin antigo do Godot 4 inteiros.
-foreach ($Velha in @('.godot', 'addons')) {
-    $Caminho = Join-Path $Raiz $Velha
-    if (Test-Path -LiteralPath $Caminho) {
-        Remove-Item -LiteralPath $Caminho -Recurse -Force
-        $Removidos++
-    }
+# A pasta de cache do Godot 4 (so cache: pode ir embora). A do plugin
+# antigo (addons) ja teve os arquivos guardados acima; vazia, ela sai.
+if (Test-Path -LiteralPath (Join-Path $Raiz '.godot')) {
+    Remove-Item -LiteralPath (Join-Path $Raiz '.godot') -Recurse -Force
+    $Removidos++
+}
+$Addons = Join-Path $Raiz 'addons'
+if ((Test-Path -LiteralPath $Addons) -and
+    -not (Get-ChildItem -LiteralPath $Addons -Recurse -File -Force -ErrorAction SilentlyContinue)) {
+    Remove-Item -LiteralPath $Addons -Recurse -Force
 }
 if ($Removidos -gt 0) {
-    Write-Host "      Sobras de versoes antigas removidas desta pasta: $Removidos." -ForegroundColor Yellow
+    Write-Host "      Sobras de versoes antigas tiradas do projeto: $Removidos (guardadas em $Guardadas)." -ForegroundColor Yellow
 }
 
 # PASTAS QUE NAO SAO DO JOGO (fotos, backups, downloads guardados aqui):
 # o Godot importaria e poria no APK tudo o que achasse nelas, e um arquivo
 # estragado ali virava erro na exportacao. Um .gdignore faz o Godot ignorar
 # a pasta; nada dela e apagado nem mexido.
-$PastasDoJogo = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
-foreach ($Item in $DaBuild) { if ($Item.Contains('\')) { [void]$PastasDoJogo.Add($Item.Split('\')[0]) } }
 foreach ($Pasta in (Get-ChildItem -LiteralPath $Raiz -Directory -Force -ErrorAction SilentlyContinue)) {
-    if ($PastasDoJogo.Contains($Pasta.Name) -or @('.git', '.import', 'build') -contains $Pasta.Name) { continue }
+    if ($PastasDoJogo.Contains($Pasta.Name) -or @('.git', '.import', 'build', $Guardadas) -contains $Pasta.Name) { continue }
     $Marca = Join-Path $Pasta.FullName ".gdignore"
     if (-not (Test-Path -LiteralPath $Marca)) {
         [System.IO.File]::WriteAllText($Marca, "")
