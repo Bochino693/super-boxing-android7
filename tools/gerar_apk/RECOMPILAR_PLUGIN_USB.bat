@@ -1,6 +1,11 @@
 @echo off
 setlocal
-rem Script interno: quem chama e o GERAR_APK_AGORA.bat (na raiz).
+rem SUPERBOXING_BUILD=95
+rem OPCIONAL: so para quem mexer no codigo do plugin USB (Kotlin, em
+rem tools\android_usb_plugin). O GERAR_APK_AGORA.bat NAO compila o plugin:
+rem ele usa o que ja vem pronto em android\plugins. Rode este arquivo uma vez
+rem depois de mudar o Kotlin; o plugin novo substitui o pronto.
+rem Precisa ter gerado um APK antes (o modelo Android fica em android\build).
 cd /d "%~dp0..\.."
 
 if not exist "android\build\libs\release\godot-lib.release.aar" (
@@ -50,5 +55,5 @@ if not exist "tools\android_usb_plugin\plugin\build\outputs\aar\PunchUsbSerial-r
 )
 copy /y "tools\android_usb_plugin\plugin\build\outputs\aar\PunchUsbSerial-release.aar" "android\plugins\PunchUsbSerial-release.aar" >nul
 
-echo [3/3] Plugin pronto.
+echo [3/3] Plugin pronto em android\plugins. Agora rode o GERAR_APK_AGORA.bat.
 exit /b 0

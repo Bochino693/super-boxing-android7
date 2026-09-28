@@ -1,5 +1,6 @@
 @echo off
 setlocal
+rem SUPERBOXING_BUILD=95
 rem Script interno: quem chama e o GERAR_APK_AGORA.bat (na raiz), pelo
 rem GERAR_APK_COMPLETO.ps1, que ja deixa o Godot 3.6.2, o modelo Android, o
 rem plugin USB, o Java e a chave de assinatura prontos.
@@ -34,10 +35,12 @@ rem que mudou, e apagar um pedaco dele fazia o Godot reclamar do arquivo.
 
 rem APK DE RELEASE, e nao de depuracao: bibliotecas nativas otimizadas e o
 rem GDScript sem as checagens de depuracao -- mais rapido na TV Box.
-echo Gerando o APK...
-"%~1" --no-window --path "%CD%" --export "Android" "build\android\SuperBoxing.apk"
+rem --quiet: o Godot so escreve na janela se acontecer um erro de verdade.
+rem Se o APK nao sair, a segunda tentativa roda sem --quiet e mostra tudo.
+echo Gerando o APK (importa e monta tudo; pode levar alguns minutos)...
+"%~1" --no-window --quiet --path "%CD%" --export "Android" "build\android\SuperBoxing.apk"
 if not exist "build\android\SuperBoxing.apk" (
-  echo O Godot fechou antes de terminar. Tentando mais uma vez...
+  echo O Godot fechou antes de terminar. Tentando mais uma vez, mostrando tudo...
   "%~1" --no-window --path "%CD%" --export "Android" "build\android\SuperBoxing.apk"
 )
 if not exist "build\android\SuperBoxing.apk" (

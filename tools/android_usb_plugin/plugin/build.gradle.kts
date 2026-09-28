@@ -33,7 +33,6 @@ android {
         manifestPlaceholders["godotPluginName"] = pluginName
         manifestPlaceholders["godotPluginPackageName"] = pluginPackageName
         buildConfigField("String", "GODOT_PLUGIN_NAME", "\"${pluginName}\"")
-        setProperty("archivesBaseName", pluginName)
     }
 
     compileOptions {
@@ -55,4 +54,10 @@ dependencies {
     implementation("com.github.mik3y:usb-serial-for-android:3.11.0")
     implementation("com.github.jiangdongguo.AndroidUSBCamera:libausbc:3.2.7")
     implementation("com.github.jiangdongguo.AndroidUSBCamera:libuvc:3.2.7")
+}
+
+// Nome do .aar gerado (PunchUsbSerial-release.aar). `archivesBaseName` é
+// recurso antigo do Gradle e gerava aviso de "Deprecated Gradle features".
+base {
+    archivesName.set(pluginName)
 }

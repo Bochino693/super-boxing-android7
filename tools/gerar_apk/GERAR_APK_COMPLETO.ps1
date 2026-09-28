@@ -9,6 +9,11 @@ $Scripts = $PSScriptRoot
 $Raiz = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 Set-Location $Raiz
 
+# O NUMERO DA BUILD. Cada script desta versao carrega o mesmo carimbo
+# (SUPERBOXING_BUILD=...): se a pasta tiver arquivos de builds diferentes
+# misturados (zip novo extraido por cima de um velho), a geracao para aqui,
+# antes de fazer qualquer coisa.
+$Build = 95
 $VersaoGodot = "3.6.2"
 $VersaoModelos = "3.6.2.stable"
 $UrlBase = "https://github.com/godotengine/godot/releases/download/3.6.2-stable"
@@ -16,20 +21,57 @@ $UrlBase = "https://github.com/godotengine/godot/releases/download/3.6.2-stable"
 $env:ANDROID_HOME = "C:\AndroidSdk"
 $env:ANDROID_SDK_ROOT = "C:\AndroidSdk"
 $ApkEsperado = Join-Path $Raiz "build\android\SuperBoxing.apk"
-$PluginGradle = Join-Path $Raiz "tools\android_usb_plugin\plugin\build.gradle.kts"
 $PluginPronto = Join-Path $Raiz "android\plugins\PunchUsbSerial-release.aar"
 
-# Impede compilar silenciosamente uma copia antiga do projeto. Esse teste
-# acontece antes do Gradle e informa exatamente qual pasta foi aberta.
+function Parar([string]$Motivo) {
+    Write-Host ""
+    Write-Host $Motivo -ForegroundColor Red
+    throw $Motivo
+}
+
+# ------------------------------------------------------------------
+# A PASTA E UMA SO VERSAO, INTEIRA. Confere o carimbo de cada arquivo que
+# participa da geracao e do jogo.
 if (-not (Test-Path -LiteralPath (Join-Path $Raiz "scripts\compat.gd"))) {
-    throw "Esta pasta nao e a versao S905L (Godot 3.6). Pasta atual: $Raiz"
+    Parar "Esta pasta nao e a versao S905L (Godot 3.6). Pasta atual: $Raiz"
 }
-if (-not (Test-Path -LiteralPath $PluginGradle)) {
-    throw "Projeto incompleto: nao encontrei $PluginGradle"
+$Carimbados = @(
+    "GERAR_APK_AGORA.bat",
+    "tools\gerar_apk\EXPORTAR_APK_ANDROID.bat",
+    "tools\gerar_apk\RECOMPILAR_PLUGIN_USB.bat"
+)
+$Misturados = @()
+foreach ($Arquivo in $Carimbados) {
+    $Caminho = Join-Path $Raiz $Arquivo
+    if (-not (Test-Path -LiteralPath $Caminho) -or
+        -not ((Get-Content -LiteralPath $Caminho -Raw) -match "SUPERBOXING_BUILD=$Build\b")) {
+        $Misturados += $Arquivo
+    }
 }
-$PluginTexto = Get-Content -LiteralPath $PluginGradle -Raw
-if ($PluginTexto -notmatch 'AndroidUSBCamera:libausbc:3\.2\.7') {
-    throw "Dependencia UVC corrigida nao encontrada. Nao vou gerar um APK incompleto. Pasta atual: $Raiz"
+if (-not ((Get-Content -LiteralPath (Join-Path $Raiz "scripts\versao.gd") -Raw) -match "const NUMERO = $Build\b")) {
+    $Misturados += "scripts\versao.gd"
+}
+if (-not ((Get-Content -LiteralPath (Join-Path $Raiz "export_presets.cfg") -Raw) -match "(?m)^version/code=$Build\b")) {
+    $Misturados += "export_presets.cfg"
+}
+foreach ($Velho in @("tools\gerar_apk\PREPARAR_PLUGIN_USB_ANDROID.bat", "addons\PunchUsbSerial", ".godot")) {
+    if (Test-Path -LiteralPath (Join-Path $Raiz $Velho)) { $Misturados += "$Velho (sobra de versao antiga)" }
+}
+if ($Misturados.Count -gt 0) {
+    Parar ("ARQUIVOS DE VERSOES DIFERENTES MISTURADOS NESTA PASTA:`n  " + ($Misturados -join "`n  ") +
+        "`nExtraia o zip da build $Build numa pasta NOVA e VAZIA e rode o GERAR_APK_AGORA.bat de la.")
+}
+# Uma segunda copia do projeto DENTRO desta pasta (zip extraido "aqui"
+# dentro da pasta velha) confunde quem clica no .bat errado.
+$Aninhado = Get-ChildItem -LiteralPath $Raiz -Directory -ErrorAction SilentlyContinue |
+    Where-Object { Test-Path -LiteralPath (Join-Path $_.FullName "project.godot") } | Select-Object -First 1
+if ($Aninhado) {
+    Parar "Ha outra copia do projeto dentro desta pasta: $($Aninhado.FullName). Extraia o zip numa pasta NOVA e VAZIA."
+}
+
+$PluginGdap = Join-Path $Raiz "android\plugins\PunchUsbSerial.gdap"
+if (-not (Test-Path -LiteralPath $PluginPronto) -or -not (Test-Path -LiteralPath $PluginGdap)) {
+    Parar "Plugin USB nao encontrado em android\plugins (PunchUsbSerial-release.aar e .gdap). Extraia o zip de novo."
 }
 
 # Apaga o resultado ANTES de qualquer compilacao. Assim uma falha no plugin
@@ -38,7 +80,7 @@ if (Test-Path $ApkEsperado) {
     Remove-Item -LiteralPath $ApkEsperado -Force
 }
 
-Write-Host "Projeto confirmado: Super Boxing - build 94 - TV Box S905L (Android 7.1) - Godot $VersaoGodot" -ForegroundColor Green
+Write-Host "Projeto confirmado: Super Boxing - build $Build - TV Box S905L (Android 7.1) - Godot $VersaoGodot" -ForegroundColor Green
 
 # ------------------------------------------------------------------
 # ESPACO EM DISCO. Sem espaco o Gradle falha no meio ("Espaco insuficiente
@@ -246,22 +288,11 @@ $env:JAVA_HOME = $Java
 $env:Path = (Join-Path $Java "bin") + ";" + $env:Path
 
 # ------------------------------------------------------------------
-# [2/4] O PLUGIN USB (Arduino + webcam). Compila a partir do fonte; se nao
-# der (sem internet, por exemplo), o plugin que ja vem pronto no projeto
-# entra no APK - ele faz tudo o que o jogo usa.
-Write-Host "[2/4] Preparando plugin USB/UVC..." -ForegroundColor Cyan
-& (Join-Path $Scripts "PREPARAR_PLUGIN_USB_ANDROID.bat")
-if ($LASTEXITCODE -ne 0) {
-    if (Test-Path $PluginPronto) {
-        Write-Host "      AVISO: o plugin nao recompilou (veja as mensagens acima)." -ForegroundColor Yellow
-        Write-Host "      Continuando com o plugin pronto que vem no projeto." -ForegroundColor Yellow
-    } else {
-        throw "A compilacao do plugin USB falhou e nao ha plugin pronto. O APK nao foi gerado."
-    }
-}
-if (-not (Test-Path $PluginPronto)) {
-    throw "Plugin USB nao encontrado: $PluginPronto"
-}
+# [2/4] O PLUGIN USB (Arduino + webcam) VEM PRONTO em android\plugins (o
+# .aar e o .gdap). Ele nao e recompilado a cada APK: e sempre o mesmo, e
+# recompilar so trazia espera, internet e mensagens do Gradle. Quem mexer no
+# Kotlin roda tools\gerar_apk\RECOMPILAR_PLUGIN_USB.bat uma vez.
+Write-Host "[2/4] Plugin USB/UVC pronto: $PluginPronto" -ForegroundColor Cyan
 
 # ------------------------------------------------------------------
 # [3/4] A ASSINATURA. A mesma chave de sempre (a de depuracao do Godot, em
@@ -316,6 +347,32 @@ $PresetTexto = [regex]::Replace($PresetTexto, '(?m)^keystore/release_password=.*
 [System.IO.File]::WriteAllText($Preset, $PresetTexto, $SemBom)
 
 # ------------------------------------------------------------------
+# O CACHE DE IMPORTACAO (.import) E DESTA BUILD, OU NAO E USADO. Um cache de
+# outra build (ou pela metade) fazia o Godot reclamar de arquivos que nao
+# existiam. Sem a marca desta build: o cache e apagado e os .import voltam
+# ao estado de fabrica; a exportacao importa tudo do zero, sem erro.
+$Cache = Join-Path $Raiz ".import"
+$MarcaDoCache = Join-Path $Cache ".superboxing_build"
+$CacheDestaBuild = (Test-Path -LiteralPath $MarcaDoCache) -and
+    ((Get-Content -LiteralPath $MarcaDoCache -Raw).Trim() -eq "$Build")
+if (-not $CacheDestaBuild) {
+    Write-Host "      Preparando a importacao do zero (primeira geracao desta build)..." -ForegroundColor Cyan
+    if (Test-Path -LiteralPath $Cache) {
+        Remove-Item -LiteralPath $Cache -Recurse -Force
+    }
+    Get-ChildItem -LiteralPath $Raiz -Recurse -File -Filter "*.import" -ErrorAction SilentlyContinue |
+        Where-Object { $_.FullName -notlike "*\android\build\*" } |
+        ForEach-Object {
+            $Texto = [System.IO.File]::ReadAllText($_.FullName)
+            $Novo = [regex]::Replace($Texto, '(?m)^(path(\.\w+)?|dest_files)=.*\r?\n', '')
+            $Novo = [regex]::Replace($Novo, '(?ms)^metadata=\{.*?^\}\r?\n', '')
+            if ($Novo -ne $Texto) {
+                [System.IO.File]::WriteAllText($_.FullName, $Novo, (New-Object System.Text.UTF8Encoding($false)))
+            }
+        }
+}
+
+# ------------------------------------------------------------------
 # [4/4] O APK.
 Write-Host "[4/4] Exportando APK..." -ForegroundColor Cyan
 & (Join-Path $Scripts "EXPORTAR_APK_ANDROID.bat") "$Godot"
@@ -325,11 +382,38 @@ if ($LASTEXITCODE -ne 0) {
 
 $Apk = Get-Item $ApkEsperado -ErrorAction Stop
 if ($Apk.Length -lt 1MB) {
-    throw "APK incompleto: $($Apk.Length) bytes."
+    Parar "APK incompleto: $($Apk.Length) bytes."
+}
+
+# O cache agora e desta build: as proximas geracoes nao importam tudo de novo.
+if (Test-Path -LiteralPath $Cache) {
+    [System.IO.File]::WriteAllText($MarcaDoCache, "$Build")
+}
+
+# CONFERE O QUE VAI PARA A TV BOX: o motor para as duas arquiteturas e o
+# plugin USB (sem ele, nada de Arduino nem camera) dentro do APK.
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+$Zip = [System.IO.Compression.ZipFile]::OpenRead($Apk.FullName)
+try {
+    $Nomes = $Zip.Entries | ForEach-Object { $_.FullName }
+    foreach ($Lib in @("lib/armeabi-v7a/libgodot_android.so", "lib/arm64-v8a/libgodot_android.so")) {
+        if ($Nomes -notcontains $Lib) { Parar "O APK saiu sem $Lib." }
+    }
+    $TemPlugin = $false
+    foreach ($Dex in ($Zip.Entries | Where-Object { $_.FullName -match '^classes\d*\.dex$' })) {
+        $Leitor = New-Object System.IO.StreamReader($Dex.Open(), [System.Text.Encoding]::GetEncoding(28591))
+        $Conteudo = $Leitor.ReadToEnd()
+        $Leitor.Close()
+        if ($Conteudo.Contains("Lcom/lazersport/punch/usbserial/GodotAndroidPlugin;")) { $TemPlugin = $true; break }
+    }
+    if (-not $TemPlugin) { Parar "O APK saiu SEM o plugin USB (Arduino e camera nao funcionariam)." }
+} finally {
+    $Zip.Dispose()
 }
 
 Write-Host ""
-Write-Host "APK GERADO E CONFERIDO" -ForegroundColor Green
+Write-Host "APK GERADO E CONFERIDO - build $Build, sem erros" -ForegroundColor Green
+Write-Host "Conferido: motor ARM 32 e 64 bits e plugin USB (Arduino + camera) dentro do APK."
 Write-Host "Arquivo: $($Apk.FullName)"
 Write-Host "Tamanho: $([math]::Round($Apk.Length / 1MB, 2)) MB"
 Write-Host "SHA256: $((Get-FileHash -LiteralPath $Apk.FullName -Algorithm SHA256).Hash)"

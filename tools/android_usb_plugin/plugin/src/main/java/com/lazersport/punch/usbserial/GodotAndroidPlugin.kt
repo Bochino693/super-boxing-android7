@@ -288,6 +288,7 @@ class GodotAndroidPlugin(godot: Godot) : GodotPlugin(godot),
                 WindowManager.LayoutParams.MATCH_PARENT
             )
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                @Suppress("DEPRECATION")
                 host.window.setDecorFitsSystemWindows(false)
                 host.window.insetsController?.hide(WindowInsets.Type.systemBars())
             }

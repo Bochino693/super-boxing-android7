@@ -34,6 +34,16 @@ if errorlevel 1 (
   pause
   exit /b 1
 )
+rem O GitHub precisa ter a versao S905L (Godot 3.6). Se tiver a antiga
+rem (Godot 4), para aqui em vez de gerar um APK que nao abre na TV Box.
+if not exist "scripts\compat.gd" (
+  echo.
+  echo PARE: o GitHub ainda tem a versao ANTIGA do jogo, a do Godot 4, que nao
+  echo abre na TV Box S905L. Suba a versao S905L para o GitHub primeiro, ou use o
+  echo GERAR_APK_AGORA.bat na pasta do zip.
+  pause
+  exit /b 1
+)
 echo      Versao nova baixada.
 echo.
 echo [2/2] Gerando o APK...
