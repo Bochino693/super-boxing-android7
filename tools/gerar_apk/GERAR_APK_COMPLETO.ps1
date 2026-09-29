@@ -13,7 +13,7 @@ Set-Location $Raiz
 # (SUPERBOXING_BUILD=...): se a pasta tiver arquivos de builds diferentes
 # misturados (zip novo extraido por cima de um velho), a geracao para aqui,
 # antes de fazer qualquer coisa.
-$Build = 103
+$Build = 104
 $VersaoGodot = "3.6.2"
 $VersaoModelos = "3.6.2.stable"
 $UrlBase = "https://github.com/godotengine/godot/releases/download/3.6.2-stable"
@@ -168,6 +168,11 @@ foreach ($ArquivoQuadros in @("PunchQuadros-release.aar", "PunchQuadros.gdap")) 
     if (-not (Test-Path -LiteralPath (Join-Path $Raiz "android\plugins\$ArquivoQuadros"))) {
         Parar "Falta android\plugins\$ArquivoQuadros (ponte da camera). Extraia o zip de novo."
     }
+}
+# Build 104: a ponte tambem e a caixa-preta (memoria do Android e erros da
+# sessao anterior). A da build 103 tinha menos de 3 KB: sobra de zip velho.
+if ((Get-Item -LiteralPath (Join-Path $Raiz "android\plugins\PunchQuadros-release.aar")).Length -lt 5000) {
+    Parar "android\plugins\PunchQuadros-release.aar e o da build 103 (antigo). Extraia o zip da build $Build de novo."
 }
 if (-not ((Get-Content -LiteralPath (Join-Path $Raiz "export_presets.cfg") -Raw) -match "(?m)^plugins/PunchQuadros=true")) {
     Parar "O export_presets.cfg nao liga o plugin PunchQuadros (ponte da camera). Extraia o zip de novo."

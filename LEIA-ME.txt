@@ -1,4 +1,4 @@
-SUPER BOXING - VERSAO TV BOX S905L (ANDROID 7.1) - BUILD 103
+SUPER BOXING - VERSAO TV BOX S905L (ANDROID 7.1) - BUILD 104
 ===========================================================
 
 PARA QUAL MAQUINA E ESTA VERSAO
@@ -26,7 +26,35 @@ O que muda por dentro (voce nao ve na tela):
 
 O APK tem outro nome de pacote (com.lazersport.superboxing), entao pode
 ficar instalado junto com o Punch Challenge das outras maquinas. Se a
-build 92 a 102 estiver instalada, a 103 instala por cima.
+build 92 a 103 estiver instalada, a 104 instala por cima.
+
+O QUE A BUILD 104 CORRIGE
+-------------------------
+O LAUNCHER CAINDO ("LongLauncher parou"). A camera nao "quebra" o
+launcher: na build 102 ela ja abria e transmitia e o launcher ficava de
+pe. A causa mais provavel e FALTA DE MEMORIA: numa placa de 1 GB,
+quando a memoria livre cai, o Android fecha primeiro o que esta em
+segundo plano - e o launcher e o primeiro da fila. A 103 somou a imagem
+da camera entrando no jogo, sons e torcida novos. A caixa-preta abaixo
+confirma (ou desmente) isso na propria placa.
+- ~50 MB A MENOS de memoria: as letras grandes ocupavam 12 imagens de
+  2 MB (agora 7); o logo da casa de 1280 px era carregado so para saber
+  que existia (4 MB); logo, FIGHT! e NEVER GIVE UP! do tamanho em que
+  aparecem. Nada muda na tela.
+- CAMERA LEVE: a imagem vem em 320x240 no resto do tempo e em 640x480 so
+  na janela da foto (4x menos memoria e trabalho). A foto do ranking
+  continua sendo tirada na resolucao cheia.
+- CAIXA-PRETA NA TELA: o jogo grava, a cada 6 segundos, quanto de memoria
+  o Android tem livre, o menor valor da sessao, o limite em que ele
+  comeca a fechar o launcher, quantos avisos de memoria deu, a tela e a
+  camera. Na abertura seguinte isso aparece no quadro "SESSAO ANTERIOR
+  (CAIXA-PRETA)" da tela de carregamento, com os ultimos erros que o
+  Android registrou do jogo; e fica tambem na Central > CAMERA E SOM.
+  Se o launcher cair de novo: desligue e ligue o jogo e FOTOGRAFE esse
+  quadro. Ele diz se foi memoria (livre perto do limite, avisos) ou outra
+  coisa (os erros em vermelho). Sem cabo, sem ADB.
+  (Com as maquinas aprovadas, scripts\perfil.gd DIAGNOSTICO_NA_TELA =
+  false esconde o quadro; a gravacao continua.)
 
 O QUE A BUILD 103 CORRIGE
 -------------------------
@@ -150,7 +178,7 @@ O QUE A BUILD 97 CORRIGIU
 ANTES DE INSTALAR NAS 80: TESTE EM UMA
 --------------------------------------
 Na tela de carregamento aparece, no canto de baixo,
-"BUILD 103 - S905L - Android 7.1". Jogue uma partida inteira, abra a
+"BUILD 104 - S905L - Android 7.1". Jogue uma partida inteira, abra a
 Central Tecnica e confira camera e Arduino antes de passar para as outras.
 
 GERAR O APK

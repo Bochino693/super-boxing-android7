@@ -594,6 +594,18 @@ func _iniciar_uvc_android() -> void:
 		_android_bridge.call("startUvcCamera")
 
 var _erro_da_ponte_avisado = false
+var _pediu_cheio = false
+
+## QUADRO CHEIO (640x480) SÓ NA JANELA DA FOTO. Fora dela o PunchQuadros
+## entrega 320x240: 4x menos bytes atravessando do Java para o jogo, menos
+## conversão e menos textura subindo para a Mali-450 — numa placa de 1 GB,
+## onde cada MB a mais empurra o Android a fechar o launcher.
+func _quadro_cheio(cheio: bool) -> void:
+	if cheio == _pediu_cheio:
+		return
+	_pediu_cheio = cheio
+	if _ponte_quadros != null:  # sem has_method: ver `_ponte_tem`
+		_ponte_quadros.call("definirFotoCheia", cheio)
 
 func _amostrar_uvc_android(agora: int) -> bool:
 	if OS.get_name() != "Android" or _android_bridge == null \
@@ -606,6 +618,9 @@ func _amostrar_uvc_android(agora: int) -> bool:
 	var largura = 0
 	var altura = 0
 	if _ponte_quadros != null:
+		# A janela da foto passou sem `capture_photo`: volta ao leve.
+		if _pediu_cheio and agora > _obturador_ate_ms + 1500:
+			_quadro_cheio(false)
 		var q = _ponte_quadros.call("pollQuadro")
 		if q is Dictionary and q.has("dados"):
 			dados_variant = q["dados"]
@@ -1095,6 +1110,9 @@ func parada_ha() -> int:
 	return 999999 if _ultima_mudanca_ms <= 0 else Time.get_ticks_msec() - _ultima_mudanca_ms
 
 func abrir_obturador(janela_ms := 3200) -> void:
+	# Resolução cheia só agora, para a foto; no resto a prévia vem em
+	# 320x240 (ver `_quadro_cheio`).
+	_quadro_cheio(true)
 	_melhor_imagem = null
 	_melhor_nota = -1.0
 	_obturador_teve_vida = false
@@ -1147,7 +1165,12 @@ func _oferecer_ao_obturador(imagem: Image, nota_pronta := NAN) -> void:
 	if imagem == null or Time.get_ticks_msec() > _obturador_ate_ms:
 		return
 	var nota = nota_pronta if not is_nan(nota_pronta) else _nota_da_imagem(imagem)
-	if nota > _melhor_nota:
+	# Um quadro cheio (640x480) vence um leve (320x240) que tenha chegado
+	# antes da troca de resolução, desde que tenha contraste de foto.
+	var maior = _melhor_imagem != null and imagem.get_width() > _melhor_imagem.get_width() \
+		and nota >= CONTRASTE_MINIMO
+	var menor = _melhor_imagem != null and imagem.get_width() < _melhor_imagem.get_width()
+	if maior or (nota > _melhor_nota and not menor):
 		_melhor_nota = nota
 		_melhor_imagem = imagem.duplicate()
 
@@ -1170,6 +1193,7 @@ func capture_photo() -> String:
 	_melhor_imagem = null
 	_melhor_nota = -1.0
 	_obturador_teve_vida = false
+	_quadro_cheio(false)
 	if image == null or image.is_empty():
 		status = "CÂMERA SEM IMAGEM — %s" % motivo_curto()
 		return ""

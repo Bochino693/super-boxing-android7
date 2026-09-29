@@ -116,6 +116,9 @@ var _fonte_numero: Resource
 func _ready() -> void:
 	Diario.inicio()
 	Diario.marca("CARREGADOR: abriu")
+	# A caixa-preta lê como terminou a sessão anterior e começa a gravar
+	# esta (memória do Android, tela, câmera) — ver `caixa_preta.gd`.
+	CaixaPreta.ligar(get_tree())
 	# Decide AGORA, antes de desenhar qualquer coisa: visual novo ou seguro.
 	Diario.marca("VISUAL: %s" % ("seguro (build 97)" if ModoSeguro.seguro() else "novo"))
 	_configurar_janela()
@@ -183,6 +186,7 @@ func _iniciar_carga() -> void:
 ## A permissão da CÂMERA o Android guarda sozinho: só é pedida se faltar.
 const Lembranca = preload("res://scripts/lembranca_usb.gd")
 const ModoSeguro = preload("res://scripts/modo_seguro.gd")
+const CaixaPreta = preload("res://scripts/caixa_preta.gd")
 ## Quanto esperar o Android devolver uma permissão já dada antes (s).
 const ESPERA_DA_PERMISSAO_GUARDADA = 10.0
 ## Quanto esperar a contagem das câmeras do sistema (s).
@@ -579,6 +583,11 @@ func _texto_status() -> String:
 
 
 # ------------------------------------------------------------- desenho
+## Corta um texto longo para caber numa linha (com reticências).
+static func _cabe(texto: String, maximo: int) -> String:
+	return texto if texto.length() <= maximo else texto.substr(0, maximo - 1) + "…"
+
+
 func _desenhar() -> void:
 	var t = _tela
 	t.draw_rect(Rect2(Vector2.ZERO, TELA), FUNDO)
@@ -605,6 +614,25 @@ func _desenhar() -> void:
 	Compat.texto(t, _fonte_numero, Vector2(caixa.position.x, topo + 100.0), pct, Compat.CENTRO, largura, 46, Compat.cor("ffd014", aparece))
 	var pontos = ".".repeat(1 + int(_relogio * 2.5) % 3)
 	Compat.texto(t, _fonte, Vector2(caixa.position.x, topo + 150.0), _texto_status() + pontos, Compat.CENTRO, largura, 28, Compat.cor("d9d1ff", 0.9 * aparece))
+	# A CAIXA-PRETA: como terminou a sessão anterior. Se o launcher ou o
+	# jogo caiu, é aqui que aparece a memória livre do Android naquela
+	# hora e os últimos erros — uma foto desta tela diz o porquê.
+	var anterior: Array = CaixaPreta.anterior()
+	if Perfil.DIAGNOSTICO_NA_TELA and not anterior.empty():
+		var caixa_p = Rect2(40.0, 1536.0, 1000.0, 236.0)
+		t.draw_rect(caixa_p, Compat.cor("0c0615", 0.85 * aparece))
+		t.draw_rect(caixa_p, Compat.cor("8f86b8", 0.6 * aparece), false, 2.0)
+		Compat.texto(t, _fonte, Vector2(caixa_p.position.x, 1566.0), "SESSÃO ANTERIOR (CAIXA-PRETA)", Compat.CENTRO, caixa_p.size.x, 20, Compat.cor("8f86b8", aparece))
+		var y_p = 1598.0
+		for i in range(int(min(anterior.size(), 4))):
+			Compat.texto(t, _fonte, Vector2(caixa_p.position.x + 16.0, y_p), _cabe(str(anterior[i]), 88), Compat.ESQUERDA, caixa_p.size.x - 32.0, 18, Compat.cor("ffb000" if i == 2 else "d9d1ff", aparece))
+			y_p += 28.0
+		var erros = CaixaPreta.erros()
+		if not erros.empty() and erros != "NENHUM":
+			var linhas_e = erros.split("\n")
+			for i in range(int(min(linhas_e.size(), 2))):
+				var l_e = linhas_e[linhas_e.size() - 1 - i]
+				Compat.texto(t, _fonte, Vector2(caixa_p.position.x + 16.0, y_p + float(i) * 26.0), _cabe(l_e, 96), Compat.ESQUERDA, caixa_p.size.x - 32.0, 16, Compat.cor("ff6070", aparece))
 	# ONDE A ABERTURA ANTERIOR PAROU, se parou: logo aqui, na primeira tela,
 	# para dar para fotografar mesmo que o jogo trave de novo adiante.
 	var travou = Diario.travou_em()

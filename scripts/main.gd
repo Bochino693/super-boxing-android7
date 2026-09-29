@@ -25,6 +25,7 @@ extends Control
 
 const TELA = Vector2(1080.0, 1920.0)
 const ArcadeStage = preload("res://scripts/presentation/arcade_stage.gd")
+const CaixaPreta = preload("res://scripts/caixa_preta.gd")
 
 # ======================================================================
 # AS BANDAS DA TELA
@@ -912,8 +913,10 @@ func _ready() -> void:
 	# O logo da transição do START carregado já aqui: carregar na hora
 	# travava o primeiro quadro do efeito.
 	Logos.aquecer()
-	if ResourceLoader.exists("res://assets/logo_lazersport.png"):
-		logo = load("res://assets/logo_lazersport.png")
+	# A marca da casa sai sempre de `Logos` (versão do tamanho certo); aqui
+	# só se confirma que ela existe. Carregar o PNG de 1280 px só para isso
+	# eram 4 MB parados na memória da TV Box.
+	logo = Logos.textura("lazersport", 96)
 	_carregar()
 	# Na edicao da TV Box a webcam faz parte do gabinete. Uma preferencia
 	# antiga salva como desligada nao pode impedir a solicitacao no arranque.
@@ -925,6 +928,7 @@ func _ready() -> void:
 	# menos se espera um travamento, logo na primeira rodada do dia.
 	_prewarm_fotos_do_ranking()
 	camera_service = CameraService.new()
+	CaixaPreta.jogo(self)
 	camera_service.adormecida = entrada_segurada
 	camera_service.enabled = camera_enabled
 	camera_service.selected_index = camera_index
@@ -7048,11 +7052,32 @@ func _central_camera() -> void:
 			"CÂMERAS ENCONTRADAS NOS ÍNDICES: %s" % _lista_de_indices(medico.indices),
 			1456.0, 17, Paleta.VERDE
 		)
+	# A caixa-preta embaixo, quando o relatório do exame deixa espaço.
+	var usadas = 3 if medico == null or medico.linhas.empty() else medico.linhas.size()
+	if usadas <= 4 and not ocupado:
+		_caixa_preta_na_central(1150.0)
 
 	_secao(Rect2(80, 1502, 920, 290), "MESA DE SOM", Paleta.VERDE)
 	_stepper("vol_musica", "%+.0f dB" % volume_musica, "TRILHA", Paleta.CIANO)
 	_stepper("vol_efeitos", "%+.0f dB" % volume_efeitos, "EFEITOS E VOZ", Paleta.AMBAR)
 	_botao(BOTOES_SIMPLES["testar_som"], "TOCAR SOCO DE TESTE", false, Paleta.VERDE, 19)
+
+## A CAIXA-PRETA NA CENTRAL: a sessão anterior e os últimos erros que o
+## Android registrou do jogo. É a página que o operador já fotografa.
+func _caixa_preta_na_central(y: float) -> void:
+	var anterior: Array = CaixaPreta.anterior()
+	_texto_cabendo("SESSÃO ANTERIOR (caixa-preta):", y, 16, Paleta.AMBAR, 860.0, 120.0)
+	if anterior.empty():
+		_texto_cabendo("nenhuma gravada ainda (primeira abertura desta build)", y + 28.0, 15, Paleta.TINTA_FRACA, 860.0, 120.0)
+	for i in range(int(min(anterior.size(), 4))):
+		_texto_cabendo(str(anterior[i]), y + 30.0 + float(i) * 30.0, 15, Paleta.CREME, 860.0, 120.0)
+	var erros = CaixaPreta.erros()
+	if erros.empty() or OS.get_name() != "Android":
+		return
+	var linhas = erros.split("\n")
+	_texto_cabendo("ÚLTIMOS ERROS DO ANDROID NA SESSÃO ANTERIOR:", y + 160.0, 15, Paleta.AMBAR, 860.0, 120.0)
+	for i in range(int(min(linhas.size(), 4))):
+		_texto_cabendo(str(linhas[i]), y + 190.0 + float(i) * 28.0, 13, Paleta.VERMELHO if linhas[i] != "NENHUM" else Paleta.VERDE, 860.0, 120.0)
 
 # ------------------------------------------------------------- DADOS
 func _central_dados() -> void:

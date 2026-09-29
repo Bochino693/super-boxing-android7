@@ -294,6 +294,7 @@ scripts/audio/audio_catalog.gd
 scripts/audio_bank.gd
 scripts/auto_escala.gd
 scripts/background.gd
+scripts/caixa_preta.gd
 scripts/calibracao.gd
 scripts/camera_doctor.gd
 scripts/camera_service.gd

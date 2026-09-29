@@ -72,3 +72,10 @@ const CAMERA_CONTAGEM_MS = 125
 ## isso punha na memória ao mesmo tempo coisas que o jogo nunca mostra e o
 ## Android derrubava o launcher: só a cena do jogo é carregada.
 const PRECARREGAR_TUDO = false
+
+## A CAIXA-PRETA NA TELA (fase de testes na TV Box). Na abertura e nos dois
+## primeiros minutos da tela de espera aparece como terminou a sessão
+## anterior: tempo aberto, tela, câmera, memória livre do Android e os
+## últimos erros. Uma foto disso diz por que o launcher ou o jogo caiu.
+## Com as máquinas aprovadas, `false` esconde (a gravação continua).
+const DIAGNOSTICO_NA_TELA = true

@@ -1,6 +1,6 @@
 # Como converter um jogo para a TV Box S905L (Android 7.1)
 
-Guia tirado da conversão do Super Boxing (builds 93 a 103). Tudo aqui
+Guia tirado da conversão do Super Boxing (builds 93 a 104). Tudo aqui
 aconteceu de verdade nesta placa; siga na ordem.
 
 ## 1. A placa
@@ -60,8 +60,24 @@ ou o próprio jogo cai na tela de carregamento. Orçamento que rodou:
 - **Câmera**: não fechar e reabrir a webcam em sequência (driver USB
   nativo + memória do sistema). Reabrir raramente (≥ 30 s, no máximo 3
   vezes) e só na tela de espera; acordar a câmera depois da abertura.
+- **Letras (DynamicFont)**: de 65 px para cima, CADA combinação de fonte
+  + tamanho + contorno vira uma imagem de letras de 1024×1024 (2 MB na
+  placa de vídeo **e** mais 2 MB de cópia na memória do Godot), mesmo com
+  dez letras dentro. Use poucos tamanhos grandes (no Super Boxing: 96 e
+  128) e poucos contornos (8 e 16) e estique o desenho. Foram 5 imagens e
+  ~20 MB a menos.
+- **Imagem 2D sem compressão** (logo com transparência) do tamanho em que
+  aparece: `size_limit` no `.import` (ver `LIMITE_2D` em
+  `tools/preparar_godot3.py`). E nada de carregar uma imagem só para
+  saber se ela existe.
 - Medir no PC: `VisualServer.texture_debug_usage()`,
   `OS.get_static_memory_usage()`, `OS.get_dynamic_memory_usage()`.
+- **Medir NA PLACA, sem cabo**: a caixa-preta (`scripts/caixa_preta.gd` +
+  `memoria()` do PunchQuadros) grava a memória livre do Android, o
+  limite em que ele fecha o launcher e os avisos `onTrimMemory`; a
+  abertura seguinte mostra isso e os últimos erros do logcat do próprio
+  jogo (o Android deixa cada app ler o seu). Copie os dois para o jogo
+  novo desde a primeira build.
 
 ## 4. Desenho na Mali-450 (o que derrubou builds)
 

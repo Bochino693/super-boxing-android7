@@ -137,6 +137,17 @@ MIPMAPS_2D = {
 }
 
 
+## IMAGENS 2D GRANDES DEMAIS PARA O TAMANHO EM QUE APARECEM (sem compressão,
+## 4 bytes por pixel): o importador reduz ao lado maior indicado. O logo
+## de 1400 px aparece com 924; o "FIGHT!" com até 700; o "NEVER GIVE UP!"
+## com 600. Na TV Box de 1 GB são ~4 MB a menos, sem perder nitidez.
+LIMITE_2D = {
+    "assets/tema/logo.png": 960,
+    "assets/tema/fight.png": 720,
+    "assets/tema/never_give_up.png": 640,
+}
+
+
 def tem_alfa(arq):
     with Image.open(arq) as im:
         return im.mode in ("RGBA", "LA", "PA") or "transparency" in im.info
@@ -169,7 +180,8 @@ def opcoes_de_importacao():
             # memória. Foto sem transparência (o fundo) vai comprimida na
             # placa de vídeo: 6 MB viram 1 MB.
             sem_alfa = rel.endswith(".jpg")
-            texto = IMPORT_TEXTURA.format(caminho=rel, modo=2 if sem_alfa else 0, limite=0, normal=0,
+            texto = IMPORT_TEXTURA.format(caminho=rel, modo=2 if sem_alfa else 0,
+                                          limite=LIMITE_2D.get(rel, 0), normal=0,
                                           mipmaps="true" if fx else "false")
         Path(arq + ".import").write_text(texto, encoding="utf-8")
     for arq in sorted(glob.glob(str(RAIZ / "assets/**/*.wav"), recursive=True)):

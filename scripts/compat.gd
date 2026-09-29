@@ -121,19 +121,25 @@ static func contorno(alvo: CanvasItem, dados, pos: Vector2, texto: String, alinh
 	# O raio do contorno também em poucos valores: cada raio diferente é
 	# mais uma imagem de letras na memória.
 	var raio = _raio_padrao(espessura * 0.5 / escala)
+	# Nas letras grandes (96 e 128 px) só dois contornos, 8 e 16: cada
+	# contorno a mais é outra imagem de letras de 2 MB.
+	if real >= 96:
+		raio = 8 if raio <= 10 else 16
 	var x = _deslocamento(dados, texto, alinhamento, largura, tamanho)
 	_escrever(alvo, fonte(dados, real, raio), pos + Vector2(x, 0.0), escala, texto, Color(1, 1, 1, 0), cor)
 
 
 ## Os tamanhos padrão: até 32 px, de 2 em 2; até 64, de 8 em 8; depois
-## 80, 96 e 128. Acima de 128 o desenho é ampliado a partir de 128.
+## 96 e 128. Acima de 128 o desenho é ampliado a partir de 128.
+##
+## De 65 px para cima CADA fonte (e cada contorno) é uma imagem de letras
+## de 1024x1024 = 2 MB, mesmo com dez letras dentro. O 80 saiu (desenha
+## reduzido do 96, sem perder nitidez): eram três imagens de 2 MB a mais.
 static func tamanho_padrao(tamanho: int) -> int:
 	if tamanho <= 32:
 		return int(max(8, tamanho + tamanho % 2))
 	if tamanho <= 64:
 		return int(ceil(tamanho / 8.0) * 8)
-	if tamanho <= 80:
-		return 80
 	if tamanho <= 96:
 		return 96
 	return 128
