@@ -9,6 +9,7 @@ CAMERA_TVBOX.bat
 GERAR_APK_AGORA.bat
 INSTALAR_NA_TVBOX.bat
 LEIA-ME.txt
+RESTAURAR_LAUNCHER.bat
 TELA_CHEIA_TVBOX.bat
 android/plugins/PunchUsbSerial-release.aar
 android/plugins/PunchUsbSerial.gdap
@@ -260,6 +261,7 @@ assets/tema/never_give_up.png.import
 docs/ANDROID-PECAS-E-MUDANCAS.md
 docs/ANDROID-TESTE-DE-BANCADA.md
 docs/ARENA.md
+docs/CONVERTER_PARA_TVBOX_S905L.md
 docs/LIGACAO_ARDUINO_SENSOR_LM393.png
 docs/LIGACAO_ARDUINO_SENSOR_LM393.png.import
 docs/LIGACAO_MH_LM393_ANDROID_MENU.png

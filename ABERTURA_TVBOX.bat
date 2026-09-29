@@ -48,6 +48,10 @@ echo [3/3] Gravando o relatorio...
 "%ADB%" shell "dumpsys window displays | grep -i -E 'overscan|init=|cur=|app=' | head -10" >> "%SAIDA%" 2>&1
 "%ADB%" shell "cat /sys/class/display/mode /sys/class/graphics/fb0/window_axis /sys/class/graphics/fb0/free_scale_axis /sys/class/video/axis 2>&1" >> "%SAIDA%" 2>&1
 >> "%SAIDA%" echo.
+>> "%SAIDA%" echo ===== TELA INICIAL (quem e o launcher) E APPS DESLIGADOS
+"%ADB%" shell "cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.HOME 2>/dev/null | grep /" >> "%SAIDA%" 2>&1
+"%ADB%" shell pm list packages -d >> "%SAIDA%" 2>&1
+>> "%SAIDA%" echo.
 >> "%SAIDA%" echo ===== VERSAO INSTALADA
 "%ADB%" shell "dumpsys package %PKG% | grep -i -E 'versionName|versionCode'" >> "%SAIDA%" 2>&1
 >> "%SAIDA%" echo.
@@ -60,6 +64,9 @@ echo [3/3] Gravando o relatorio...
 >> "%SAIDA%" echo.
 >> "%SAIDA%" echo ===== ETAPAS DA ABERTURA, ERROS E FECHAMENTOS
 "%ADB%" logcat -d -v time -s godot:* AndroidRuntime:E ActivityManager:I lowmemorykiller:* libc:F DEBUG:* >> "%SAIDA%" 2>&1
+>> "%SAIDA%" echo.
+>> "%SAIDA%" echo ===== QUEM O ANDROID DERRUBOU POR FALTA DE MEMORIA
+"%ADB%" logcat -d -v time | findstr /i "lowmemorykiller Killing has.died crash FATAL" >> "%SAIDA%" 2>&1
 
 echo.
 echo PRONTO. O relatorio esta em:

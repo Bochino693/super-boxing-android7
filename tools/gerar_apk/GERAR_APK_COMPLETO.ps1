@@ -13,7 +13,7 @@ Set-Location $Raiz
 # (SUPERBOXING_BUILD=...): se a pasta tiver arquivos de builds diferentes
 # misturados (zip novo extraido por cima de um velho), a geracao para aqui,
 # antes de fazer qualquer coisa.
-$Build = 100
+$Build = 101
 $VersaoGodot = "3.6.2"
 $VersaoModelos = "3.6.2.stable"
 $UrlBase = "https://github.com/godotengine/godot/releases/download/3.6.2-stable"
@@ -87,7 +87,7 @@ $PastasDoPC = @('.git', '.import', 'build', 'android\build', $Guardadas,
     'tools\android_usb_plugin\.gradle', 'tools\android_usb_plugin\build', 'tools\android_usb_plugin\plugin\build')
 $PastasDoPC += $Aninhadas
 # Arquivos que os proprios .bat criam neste PC (nao vem no zip).
-$ArquivosDoPC = @('android\.build_version', 'tools\android_usb_plugin\local.properties', 'CAMERA_RELATORIO.txt', 'ABERTURA_RELATORIO.txt')
+$ArquivosDoPC = @('android\.build_version', 'tools\android_usb_plugin\local.properties', 'CAMERA_RELATORIO.txt', 'ABERTURA_RELATORIO.txt', 'launchers_desligados.txt')
 # As pastas do jogo (as que aparecem na lista da build): dentro delas,
 # qualquer arquivo fora da lista e sobra de versao antiga. Na raiz, so os
 # tipos de arquivo do jogo; o resto (seus arquivos) fica onde esta.

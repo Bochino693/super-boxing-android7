@@ -532,11 +532,15 @@ func _tela_vertical() -> Viewport:
 	var vp = Viewport.new()
 	vp.name = "Jogo"
 	vp.size = Vector2(int(TELA.x), int(TELA.y))
-	vp.disable_3d = false
+	# SÓ 2D: a arena (o único 3D do jogo) é uma janela própria, com o seu
+	# buffer. Aqui um buffer de profundidade de 1080x1920 era memória
+	# parada — e na TV Box de 1 GB cada MB a menos é o launcher do Android
+	# que não é derrubado.
+	vp.disable_3d = true
 	vp.transparent_bg = false
 	vp.render_target_update_mode = Viewport.UPDATE_ALWAYS
 	vp.handle_input_locally = false
-	vp.usage = Viewport.USAGE_3D
+	vp.usage = Viewport.USAGE_2D
 	caixa.add_child(vp)
 	add_child(caixa)
 	# Imagem pronta ampliada/girada com filtro (o `texture_filter` do 4).
