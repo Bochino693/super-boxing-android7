@@ -7726,12 +7726,14 @@ func _decodificar_foto(path: String) -> void:
 	var imagem = false
 	if Compat.existe(path):
 		var candidata = Image.new()
-		if candidata.load(ProjectSettings.globalize_path(path)) == OK and not candidata.empty():
-			# As fotos são miniaturas na tabela. Limita o upload e a memória
-			# sem alterar o arquivo original; o resize ocorre no worker.
+		if candidata.load(ProjectSettings.globalize_path(path)) == OK and not candidata.is_empty():
+			# As fotos são miniaturas na tabela (76 a 82 px na tela). Limita o
+			# upload e a memória sem alterar o arquivo original; o resize
+			# ocorre no worker. (`is_empty`, não `empty`: no Godot 3 a Image
+			# não tem `empty()` e a foto nunca chegava à tabela.)
 			var maior = int(max(candidata.get_width(), candidata.get_height()))
-			if maior > 384:
-				var fator = 384.0 / float(maior)
+			if maior > FOTO_NA_TABELA:
+				var fator = float(FOTO_NA_TABELA) / float(maior)
 				candidata.resize(int(max(1, int(candidata.get_width() * fator))),
 					int(max(1, int(candidata.get_height() * fator))), Image.INTERPOLATE_BILINEAR)
 			imagem = candidata
@@ -7740,12 +7742,32 @@ func _decodificar_foto(path: String) -> void:
 	_mutex_fotos.unlock()
 
 ## Põe uma foto na fila de decodificação, uma vez só por caminho.
+##
+## UMA FOTO POR VEZ. Antes cada foto ganhava a sua linha de processamento,
+## todas ao mesmo tempo: com o ranking cheio eram vinte fotos sendo abertas
+## juntas logo na abertura do jogo — na TV Box de 1 GB, um pico de memória
+## que derrubava o launcher do Android e o próprio jogo. Agora há uma fila
+## e uma linha só (`_andar_fila_de_fotos`, chamada todo quadro).
+const FOTO_NA_TABELA = 128
 var _fotos_em_andamento: Dictionary = {}
+var _fila_de_fotos: Array = []
+var _linha_da_foto: Thread = null
 func _agendar_decodificacao(path: String) -> void:
 	if path.empty() or _photo_cache.has(path) or _fotos_em_andamento.has(path):
 		return
 	_fotos_em_andamento[path] = true
-	Compat.tarefa(self, "_decodificar_foto", [path])
+	_fila_de_fotos.append(path)
+
+func _andar_fila_de_fotos() -> void:
+	if _linha_da_foto != null:
+		if not Compat.terminou(_linha_da_foto):
+			return
+		Compat.esperar(_linha_da_foto)
+		_linha_da_foto = null
+	if _fila_de_fotos.empty():
+		return
+	var path = str(_fila_de_fotos.pop_front())
+	_linha_da_foto = Compat.tarefa(self, "_decodificar_foto", [path])
 
 ## Chamada assim que uma pontuação entra no ranking: põe as fotos que
 ## ainda faltam no cache a caminho, com vários segundos de folga antes
@@ -7761,6 +7783,7 @@ func _prewarm_fotos_do_ranking() -> void:
 ## tentativa depois -- `_photo_texture` reagenda sozinho quando alguém
 ## pedir essa foto de novo.
 func _colher_fotos_decodificadas() -> void:
+	_andar_fila_de_fotos()
 	_mutex_fotos.lock()
 	if _fotos_decodificadas.empty():
 		_mutex_fotos.unlock()

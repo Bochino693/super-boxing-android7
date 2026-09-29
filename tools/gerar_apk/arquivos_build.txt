@@ -9,7 +9,6 @@ CAMERA_TVBOX.bat
 GERAR_APK_AGORA.bat
 INSTALAR_NA_TVBOX.bat
 LEIA-ME.txt
-RESTAURAR_LAUNCHER.bat
 TELA_CHEIA_TVBOX.bat
 android/plugins/PunchUsbSerial-release.aar
 android/plugins/PunchUsbSerial.gdap

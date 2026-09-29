@@ -1,11 +1,11 @@
 @echo off
 setlocal
-rem SUPERBOXING_BUILD=101
+rem SUPERBOXING_BUILD=102
 title Super Boxing S905L - Gerar APK Android
 cd /d "%~dp0"
 
 echo ============================================================
-echo   SUPER BOXING - BUILD 101 - TV BOX S905L (ANDROID 7.1) - GODOT 3.6
+echo   SUPER BOXING - BUILD 102 - TV BOX S905L (ANDROID 7.1) - GODOT 3.6
 echo   GERA O APK COMPLETO (PLUGIN USB + JOGO)
 echo ============================================================
 echo.

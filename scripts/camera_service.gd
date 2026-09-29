@@ -47,7 +47,9 @@ extends Node
 const Lembranca = preload("res://scripts/lembranca_usb.gd")
 
 const PHOTO_DIR = "user://ranking_photos"
-const THUMB_SIZE = 640
+## A foto do ranking é gravada em 320 (aparece com ~80 px na tabela): menos
+## disco, e abrir a foto na TV Box pesa um quarto do que pesava em 640.
+const THUMB_SIZE = 320
 const VIDA_MAXIMA_MS = 10000
 const INTERVALO_AMOSTRA_MS = 500
 const INTERVALO_OBTURADOR_MS = 66
@@ -136,7 +138,9 @@ func ao_voltar() -> void:
 ## próxima abertura do jogo mostra qual foi.
 ## Depois da animação de abertura inteira (~5,5 s) e do Arduino (6 s):
 ## a luva da entrada anda sem nada de câmera por baixo.
-const DESPERTAR_ATRASO_MS = 7000
+## Na S905L a câmera acorda 15 s depois: longe do pico de memória do
+## carregamento e da abertura (a câmera do Android também gasta memória).
+const DESPERTAR_ATRASO_MS = 15000
 const DESPERTAR_PASSO_MS = 300
 var _etapa_despertar = -1
 var _proxima_etapa_ms = 0
@@ -491,13 +495,23 @@ func _vigiar_webcam_android(agora: int) -> void:
 		# guarda a falha e não tenta de novo sozinho. Soltar zera a falha;
 		# a próxima volta abre do zero. Sem vídeo por muito tempo, mesmo
 		# sem falha dita, faz o mesmo.
-		var recusou = _abertura_falhou(situacao)
+		var recusou = _abertura_falhou(situacao) and "SISTEMA" in situacao.to_upper()
 		var demorou = _sem_video_desde_ms > 0 and agora - _sem_video_desde_ms > SEM_VIDEO_REABRIR_MS
-		if recusou or demorou:
-			_registro("reabrindo do zero (%s)" % situacao)
+		# REABRIR É RARO E SÓ NA TELA DE ESPERA. Fechar e abrir a webcam em
+		# sequência mexe no driver USB (código nativo) e na memória do
+		# sistema; na build 98 isso acontecia a cada poucos segundos e a TV
+		# Box derrubava o launcher e o jogo. Agora: só quando a câmera do
+		# SISTEMA recusou (a UVC direta nunca entra neste ciclo), no máximo
+		# a cada 30 s, no máximo 3 vezes por abertura do jogo.
+		var pode = janelas_liberadas and _reaberturas < REABERTURAS_MAXIMAS \
+			and agora - _reaberta_em_ms >= SEM_VIDEO_REABRIR_MS
+		if (recusou or demorou) and pode:
+			_reaberturas += 1
+			_reaberta_em_ms = agora
+			_registro("reabrindo do zero, %d de %d (%s)" % [_reaberturas, REABERTURAS_MAXIMAS, situacao])
 			_android_bridge.call("stopUvcCamera")
 			_sem_video_desde_ms = agora
-			_uvc_proximo_religar_ms = agora + 1500
+			_uvc_proximo_religar_ms = agora + 3000
 			return
 		if _sem_video_desde_ms == 0:
 			_sem_video_desde_ms = agora
@@ -508,12 +522,12 @@ func _vigiar_webcam_android(agora: int) -> void:
 		return
 	if _uvc_parada:
 		_uvc_parada = false
-		_uvc_proximo_religar_ms = agora + 6000
+		_uvc_proximo_religar_ms = agora + 15000
 		_android_bridge.call("startUvcCamera")
 		_requisitar_webcam_usb_android(true)
 	else:
 		_uvc_parada = true
-		_uvc_proximo_religar_ms = agora + 1500
+		_uvc_proximo_religar_ms = agora + 3000
 		_android_bridge.call("stopUvcCamera")
 		if _uvc_teve_video:
 			status = "CÂMERA DESCONECTADA — RECONECTE A WEBCAM"
@@ -521,7 +535,10 @@ func _vigiar_webcam_android(agora: int) -> void:
 
 ## Sem vídeo desde quando (0 = ainda não começou a esperar).
 var _sem_video_desde_ms = 0
-const SEM_VIDEO_REABRIR_MS = 20000
+const SEM_VIDEO_REABRIR_MS = 30000
+const REABERTURAS_MAXIMAS = 3
+var _reaberturas = 0
+var _reaberta_em_ms = 0
 ## Sem nenhuma câmera do sistema por este tempo, a webcam só existe como
 ## aparelho USB: aí sim a janela USB dela pode aparecer.
 const ESPERA_ANTES_DA_JANELA_USB_MS = 20000
@@ -970,6 +987,8 @@ func procurar_de_novo() -> void:
 		_uvc_teve_video = false
 		_uvc_proximo_religar_ms = 0
 		_sem_video_desde_ms = 0
+		_reaberturas = 0
+		_reaberta_em_ms = 0
 		_permissoes_conferidas_ms = 0
 	_descobrir_cameras(true)
 

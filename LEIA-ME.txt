@@ -1,4 +1,4 @@
-SUPER BOXING - VERSAO TV BOX S905L (ANDROID 7.1) - BUILD 101
+SUPER BOXING - VERSAO TV BOX S905L (ANDROID 7.1) - BUILD 102
 ===========================================================
 
 PARA QUAL MAQUINA E ESTA VERSAO
@@ -26,22 +26,28 @@ O que muda por dentro (voce nao ve na tela):
 
 O APK tem outro nome de pacote (com.lazersport.superboxing), entao pode
 ficar instalado junto com o Punch Challenge das outras maquinas. Se a
-build 92 a 100 estiver instalada, a 101 instala por cima.
+build 92 a 101 estiver instalada, a 102 instala por cima.
 
-O QUE A BUILD 101 CORRIGE
+O QUE A BUILD 102 CORRIGE
 -------------------------
-- "LongLauncher parou" POR CIMA DO JOGO: o LongLauncher e o launcher de
-  fabrica da TV Box. Com 1 GB, quando a camera abre o Android o derruba
-  por falta de memoria e o aviso trava a abertura do jogo. Agora o
-  INSTALAR_NA_TVBOX.bat deixa a TV Box DEDICADA: o jogo vira a tela
-  inicial (abre sozinho ao ligar) e o launcher de fabrica e DESLIGADO
-  (nao apagado) - nao roda, nao quebra, e a memoria dele fica para o jogo.
-  Para voltar ao normal: RESTAURAR_LAUNCHER.bat.
-  >>> INSTALE PELO INSTALAR_NA_TVBOX.bat (com a TV Box no ADB). <<<
-- Menos memoria: a tela vertical do jogo nao reserva mais um buffer 3D de
-  1080x1920 (o 3D da arena tem a janela propria).
-- O ABERTURA_TVBOX.bat agora mostra tambem quem e a tela inicial e quem o
-  Android derrubou por falta de memoria.
+- A 98 A 101 CAIAM (o jogo e o LongLauncher, o launcher da TV Box) logo
+  depois do carregamento. As causas encontradas, todas desde a 98, quando
+  a camera passou a funcionar:
+  * a CAMERA era fechada e reaberta a cada poucos segundos quando falhava
+    (mexendo no driver USB da webcam o tempo todo). Agora so reabre na
+    tela de espera, no maximo a cada 30 s e no maximo 3 vezes, e so
+    quando e a camera do sistema que recusou. Ela tambem acorda 15 s
+    depois da abertura, longe do pico de memoria do carregamento;
+  * as FOTOS DO RANKING eram abertas todas ao mesmo tempo na abertura do
+    jogo (uma linha de processamento por foto, em 640 px). Agora sao
+    abertas uma por vez, em 128 px (o tamanho da tabela), e as novas sao
+    gravadas em 320 px. A leitura delas tambem tinha o mesmo erro de
+    comando do Godot 4 que a camera tinha - corrigido.
+- Menos memoria: a tela vertical do jogo nao reserva mais um buffer 3D
+  de 1080x1920 (o 3D da arena tem a janela propria).
+- Se ainda cair: ao abrir de novo, a faixa amarela "A ULTIMA ABERTURA
+  PAROU EM: ..." (embaixo, na tela de carregamento e na tela de espera)
+  diz a etapa exata. Tire uma foto dela e mande.
 - docs\CONVERTER_PARA_TVBOX_S905L.md: o passo a passo para converter os
   proximos jogos para esta placa.
 
@@ -122,7 +128,7 @@ O QUE A BUILD 97 CORRIGIU
 ANTES DE INSTALAR NAS 80: TESTE EM UMA
 --------------------------------------
 Na tela de carregamento aparece, no canto de baixo,
-"BUILD 101 - S905L - Android 7.1". Jogue uma partida inteira, abra a
+"BUILD 102 - S905L - Android 7.1". Jogue uma partida inteira, abra a
 Central Tecnica e confira camera e Arduino antes de passar para as outras.
 
 GERAR O APK
@@ -135,7 +141,7 @@ GERAR O APK
    nao sao do jogo sao ignoradas pelo Godot. Se faltar arquivo, ele avisa.
 2. Clique duas vezes em  GERAR_APK_AGORA.bat
 3. Espere. A janela mostra cada passo e NAO fecha sozinha: no fim aparece
-   "APK GERADO E CONFERIDO - build 101, sem erros" (ou FALHA com o motivo).
+   "APK GERADO E CONFERIDO - build 102, sem erros" (ou FALHA com o motivo).
 4. O APK fica em:  build\android\SuperBoxing.apk
 
 Precisa no PC:
@@ -161,13 +167,10 @@ de novo uma vez (ou use o GERAR_APK_AGORA.bat da pasta do zip).
 
 INSTALAR NA TV BOX
 ------------------
-Pela USB/rede com ADB: clique duas vezes em  INSTALAR_NA_TVBOX.bat
-(ou INSTALAR_NA_TVBOX.bat 192.168.0.50 pela rede). Ele instala por cima,
-sem apagar ranking e ajustes, libera a camera e deixa a TV Box dedicada ao
-jogo: o jogo vira a tela inicial e o launcher de fabrica e desligado (a
-lista fica em launchers_desligados.txt; RESTAURAR_LAUNCHER.bat desfaz).
-Copiar o APK para a TV Box e instalar por la tambem funciona, mas ai o
-launcher de fabrica continua ligado e pode voltar o "LongLauncher parou".
+Copie build\android\SuperBoxing.apk para o pendrive, espete na TV Box e
+instale pelo gerenciador de arquivos dela. Por cima da versao anterior:
+ranking, fotos, ajustes e permissoes ficam guardados.
+(Quem tiver o ADB tambem pode usar o INSTALAR_NA_TVBOX.bat.)
 
 PRIMEIRA VEZ NA TV BOX
 ----------------------

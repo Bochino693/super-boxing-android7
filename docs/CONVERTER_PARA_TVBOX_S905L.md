@@ -1,6 +1,6 @@
 # Como converter um jogo para a TV Box S905L (Android 7.1)
 
-Guia tirado da conversão do Super Boxing (builds 93 a 101). Tudo aqui
+Guia tirado da conversão do Super Boxing (builds 93 a 102). Tudo aqui
 aconteceu de verdade nesta placa; siga na ordem.
 
 ## 1. A placa
@@ -47,6 +47,12 @@ ou o próprio jogo cai na tela de carregamento. Orçamento que rodou:
 - Texturas 3D em no máximo 1024.
 - `Viewport` que só desenha 2D: `usage = USAGE_2D`, `disable_3d = true`
   (senão reserva um buffer de profundidade do tamanho da tela).
+- **Nada em paralelo na abertura.** Fotos, imagens e sons abertos um por
+  vez (uma fila, uma linha de processamento). Vinte fotos abertas juntas
+  derrubaram o jogo.
+- **Câmera**: não fechar e reabrir a webcam em sequência (driver USB
+  nativo + memória do sistema). Reabrir raramente (≥ 30 s, no máximo 3
+  vezes) e só na tela de espera; acordar a câmera depois da abertura.
 - Medir no PC: `VisualServer.texture_debug_usage()`,
   `OS.get_static_memory_usage()`, `OS.get_dynamic_memory_usage()`.
 
@@ -85,9 +91,9 @@ ou o próprio jogo cai na tela de carregamento. Orçamento que rodou:
     abertura seguinte, **esperar o Android devolver a permissão** antes de
     chamar qualquer coisa que abra janela.
   - Nunca pedir a janela USB da webcam quando ela é câmera do sistema.
-- **Máquina dedicada** (`INSTALAR_NA_TVBOX.bat`): o jogo vira a tela
-  inicial (`pm set-home-activity`) e o launcher de fábrica é desligado
-  (`pm disable-user`). Volta com `RESTAURAR_LAUNCHER.bat`.
+- **Instalação sempre por pendrive** (sem ADB): o jogo tem de rodar do
+  jeito que é instalado, com o launcher de fábrica ligado. Nada de
+  depender de comando no aparelho.
 
 ## 6. Gerar o APK
 
@@ -105,5 +111,7 @@ regenerar `arquivos_build.txt` (`git ls-files`).
 3. **As mesmas duas com `force_software_skinning=true`** (várias vezes).
 4. Memória (§3) comparada com a última build que rodou na placa.
 5. Imagem da tela na orientação da TV (1920×1080 girado).
-6. Na placa: `ABERTURA_TVBOX.bat` grava etapas, memória, quem o Android
-   derrubou e o erro exato — é o que se manda quando algo falha.
+6. Na placa: se cair, a abertura seguinte mostra a faixa "A ÚLTIMA
+   ABERTURA PAROU EM: ..." (o `Diario` grava cada etapa até 90 s depois
+   da abertura). Uma foto dela diz onde parou. Com ADB,
+   `ABERTURA_TVBOX.bat` traz o erro exato do Android.
