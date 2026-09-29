@@ -266,7 +266,7 @@ func montar() -> void:
 		var mat = _pele.mesh.surface_get_material(0) as SpatialMaterial
 		if mat != null:
 			_mat_pele = mat.duplicate() as SpatialMaterial
-			_definir(_mat_pele, 0.50, 0.55)
+			_definir(_mat_pele, 0.50, 0.22)
 			# Pele suada: menos áspera e com o relevo mais marcado — é o
 			# brilho nos músculos que desenha o corpo de longe.
 			_mat_pele.normal_scale = 1.15
@@ -301,7 +301,7 @@ func montar() -> void:
 				var luva = mi.name.begins_with("Luva")
 				# Couro da luva: menos recorte e menos espelho — com muito
 				# dos dois ela estourava num vermelho chapado.
-				_definir(novo, max(base.roughness, 0.42) if luva else base.roughness, 0.18 if luva else 0.45, casca)
+				_definir(novo, max(base.roughness, 0.42) if luva else base.roughness, 0.10 if luva else 0.18, casca)
 				if luva:
 					# o vermelho vivo da cor de vértice estourava no lado
 					# iluminado: um pouco mais escuro, a forma aparece.
@@ -492,6 +492,10 @@ static func _definir(m: SpatialMaterial, aspereza: float, recorte: float, dois_l
 	if dois_lados:
 		m.params_cull_mode = SpatialMaterial.CULL_DISABLED
 	m.roughness = aspereza
+	# O RECORTE FICOU DISCRETO: na Mali-450 a borda da silhueta com recorte
+	# forte virava um pontilhado branco em volta do cabelo, dos ombros e das
+	# luvas (visto na TV Box). Um pouco de recorte ainda descola o corpo do
+	# fundo.
 	m.rim_enabled = true
 	m.rim = recorte
 	m.rim_tint = 0.55

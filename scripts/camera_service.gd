@@ -80,6 +80,7 @@ var _assinatura_do_quadro = 0
 var _ultima_mudanca_ms = 0
 var _ultima_quantidade_feeds = -1
 var _android_bridge = null
+var _ponte_quadros = null
 var _proxima_permissao_usb_ms = 0
 var _uvc_texture: ImageTexture = null
 ## A WEBCAM ENTRA E SAI A QUALQUER HORA, COMO O ARDUINO. Sem quadro por
@@ -345,6 +346,8 @@ func _motivo_android() -> String:
 	if _caca == Caca.SERVIDOR:
 		var n = CameraServer.feeds().size()
 		return "CAMERA2: %s" % ("NENHUMA CÂMERA PUBLICADA" if n == 0 else "%d CÂMERA(S), ABRINDO…" % n)
+	if _android_bridge != null and _ponte_quadros == null:
+		return "FALTA O PLUGIN PunchQuadros NO APK — GERE O APK DE NOVO"
 	if _android_bridge != null and _ponte_tem("getUvcStatus"):
 		return "PLUGIN: " + str(_android_bridge.call("getUvcStatus"))
 	return "NENHUMA CÂMERA USB ENCONTRADA"
@@ -367,6 +370,14 @@ func _preparar_android_usb() -> void:
 	# sempre no instante em que a câmera acordava. Paisagem e tela cheia
 	# já vêm do próprio APK (export_presets).
 	_android_bridge = Engine.get_singleton("PunchUsbSerial")
+	# A PONTE DOS QUADROS (Godot 3): o `pollUvcFrame` do PunchUsbSerial
+	# devolve byte[], que o Godot 3.6 não converte — o quadro chegava vazio
+	# e a câmera "transmitia" (Central: "QUADROS: aceitos 964") sem nunca
+	# aparecer no jogo. O PunchQuadros entrega o mesmo quadro dentro de um
+	# Dictionary, que o Godot 3 converte (ver `tools/android_quadros_plugin`).
+	if Engine.has_singleton("PunchQuadros"):
+		_ponte_quadros = Engine.get_singleton("PunchQuadros")
+	_registro("ponte dos quadros: %s" % ("PunchQuadros" if _ponte_quadros != null else "AUSENTE"))
 
 ## QUEM ABRE A CÂMERA NO ANDROID — um só, nunca os dois.
 ##
@@ -582,6 +593,8 @@ func _iniciar_uvc_android() -> void:
 	if _ponte_tem("startUvcCamera"):
 		_android_bridge.call("startUvcCamera")
 
+var _erro_da_ponte_avisado = false
+
 func _amostrar_uvc_android(agora: int) -> bool:
 	if OS.get_name() != "Android" or _android_bridge == null \
 			or not _ponte_tem("pollUvcFrame"):
@@ -589,7 +602,22 @@ func _amostrar_uvc_android(agora: int) -> bool:
 	if agora < _proxima_leitura_uvc_ms:
 		return _uvc_texture != null and ao_vivo()
 	_proxima_leitura_uvc_ms = agora + intervalo_uvc_ms
-	var dados_variant = _android_bridge.call("pollUvcFrame")
+	var dados_variant = null
+	var largura = 0
+	var altura = 0
+	if _ponte_quadros != null:
+		var q = _ponte_quadros.call("pollQuadro")
+		if q is Dictionary and q.has("dados"):
+			dados_variant = q["dados"]
+			largura = int(q.get("largura", 0))
+			altura = int(q.get("altura", 0))
+		else:
+			dados_variant = PoolByteArray()
+			if q is Dictionary and q.has("erro") and not _erro_da_ponte_avisado:
+				_erro_da_ponte_avisado = true
+				_registro("ponte dos quadros: %s" % str(q["erro"]))
+	else:
+		dados_variant = _android_bridge.call("pollUvcFrame")
 	if not dados_variant is PoolByteArray:
 		return _uvc_texture != null and ao_vivo()
 	var dados: PoolByteArray = dados_variant
@@ -597,8 +625,9 @@ func _amostrar_uvc_android(agora: int) -> bool:
 		if _ponte_tem("getUvcStatus") and _feed == null:
 			status = str(_android_bridge.call("getUvcStatus"))
 		return _uvc_texture != null and ao_vivo()
-	var largura = int(_android_bridge.call("getUvcFrameWidth"))
-	var altura = int(_android_bridge.call("getUvcFrameHeight"))
+	if _ponte_quadros == null:
+		largura = int(_android_bridge.call("getUvcFrameWidth"))
+		altura = int(_android_bridge.call("getUvcFrameHeight"))
 	if largura <= 0 or altura <= 0 or dados.size() != largura * altura * 4:
 		return false
 	_uvc_quadro_ms = agora

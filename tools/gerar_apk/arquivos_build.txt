@@ -10,6 +10,8 @@ GERAR_APK_AGORA.bat
 INSTALAR_NA_TVBOX.bat
 LEIA-ME.txt
 TELA_CHEIA_TVBOX.bat
+android/plugins/PunchQuadros-release.aar
+android/plugins/PunchQuadros.gdap
 android/plugins/PunchUsbSerial-release.aar
 android/plugins/PunchUsbSerial.gdap
 arduino/punch_sensor/punch_sensor.ino
@@ -30,6 +32,8 @@ assets/arena/torcida_baixo.png.import
 assets/arena/torcida_cima.png
 assets/arena/torcida_cima.png.import
 assets/audio/LICENCAS.md
+assets/audio/arcade/arena_ambiente.wav
+assets/audio/arcade/arena_ambiente.wav.import
 assets/audio/arcade/arena_corpo.wav
 assets/audio/arcade/arena_corpo.wav.import
 assets/audio/arcade/arena_publico.wav
@@ -132,6 +136,8 @@ assets/audio/count.wav
 assets/audio/count.wav.import
 assets/audio/credit.wav
 assets/audio/credit.wav.import
+assets/audio/fontes/.gdignore
+assets/audio/fontes/torcida_vitoria.mp3
 assets/audio/go.wav
 assets/audio/go.wav.import
 assets/audio/hit.wav
@@ -328,6 +334,9 @@ shaders/escudo_vivo.shader
 shaders/fundo_vivo.shader
 shaders/lutador_leve.shader
 shaders/pele.shader
+tools/ajustar_som_tv.py
+tools/android_quadros_plugin/PunchQuadros.java
+tools/android_quadros_plugin/montar_aar.py
 tools/android_usb_plugin/.gdignore
 tools/android_usb_plugin/build.gradle.kts
 tools/android_usb_plugin/gradle.properties
@@ -357,3 +366,5 @@ tools/gerar_tema.py
 tools/gerar_torcida.py
 tools/pintura.py
 tools/preparar_godot3.py
+tools/som_tv_feito.json
+tools/torcida_real.py

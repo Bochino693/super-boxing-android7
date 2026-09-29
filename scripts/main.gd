@@ -2248,6 +2248,9 @@ func _iniciar_rodada() -> void:
 	clarao = 1.0
 	tremor = 14.0
 	sons.play("start")
+	# O GINÁSIO ENTRA COM O START e fica por baixo da luta inteira, em laço.
+	# A volta para a abertura (`sons.attract`) o desliga.
+	sons.play("arena_ambiente", -9.0)
 	sons.music(-24.0)
 	moldura.set_estado(LedFrame.CONTAGEM)
 	fundo.matiz = Color(0, 0, 0, 0)

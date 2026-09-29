@@ -1,4 +1,4 @@
-SUPER BOXING - VERSAO TV BOX S905L (ANDROID 7.1) - BUILD 102
+SUPER BOXING - VERSAO TV BOX S905L (ANDROID 7.1) - BUILD 103
 ===========================================================
 
 PARA QUAL MAQUINA E ESTA VERSAO
@@ -26,10 +26,32 @@ O que muda por dentro (voce nao ve na tela):
 
 O APK tem outro nome de pacote (com.lazersport.superboxing), entao pode
 ficar instalado junto com o Punch Challenge das outras maquinas. Se a
-build 92 a 101 estiver instalada, a 102 instala por cima.
+build 92 a 102 estiver instalada, a 103 instala por cima.
 
-O QUE A BUILD 102 CORRIGE
+O QUE A BUILD 103 CORRIGE
 -------------------------
+- CAMERA: a webcam transmitia (a Central mostrava "QUADROS: aceitos 964")
+  mas o jogo ficava em "SEM IMAGEM". O Godot 3 nao recebe o quadro no
+  formato em que o plugin USB o entrega; um plugin novo e pequeno
+  (android\plugins\PunchQuadros) faz a ponte. O GERAR_APK confere que ele
+  entrou no APK.
+- MUSICA E START SEM SOM: nao estavam mudos - eram quase so GRAVE, e
+  alto-falante de TV nao toca grave. A musica da abertura, o START, o
+  soco, o GO, a queda e as vozes de nivel foram tratados para TV (o grave
+  vira harmonicos que a TV toca; tools\ajustar_som_tv.py), e a musica
+  subiu 6 dB.
+- TORCIDA DA VITORIA: agora e a gravacao enviada (sem os gritinhos). A
+  mesma gravacao faz as torcidas do ranking e o incentivo durante a luta.
+- GINASIO DURANTE A LUTA: um som ambiente de torcida em laco toca do
+  START ate o fim da rodada.
+- FAIXAS VERTICAIS NA TORCIDA: as imagens da torcida (com transparencia)
+  eram rebaixadas para 16 tons por canal na placa de video; agora vao sem
+  compressao, e o degrade dos refletores nao vira mais faixas.
+- CONTORNO PONTILHADO DO LUTADOR: o recorte de luz na borda do cabelo,
+  ombros e luvas virava um pontilhado branco na TV Box; ficou discreto.
+
+O QUE A BUILD 102 TROUXE
+------------------------
 - A 98 A 101 CAIAM (o jogo e o LongLauncher, o launcher da TV Box) logo
   depois do carregamento. As causas encontradas, todas desde a 98, quando
   a camera passou a funcionar:
@@ -128,7 +150,7 @@ O QUE A BUILD 97 CORRIGIU
 ANTES DE INSTALAR NAS 80: TESTE EM UMA
 --------------------------------------
 Na tela de carregamento aparece, no canto de baixo,
-"BUILD 102 - S905L - Android 7.1". Jogue uma partida inteira, abra a
+"BUILD 103 - S905L - Android 7.1". Jogue uma partida inteira, abra a
 Central Tecnica e confira camera e Arduino antes de passar para as outras.
 
 GERAR O APK
@@ -141,7 +163,7 @@ GERAR O APK
    nao sao do jogo sao ignoradas pelo Godot. Se faltar arquivo, ele avisa.
 2. Clique duas vezes em  GERAR_APK_AGORA.bat
 3. Espere. A janela mostra cada passo e NAO fecha sozinha: no fim aparece
-   "APK GERADO E CONFERIDO - build 102, sem erros" (ou FALHA com o motivo).
+   "APK GERADO E CONFERIDO - build 103, sem erros" (ou FALHA com o motivo).
 4. O APK fica em:  build\android\SuperBoxing.apk
 
 Precisa no PC:

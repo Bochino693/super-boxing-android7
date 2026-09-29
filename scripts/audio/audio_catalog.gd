@@ -39,8 +39,11 @@ const EXTRA = [
 	"torcida_incentivo",
 	# Vozes especiais da rodada de dois golpes.
 	"not_supress", "good_player",
+	# O GINÁSIO CHEIO, em laço, por baixo da luta inteira (a gravação real
+	# de torcida — ver `tools/torcida_real.py`).
+	"arena_ambiente",
 ]
-const LOOPS = ["music", "charge", "score_loop"]
+const LOOPS = ["music", "charge", "score_loop", "arena_ambiente"]
 const ROOT = "res://assets/audio/arcade/"
 
 ## O arquivo de alguns sons tem outro nome: o do erro chama-se `aviso.wav`,

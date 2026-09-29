@@ -1,6 +1,6 @@
 # Como converter um jogo para a TV Box S905L (Android 7.1)
 
-Guia tirado da conversão do Super Boxing (builds 93 a 102). Tudo aqui
+Guia tirado da conversão do Super Boxing (builds 93 a 103). Tudo aqui
 aconteceu de verdade nesta placa; siga na ordem.
 
 ## 1. A placa
@@ -28,6 +28,13 @@ aconteceu de verdade nesta placa; siga na ordem.
 - `CameraServer` **não existe no Android no Godot 3** (só no 4.4+): câmera
   só pelo plugin Android.
 - Plugin Android no formato v1 (`.gdap` + `.aar`, `org.godotengine.plugin.v1`).
+- **Plugin que devolve `byte[]` não funciona no Godot 3.6**: o `JNISingleton`
+  não converte esse retorno e o GDScript recebe vazio (a câmera
+  "transmitia" e o jogo ficava sem imagem). Devolva um
+  `org.godotengine.godot.Dictionary` com o `byte[]` dentro — isso o Godot 3
+  converte para `PoolByteArray`. Tipos de retorno que funcionam: `void`,
+  `boolean`, `int`, `float`, `String`, `int[]`, `float[]`, `String[]`,
+  `Dictionary`. Ver `tools/android_quadros_plugin`.
 
 ## 3. Memória (1 GB)
 
@@ -76,7 +83,15 @@ ou o próprio jogo cai na tela de carregamento. Orçamento que rodou:
   e ligue o novo por uma chave (`Perfil.VISUAL_NOVO`).
 - Arena 3D numa janela menor (`ARENA_ESCALA = 0.55`) ampliada com filtro.
 
-## 5. Android: tela, permissões, máquina dedicada
+## 5. Som: alto-falante de TV
+
+Alto-falante de TV quase não toca abaixo de ~150-200 Hz. Som que é quase só
+grave (trilha eletrônica, "boom" de START, soco) **some na TV** — no fone
+parece perfeito. Meça a fração de energia acima de 250 Hz de cada WAV; abaixo
+de ~40%, trate com `tools/ajustar_som_tv.py` (o grave vira harmônicos que a TV
+toca). Torcida e voz já são médios e aparecem.
+
+## 6. Android: tela, permissões, máquina dedicada
 
 - **Tela cheia de verdade** (sem borda preta): a `GodotApp.java` escrita
   pelo `GERAR_APK_COMPLETO.ps1` usa `FLAG_LAYOUT_IN_OVERSCAN`,
@@ -95,7 +110,7 @@ ou o próprio jogo cai na tela de carregamento. Orçamento que rodou:
   jeito que é instalado, com o launcher de fábrica ligado. Nada de
   depender de comando no aparelho.
 
-## 6. Gerar o APK
+## 7. Gerar o APK
 
 `GERAR_APK_AGORA.bat` → `tools/gerar_apk/GERAR_APK_COMPLETO.ps1`: baixa o
 Godot 3.6.2 e os modelos, confere a pasta contra `arquivos_build.txt`
@@ -104,7 +119,7 @@ e confere o APK. Toda build nova: subir o carimbo em `versao.gd`,
 `export_presets.cfg`, `$Build` do `.ps1` e `SUPERBOXING_BUILD` dos `.bat`, e
 regenerar `arquivos_build.txt` (`git ls-files`).
 
-## 7. Testar antes de mandar para a placa
+## 8. Testar antes de mandar para a placa
 
 1. Sintaxe de todos os scripts (Godot 3.6.2 sem janela).
 2. Abertura inteira pelo carregador (até "PRONTO") e uma partida inteira.

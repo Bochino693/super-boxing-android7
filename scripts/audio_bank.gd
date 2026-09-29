@@ -83,7 +83,15 @@ func _montar_mesa() -> void:
 		AudioServer.set_bus_name(i, nome)
 		AudioServer.set_bus_send(i, "Master")
 
+## A TRILHA UM POUCO ACIMA DOS NÍVEIS ANTIGOS: eles foram acertados em
+## caixa de som, e na TV Box o som sai pelo alto-falante da TV — a música
+## ficava 18 vezes mais baixa que a torcida e sumia (ver também
+## `tools/ajustar_som_tv.py`).
+const MUSICA_REFORCO_DB = 6.0
+
 func music(level: float) -> void:
+	if level > -79.0:
+		level = min(level + MUSICA_REFORCO_DB, 0.0)
 	music_target = level
 	var player: AudioStreamPlayer = _players.get("music")
 	if player != null and level > -79.0 and not player.playing:

@@ -137,6 +137,11 @@ MIPMAPS_2D = {
 }
 
 
+def tem_alfa(arq):
+    with Image.open(arq) as im:
+        return im.mode in ("RGBA", "LA", "PA") or "transparency" in im.info
+
+
 def opcoes_de_importacao():
     for arq in sorted(glob.glob(str(RAIZ / "assets/**/*.png"), recursive=True)
                       + glob.glob(str(RAIZ / "assets/**/*.jpg"), recursive=True)
@@ -150,7 +155,12 @@ def opcoes_de_importacao():
             # Tudo em no máximo 1024: a arena é desenhada numa janela de
             # ~550x780, e a torcida em 2048 só gastava memória.
             limite = 1024
-            texto = IMPORT_TEXTURA.format(caminho=rel, modo=2, mipmaps="true", limite=limite, normal=0)
+            # COM TRANSPARÊNCIA (torcida, fachos, brilho): SEM compressão. O
+            # ETC1 da Mali-450 não tem alfa e o Godot 3 então rebaixa a
+            # imagem para 16 tons por canal: o degradê dos refletores virava
+            # degraus — as faixas verticais no corpo da torcida.
+            modo = 0 if tem_alfa(arq) else 2
+            texto = IMPORT_TEXTURA.format(caminho=rel, modo=modo, mipmaps="true", limite=limite, normal=0)
         else:
             # 2D SEM MIPMAPS (menos as partículas, que já têm lados em
             # potência de 2): no OpenGL ES 2.0 da Mali-450 o Godot 3 estica

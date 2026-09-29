@@ -13,7 +13,7 @@ Set-Location $Raiz
 # (SUPERBOXING_BUILD=...): se a pasta tiver arquivos de builds diferentes
 # misturados (zip novo extraido por cima de um velho), a geracao para aqui,
 # antes de fazer qualquer coisa.
-$Build = 102
+$Build = 103
 $VersaoGodot = "3.6.2"
 $VersaoModelos = "3.6.2.stable"
 $UrlBase = "https://github.com/godotengine/godot/releases/download/3.6.2-stable"
@@ -161,6 +161,16 @@ if ($Misturados.Count -gt 0) {
 $PluginGdap = Join-Path $Raiz "android\plugins\PunchUsbSerial.gdap"
 if (-not (Test-Path -LiteralPath $PluginPronto) -or -not (Test-Path -LiteralPath $PluginGdap)) {
     Parar "Plugin USB nao encontrado em android\plugins (PunchUsbSerial-release.aar e .gdap). Extraia o zip de novo."
+}
+# A ponte dos quadros da camera (Godot 3 nao recebe o byte[] do plugin USB
+# direto): sem ela a camera transmite e o jogo fica em "SEM IMAGEM".
+foreach ($ArquivoQuadros in @("PunchQuadros-release.aar", "PunchQuadros.gdap")) {
+    if (-not (Test-Path -LiteralPath (Join-Path $Raiz "android\plugins\$ArquivoQuadros"))) {
+        Parar "Falta android\plugins\$ArquivoQuadros (ponte da camera). Extraia o zip de novo."
+    }
+}
+if (-not ((Get-Content -LiteralPath (Join-Path $Raiz "export_presets.cfg") -Raw) -match "(?m)^plugins/PunchQuadros=true")) {
+    Parar "O export_presets.cfg nao liga o plugin PunchQuadros (ponte da camera). Extraia o zip de novo."
 }
 
 # Apaga o resultado ANTES de qualquer compilacao. Assim uma falha no plugin
@@ -596,13 +606,21 @@ try {
         if ($Conteudo.Contains("Lcom/lazersport/punch/usbserial/GodotAndroidPlugin;")) { $TemPlugin = $true; break }
     }
     if (-not $TemPlugin) { Parar "O APK saiu SEM o plugin USB (Arduino e camera nao funcionariam)." }
+    $TemQuadros = $false
+    foreach ($Dex in ($Zip.Entries | Where-Object { $_.FullName -match '^classes\d*\.dex$' })) {
+        $Leitor = New-Object System.IO.StreamReader($Dex.Open(), [System.Text.Encoding]::GetEncoding(28591))
+        $Conteudo = $Leitor.ReadToEnd()
+        $Leitor.Close()
+        if ($Conteudo.Contains("Lcom/lazersport/punch/quadros/PunchQuadros;")) { $TemQuadros = $true; break }
+    }
+    if (-not $TemQuadros) { Parar "O APK saiu SEM a ponte da camera (PunchQuadros): a camera nao apareceria no jogo." }
 } finally {
     $Zip.Dispose()
 }
 
 Write-Host ""
 Write-Host "APK GERADO E CONFERIDO - build $Build, sem erros" -ForegroundColor Green
-Write-Host "Conferido: motor ARM 32 e 64 bits e plugin USB (Arduino + camera) dentro do APK."
+Write-Host "Conferido: motor ARM 32 e 64 bits, plugin USB (Arduino + camera) e ponte da camera dentro do APK."
 Write-Host "Arquivo: $($Apk.FullName)"
 Write-Host "Tamanho: $([math]::Round($Apk.Length / 1MB, 2)) MB"
 Write-Host "SHA256: $((Get-FileHash -LiteralPath $Apk.FullName -Algorithm SHA256).Hash)"

@@ -1,0 +1,15 @@
+; PONTE DOS QUADROS DA WEBCAM (Godot 3): entrega ao jogo, dentro de um
+; Dictionary, o quadro que o PunchUsbSerial recebe da camera. O Godot 3.6
+; nao converte o byte[] que o PunchUsbSerial devolve direto.
+; Fonte: tools/android_quadros_plugin/PunchQuadros.java
+
+[config]
+
+name="PunchQuadros"
+binary_type="local"
+binary="PunchQuadros-release.aar"
+
+[dependencies]
+
+local=[]
+remote=[]
