@@ -146,3 +146,40 @@ regenerar `arquivos_build.txt` (`git ls-files`).
    ABERTURA PAROU EM: ..." (o `Diario` grava cada etapa até 90 s depois
    da abertura). Uma foto dela diz onde parou. Com ADB,
    `ABERTURA_TVBOX.bat` traz o erro exato do Android.
+
+## 9. Jogo 2D: o conversor automático (Dragon Bowling)
+
+O Dragon Bowling (Pro Ultra, Godot 4.6, 11 mil linhas) foi convertido com
+ferramentas que ficam no repositório dele (`boliche-and-raiz`, branch
+`android7-s905l`) e servem para os próximos jogos:
+
+- `tools/godot4_para_godot3.py ORIGEM.gd DESTINO.gd` — a parte mecânica:
+  anotações (`@onready`, `@export`), tipos (`Array[T]`, `Packed*`,
+  `Texture2D`...), `await` → `yield` (inclusive `await f()` que às vezes
+  não espera nada), sinais (`x.sig.connect(f)` → `connect("sig", ...)`),
+  geometria de Control (`position` → `rect_position` quando o tipo é
+  conhecido; `Compat.prop` quando não é), tema de Label, alinhamento,
+  `z_index` de Control, `:=` sem tipo conhecido, identificadores com
+  acento, `not in`. O que não dá para converter sai com `# TODO-G3:`
+  (funções anônimas, `skew`, `clip_children`...).
+- `tools/tscn_godot4_para_godot3.py` — cenas (format=3 → 2, SpriteFrames).
+- `scripts/compat_g3.gd` (autoload `Compat`) — fonte + tamanho + contorno
+  de Label numa DynamicFont só (com as fontinhas de emoji e símbolos),
+  carga "em segundo plano" (uma por quadro), randi_range etc.
+- `tools/importacoes_godot3.py` — .import da S905L (ETC1 sem alfa, sem
+  mipmaps, som sem laço).
+- `tools/dragon_usb_plugin_g3/montar_aar.py` — o plugin Android do Godot 4
+  reaproveitado no Godot 3 (só muda o registro: `plugin.v1` + `.gdap`) e
+  com a atividade que faz o Android lembrar a permissão USB.
+
+Armadilhas que só aparecem RODANDO (a sintaxe passa):
+- Control não tem `position/scale/size/z_index` no Godot 3; variável sem
+  tipo dá erro só na hora.
+- Nome de NÓ em string (`"AnimatedSprite2D"`, `$Sprite2D`) não é nome de
+  classe: não trocar.
+- MP3/OGG importam em LAÇO no Godot 3: quem espera o `finished` fica
+  esperando para sempre.
+- Tecla no Input Map pelo código lógico (`scancode`), não o físico.
+- `max()`/`min()` devolvem float no Godot 3 (função `-> int` recusa).
+- Compare lado a lado: o mesmo roteiro de teclas no Godot 4 e no 3,
+  foto a cada 0,5 s (`.teste/roteiro.gd`).
