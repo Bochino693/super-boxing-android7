@@ -3,6 +3,16 @@ FIRMWARE DEFINITIVO - SENSOR DE FEIXE LM393 - V4
 
 Grave o arquivo ARDUINO_SENSOR_DE_FEIXE_LM393.ino no Arduino Uno/Nano
 (biblioteca Adafruit NeoPixel instalada pelo Gerenciador de Bibliotecas).
+E UM FIRMWARE SO para tudo: sensor de feixe, botoes, fitas de LED, PONTE H
+do motor do saco e fins de curso. Todo o codigo Arduino da maquina fica
+nesta pasta (a pasta "arduino" antiga, do sensor MPU-6050, saiu).
+
+TESTES SEM O JOGO (subpastas; a IDE nao junta ao firmware):
+  TESTE_FEIXE\TESTE_FEIXE.ino       - o feixe ve a palheta? a que velocidade?
+  TESTE_PONTE_H\TESTE_PONTE_H.ino   - sobe/desce o saco pelo Monitor Serial
+                                      (s, d, p, t) e mostra as chaves.
+  Depois do teste, grave de novo o ARDUINO_SENSOR_DE_FEIXE_LM393.ino.
+  Passo a passo: docs\TESTE_DO_SENSOR.md
 
 DIAGRAMAS (abra e siga o NOME de cada pino):
   docs\MONTAGEM_1_LIGACAO_ELETRICA.png

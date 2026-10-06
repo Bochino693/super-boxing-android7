@@ -4,6 +4,8 @@
 ABERTURA_TVBOX.bat
 ARDUINO_SENSOR_DE_FEIXE_LM393/ARDUINO_SENSOR_DE_FEIXE_LM393.ino
 ARDUINO_SENSOR_DE_FEIXE_LM393/LEIA_LIGACOES.txt
+ARDUINO_SENSOR_DE_FEIXE_LM393/TESTE_FEIXE/TESTE_FEIXE.ino
+ARDUINO_SENSOR_DE_FEIXE_LM393/TESTE_PONTE_H/TESTE_PONTE_H.ino
 ATUALIZAR_E_GERAR.bat
 CAMERA_TVBOX.bat
 GERAR_APK_AGORA.bat
@@ -14,9 +16,6 @@ android/plugins/PunchQuadros-release.aar
 android/plugins/PunchQuadros.gdap
 android/plugins/PunchUsbSerial-release.aar
 android/plugins/PunchUsbSerial.gdap
-arduino/punch_sensor/punch_sensor.ino
-arduino/punch_sensor_optico/LEIA.txt
-arduino/teste_sensor/teste_sensor.ino
 assets/arena/brilho.png
 assets/arena/brilho.png.import
 assets/arena/facho.png

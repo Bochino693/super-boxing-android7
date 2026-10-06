@@ -48,6 +48,12 @@ O SENSOR DE FEIXE "NAO FUNCIONAVA" por tres motivos:
   Use sensor de FENDA ou infravermelho. LDR (fotoresistor) com laser e
   lento demais para medir um soco.
 
+TODO O CODIGO ARDUINO FICA EM ARDUINO_SENSOR_DE_FEIXE_LM393: um firmware so
+(feixe, botoes, LEDs, PONTE H do motor do saco e fins de curso) e dois
+testes sem o jogo, nas subpastas TESTE_FEIXE e TESTE_PONTE_H (veja
+docs\TESTE_DO_SENSOR.md). A pasta "arduino" antiga (sensor MPU-6050, que
+esta maquina nao usa mais) saiu: apague-a da pasta do PC se ela estiver la.
+
 FIM DE CURSO DE CIMA (obrigatorio com "FINS DE CURSO: SIM"):
 - Micro chave com rolete: C no GND, NF (NC) no D11. O saco sobe ate a
   chave abrir e o motor e cortado NA HORA pela interrupcao do pino.
