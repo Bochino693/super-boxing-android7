@@ -1,6 +1,6 @@
 @echo off
 setlocal
-rem SUPERBOXING_BUILD=106
+rem SUPERBOXING_BUILD=108
 rem OPCIONAL: so para quem mexer no codigo do plugin USB (Kotlin, em
 rem tools\android_usb_plugin). O GERAR_APK_AGORA.bat NAO compila o plugin:
 rem ele usa o que ja vem pronto em android\plugins. Rode este arquivo uma vez

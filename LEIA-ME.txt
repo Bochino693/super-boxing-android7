@@ -1,4 +1,4 @@
-SUPER BOXING - VERSAO TV BOX S905L (ANDROID 7.1) - BUILD 106
+SUPER BOXING - VERSAO TV BOX S905L (ANDROID 7.1) - BUILD 108
 ===========================================================
 
 PARA QUAL MAQUINA E ESTA VERSAO
@@ -26,9 +26,101 @@ O que muda por dentro (voce nao ve na tela):
 
 O APK tem outro nome de pacote (com.lazersport.superboxing), entao pode
 ficar instalado junto com o Punch Challenge das outras maquinas. Se a
-build 92 a 105 estiver instalada, a 106 instala por cima.
+build 92 a 107 estiver instalada, a 108 instala por cima.
 
-O QUE A BUILD 106 MUDA (GRAVE O FIRMWARE V6 NO ARDUINO)
+O QUE A BUILD 108 CORRIGE (GRAVE O FIRMWARE V8 NO ARDUINO)
+-----------------------------------------------------------
+GRAVE O V8 NO NANO: ARDUINO_SENSOR_DE_FEIXE_LM393\ARDUINO_SENSOR_DE_FEIXE_LM393.ino
+(Placa "Arduino Nano", processador "ATmega328P" ou "ATmega328P (Old
+Bootloader)"). Com firmware antigo a Central e a abertura avisam:
+"FIRMWARE ANTIGO NO ARDUINO (Vx)".
+
+O MOTOR ANDA SEMPRE (firmware V8):
+- A placa vigia o sensor de cima. Se ele fica preso em "chegou" (era o
+  que deixava o motor MORTO: a placa achava que o saco ja estava em cima
+  e recusava subir) ou se ele nunca ve o saco, a placa percebe sozinha e
+  passa a SUBIR PELO TEMPO DE CURSO. Arrumou o sensor: volta ao normal.
+- A placa lembra (EEPROM) onde o saco ficou: ao ligar, se ele nao estava
+  em cima, ela o recolhe sozinha - antes mesmo do jogo abrir.
+- Na abertura o jogo confere a cada 15 s se o saco segue recolhido e,
+  se nao, manda subir (saco baixado na mao, fonte do motor ligada depois).
+
+POR QUE O MOTOR NAO ANDA - AGORA A MAQUINA DIZ:
+- Central (botao MENU) -> aba SACO -> caixa "DIAGNOSTICO - POR QUE O
+  MOTOR NAO ANDA": mostra o motivo e o que conferir. O mesmo motivo
+  aparece no rodape da abertura ("MOTOR DO SACO: ...").
+- "MOTOR OK - A PLACA ESTA MANDANDO" e o saco parado = a placa esta
+  ligando as saidas: o defeito e de ligacao/fonte (R_EN e L_EN no 5V,
+  GND comum, fonte do motor em B+/B-, D9->RPWM, D10->LPWM).
+
+O MOTOR "MORTO" - as duas causas achadas:
+- Os botoes SUBIR/DESCER da Central (aba SACO) nao mandavam nada quando
+  o jogo ACHAVA que o saco ja estava la (ex.: SUBIR com o saco baixado
+  na mao). Agora o botao SEMPRE manda o comando, e a placa responde onde
+  o saco esta de verdade.
+- Firmware V6: se a subida durasse o tempo de curso inteiro sem o sensor
+  de cima ver o saco (curso curto, fonte do motor desligada, sensor
+  desalinhado), a placa TRAVAVA a subida para sempre - so o PARAR da
+  Central soltava. O V7/V8 nao trava: para, avisa, e tenta de novo no
+  proximo pedido. A subida ganhou folga de tempo (curso + 50%, no
+  minimo + 1,5 s), porque quem para a subida e o sensor.
+- V7/V8: quem diz se o saco esta em cima e o SENSOR, nao a memoria da
+  placa. Saco baixado na mao + SOBE = o motor sobe.
+
+O FLUXO DA PARTIDA (fora da partida = ENROLADO; na partida = DESCE):
+1. Aperta START.
+2. O jogo confere o sensor de cima. Viu o saco: segue. NAO viu: manda
+   SUBIR e a tela mostra "AGUARDE: RECOLHENDO O SACO" ate ele chegar.
+3. Contagem 3-2-1 e FOTO (com o saco em cima, fora do quadro).
+4. Depois da foto o saco DESCE. O sino ("pode bater") espera ele chegar.
+5. Acabou a rodada: o saco SOBE e fica enrolado ate o proximo START.
+
+SE AINDA ASSIM O MOTOR NAO ANDAR, a tela agora diz o motivo:
+- "SENSOR DE CIMA ACUSA O SACO COM ELE EMBAIXO": o D11 esta lendo
+  "chegou" sempre (fio OUT solto do D11, sensor sem 5V, ou ele esta vendo
+  outra coisa perto). Com isso a placa recusa toda subida (protecao).
+  Na Central, aba SACO, "sensor de CIMA" deve mudar quando voce poe a mao
+  na frente do sensor.
+- "SUBIU O TEMPO TODO E O SENSOR DE CIMA NAO VIU O SACO": aumente o
+  TEMPO DE CURSO na Central ou aproxime/regule o sensor (trimpot).
+- "MOTOR NAO RESPONDEU": a placa nao respondeu ao comando - firmware
+  antigo (grave o V8) ou Arduino desconectado.
+- Nada na tela e o motor parado: confira R_EN e L_EN no 5V, o GND comum,
+  a fonte do motor ligada em B+/B-, e D9->RPWM, D10->LPWM. Teste sem o
+  jogo com TESTE_PONTE_H.ino (comandos s, d, p).
+
+O QUE A BUILD 107 CORRIGIU
+---------------------------------------------------------------
+O SACO SO DESCE NA PARTIDA, E SO DEPOIS DA FOTO:
+- Fora da partida o saco fica ENROLADO em cima. Ao ligar a maquina a
+  placa recolhe o saco sozinha (1,5 s depois de ligar, mesmo antes do
+  jogo abrir), e o jogo pede "em cima" de novo assim que acha a placa,
+  quando a placa religa, ao voltar para a abertura e ao fechar a Central.
+- START -> contagem 3-2-1 -> FOTO -> so ENTAO o saco desce. O "pode
+  bater" (sino) espera o saco chegar embaixo e parar (com teto: curso
+  + 2,5 s). Acabou a rodada -> o saco sobe.
+- O MOTOR VINHA DESLIGADO DE FABRICA na Central (aba SACO). Com tudo
+  ligado, o jogo nunca mandava o motor andar ate alguem achar essa
+  chave. Agora vem LIGADO (e uma configuracao antiga e corrigida uma vez).
+- Ao ligar, se a placa demorava a conectar, o jogo "desistia" do pedido
+  de subir antes de mandar o primeiro comando. Agora o relogio da
+  desistencia so comeca quando o pedido sai de verdade.
+ARDUINO AUTORIZADO UMA VEZ SO:
+- Na primeira vez a janela do Android pergunta: MARQUE "USAR POR PADRAO
+  PARA ESTE DISPOSITIVO USB" e toque OK. Com a caixa marcada, o Android
+  da a permissao sozinho para sempre (no boot e quando a placa reconecta).
+- Se a placa reconecta no meio do jogo (o tranco do motor pode reiniciar
+  a USB do Nano), o jogo agora ESPERA o Android devolver a permissao (ate
+  12 s) em vez de abrir a janela na hora.
+- Se a janela continuar aparecendo a cada boot: a caixa nao foi marcada.
+  Abra Configuracoes > Apps > Super Boxing > "Limpar padroes", reabra o
+  jogo e marque a caixa. Outro aplicativo que tambem use Arduino na mesma
+  TV Box pode "roubar" o padrao: limpe os padroes dele tambem.
+- Motor e Arduino: use fonte SEPARADA para o motor (B+/B-), una so os
+  GND, e se possivel um capacitor de 100 nF nos terminais do motor e
+  ferrite no cabo USB. Isso evita que o tranco do motor derrube a USB.
+
+O QUE A BUILD 106 MUDOU (FIRMWARE V6)
 -------------------------------------------------------
 MOTOR DO SACO COM VELOCIDADE. A ponte H e a BTS7960 "BT_2" (IBT-2). O
 motor so faz tres coisas: sobe, desce e velocidade.
@@ -239,7 +331,7 @@ O QUE A BUILD 97 CORRIGIU
 ANTES DE INSTALAR NAS 80: TESTE EM UMA
 --------------------------------------
 Na tela de carregamento aparece, no canto de baixo,
-"BUILD 106 - S905L - Android 7.1". Jogue uma partida inteira, abra a
+"BUILD 108 - S905L - Android 7.1". Jogue uma partida inteira, abra a
 Central Tecnica e confira camera e Arduino antes de passar para as outras.
 
 GERAR O APK

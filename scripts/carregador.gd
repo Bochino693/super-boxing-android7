@@ -201,6 +201,8 @@ var _perm_t0 = 0.0
 var _saiu_foco = false
 var _voltou_foco = false
 var _perm_texto = "VERIFICANDO PERMISSÕES"
+## Segunda linha, só enquanto a janela do Arduino está aberta.
+var _perm_texto2 = ""
 var _arduino_tentativas = 0
 
 func _notification(what: int) -> void:
@@ -212,6 +214,7 @@ func _notification(what: int) -> void:
 				_voltou_foco = true
 
 func _proxima_permissao() -> void:
+	_perm_texto2 = ""
 	_perm = int(_perm) + 1
 	_perm_pedido = false
 	_perm_t0 = _relogio
@@ -315,6 +318,7 @@ func _passo_do_arduino() -> void:
 		_voltou_foco = false
 		_perm_texto = "ARDUINO: MARQUE \"USAR POR PADRÃO\" E TOQUE OK" if _arduino_tentativas == 0 \
 			else "O JOGO PRECISA DO ARDUINO: MARQUE \"USAR POR PADRÃO\" E TOQUE OK"
+		_perm_texto2 = "COM A CAIXA MARCADA, O ANDROID NUNCA MAIS PERGUNTA"
 		Diario.marca("PERMISSOES: pedindo arduino")
 		return
 	Diario.marca("PERMISSOES: arduino erro (%s)" % erro)
@@ -614,6 +618,8 @@ func _desenhar() -> void:
 	Compat.texto(t, _fonte_numero, Vector2(caixa.position.x, topo + 100.0), pct, Compat.CENTRO, largura, 46, Compat.cor("ffd014", aparece))
 	var pontos = ".".repeat(1 + int(_relogio * 2.5) % 3)
 	Compat.texto(t, _fonte, Vector2(caixa.position.x, topo + 150.0), _texto_status() + pontos, Compat.CENTRO, largura, 28, Compat.cor("d9d1ff", 0.9 * aparece))
+	if fase == Fase.PERMISSOES and not _perm_texto2.empty():
+		Compat.texto(t, _fonte, Vector2(caixa.position.x, topo + 190.0), _perm_texto2, Compat.CENTRO, largura, 24, Compat.cor("ffd014", 0.95 * aparece))
 	# A CAIXA-PRETA: como terminou a sessão anterior. Se o launcher ou o
 	# jogo caiu, é aqui que aparece a memória livre do Android naquela
 	# hora e os últimos erros — uma foto desta tela diz o porquê.

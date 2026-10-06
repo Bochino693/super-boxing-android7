@@ -168,6 +168,12 @@ static func parse(line: String) -> Dictionary:
 				"baixo": parts[2].strip_edges() == "1",
 				"trava": parts[3].strip_edges() == "1",
 			}
+		"SENSOR_CIMA":
+			# SENSOR_CIMA,<0 ok|1 preso em "chegou"|2 nunca vê> — firmware V8.
+			# A placa vigia o sensor de cima e, se ele mente, sobe pelo tempo.
+			if parts.size() != 2 or not parts[1].strip_edges().is_valid_integer():
+				return {"type": ""}
+			return {"type": "SENSOR_CIMA", "estado": int(clamp(parts[1].strip_edges().to_int(), 0, 2))}
 		"OK":
 			return {"type": "OK", "detail": parts[1].strip_edges().to_upper() if parts.size() > 1 else ""}
 	return {"type": ""}
