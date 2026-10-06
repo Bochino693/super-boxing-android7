@@ -13,6 +13,19 @@ extends SerialLink
 ##
 ## Com um plugin antigo (sem `pollSerial`) cai no caminho de antes.
 
+## O ARDUINO JÁ AUTORIZADO NÃO ABRE JANELA DE NOVO.
+##
+## Com "Usar por padrão" marcado uma vez, o Android devolve a permissão
+## sozinho — no boot e toda vez que a placa reconecta (o tranco do motor
+## pode reiniciar a USB do Nano, e aí ela volta como aparelho "novo").
+## Chamar `openPort` antes disso abria a janela na hora, no meio do jogo.
+## Agora, se o Arduino já foi autorizado antes, o jogo espera até
+## ESPERA_DO_ANDROID_MS o próprio Android liberar; só se não liberar
+## (caixa não marcada, aparelho trocado) é que a janela aparece.
+const Lembranca = preload("res://scripts/lembranca_usb.gd")
+const ESPERA_DO_ANDROID_MS = 12000
+var _sem_permissao_desde = {}
+
 const FECHADA = 0
 const ABRINDO = 1
 const ABERTA = 2
@@ -67,10 +80,19 @@ func open_port(port: String, baud: int = GameDef.SERIAL_BAUD) -> bool:
 	if _plugin == null:
 		return false
 	_porta_pedida = port
+	if Lembranca.sabe(Lembranca.ARDUINO) and not Lembranca.porta_tem_permissao(_plugin, port):
+		var agora = OS.get_ticks_msec()
+		if not _sem_permissao_desde.has(port):
+			_sem_permissao_desde[port] = agora
+		if agora - int(_sem_permissao_desde[port]) < ESPERA_DO_ANDROID_MS:
+			_motivo = "aguardando o Android liberar o Arduino (ja autorizado antes)"
+			return false
 	if not bool(_plugin.call("openPort", port, baud)):
 		_motivo = str(_plugin.call("getLastError"))
 		return false
 	_motivo = ""
+	_sem_permissao_desde.erase(port)
+	Lembranca.guardar(Lembranca.ARDUINO)
 	if _assincrono:
 		# Pedido aceito; o "opened" sai do `poll()` quando a porta abrir.
 		_estado = ABRINDO

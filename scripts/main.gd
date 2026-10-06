@@ -740,6 +740,15 @@ var pose_sem_camera = false
 ## Ver o comentário grande em `_processar_contagem`. O obturador só abre
 ## dentro desta janela final, em segundos antes de a contagem zerar.
 const JANELA_TARDIA_OBTURADOR_SEGUNDOS = 0.5
+## O SACO DESCE DEPOIS DA FOTO, e o soco só é liberado com ele embaixo.
+## Quando a descida foi pedida, desde quando ele está embaixo parado, e
+## se o aviso "o saco está descendo" já apareceu nesta rodada.
+var _saco_descendo_desde = -1.0
+var _saco_em_baixo_desde = -1.0
+var _aviso_saco_dado = false
+## Depois de parar embaixo, o saco ainda balança; o firmware também
+## ignora o feixe por 0,9 s depois do motor. Esperar um pouco mais.
+const SACO_ASSENTAR_SEGUNDOS = 1.0
 var _obturador_tardio_aberto = false
 var photo_retained = false
 var ranking_announced = false
@@ -1488,12 +1497,21 @@ func _processar_contagem(delta: float) -> void:
 			)
 		clarao = 0.65
 		sons.play("shutter", -5.0)
+		# FOTO TIRADA: AGORA O SACO DESCE. É o único lugar do jogo que
+		# pede o saco embaixo.
+		saco.quero(SacoMotor.Onde.EM_BAIXO)
+		_saco_descendo_desde = animation_time
 		return
 	var atual = int(max(0, int(ceil(countdown_left))))
 	if atual > 0 and atual < last_count:
 		last_count = atual
 		sons.play("count")
 		sons.duck(8.0, 0.5)
+	if countdown_left <= -1.2 and _esperando_o_saco():
+		if not _aviso_saco_dado:
+			_aviso_saco_dado = true
+			_show_notice("PREPARE-SE: O SACO ESTÁ DESCENDO")
+		return
 	if countdown_left <= -1.2:
 		state = GameDef.State.ARMED
 		_armar_sensor_optico()
@@ -1510,6 +1528,26 @@ func _processar_contagem(delta: float) -> void:
 		sons.play("go")
 		sons.music(-19.0)
 		moldura.set_estado(LedFrame.ARMADA)
+
+## O SOCO ESPERA O SACO CHEGAR EMBAIXO.
+##
+## Sem motor (ou motor desligado, placa sem motor, placa que não
+## respondeu), não espera nada. Com motor, espera o saco parar embaixo e
+## assentar — e nunca mais que o curso inteiro mais uma folga: um saco
+## que não chega não pode prender a partida para sempre.
+func _esperando_o_saco() -> bool:
+	if _saco_descendo_desde < 0.0 or link == null or not link.is_open():
+		return false
+	if not saco.vale_esperar():
+		return false
+	if animation_time - _saco_descendo_desde > saco.curso_ms / 1000.0 + 2.5:
+		return false
+	if not saco.em_baixo_parado():
+		_saco_em_baixo_desde = -1.0
+		return true
+	if _saco_em_baixo_desde < 0.0:
+		_saco_em_baixo_desde = animation_time
+	return animation_time - _saco_em_baixo_desde < SACO_ASSENTAR_SEGUNDOS
 
 func _processar_armado(delta: float) -> void:
 	_passo_do_ko(delta)
@@ -2216,11 +2254,12 @@ func _iniciar_rodada() -> void:
 	_fim_por_nocaute = -1.0
 	if arena != null:
 		arena.jogador_no_chao(false)
-	# O SACO DESCE AGORA, no 3-2-1, e não no primeiro soco: o curso leva
-	# três segundos e meio, que é exatamente o tempo da contagem. Quem
-	# está na frente da máquina vê o saco baixando enquanto conta, e o
-	# movimento vira parte da abertura em vez de uma espera.
-	saco.quero(SacoMotor.Onde.EM_BAIXO)
+	# O SACO AINDA NÃO DESCE. Ele desce DEPOIS DA FOTO (ver
+	# `_processar_contagem`): a pose é tirada com o saco enrolado em cima,
+	# fora do quadro, e só então ele baixa para o soco.
+	_saco_descendo_desde = -1.0
+	_saco_em_baixo_desde = -1.0
+	_aviso_saco_dado = false
 	_discard_round_photo()
 	intro_active = false
 	sons.stop("score_loop")
@@ -2317,6 +2356,10 @@ func _entrar_em_abertura() -> void:
 	sons.stop("torcida_vaia")
 	sons.stop("torcida_festa")
 	sons.stop("torcida_incentivo")
+	# FORA DA PARTIDA O SACO FICA ENROLADO. Qualquer caminho de volta à
+	# abertura (rodada encerrada, tempo esgotado, cancelada) recolhe o
+	# saco; repetido depois do `_fechar_rodada`, não faz nada.
+	saco.quero(SacoMotor.Onde.EM_CIMA)
 	state = GameDef.State.IDLE
 	state_time = 0.0
 	verdict_time = -1.0
@@ -3995,6 +4038,9 @@ func _on_serial_line(line: String) -> void:
 			if firmware_optico_identificado and ja_identificado:
 				_ready_repetido_em = animation_time
 			elif firmware_optico_identificado:
+				# A placa acabou de aparecer: o jogo repete na hora o que
+				# quer do saco (fora da partida: enrolado em cima).
+				saco.reafirmar()
 				porta_arduino_identificada = porta_atual
 				placa_calibrando = true
 				progresso_calibracao = 0
@@ -4050,6 +4096,8 @@ func _on_serial_line(line: String) -> void:
 			# a nossa é reenviada assim que a calibração terminar.
 			if animation_time - _ready_repetido_em < 1.5 and animation_time - _config_enviada_em > 3.0:
 				_reenviar_config = true
+				# Religou sozinha: perdeu o pedido do saco junto.
+				saco.reafirmar()
 			_ready_repetido_em = -99.0
 			placa_calibrando = true
 			progresso_calibracao = int(msg["percent"])
@@ -4533,6 +4581,13 @@ func _toggle_central() -> void:
 
 func _fechar_central() -> void:
 	central_aberta = false
+	# Fechou a Central fora da partida: o saco volta a ficar enrolado,
+	# mesmo que o operador o tenha baixado à mão para acertar a altura.
+	# (O PARAR desliga a intenção; aqui ela volta a valer.)
+	if state == GameDef.State.IDLE or state == GameDef.State.RESULT:
+		if saco.desistiu() and not saco.trava_cima:
+			saco.destravar()
+		saco.quero(SacoMotor.Onde.EM_CIMA)
 	# O F9 FECHA O ASSISTENTE DE CALIBRAÇÃO JUNTO, e a falta disto era o
 	# defeito que fazia a máquina parecer saudável e não pontuar nada.
 	#

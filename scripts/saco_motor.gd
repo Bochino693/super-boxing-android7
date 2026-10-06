@@ -52,7 +52,10 @@ const FOLGA_DA_CONFIRMACAO_MS = 2500
 ## vez por segundo, e não sessenta.
 const REPETIR_A_CADA_MS = 1000
 
-var ligado = false
+## LIGADO DE FÁBRICA. Desligado de fábrica, uma máquina recém-montada
+## não mexia o motor de jeito nenhum até alguém achar a chave na Central
+## — e o saco ficava parado onde estava, parecendo defeito da placa.
+var ligado = true
 var curso_ms = 3500
 var pausa_ms = 350
 var fim_de_curso = true
@@ -73,6 +76,8 @@ var fim_baixo = -1
 ## abriu. Só o PARAR da Central destrava (lá e aqui).
 var trava_cima = false
 
+## FORA DA PARTIDA O SACO FICA ENROLADO (em cima). É a intenção com que
+## o jogo nasce: assim que a placa responde, ele pede para recolher.
 var _querido: int = Onde.EM_CIMA
 var _pedido_em_ms = 0
 var _ultimo_envio_ms = 0
@@ -85,7 +90,15 @@ var _desistiu = false
 ## primeiros mil milissegundos de vida do processo, portanto, o primeiro
 ## comando do motor era engolido pelo próprio intervalo de repetição.
 ## Uma bandeira diz o que a conta não sabia dizer.
-var _mandar_ja = false
+var _mandar_ja = true
+## O relógio da desistência só começa quando o pedido SAI de verdade.
+## Antes ele começava no `quero` (ou no zero do programa): com a placa
+## demorando a conectar, o jogo "desistia" antes de mandar o primeiro
+## comando — e o saco nunca era recolhido ao ligar a máquina.
+var _enviado = false
+## A placa já respondeu a algum comando de motor nesta conexão? Sem isso,
+## o jogo não espera o saco descer (firmware sem motor, placa antiga).
+var placa_tem_motor = false
 
 ## O que o jogo chama. Não manda nada por si: só registra a intenção.
 func quero(onde: int) -> void:
@@ -94,8 +107,31 @@ func quero(onde: int) -> void:
 	_querido = onde
 	_desistiu = false
 	_mandar_ja = true
+	_enviado = false
 	_pedido_em_ms = Time.get_ticks_msec()
 	_ultimo_envio_ms = Time.get_ticks_msec()
+
+## A PLACA (RE)APARECEU: o cabo voltou, a placa religou, o jogo abriu.
+## Ela não sabe o que o jogo quer, e o jogo não sabe onde o saco está:
+## pede de novo, na hora, a intenção de agora (fora da partida = em cima).
+func reafirmar() -> void:
+	_desistiu = false
+	_mandar_ja = true
+	_enviado = false
+	placa_tem_motor = false
+	estado = ArduinoProtocol.MOTOR_PARADO
+	posicao = ArduinoProtocol.POS_DESCONHECIDA
+	_pedido_em_ms = Time.get_ticks_msec()
+	_ultimo_envio_ms = Time.get_ticks_msec()
+
+## O saco está embaixo e parado (pronto para o soco)?
+func em_baixo_parado() -> bool:
+	return posicao == ArduinoProtocol.POS_EM_BAIXO and estado == ArduinoProtocol.MOTOR_PARADO
+
+## Vale a pena esperar o saco? Só com o motor ligado, a placa falando de
+## motor e sem desistência — senão o jogo segue como se não houvesse motor.
+func vale_esperar() -> bool:
+	return ligado and placa_tem_motor and not _desistiu
 
 ## Chamada a cada quadro. Devolve a linha a enviar, ou "" quando não há
 ## nada a dizer — que é o caso na esmagadora maioria dos quadros.
@@ -109,16 +145,24 @@ func passo() -> String:
 	if posicao == alvo and estado == ArduinoProtocol.MOTOR_PARADO:
 		return ""
 	var agora = Time.get_ticks_msec()
+	# JÁ ESTÁ INDO PARA LÁ: a placa confirmou o sentido certo e está
+	# andando. Repetir o pedido a cada segundo só enchia a serial.
+	var indo = ArduinoProtocol.MOTOR_DESCENDO if _querido == Onde.EM_BAIXO else ArduinoProtocol.MOTOR_SUBINDO
+	if _enviado and estado == indo:
+		return ""
 	# DESISTIR É PARTE DO PROJETO. Passado o curso inteiro mais a folga
 	# sem a placa confirmar, o jogo para de pedir e passa a dizer que não
 	# sabe onde o saco está — que é a verdade. Continuar mandando seria
 	# um laço infinito distribuído entre dois aparelhos.
-	if agora - _pedido_em_ms > curso_ms + FOLGA_DA_CONFIRMACAO_MS:
+	if _enviado and agora - _pedido_em_ms > curso_ms + FOLGA_DA_CONFIRMACAO_MS:
 		_desistiu = true
 		posicao = ArduinoProtocol.POS_DESCONHECIDA
 		return ""
 	if not _mandar_ja and agora - _ultimo_envio_ms < REPETIR_A_CADA_MS:
 		return ""
+	if not _enviado:
+		_enviado = true
+		_pedido_em_ms = agora
 	_mandar_ja = false
 	_ultimo_envio_ms = agora
 	return ArduinoProtocol.build_motor(
@@ -130,6 +174,7 @@ func receber(msg: Dictionary) -> void:
 	estado = int(msg.get("estado", ArduinoProtocol.MOTOR_PARADO))
 	posicao = int(msg.get("posicao", ArduinoProtocol.POS_DESCONHECIDA))
 	resta_ms = int(msg.get("resta_ms", 0))
+	placa_tem_motor = true
 	if estado != ArduinoProtocol.MOTOR_PARADO:
 		# Enquanto anda, o relógio da desistência anda junto: um curso
 		# longo configurado pelo operador não pode virar desistência só
@@ -164,6 +209,7 @@ func parar() -> String:
 func destravar() -> void:
 	_desistiu = false
 	_mandar_ja = true
+	_enviado = false
 	_pedido_em_ms = Time.get_ticks_msec()
 	_ultimo_envio_ms = Time.get_ticks_msec()
 
@@ -200,10 +246,16 @@ func para_salvar() -> Dictionary:
 		"ligado": ligado, "curso_ms": curso_ms,
 		"pausa_ms": pausa_ms, "fim_de_curso": fim_de_curso,
 		"vel_sobe": vel_sobe, "vel_desce": vel_desce,
+		"versao": 2,
 	}
 
 func carregar(dados: Dictionary) -> void:
-	ligado = bool(dados.get("ligado", false))
+	ligado = bool(dados.get("ligado", true))
+	# Configuração gravada antes da build 107 tinha o motor DESLIGADO de
+	# fábrica: liga de novo uma vez. Depois disso vale o que o operador
+	# escolher na Central.
+	if int(dados.get("versao", 1)) < 2:
+		ligado = true
 	curso_ms = int(clamp(int(dados.get("curso_ms", 3500)), 200, 15000))
 	pausa_ms = int(clamp(int(dados.get("pausa_ms", 350)), 50, 2000))
 	fim_de_curso = bool(dados.get("fim_de_curso", true))

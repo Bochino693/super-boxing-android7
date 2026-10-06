@@ -1,4 +1,4 @@
-SUPER BOXING - VERSAO TV BOX S905L (ANDROID 7.1) - BUILD 106
+SUPER BOXING - VERSAO TV BOX S905L (ANDROID 7.1) - BUILD 107
 ===========================================================
 
 PARA QUAL MAQUINA E ESTA VERSAO
@@ -26,9 +26,40 @@ O que muda por dentro (voce nao ve na tela):
 
 O APK tem outro nome de pacote (com.lazersport.superboxing), entao pode
 ficar instalado junto com o Punch Challenge das outras maquinas. Se a
-build 92 a 105 estiver instalada, a 106 instala por cima.
+build 92 a 106 estiver instalada, a 107 instala por cima.
 
-O QUE A BUILD 106 MUDA (GRAVE O FIRMWARE V6 NO ARDUINO)
+O QUE A BUILD 107 CORRIGE (GRAVE O FIRMWARE V6 DE NOVO NO ARDUINO)
+---------------------------------------------------------------
+O SACO SO DESCE NA PARTIDA, E SO DEPOIS DA FOTO:
+- Fora da partida o saco fica ENROLADO em cima. Ao ligar a maquina a
+  placa recolhe o saco sozinha (1,5 s depois de ligar, mesmo antes do
+  jogo abrir), e o jogo pede "em cima" de novo assim que acha a placa,
+  quando a placa religa, ao voltar para a abertura e ao fechar a Central.
+- START -> contagem 3-2-1 -> FOTO -> so ENTAO o saco desce. O "pode
+  bater" (sino) espera o saco chegar embaixo e parar (com teto: curso
+  + 2,5 s). Acabou a rodada -> o saco sobe.
+- O MOTOR VINHA DESLIGADO DE FABRICA na Central (aba SACO). Com tudo
+  ligado, o jogo nunca mandava o motor andar ate alguem achar essa
+  chave. Agora vem LIGADO (e uma configuracao antiga e corrigida uma vez).
+- Ao ligar, se a placa demorava a conectar, o jogo "desistia" do pedido
+  de subir antes de mandar o primeiro comando. Agora o relogio da
+  desistencia so comeca quando o pedido sai de verdade.
+ARDUINO AUTORIZADO UMA VEZ SO:
+- Na primeira vez a janela do Android pergunta: MARQUE "USAR POR PADRAO
+  PARA ESTE DISPOSITIVO USB" e toque OK. Com a caixa marcada, o Android
+  da a permissao sozinho para sempre (no boot e quando a placa reconecta).
+- Se a placa reconecta no meio do jogo (o tranco do motor pode reiniciar
+  a USB do Nano), o jogo agora ESPERA o Android devolver a permissao (ate
+  12 s) em vez de abrir a janela na hora.
+- Se a janela continuar aparecendo a cada boot: a caixa nao foi marcada.
+  Abra Configuracoes > Apps > Super Boxing > "Limpar padroes", reabra o
+  jogo e marque a caixa. Outro aplicativo que tambem use Arduino na mesma
+  TV Box pode "roubar" o padrao: limpe os padroes dele tambem.
+- Motor e Arduino: use fonte SEPARADA para o motor (B+/B-), una so os
+  GND, e se possivel um capacitor de 100 nF nos terminais do motor e
+  ferrite no cabo USB. Isso evita que o tranco do motor derrube a USB.
+
+O QUE A BUILD 106 MUDOU (FIRMWARE V6)
 -------------------------------------------------------
 MOTOR DO SACO COM VELOCIDADE. A ponte H e a BTS7960 "BT_2" (IBT-2). O
 motor so faz tres coisas: sobe, desce e velocidade.
@@ -239,7 +270,7 @@ O QUE A BUILD 97 CORRIGIU
 ANTES DE INSTALAR NAS 80: TESTE EM UMA
 --------------------------------------
 Na tela de carregamento aparece, no canto de baixo,
-"BUILD 106 - S905L - Android 7.1". Jogue uma partida inteira, abra a
+"BUILD 107 - S905L - Android 7.1". Jogue uma partida inteira, abra a
 Central Tecnica e confira camera e Arduino antes de passar para as outras.
 
 GERAR O APK

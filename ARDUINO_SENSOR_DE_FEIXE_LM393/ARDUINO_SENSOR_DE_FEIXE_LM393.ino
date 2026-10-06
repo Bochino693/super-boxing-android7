@@ -18,6 +18,9 @@
       A partida e em rampa (RAMPA_MS) para nao dar tranco na caixa.
     - Pinos novos: RPWM no D9 e LPWM no D10 (os unicos pinos livres com
       PWM). O botao CONFIG foi para o D12. O fim de curso de baixo saiu.
+    - AO LIGAR A PLACA RECOLHE O SACO SOZINHA (1,5 s depois), mesmo sem o
+      jogo: fora da partida o saco fica enrolado em cima. O sensor de cima
+      para a subida; o tempo de curso e o teto.
 
   O QUE MUDOU NA V5:
     - Fim de curso de CIMA = sensor infravermelho de obstaculo. A saida
@@ -179,6 +182,13 @@ volatile bool motorCorteFim = false;
 /* Subida sem o sensor de cima ver o saco dentro do tempo: subida travada ate
    um MOTOR,PARA (botao PARAR da Central). */
 bool motorTravaCima = false;
+/* AO LIGAR, O SACO E RECOLHIDO SOZINHO (fora da partida ele fica
+   enrolado em cima). Espera RECOLHER_APOS_MS depois de ligar; qualquer
+   comando MOTOR do jogo antes disso cancela (o jogo manda o que quer). So
+   com fim de curso ligado: e o sensor de cima que para a subida. */
+#define RECOLHER_AO_LIGAR 1
+const unsigned long RECOLHER_APOS_MS = 1500;
+bool recolherPendente = RECOLHER_AO_LIGAR;
 
 /* O feixe nao mede enquanto o motor anda nem logo depois: o saco ainda
    balanca do tranco do motor. */
@@ -554,6 +564,7 @@ void motorConfigurar(char *cmd) {
 }
 
 void motorComando(char *cmd) {
+  recolherPendente = false;   /* o jogo assumiu o motor */
   if (!strncasecmp(cmd + 6, "CONFIG", 6)) { motorConfigurar(cmd); return; }
   if (!strncasecmp(cmd + 6, "VEL,", 4)) {
     char *p = cmd + 10;
@@ -635,6 +646,10 @@ void setup() {
 }
 
 void loop() {
+  if (recolherPendente && millis() >= RECOLHER_APOS_MS) {
+    recolherPendente = false;
+    if (motorUsaFimDeCurso && motorEstado == MOTOR_PARADO) motorIr(MOTOR_SUBINDO);
+  }
   serialReceber(); botoes(); motorAtualizar(); feixeAtualizarMudo(); feixeAcompanharRepouso(); medir();
   if (millis()-ultimaTelemetriaMs >= 250) { ultimaTelemetriaMs=millis(); telemetria(); }
 }

@@ -95,6 +95,9 @@ COMO O V6 TRABALHA:
     acabar sem ele ver, corta, avisa ERROR,FIM_CIMA e TRAVA a subida ate
     o PARAR da Central (aba SACO).
   - Descida: pelo tempo de curso.
+  - AO LIGAR, a placa recolhe o saco sozinha (1,5 s depois), mesmo sem o
+    jogo: fora da partida o saco fica enrolado em cima. O jogo so pede o
+    saco embaixo depois da FOTO do START.
   - Velocidade: PWM de 20 kHz no D9/D10 (sem chiado), rampa de 0,3 s na
     partida. Parado = as duas saidas em LOW = a ponte freia o motor.
   - Linha FIM,<cima>,<baixo>,<trava> a cada 250 ms (baixo e sempre 0): a
