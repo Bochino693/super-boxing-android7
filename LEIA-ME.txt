@@ -31,8 +31,9 @@ build 92 a 104 estiver instalada, a 105 instala por cima.
 O QUE A BUILD 105 CORRIGE (GRAVE O FIRMWARE V4 NO ARDUINO)
 ---------------------------------------------------------
 Arquivo: ARDUINO_SENSOR_DE_FEIXE_LM393\ARDUINO_SENSOR_DE_FEIXE_LM393.ino
-Montagem: docs\MONTAGEM_1_LIGACAO_ELETRICA.png e
-          docs\MONTAGEM_2_MECANICA_FEIXE_E_FIM_DE_CURSO.png
+Montagem: docs\MONTAGEM_1_MAPA_DO_ARDUINO_NANO.png (o que vai em cada pino),
+          docs\MONTAGEM_2_LIGACOES_POR_PARTE.png (sensor, botoes, ponte H,
+          fins de curso, fitas, USB) e docs\MONTAGEM_3_MECANICA.png
 
 O SENSOR DE FEIXE "NAO FUNCIONAVA" por tres motivos:
 - O MOTOR GASTAVA O SOCO. O saco desce na contagem e o jogo arma o

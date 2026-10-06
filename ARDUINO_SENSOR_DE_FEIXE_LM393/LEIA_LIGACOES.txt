@@ -15,8 +15,9 @@ TESTES SEM O JOGO (subpastas; a IDE nao junta ao firmware):
   Passo a passo: docs\TESTE_DO_SENSOR.md
 
 DIAGRAMAS (abra e siga o NOME de cada pino):
-  docs\MONTAGEM_1_LIGACAO_ELETRICA.png
-  docs\MONTAGEM_2_MECANICA_FEIXE_E_FIM_DE_CURSO.png
+  docs\MONTAGEM_1_MAPA_DO_ARDUINO_NANO.png   (o que vai em cada pino)
+  docs\MONTAGEM_2_LIGACOES_POR_PARTE.png      (cada peca, terminal por terminal)
+  docs\MONTAGEM_3_MECANICA.png                (palheta, feixe, motor, chaves)
 
 SENSOR DE FEIXE:
   VCC -> 5V

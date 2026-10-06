@@ -266,8 +266,9 @@ docs/ANDROID-PECAS-E-MUDANCAS.md
 docs/ANDROID-TESTE-DE-BANCADA.md
 docs/ARENA.md
 docs/CONVERTER_PARA_TVBOX_S905L.md
-docs/MONTAGEM_1_LIGACAO_ELETRICA.png
-docs/MONTAGEM_2_MECANICA_FEIXE_E_FIM_DE_CURSO.png
+docs/MONTAGEM_1_MAPA_DO_ARDUINO_NANO.png
+docs/MONTAGEM_2_LIGACOES_POR_PARTE.png
+docs/MONTAGEM_3_MECANICA.png
 docs/PROTOCOLO-USB-ANDROID.md
 docs/RECURSOS_ARCADE.md
 docs/TESTE_DO_SENSOR.md
@@ -346,8 +347,9 @@ tools/android_usb_plugin/plugin/src/main/java/com/lazersport/punch/usbserial/God
 tools/android_usb_plugin/plugin/src/main/java/com/lazersport/punch/usbserial/UsbAttachActivity.kt
 tools/android_usb_plugin/plugin/src/main/res/xml/punch_usb_devices.xml
 tools/android_usb_plugin/settings.gradle.kts
-tools/diagramas/montagem_1_ligacao_eletrica.html
-tools/diagramas/montagem_2_mecanica.html
+tools/diagramas/montagem_1_mapa_do_nano.py
+tools/diagramas/montagem_2_ligacoes_por_parte.py
+tools/diagramas/montagem_3_mecanica.html
 tools/gerar_abertura.py
 tools/gerar_apk/EXPORTAR_APK_ANDROID.bat
 tools/gerar_apk/GERAR_APK_COMPLETO.ps1
