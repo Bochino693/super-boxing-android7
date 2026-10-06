@@ -153,6 +153,21 @@ static func parse(line: String) -> Dictionary:
 				"posicao": int(clamp(parts[2].strip_edges().to_int(), 0, 2)),
 				"resta_ms": int(max(parts[3].strip_edges().to_int(), 0)),
 			}
+		"FIM":
+			# FIM,<cima>,<baixo>,<trava> — as chaves de fim de curso, cruas
+			# (1 = acionada), e se a placa travou a subida porque a chave de
+			# cima não abriu dentro do tempo de curso. Firmware V4.
+			if parts.size() != 4:
+				return {"type": ""}
+			for i in range(1, 4):
+				if not parts[i].strip_edges() in ["0", "1"]:
+					return {"type": ""}
+			return {
+				"type": "FIM",
+				"cima": parts[1].strip_edges() == "1",
+				"baixo": parts[2].strip_edges() == "1",
+				"trava": parts[3].strip_edges() == "1",
+			}
 		"OK":
 			return {"type": "OK", "detail": parts[1].strip_edges().to_upper() if parts.size() > 1 else ""}
 	return {"type": ""}

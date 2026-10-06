@@ -1,4 +1,4 @@
-SUPER BOXING - VERSAO TV BOX S905L (ANDROID 7.1) - BUILD 104
+SUPER BOXING - VERSAO TV BOX S905L (ANDROID 7.1) - BUILD 105
 ===========================================================
 
 PARA QUAL MAQUINA E ESTA VERSAO
@@ -26,7 +26,38 @@ O que muda por dentro (voce nao ve na tela):
 
 O APK tem outro nome de pacote (com.lazersport.superboxing), entao pode
 ficar instalado junto com o Punch Challenge das outras maquinas. Se a
-build 92 a 103 estiver instalada, a 104 instala por cima.
+build 92 a 104 estiver instalada, a 105 instala por cima.
+
+O QUE A BUILD 105 CORRIGE (GRAVE O FIRMWARE V4 NO ARDUINO)
+---------------------------------------------------------
+Arquivo: ARDUINO_SENSOR_DE_FEIXE_LM393\ARDUINO_SENSOR_DE_FEIXE_LM393.ino
+Montagem: docs\MONTAGEM_1_LIGACAO_ELETRICA.png e
+          docs\MONTAGEM_2_MECANICA_FEIXE_E_FIM_DE_CURSO.png
+
+O SENSOR DE FEIXE "NAO FUNCIONAVA" por tres motivos:
+- O MOTOR GASTAVA O SOCO. O saco desce na contagem e o jogo arma o
+  sensor logo depois. A palheta passando pela fenda empurrada pelo motor
+  virava o soco (ou "soco fraco") antes de o jogador bater. Agora o
+  feixe fica surdo enquanto o motor anda e mais 0,9 s depois.
+- O "LIVRE" DO FEIXE ERA MEDIDO UMA VEZ SO, ao ligar. Se a palheta
+  estivesse na fenda nessa hora, a placa media ao contrario e nenhum soco
+  valia. Agora o nivel que fica parado 1,5 s e o livre, sempre.
+- O DIAGRAMA ANTIGO tinha os fios do DO/AO e dos botoes START/CREDITO na
+  mesma linha: dava para ligar o DO no D2. O diagrama novo tem cada fio
+  no seu caminho. CONFIRA: DO do sensor no D4.
+  Use sensor de FENDA ou infravermelho. LDR (fotoresistor) com laser e
+  lento demais para medir um soco.
+
+FIM DE CURSO DE CIMA (obrigatorio com "FINS DE CURSO: SIM"):
+- Micro chave com rolete: C no GND, NF (NC) no D11. O saco sobe ate a
+  chave abrir e o motor e cortado NA HORA pela interrupcao do pino.
+- Fio solto ou chave arrancada = chave aberta = o saco NAO sobe (falha
+  segura: nunca fica forcando o topo).
+- Se subir o tempo de curso inteiro sem a chave abrir, a placa corta e
+  TRAVA a subida ("SUBIDA TRAVADA" na aba SACO). Ajuste a chave e aperte
+  PARAR para destravar.
+- Na aba SACO aparece "chave de CIMA: ACIONADA/LIVRE": aperte a chave com
+  a mao para testar a fiacao sem ligar o motor.
 
 O QUE A BUILD 104 CORRIGE
 -------------------------
@@ -178,7 +209,7 @@ O QUE A BUILD 97 CORRIGIU
 ANTES DE INSTALAR NAS 80: TESTE EM UMA
 --------------------------------------
 Na tela de carregamento aparece, no canto de baixo,
-"BUILD 104 - S905L - Android 7.1". Jogue uma partida inteira, abra a
+"BUILD 105 - S905L - Android 7.1". Jogue uma partida inteira, abra a
 Central Tecnica e confira camera e Arduino antes de passar para as outras.
 
 GERAR O APK

@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="pt-br"><head><meta charset="utf-8">
+<style>
+  body { margin:0; background:#0e141c; font-family:"DejaVu Sans", Arial, sans-serif; color:#e8eef5; }
+  .pagina { width:1800px; padding:30px 40px 34px; box-sizing:border-box; }
+  h1 { margin:0 0 4px; font-size:38px; color:#ffd21f; letter-spacing:.5px; }
+  .sub { font-size:19px; color:#9fb3c8; margin-bottom:14px; }
+  svg text { font-family:"DejaVu Sans", Arial, sans-serif; }
+</style></head><body><div class="pagina">
+<h1>PUNCH CHALLENGE — LIGAÇÃO ELÉTRICA COMPLETA (FIRMWARE V4)</h1>
+<div class="sub">Firmware: ARDUINO_SENSOR_DE_FEIXE_LM393.ino (V4) • siga o NOME impresso em cada pino do Nano • todo símbolo ⏚ vai no GND comum</div>
+<svg width="1720" height="900" viewBox="0 120 1720 900" style="display:block">
+  <defs>
+    <g id="terra"><line x1="0" y1="0" x2="0" y2="12" stroke="#4aa3ff" stroke-width="4"/><line x1="-14" y1="12" x2="14" y2="12" stroke="#4aa3ff" stroke-width="4"/><line x1="-9" y1="18" x2="9" y2="18" stroke="#4aa3ff" stroke-width="4"/><line x1="-4" y1="24" x2="4" y2="24" stroke="#4aa3ff" stroke-width="4"/></g>
+  </defs>
+  <style>
+    .caixa { fill:#152030; stroke:#3b5168; stroke-width:3; }
+    .tit { fill:#ffd21f; font-size:22px; font-weight:bold; }
+    .pin { fill:#e8eef5; font-size:18px; }
+    .peq { fill:#9fb3c8; font-size:15px; }
+    .sig { stroke:#ffd21f; stroke-width:5; fill:none; }
+    .v5 { stroke:#ff4d4d; stroke-width:5; fill:none; }
+    .gnd { stroke:#4aa3ff; stroke-width:5; fill:none; }
+    .mot { stroke:#ff7ae0; stroke-width:5; fill:none; }
+    .fim { stroke:#5fe08a; stroke-width:5; fill:none; }
+    .led { stroke:#ffa53a; stroke-width:5; fill:none; }
+    .pot { stroke:#ff4d4d; stroke-width:7; fill:none; }
+    .pinbox { fill:#0e141c; stroke:#cfd8e3; stroke-width:2; }
+    .alerta { fill:#7a1f2b; }
+  </style>
+
+  <!-- ===================== ARDUINO NANO ===================== -->
+  <rect x="700" y="150" width="300" height="640" rx="18" fill="#1a3d6b" stroke="#0b2140" stroke-width="4"/>
+  <text x="850" y="190" class="tit" text-anchor="middle">ARDUINO NANO</text>
+  <rect x="805" y="760" width="90" height="46" rx="6" fill="#c9ced6"/><text x="850" y="790" text-anchor="middle" fill="#222" font-size="16" font-weight="bold">USB</text>
+  <!-- pinos esquerda -->
+  <g class="pin">
+    <rect x="700" y="225" width="78" height="30" class="pinbox"/><text x="739" y="247" text-anchor="middle">5V</text>
+    <rect x="700" y="275" width="78" height="30" class="pinbox"/><text x="739" y="297" text-anchor="middle">GND</text>
+    <rect x="700" y="325" width="78" height="30" class="pinbox"/><text x="739" y="347" text-anchor="middle">D4</text>
+    <rect x="700" y="375" width="78" height="30" class="pinbox"/><text x="739" y="397" text-anchor="middle">A0</text>
+    <rect x="700" y="505" width="78" height="30" class="pinbox"/><text x="739" y="527" text-anchor="middle">D2</text>
+    <rect x="700" y="555" width="78" height="30" class="pinbox"/><text x="739" y="577" text-anchor="middle">D3</text>
+    <rect x="700" y="605" width="78" height="30" class="pinbox"/><text x="739" y="627" text-anchor="middle">D9</text>
+    <rect x="700" y="665" width="78" height="30" class="pinbox"/><text x="739" y="687" text-anchor="middle">GND</text>
+  </g>
+  <!-- pinos direita -->
+  <g class="pin">
+    <rect x="922" y="225" width="78" height="30" class="pinbox"/><text x="961" y="247" text-anchor="middle">D5</text>
+    <rect x="922" y="275" width="78" height="30" class="pinbox"/><text x="961" y="297" text-anchor="middle">D6</text>
+    <rect x="922" y="425" width="78" height="30" class="pinbox"/><text x="961" y="447" text-anchor="middle">D7</text>
+    <rect x="922" y="475" width="78" height="30" class="pinbox"/><text x="961" y="497" text-anchor="middle">D8</text>
+    <rect x="922" y="625" width="78" height="30" class="pinbox"/><text x="961" y="647" text-anchor="middle">D11</text>
+    <rect x="922" y="715" width="78" height="30" class="pinbox"/><text x="961" y="737" text-anchor="middle">D10</text>
+  </g>
+
+  <!-- ===================== SENSOR DE FEIXE ===================== -->
+  <rect x="30" y="150" width="400" height="290" rx="14" class="caixa"/>
+  <text x="50" y="186" class="tit">SENSOR DE FEIXE MH / LM393</text>
+  <!-- desenho da fenda -->
+  <path d="M60,230 h34 v120 h-34 z M140,230 h34 v120 h-34 z" fill="#2b2b2b" stroke="#888" stroke-width="2"/>
+  <line x1="94" y1="290" x2="140" y2="290" stroke="#ff4d4d" stroke-width="3" stroke-dasharray="6 4"/>
+  <rect x="108" y="250" width="18" height="80" fill="#ffd21f" opacity=".85"/>
+  <text x="117" y="372" class="peq" text-anchor="middle">palheta 20 mm</text>
+  <text x="117" y="392" class="peq" text-anchor="middle">atravessa o feixe</text>
+  <g class="pin"><text x="400" y="246" text-anchor="end">VCC</text><text x="400" y="296" text-anchor="end">GND</text><text x="400" y="346" text-anchor="end">DO</text><text x="400" y="396" text-anchor="end">AO</text></g>
+  <rect x="200" y="412" width="222" height="22" rx="4" class="alerta"/><text x="311" y="428" text-anchor="middle" fill="#fff" font-size="13" font-weight="bold">TRIMPOT: LED muda ao cortar</text>
+  <path d="M430,240 H700" class="v5"/><text x="560" y="232" class="peq" text-anchor="middle">5V</text>
+  <path d="M430,290 H700" class="gnd"/><text x="560" y="282" class="peq" text-anchor="middle">GND</text>
+  <path d="M430,340 H700" class="sig"/><text x="560" y="332" class="peq" text-anchor="middle">DO → D4 (medida)</text>
+  <path d="M430,390 H700" class="sig" stroke-dasharray="12 6"/><text x="560" y="382" class="peq" text-anchor="middle">AO → A0 (diagnóstico)</text>
+
+  <!-- ===================== BOTÕES ===================== -->
+  <rect x="30" y="470" width="400" height="260" rx="14" class="caixa"/>
+  <text x="50" y="500" class="tit">BOTÕES (contato NA)</text>
+  <g class="pin"><text x="190" y="527" text-anchor="end">START</text><text x="190" y="577" text-anchor="end">CRÉDITO</text><text x="190" y="627" text-anchor="end">MENU/CONFIG</text></g>
+  <g fill="#0e141c" stroke="#cfd8e3" stroke-width="3"><circle cx="300" cy="520" r="17"/><circle cx="300" cy="570" r="17"/><circle cx="300" cy="620" r="17"/></g>
+  <path d="M317,520 H700" class="sig"/><path d="M317,570 H700" class="sig"/><path d="M317,620 H700" class="sig"/>
+  <text x="560" y="512" class="peq" text-anchor="middle">→ D2</text><text x="560" y="562" class="peq" text-anchor="middle">→ D3</text><text x="560" y="612" class="peq" text-anchor="middle">→ D9</text>
+  <!-- comum dos botões -->
+  <path d="M283,520 H230 V680 H700" class="gnd"/><path d="M283,570 H230" class="gnd"/><path d="M283,620 H230" class="gnd"/>
+  <circle cx="230" cy="570" r="6" fill="#4aa3ff"/><circle cx="230" cy="620" r="6" fill="#4aa3ff"/>
+  <text x="585" y="672" class="peq" text-anchor="middle">comum dos botões → GND</text>
+  <text x="50" y="716" class="peq">Cada botão fecha o seu pino no GND.</text>
+
+  <!-- ===================== FITAS ===================== -->
+  <rect x="1210" y="130" width="500" height="235" rx="14" class="caixa"/>
+  <text x="1228" y="166" class="tit">FITAS WS2812B (30 LEDs cada)</text>
+  <g class="pin"><text x="1228" y="246">DIN fita ESQUERDA</text><text x="1228" y="296">DIN fita DIREITA</text></g>
+  <path d="M1000,240 H1080" class="led"/><rect x="1080" y="230" width="60" height="20" fill="#d8c08a" stroke="#6b5b2e"/><text x="1110" y="226" class="peq" text-anchor="middle">330 Ω</text><path d="M1140,240 H1210" class="led"/>
+  <path d="M1000,290 H1080" class="led"/><rect x="1080" y="280" width="60" height="20" fill="#d8c08a" stroke="#6b5b2e"/><text x="1110" y="318" class="peq" text-anchor="middle">330 Ω</text><path d="M1140,290 H1210" class="led"/>
+  <text x="1228" y="330" class="peq">+5V e GND das fitas ← FONTE 5 V EXTERNA (3 A+)</text>
+  <text x="1228" y="352" class="peq">GND da fonte no GND comum • 1000 µF no +5V/GND</text>
+
+  <!-- ===================== PONTE H + MOTOR ===================== -->
+  <rect x="1210" y="390" width="500" height="200" rx="14" class="caixa"/>
+  <text x="1228" y="424" class="tit">PONTE H IBT-2 / BTS7960</text>
+  <g class="pin"><text x="1228" y="447">RPWM  (DESCE)</text><text x="1228" y="497">LPWM  (SOBE)</text></g>
+  <path d="M1000,440 H1210" class="mot"/><text x="1125" y="432" class="peq" text-anchor="middle">D7 → RPWM</text>
+  <path d="M1000,490 H1210" class="mot"/><text x="1125" y="482" class="peq" text-anchor="middle">D8 → LPWM</text>
+  <text x="1228" y="530" class="peq">R_EN + L_EN + VCC ← 5V do Nano  •  GND ← ⏚</text>
+  <text x="1228" y="553" class="peq">B+ / B− ← FONTE DO MOTOR (com fusível)</text>
+  <text x="1228" y="576" class="peq">M+ / M− → motor do saco</text>
+
+  <!-- ===================== FIM DE CURSO CIMA ===================== -->
+  <rect x="1210" y="606" width="500" height="96" rx="14" class="caixa" style="stroke:#5fe08a"/>
+  <text x="1228" y="636" class="tit" style="fill:#5fe08a">FIM DE CURSO CIMA — OBRIGATÓRIO</text>
+  <text x="1228" y="662" class="pin">micro chave: <tspan fill="#5fe08a" font-weight="bold">NF (NC) → D11</tspan>  •  C → ⏚</text>
+  <text x="1228" y="688" class="peq">NA livre. Saco em cima → chave ABRE → motor corta.</text>
+  <path d="M1000,640 H1210" class="fim"/><text x="1125" y="632" class="peq" text-anchor="middle">NF → D11</text>
+
+  <!-- ===================== FIM DE CURSO BAIXO ===================== -->
+  <rect x="1210" y="714" width="500" height="76" rx="14" class="caixa"/>
+  <text x="1228" y="742" class="tit">FIM DE CURSO BAIXO — opcional</text>
+  <text x="1228" y="772" class="pin">micro chave: <tspan font-weight="bold">NA (NO) → D10</tspan>  •  C → ⏚</text>
+  <path d="M1000,730 H1210" class="fim" stroke-dasharray="12 6"/><text x="1125" y="722" class="peq" text-anchor="middle">NA → D10</text>
+
+  <!-- GND das chaves e ponte: símbolos -->
+
+  <!-- ===================== TV BOX ===================== -->
+  <path d="M850,806 V870" stroke="#cfd8e3" stroke-width="6"/>
+  <rect x="30" y="870" width="1670" height="120" rx="14" class="caixa"/>
+  <text x="50" y="906" class="tit">TV BOX ANDROID + HUB USB ALIMENTADO</text>
+  <text x="50" y="940" class="pin">USB do Nano → hub USB alimentado → TV Box.  No mesmo hub: webcam UVC.  Aceite as janelas de permissão USB e CÂMERA.</text>
+  <text x="50" y="970" class="peq">Motor e fitas NUNCA pelo 5V do Nano/USB: cada um com a sua fonte. Todos os GND (Nano, fontes, ponte H, sensor, chaves) ligados juntos.</text>
+</svg>
+</div></body></html>

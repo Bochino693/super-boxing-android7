@@ -13,7 +13,7 @@ Set-Location $Raiz
 # (SUPERBOXING_BUILD=...): se a pasta tiver arquivos de builds diferentes
 # misturados (zip novo extraido por cima de um velho), a geracao para aqui,
 # antes de fazer qualquer coisa.
-$Build = 104
+$Build = 105
 $VersaoGodot = "3.6.2"
 $VersaoModelos = "3.6.2.stable"
 $UrlBase = "https://github.com/godotengine/godot/releases/download/3.6.2-stable"

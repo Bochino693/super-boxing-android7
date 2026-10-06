@@ -61,6 +61,14 @@ var estado = ArduinoProtocol.MOTOR_PARADO
 var posicao = ArduinoProtocol.POS_DESCONHECIDA
 var resta_ms = 0
 
+## AS CHAVES DE FIM DE CURSO, como a placa lê agora (firmware V4).
+## -1 = a placa ainda não disse (firmware antigo, ou sem placa).
+var fim_cima = -1
+var fim_baixo = -1
+## A placa travou a subida: subiu o tempo inteiro e a chave de cima não
+## abriu. Só o PARAR da Central destrava (lá e aqui).
+var trava_cima = false
+
 var _querido: int = Onde.EM_CIMA
 var _pedido_em_ms = 0
 var _ultimo_envio_ms = 0
@@ -125,10 +133,25 @@ func receber(msg: Dictionary) -> void:
 		_pedido_em_ms = Time.get_ticks_msec()
 		_desistiu = false
 
+## A linha FIM da telemetria.
+func receber_fim(msg: Dictionary) -> void:
+	fim_cima = 1 if bool(msg.get("cima", false)) else 0
+	fim_baixo = 1 if bool(msg.get("baixo", false)) else 0
+	trava_cima = bool(msg.get("trava", false))
+
+## ERROR,FIM_CIMA: a placa cortou a subida sem a chave de cima abrir.
+## O jogo para de pedir — a placa recusaria de qualquer jeito, e repetir
+## o pedido uma vez por segundo seria barulho na serial e na tela.
+func travou() -> void:
+	trava_cima = true
+	_desistiu = true
+	posicao = ArduinoProtocol.POS_DESCONHECIDA
+
 ## A parada de emergência. Ela é diferente de `quero`: não é uma
 ## intenção, é uma ordem — e ela apaga a intenção junto, senão o passo
 ## seguinte religaria o motor que o operador acabou de mandar parar.
 func parar() -> String:
+	trava_cima = false     # o PARAR também destrava a subida na placa
 	_querido = Onde.EM_CIMA if posicao == ArduinoProtocol.POS_EM_CIMA else Onde.EM_BAIXO
 	_desistiu = true
 	return ArduinoProtocol.build_motor("PARA")
@@ -158,6 +181,8 @@ func progresso() -> float:
 func ficha() -> String:
 	if not ligado:
 		return "MOTOR DESLIGADO NA CENTRAL"
+	if trava_cima:
+		return "SUBIDA TRAVADA: A CHAVE DE CIMA NÃO ABRIU — APERTE PARAR"
 	if _desistiu:
 		return "MOTOR NÃO RESPONDEU — CONFIRA A LIGAÇÃO"
 	if estado == ArduinoProtocol.MOTOR_DESCENDO:
