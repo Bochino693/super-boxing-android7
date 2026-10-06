@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="pt-br"><head><meta charset="utf-8">
+<style>
+  body { margin:0; background:#ffffff; font-family:"DejaVu Sans", Arial, sans-serif; color:#1f2328; }
+  .pagina { width:1800px; padding:30px 40px 30px; box-sizing:border-box; }
+  h1 { margin:0 0 4px; font-size:38px; color:#111; }
+  .sub { font-size:19px; color:#555; margin-bottom:14px; }
+  .lado { display:flex; gap:28px; }
+  .passos { width:800px; font-size:19px; line-height:1.38; }
+  .passo { background:#f6f8fa; border:1px solid #d0d7de; border-left:6px solid #d4a017; border-radius:8px; padding:10px 14px; margin-bottom:10px; }
+  .passo b { color:#111; } .passo.vd { border-left-color:#1a7f37; } .passo.vm { border-left-color:#d1242f; } .passo.az { border-left-color:#1f6feb; }
+  svg text { font-family:"DejaVu Sans", Arial, sans-serif; }
+</style></head><body><div class="pagina">
+<h1>PUNCH CHALLENGE — MONTAGEM MECÂNICA: MOTOR, FEIXE E FINS DE CURSO</h1>
+<div class="sub">Vista de lado (ilustrativa): o saco desce para jogar e sobe para guardar. Palheta, sensor de feixe e o fim de curso de cima.</div>
+<div class="lado">
+<svg width="880" height="900" viewBox="0 0 880 900">
+  <style>
+    .s-t { fill:#1f2328; font-size:18px; } .s-p { fill:#57606a; font-size:15px; } .s-tt { fill:#111; font-size:20px; font-weight:bold; }
+    .s-vd { fill:#1a7f37; font-size:17px; font-weight:bold; } .s-am { fill:#9a6700; font-size:17px; font-weight:bold; }
+  </style>
+  <defs><marker id="seta" markerUnits="userSpaceOnUse" markerWidth="22" markerHeight="22" refX="18" refY="11" orient="auto"><path d="M0,0 L22,11 L0,22 z" fill="#d4a017"/></marker>
+  <marker id="setac" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto"><path d="M0,0 L14,7 L0,14 z" fill="#9fb3c8"/></marker></defs>
+  <!-- gabinete -->
+  <rect x="30" y="40" width="820" height="840" rx="16" fill="#fbfcfd" stroke="#d0d7de" stroke-width="4"/>
+  <text x="50" y="78" class="s-tt">GABINETE (vista de lado)</text>
+  <!-- viga -->
+  <rect x="60" y="112" width="760" height="22" fill="#8c959f"/>
+  <!-- motor e correia -->
+  <rect x="660" y="200" width="160" height="84" rx="10" fill="#f3e8ff" stroke="#a333c8" stroke-width="3"/>
+  <text x="748" y="236" text-anchor="middle" class="s-t" style="font-weight:bold">MOTOR</text>
+  <text x="742" y="262" text-anchor="middle" class="s-p" style="fill:#6b21a8;font-size:13px">ponte H: D9↓ D10↑</text>
+  <circle cx="676" cy="242" r="13" fill="#a333c8"/>
+  <line x1="440" y1="152" x2="676" y2="229" stroke="#a333c8" stroke-width="4"/>
+  <line x1="440" y1="188" x2="676" y2="255" stroke="#a333c8" stroke-width="4"/>
+  <text x="575" y="288" class="s-p" text-anchor="middle">correia / corrente</text>
+  <!-- braço GUARDADO (em cima) -->
+  <line x1="440" y1="170" x2="140" y2="178" stroke="#7f93a8" stroke-width="12" stroke-dasharray="18 10" stroke-linecap="round"/>
+  <rect x="40" y="150" width="70" height="52" rx="26" fill="none" stroke="#7f93a8" stroke-width="4" stroke-dasharray="10 8"/>
+  <text x="44" y="224" class="s-p">saco</text><text x="44" y="242" class="s-p">guardado</text>
+  <!-- sensor IR de cima: vê o alvo branco do braço quando ele chega -->
+  <rect x="256" y="181" width="48" height="6" fill="#ffffff" stroke="#24292f" stroke-width="1.5"/>
+  <line x1="268" y1="196" x2="270" y2="189" stroke="#d1242f" stroke-width="2" stroke-dasharray="3 2"/>
+  <line x1="292" y1="196" x2="290" y2="189" stroke="#d1242f" stroke-width="2" stroke-dasharray="3 2"/>
+  <rect x="261" y="196" width="14" height="14" rx="6" fill="#e8f1fb" stroke="#8aa4c0" stroke-width="1.5"/>
+  <rect x="285" y="196" width="14" height="14" rx="6" fill="#2b2f36"/>
+  <rect x="246" y="210" width="68" height="20" rx="4" fill="#1565c0" stroke="#0d3c7a" stroke-width="2"/>
+  <rect x="160" y="190" width="26" height="40" fill="#7a1f2b"/>
+  <text x="173" y="250" class="s-p" text-anchor="middle">batente</text>
+  <text x="60" y="300" class="s-vd">FIM DE CURSO CIMA (IR → D11)</text>
+  <text x="60" y="322" class="s-p">vê o alvo branco do braço antes do batente</text>
+  <line x1="300" y1="282" x2="286" y2="236" stroke="#1a7f37" stroke-width="2" marker-end="url(#setac)"/>
+  <!-- eixo -->
+  <circle cx="440" cy="170" r="20" fill="#6e7781" stroke="#24292f" stroke-width="4"/>
+  <text x="470" y="160" class="s-p">eixo do braço</text>
+  <!-- braço de JOGO (embaixo) -->
+  <line x1="440" y1="170" x2="440" y2="600" stroke="#57606a" stroke-width="14" stroke-linecap="round"/>
+  <rect x="365" y="590" width="150" height="230" rx="60" fill="#b3262f" stroke="#ff8b8b" stroke-width="4"/>
+  <text x="440" y="715" text-anchor="middle" class="s-t" style="font-weight:bold;fill:#fff">SACO</text>
+  <text x="440" y="740" text-anchor="middle" class="s-p" style="fill:#ffd0d0">posição de JOGO</text>
+  <!-- palheta -->
+  <rect x="446" y="372" width="74" height="18" fill="#ffd21f"/>
+  <text x="428" y="388" class="s-am" text-anchor="end">palheta 20 mm →</text>
+  <!-- sensor de fenda: torre de cima e de baixo, feixe vertical -->
+  <rect x="548" y="332" width="64" height="32" fill="#2d333b" stroke="#57606a" stroke-width="2"/>
+  <rect x="548" y="398" width="64" height="32" fill="#2d333b" stroke="#57606a" stroke-width="2"/>
+  <rect x="612" y="332" width="14" height="98" fill="#8c959f"/>
+  <line x1="580" y1="364" x2="580" y2="398" stroke="#ff4d4d" stroke-width="3" stroke-dasharray="5 4"/>
+  <text x="640" y="362" class="s-am">SENSOR DE FEIXE</text>
+  <text x="640" y="386" class="s-p">DO → D4 • AO → A0</text>
+  <text x="640" y="410" class="s-p">a palheta passa ENTRE</text>
+  <text x="640" y="430" class="s-p">as duas torres</text>
+  <!-- embaixo: sem fim de curso, a descida termina pelo tempo -->
+  <text x="60" y="488" class="s-vd" style="fill:#57606a">EMBAIXO: SEM SENSOR</text>
+  <text x="60" y="510" class="s-p">a descida termina pelo TEMPO DE CURSO</text>
+  <!-- soco e balanço -->
+  <path d="M200,700 H352" stroke="#d4a017" stroke-width="6" marker-end="url(#seta)"/>
+  <text x="200" y="684" class="s-t">SOCO</text>
+  <path d="M540,640 q70,-50 80,-140" stroke="#d4a017" stroke-width="3" fill="none" stroke-dasharray="8 6" marker-end="url(#seta)"/>
+  <text x="560" y="680" class="s-p">o saco balança para trás:</text>
+  <text x="560" y="700" class="s-p">a palheta atravessa o feixe</text>
+  <!-- rodapé -->
+  <text x="60" y="846" class="s-p">Ilustrativo: vale a ORDEM das peças, não a forma exata do seu braço e motor.</text>
+  <text x="60" y="868" class="s-p">Parado, a palheta fica FORA da fenda (5 a 10 mm antes). No soco, atravessa INTEIRA.</text>
+</svg>
+<div class="passos">
+  <div class="passo"><b>1. Palheta.</b> Uma chapinha rígida de <b>20 mm</b> (medidos no sentido em que ela anda), presa no braço perto do eixo. Com o saco parado ela fica <b>fora</b> da fenda. No soco, ela <b>entra e sai</b> da fenda inteira. A largura vai na Central (PALHETA).</div>
+  <div class="passo az"><b>2. Sensor de feixe.</b> Use módulo de <b>fenda</b> (fotointerruptor, tipo H206/FC-03) ou emissor + receptor <b>infravermelho</b>. <b>Não use LDR com laser:</b> o fotoresistor demora de 10 a 50 ms para reagir, e um soco tapa o feixe por só 3 a 10 ms. Gire o trimpot até o LED do módulo mudar quando um cartão passa.</div>
+  <div class="passo vd"><b>3. Sensor de CIMA (obrigatório).</b> Sensor infravermelho de 3 pinos: <b>VCC → 5V</b>, <b>GND → GND</b>, <b>OUT → D11</b> e um <b>resistor de 100k do D11 ao GND</b>. Cole um <b>alvo branco</b> no braço; o sensor deve vê-lo <b>5 a 10 mm antes do batente</b> (regule no trimpot). O motor é cortado na hora pela interrupção do pino. Fio OUT solto: o saco <b>não sobe</b> (falha segura). Detalhe: MONTAGEM_5.</div>
+  <div class="passo"><b>4. Motor e velocidade.</b> Ponte H BTS7960 (BT_2): <b>RPWM → D9</b> (desce) e <b>LPWM → D10</b> (sobe). A velocidade vem do pulso nesses dois fios: ajuste na Central, aba SACO, <b>VELOCIDADE DO MOTOR</b> (subida 80%, descida 60% para começar). Embaixo não há sensor: a descida termina pelo tempo de curso.</div>
+  <div class="passo az"><b>5. Primeiro teste.</b> Grave o firmware V6. Abra a Central (botão MENU) e vá na aba <b>SACO</b>. Ligue o motor e deixe <b>FINS DE CURSO: SIM</b>. Ponha a mão (ou o alvo) na frente do sensor de cima: a linha deve mudar para <b>"chave de CIMA: ACIONADA"</b>. Depois passe um cartão no feixe: o feixe deve aparecer como <b>INTERROMPIDO</b>.</div>
+  <div class="passo"><b>6. Tempo de curso.</b> Com o saco no meio, aperte <b>SUBIR</b>. Se ele descer, inverta M+ e M− na ponte H. Cronometre a subida e ponha <b>TEMPO DE CURSO = medido + 10%</b>. Esse tempo é o teto de segurança.</div>
+  <div class="passo vm"><b>7. "SUBIDA TRAVADA".</b> O saco subiu o tempo todo e o sensor de cima não viu o alvo. A placa cortou o motor e trava a subida para não forçar o mecanismo. Regule o sensor (posição e trimpot) e aperte <b>PARAR</b> na Central para destravar.</div>
+</div>
+</div>
+</div></body></html>

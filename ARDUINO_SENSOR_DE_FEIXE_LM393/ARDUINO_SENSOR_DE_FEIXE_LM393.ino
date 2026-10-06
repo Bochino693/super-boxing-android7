@@ -1,12 +1,33 @@
 /*
-  PUNCH CHALLENGE - FIRMWARE COMPLETO SENSOR DE FEIXE MH/LM393 V4
+  PUNCH CHALLENGE - FIRMWARE COMPLETO SENSOR DE FEIXE MH/LM393 V6
   Arduino Uno/Nano ATmega328P - serial 115200
 
   Sensor: VCC->5V, GND->GND, D0->D4, A0->A0
-  Botoes: START->D2/GND, CREDIT->D3/GND, CONFIG->D9/GND
+  Botoes: START->D2/GND, CREDIT->D3/GND, CONFIG->D12/GND
   Fitas: dados esquerda D5, dados direita D6, fonte externa e GND comum
-  Motor: D7 desce, D8 sobe (ponte H). Fim de curso de CIMA em D11
-         (contato NF/NC da micro chave), de BAIXO em D10 (NA, opcional).
+  Motor (ponte H BTS7960 "BT_2"/IBT-2): D9 -> RPWM (DESCE com velocidade),
+         D10 -> LPWM (SOBE com velocidade), R_EN e L_EN e VCC -> 5V,
+         GND -> GND. PWM de 20 kHz (sem chiado), rampa suave na partida.
+  Fim de curso: SO O DE CIMA, em D11: SENSOR INFRAVERMELHO de obstaculo
+         (modulo FC-51/LM393, 3 pinos VCC/GND/OUT): OUT->D11 e um resistor
+         de 100k do D11 ao GND. A descida termina pelo tempo de curso.
+
+  O QUE MUDOU NA V6:
+    - VELOCIDADE: subida e descida com velocidade propria (padrao 80% e
+      60%), ajustada na Central (aba SACO) ou por MOTOR,VEL,<sobe>,<desce>.
+      A partida e em rampa (RAMPA_MS) para nao dar tranco na caixa.
+    - Pinos novos: RPWM no D9 e LPWM no D10 (os unicos pinos livres com
+      PWM). O botao CONFIG foi para o D12. O fim de curso de baixo saiu.
+
+  O QUE MUDOU NA V5:
+    - Fim de curso de CIMA = sensor infravermelho de obstaculo. A saida
+      dele vai a LOW (0 V) quando "ve" o alvo branco preso no saco: e o
+      "chegou em cima". O resistor de 100k do D11 ao GND faz um fio OUT
+      partido, ou o sensor sem o 5V, tambem ler LOW: o firmware entende
+      "ja chegou" e NAO liga a subida (falha segura, como a chave NF).
+      O D11 fica SEM o pull-up interno (INPUT), senao o fio solto leria
+      HIGH.
+    - Quem ainda usa a micro chave NF: FIM_CIMA_INFRAVERMELHO 0 (abaixo).
 
   O QUE MUDOU NA V4 (sensor que "nao funcionava" e saco subindo demais):
     - O FEIXE FICA SURDO ENQUANTO O MOTOR ANDA, e mais ASSENTAR_MS depois.
@@ -54,7 +75,7 @@
 
 #define PIN_START 2
 #define PIN_CREDIT 3
-#define PIN_CONFIG 9
+#define PIN_CONFIG 12
 #define PIN_D0 4
 #define PIN_A0 A0
 #define LED_STATUS 13
@@ -65,21 +86,23 @@
 /* ------------------------------------------------------------------
    MOTOR DO SACO - desce no START e sobe no fim da rodada.
 
-   LIGACAO. Duas saidas digitais comandam uma ponte H (L298N: IN1/IN2;
-   BTS7960: D7->RPWM, D8->LPWM, R_EN e L_EN->5V) ou um par de reles com intertravamento
-   mecanico. NUNCA as duas ao mesmo tempo - ver `motorParar`.
+   LIGACAO. Duas saidas com PWM comandam a ponte H BTS7960 (placa "BT_2",
+   a IBT-2): cada uma liga UM sentido, e a largura do pulso e a
+   velocidade. NUNCA as duas ao mesmo tempo - ver `saidaLigar`.
 
-     D7  -> DESCE   (IN1 ou RPWM)
-     D8  -> SOBE    (IN2 ou LPWM)
-     D10 -> fim de curso DE BAIXO  (C e NA da chave: C no GND; opcional)
-     D11 -> fim de curso DE CIMA   (C e NF da chave: C no GND; obrigatorio
-            com "FINS DE CURSO: SIM" na Central)
+     D9  -> RPWM  = DESCE, com velocidade
+     D10 -> LPWM  = SOBE, com velocidade
+     5V  -> R_EN, L_EN e VCC da ponte (habilitam a ponte; sem eles ela
+            nao anda)       GND -> GND da ponte. R_IS e L_IS: nao ligar.
+     D11 -> fim de curso DE CIMA   (OUT do sensor infravermelho + 100k ao
+            GND; obrigatorio com "FINS DE CURSO: SIM" na Central)
 
-   O DE CIMA E NF (NC) DE PROPOSITO. Em repouso a chave esta FECHADA e o
-   pino le LOW. Quando o saco chega, a chave abre e o pino le HIGH. Um fio
-   partido, um conector solto ou a chave arrancada tambem leem HIGH: o
-   firmware entende "ja chegou" e NAO liga a subida. O defeito vira saco
-   parado, e nunca motor forcando o mecanismo.
+   O DE CIMA FALHA PARA O LADO SEGURO. Com o sensor infravermelho, o
+   pino le HIGH enquanto o sensor nao ve nada e LOW quando ve o alvo (o
+   saco chegou). O fio OUT partido ou o sensor sem 5V tambem leem LOW por
+   causa do resistor de 100k ao GND: o firmware entende "ja chegou" e NAO
+   liga a subida. O defeito vira saco parado, e nunca motor forcando o
+   mecanismo. (Com a micro chave NF a ideia e a mesma, com HIGH.)
 
    POR QUE O CURSO E POR TEMPO. Um motor de saco de pancada nao tem
    encoder e nao precisa de um: o curso e sempre o mesmo, e cronometrar
@@ -93,10 +116,26 @@
    ler o sensor e de responder ao jogo - e ai ninguem consegue nem
    mandar parar.
    ------------------------------------------------------------------ */
-#define PIN_MOTOR_DESCE 7
-#define PIN_MOTOR_SOBE 8
-#define PIN_FIM_BAIXO 10
+#define PIN_MOTOR_DESCE 9    /* RPWM - OC1A (PB1) */
+#define PIN_MOTOR_SOBE 10    /* LPWM - OC1B (PB2) */
 #define PIN_FIM_CIMA 11
+
+/* QUAL E O FIM DE CURSO DE CIMA.
+   1 = SENSOR INFRAVERMELHO de obstaculo (FC-51 / LM393, VCC-GND-OUT):
+       OUT -> D11, VCC -> 5V, GND -> GND, e um resistor de 100k (47k a
+       100k) do D11 ao GND. LOW = viu o alvo = chegou em cima.
+       Fio OUT partido ou sensor sem 5V: o resistor puxa para LOW = "chegou"
+       = a subida NAO liga. Sensor sem o GND: le "livre"; ai quem protege e
+       o TEMPO DE CURSO (corta e trava a subida com ERROR,FIM_CIMA).
+   0 = micro chave com contato NF (C no GND, NF no D11): HIGH = chegou. */
+#define FIM_CIMA_INFRAVERMELHO 1
+#if FIM_CIMA_INFRAVERMELHO
+  #define FIM_CIMA_NIVEL_CHEGOU LOW
+  #define FIM_CIMA_MODO INPUT          /* sem pull-up: o 100k puxa para o GND */
+#else
+  #define FIM_CIMA_NIVEL_CHEGOU HIGH
+  #define FIM_CIMA_MODO INPUT_PULLUP
+#endif
 
 /* Estados do motor. PARADO e o unico em que as duas saidas estao baixas. */
 #define MOTOR_PARADO 0
@@ -124,10 +163,20 @@ const unsigned long MOTOR_CURSO_MAX_MS = 15000;
 /* Tempo morto ao inverter o sentido: protege a ponte H de conducao
    cruzada e a caixa de reducao do tranco. */
 unsigned long motorPausaMs = 350;
+/* VELOCIDADE em % (20 a 100). A subida carrega o peso do saco; a descida
+   tem a gravidade a favor, por isso comeca mais devagar. */
+uint8_t motorVelSobe = 80;
+uint8_t motorVelDesce = 60;
+/* Rampa de partida: sai de RAMPA_INICIO % ate a velocidade em RAMPA_MS. */
+const unsigned long RAMPA_MS = 300;
+const uint8_t RAMPA_INICIO = 25;
+unsigned long motorInicio = 0;
+/* PWM do Timer1 a 20 kHz (Fast PWM, TOPO no ICR1): 16 MHz / 800. */
+#define PWM_TOPO 800
 volatile bool motorUsaFimDeCurso = true;
 /* A interrupcao do fim de curso cortou o motor; o loop confirma. */
 volatile bool motorCorteFim = false;
-/* Subida sem a chave de cima abrir dentro do tempo: subida travada ate
+/* Subida sem o sensor de cima ver o saco dentro do tempo: subida travada ate
    um MOTOR,PARA (botao PARAR da Central). */
 bool motorTravaCima = false;
 
@@ -210,12 +259,14 @@ ISR(PCINT2_vect) { observar((PIND & _BV(PD4)) ? HIGH : LOW, micros()); }
 
 /* FIM DE CURSO POR INTERRUPCAO: corta a saida do sentido no mesmo
    microssegundo em que a chave muda, sem esperar o loop (que pode estar
-   escrevendo na serial). D8 = PB0 (sobe), D7 = PD7 (desce),
-   D11 = PB3 (cima, NF: HIGH = chegou), D10 = PB2 (baixo, NA: LOW = chegou). */
+   escrevendo na serial). D10 = PB2/OC1B (sobe), D11 = PB3 (cima:
+   FIM_CIMA_NIVEL_CHEGOU). Cortar = desligar o PWM do pino e po-lo em LOW. */
 ISR(PCINT0_vect) {
   if (!motorUsaFimDeCurso) return;
-  if (motorEstado == MOTOR_SUBINDO && (PINB & _BV(PB3))) { PORTB &= ~_BV(PB0); motorCorteFim = true; }
-  if (motorEstado == MOTOR_DESCENDO && !(PINB & _BV(PB2))) { PORTD &= ~_BV(PD7); motorCorteFim = true; }
+  uint8_t cima = (PINB & _BV(PB3)) ? HIGH : LOW;
+  if (motorEstado == MOTOR_SUBINDO && cima == FIM_CIMA_NIVEL_CHEGOU) {
+    TCCR1A &= ~_BV(COM1B1); PORTB &= ~_BV(PB2); motorCorteFim = true;
+  }
 }
 #endif
 
@@ -344,6 +395,37 @@ void leds(long permil) {
 
 /* ---------------------------------------------------------- o motor */
 
+/* AS DUAS SAIDAS DA PONTE H. So uma tem PWM de cada vez; a outra fica em
+   LOW. Com as duas em LOW (e R_EN/L_EN no 5V) a ponte FREIA o motor: o
+   saco fica onde parou. */
+void saidasDesligar() {
+  TCCR1A &= ~(_BV(COM1A1) | _BV(COM1B1));
+  OCR1A = 0; OCR1B = 0;
+  PORTB &= ~(_BV(PB1) | _BV(PB2));
+}
+
+uint16_t motorCarga(uint8_t sentido) {
+  uint8_t alvo = (sentido == MOTOR_SUBINDO) ? motorVelSobe : motorVelDesce;
+  unsigned long dt = millis() - motorInicio;
+  uint8_t pct = alvo;
+  if (dt < RAMPA_MS && alvo > RAMPA_INICIO)
+    pct = RAMPA_INICIO + (uint8_t)((unsigned long)(alvo - RAMPA_INICIO) * dt / RAMPA_MS);
+  return (uint16_t)((unsigned long)pct * PWM_TOPO / 100);   /* 100% = TOPO+1: sempre alto */
+}
+
+/* Liga (ou atualiza) o PWM do sentido. A saida do outro sentido fica em
+   LOW antes de qualquer coisa. */
+void saidaLigar(uint8_t sentido) {
+  uint16_t carga = motorCarga(sentido);
+  if (sentido == MOTOR_SUBINDO) {
+    TCCR1A &= ~_BV(COM1A1); PORTB &= ~_BV(PB1); OCR1A = 0;
+    OCR1B = carga; TCCR1A |= _BV(COM1B1);
+  } else {
+    TCCR1A &= ~_BV(COM1B1); PORTB &= ~_BV(PB2); OCR1B = 0;
+    OCR1A = carga; TCCR1A |= _BV(COM1A1);
+  }
+}
+
 void motorRelatar() {
   Serial.print(F("MOTOR,"));
   Serial.print(motorEstado); Serial.print(',');
@@ -356,8 +438,7 @@ void motorRelatar() {
 /* Desliga as duas saidas. E o unico lugar que escreve LOW nas duas, e
    toda mudanca de estado passa por aqui antes de ligar o outro sentido. */
 void motorParar(bool avisar) {
-  digitalWrite(PIN_MOTOR_DESCE, LOW);
-  digitalWrite(PIN_MOTOR_SOBE, LOW);
+  saidasDesligar();
   bool mudou = motorEstado != MOTOR_PARADO;
   motorEstado = MOTOR_PARADO;
   motorProximo = MOTOR_PARADO;
@@ -368,8 +449,8 @@ void motorParar(bool avisar) {
 
 bool motorFimAtingido(uint8_t sentido) {
   if (!motorUsaFimDeCurso) return false;
-  if (sentido == MOTOR_DESCENDO) return digitalRead(PIN_FIM_BAIXO) == LOW;   /* NA */
-  if (sentido == MOTOR_SUBINDO) return digitalRead(PIN_FIM_CIMA) == HIGH;    /* NF */
+  /* So ha fim de curso EM CIMA: a descida termina pelo tempo. */
+  if (sentido == MOTOR_SUBINDO) return digitalRead(PIN_FIM_CIMA) == FIM_CIMA_NIVEL_CHEGOU;
   return false;
 }
 
@@ -396,6 +477,7 @@ void motorIr(uint8_t sentido) {
   if (motorFimAtingido(sentido)) { motorPosicao = destino; motorRelatar(); return; }
   /* Inverter exige parar e esperar o tempo morto. */
   if (motorEstado != MOTOR_PARADO) {
+    motorPosicao = POS_DESCONHECIDA;
     motorParar(false);
     motorProximo = sentido;
     motorLiberaEm = millis() + motorPausaMs;
@@ -403,10 +485,14 @@ void motorIr(uint8_t sentido) {
     return;
   }
   if (millis() < motorLiberaEm) { motorProximo = sentido; return; }
+  /* Saiu do lugar: ate chegar, a posicao e desconhecida. Sem isto, um
+     DESCE no meio de uma subida que saiu de baixo era ignorado ("ja esta
+     embaixo") e a subida seguia. */
+  motorPosicao = POS_DESCONHECIDA;
   motorEstado = sentido;
   motorAte = millis() + motorCursoMs;
-  digitalWrite(PIN_MOTOR_DESCE, sentido == MOTOR_DESCENDO ? HIGH : LOW);
-  digitalWrite(PIN_MOTOR_SOBE, sentido == MOTOR_SUBINDO ? HIGH : LOW);
+  motorInicio = millis();
+  saidaLigar(sentido);
   motorRelatar();
 }
 
@@ -430,22 +516,24 @@ void motorAtualizar() {
     /* Pico no fio: a chave nao ficou aberta. Religa o mesmo sentido; o
        cronometro do curso continua o mesmo, entao o teto nao muda. */
     motorCorteFim = false;
-    digitalWrite(sentido == MOTOR_DESCENDO ? PIN_MOTOR_DESCE : PIN_MOTOR_SOBE, HIGH);
+    saidaLigar(sentido);
   }
+  /* Rampa: a carga sobe ate a velocidade escolhida. */
+  if (!motorCorteFim && millis() - motorInicio <= RAMPA_MS + 20) saidaLigar(motorEstado);
   if ((long)(millis() - motorAte) >= 0) {
     uint8_t sentido = motorEstado;
     motorParar(false);
     motorLiberaEm = millis() + motorPausaMs;
     if (sentido == MOTOR_SUBINDO && motorUsaFimDeCurso) {
-      /* SUBIU O TEMPO TODO E A CHAVE DE CIMA NAO ABRIU. Ou a chave esta
-         fora do lugar, ou em curto: o saco pode estar forcando o topo.
+      /* SUBIU O TEMPO TODO E O SENSOR DE CIMA NAO VIU O SACO. Ou o sensor
+         esta fora do lugar/desregulado, ou sem o GND: o saco pode estar
+         forcando o topo.
          Nao finge que chegou e trava a subida ate o tecnico ver. */
       motorPosicao = POS_DESCONHECIDA;
       motorTravaCima = true;
       Serial.println(F("ERROR,FIM_CIMA"));
     } else {
-      /* Sem fins de curso (ou descendo sem a chave de baixo): o tempo e
-         o curso. */
+      /* Descendo (ou sem fim de curso): o tempo e o curso. */
       motorPosicao = (sentido == MOTOR_DESCENDO) ? POS_EM_BAIXO : POS_EM_CIMA;
     }
     motorRelatar();
@@ -457,12 +545,23 @@ void motorConfigurar(char *cmd) {
   if (p) motorCursoMs = constrain(atol(p), 200L, (long)MOTOR_CURSO_MAX_MS);
   p = strtok(NULL, ","); if (p) motorPausaMs = constrain(atol(p), 50L, 2000L);
   p = strtok(NULL, ","); if (p) motorUsaFimDeCurso = atoi(p) != 0;
+  /* Opcionais (Central da build 106 em diante): velocidade de subida e
+     de descida em %. Um jogo antigo manda so os tres primeiros. */
+  p = strtok(NULL, ","); if (p) motorVelSobe = constrain(atoi(p), 20, 100);
+  p = strtok(NULL, ","); if (p) motorVelDesce = constrain(atoi(p), 20, 100);
   Serial.println(F("OK,MOTOR"));
   motorRelatar();
 }
 
 void motorComando(char *cmd) {
   if (!strncasecmp(cmd + 6, "CONFIG", 6)) { motorConfigurar(cmd); return; }
+  if (!strncasecmp(cmd + 6, "VEL,", 4)) {
+    char *p = cmd + 10;
+    motorVelSobe = constrain(atoi(p), 20, 100);
+    p = strchr(p, ','); if (p) motorVelDesce = constrain(atoi(p + 1), 20, 100);
+    Serial.print(F("OK,VEL,")); Serial.print(motorVelSobe); Serial.print(','); Serial.println(motorVelDesce);
+    return;
+  }
   if (!strcasecmp(cmd + 6, "DESCE")) motorIr(MOTOR_DESCENDO);
   else if (!strcasecmp(cmd + 6, "SOBE")) motorIr(MOTOR_SUBINDO);
   else if (!strcasecmp(cmd + 6, "PARA")) { motorTravaCima = false; motorParar(true); }
@@ -471,7 +570,7 @@ void motorComando(char *cmd) {
 }
 
 void comando(char *cmd) {
-  if (!strcasecmp(cmd,"PING")) { Serial.println(F("READY,PUNCH_OPTICAL,V4-MH-LM393")); Serial.println(F("PONG")); }
+  if (!strcasecmp(cmd,"PING")) { Serial.println(F("READY,PUNCH_OPTICAL,V6-MH-LM393")); Serial.println(F("PONG")); }
   else if (!strcasecmp(cmd,"ARM")) armarCaptura();
   else if (!strcasecmp(cmd,"RESET")) { noInterrupts(); capturaArmada=false; pulsoAberto=false; pulsoPendente=false; interrupts(); motorParar(false); Serial.println(F("OK,RESET")); }
   else if (!strcasecmp(cmd,"CALIBRATE")) { calibrar(); Serial.println(F("OK,CALIBRATE")); }
@@ -500,9 +599,10 @@ void telemetria() {
   Serial.print(digitalRead(PIN_CREDIT)==LOW?1:0); Serial.print(','); Serial.println(digitalRead(PIN_CONFIG)==LOW?1:0);
   Serial.print(F("STATUS,")); Serial.print(pulsoAberto?1:0); Serial.print(','); Serial.print(ultimoA0,3); Serial.print(','); Serial.println(pulsoMinUs/1000.0f,2);
   /* FIM,<cima chegou>,<baixo chegou>,<subida travada> - cru, para a
-     Central: aperte a chave com a mao e veja o numero mudar. */
-  Serial.print(F("FIM,")); Serial.print(digitalRead(PIN_FIM_CIMA)==HIGH?1:0); Serial.print(',');
-  Serial.print(digitalRead(PIN_FIM_BAIXO)==LOW?1:0); Serial.print(','); Serial.println(motorTravaCima?1:0);
+     Central: ponha a mao (ou o alvo branco) na frente do sensor de cima
+     e veja o numero mudar. */
+  Serial.print(F("FIM,")); Serial.print(digitalRead(PIN_FIM_CIMA)==FIM_CIMA_NIVEL_CHEGOU?1:0); Serial.print(',');
+  Serial.print(0); Serial.print(','); Serial.println(motorTravaCima?1:0);   /* sem fim de curso de baixo */
 }
 
 void setup() {
@@ -516,15 +616,21 @@ void setup() {
   digitalWrite(PIN_MOTOR_DESCE,LOW); digitalWrite(PIN_MOTOR_SOBE,LOW);
   pinMode(PIN_MOTOR_DESCE,OUTPUT); pinMode(PIN_MOTOR_SOBE,OUTPUT);
   digitalWrite(PIN_MOTOR_DESCE,LOW); digitalWrite(PIN_MOTOR_SOBE,LOW);
-  pinMode(PIN_FIM_BAIXO,INPUT_PULLUP); pinMode(PIN_FIM_CIMA,INPUT_PULLUP);
+  /* Timer1 so para a ponte H: Fast PWM (modo 14), TOPO no ICR1, sem
+     divisor -> 20 kHz, acima do que o ouvido escuta. As saidas so ligam
+     em saidaLigar. */
+  TCCR1A = _BV(WGM11); TCCR1B = 0; TCNT1 = 0;
+  ICR1 = PWM_TOPO - 1; OCR1A = 0; OCR1B = 0;
+  TCCR1B = _BV(WGM13) | _BV(WGM12) | _BV(CS10);
+  pinMode(PIN_FIM_CIMA,FIM_CIMA_MODO);
 #if TEM_FITAS
   fitaEsq.begin(); fitaDir.begin(); fitaEsq.setBrightness(140); fitaDir.setBrightness(140);
   fitaEsq.show(); fitaDir.show();
 #endif
-  Serial.println(F("READY,PUNCH_OPTICAL,V4-MH-LM393")); calibrar();
+  Serial.println(F("READY,PUNCH_OPTICAL,V6-MH-LM393")); calibrar();
 #if defined(__AVR_ATmega328P__)
   PCICR |= _BV(PCIE2); PCMSK2 |= _BV(PCINT20);
-  PCICR |= _BV(PCIE0); PCMSK0 |= _BV(PCINT2) | _BV(PCINT3);   /* D10, D11 */
+  PCICR |= _BV(PCIE0); PCMSK0 |= _BV(PCINT3);   /* D11: fim de curso de cima */
 #endif
 }
 

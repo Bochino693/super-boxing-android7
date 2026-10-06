@@ -1,12 +1,26 @@
-FIRMWARE DEFINITIVO - SENSOR DE FEIXE LM393 - V4
+FIRMWARE DEFINITIVO - SENSOR DE FEIXE LM393 - V6
 ================================================
 
 Grave o arquivo ARDUINO_SENSOR_DE_FEIXE_LM393.ino no Arduino Uno/Nano
 (biblioteca Adafruit NeoPixel instalada pelo Gerenciador de Bibliotecas).
+E UM FIRMWARE SO para tudo: sensor de feixe, botoes, fitas de LED, PONTE H
+do motor do saco e fins de curso. Todo o codigo Arduino da maquina fica
+nesta pasta (a pasta "arduino" antiga, do sensor MPU-6050, saiu).
+
+TESTES SEM O JOGO (subpastas; a IDE nao junta ao firmware):
+  TESTE_FEIXE\TESTE_FEIXE.ino       - o feixe ve a palheta? a que velocidade?
+  TESTE_PONTE_H\TESTE_PONTE_H.ino   - sobe/desce o saco pelo Monitor Serial
+                                      (s, d, p, t, v80, w60): acha a velocidade
+                                      boa e mostra o sensor de cima.
+  Depois do teste, grave de novo o ARDUINO_SENSOR_DE_FEIXE_LM393.ino.
+  Passo a passo: docs\TESTE_DO_SENSOR.md
 
 DIAGRAMAS (abra e siga o NOME de cada pino):
-  docs\MONTAGEM_1_LIGACAO_ELETRICA.png
-  docs\MONTAGEM_2_MECANICA_FEIXE_E_FIM_DE_CURSO.png
+  docs\MONTAGEM_1_MAPA_DO_ARDUINO_NANO.png   (o que vai em cada pino)
+  docs\MONTAGEM_2_LIGACOES_POR_PARTE.png      (cada peca, terminal por terminal)
+  docs\MONTAGEM_3_MECANICA.png                (palheta, feixe, motor, chaves)
+  docs\MONTAGEM_4_PONTE_H_COMPLETA.png        (ponte H: pino por pino ate o Nano)
+  docs\MONTAGEM_5_SENSOR_FIM_DE_CURSO_IR.png  (sensor IR de cima: ligacao e ajuste)
 
 SENSOR DE FEIXE:
   VCC -> 5V
@@ -20,29 +34,55 @@ SENSOR DE FEIXE:
 BOTOES (contato NA, o outro terminal no GND):
   START  -> D2
   CREDIT -> D3
-  CONFIG -> D9
+  CONFIG -> D12   (mudou na V6: o D9 agora e da ponte H)
 
 FITAS WS2812B:
   dados esquerda -> 330 ohm -> D5
   dados direita  -> 330 ohm -> D6
   alimentacao por fonte 5V externa, com GND comum ao Arduino
 
-MOTOR DO SACO (ponte H IBT-2 / BTS7960):
-  D7  -> RPWM (DESCE)
-  D8  -> LPWM (SOBE)
-  R_EN, L_EN e VCC da ponte -> 5V do Nano; GND -> GND comum
-  B+/B- -> fonte propria do motor (com fusivel); M+/M- -> motor
+MOTOR DO SACO (ponte H BTS7960, placa "BT_2" / IBT-2)
+  desenho: docs\MONTAGEM_4_PONTE_H_COMPLETA.png
+  O motor so faz 3 coisas: SOBE, DESCE e VELOCIDADE. Dois fios mandam nele:
+    RPWM -> D9   DESCE  (o pulso neste fio e a velocidade da descida)
+    LPWM -> D10  SOBE   (o pulso neste fio e a velocidade da subida)
+  O resto e so alimentacao da placa:
+    R_EN -> 5V do Nano   \  "chave geral" da ponte: com eles no 5V a
+    L_EN -> 5V do Nano   /   ponte pode andar
+    VCC  -> 5V do Nano       alimenta a logica da placa
+    GND  -> GND do Nano
+    R_IS e L_IS -> nao ligar (medicao de corrente, nao usada)
+  O conector da placa e 2x4 (duas fileiras de 4 pinos). Os nomes estao na
+  TABELINHA impressa ao lado dele: siga os nomes.
+  Borne verde (parafusos):
+    B+ -> fusivel -> V+ da fonte do motor     B- -> V- da fonte do motor
+    M+ e M- -> os dois fios do motor (saco desce no SOBE? inverta M+ e M-)
+  VELOCIDADE: Central (botao MENU) -> aba SACO -> VELOCIDADE DO MOTOR:
+    SUBIDA (padrao 80%) e DESCIDA (padrao 60%). Partida em rampa, sem tranco.
 
 FIM DE CURSO DE CIMA (OBRIGATORIO com "FINS DE CURSO: SIM"):
-  micro chave com rolete: C -> GND, NF (NC) -> D11, NA livre
-  Deve ABRIR quando o saco chega em cima, 5 a 10 mm antes do batente.
+  SENSOR INFRAVERMELHO de obstaculo (modulo de 3 pinos, tipo FC-51/LM393)
+  - desenho: docs\MONTAGEM_5_SENSOR_FIM_DE_CURSO_IR.png
+    VCC -> 5V do Nano
+    GND -> GND do Nano
+    OUT -> D11
+    + RESISTOR DE 100k (47k a 100k; marrom-preto-amarelo) do D11 ao GND,
+      no borne do Nano. OBRIGATORIO: e ele que faz o fio OUT solto (ou o
+      sensor sem 5V) ler "chegou" -> o saco NAO sobe (falha segura).
+  Siga o NOME impresso ao lado de cada pino do sensor (a ordem muda de
+  placa para placa; a cor do fio nao importa).
+  Cole um ALVO BRANCO (plastico branco ou fita branca fosca) no braco do
+  saco. O sensor, preso no gabinete, deve VER o alvo 5 a 10 mm antes do
+  batente, a 1-3 cm de distancia. Regule no trimpot azul: o LED OBS do
+  sensor acende quando ele ve o alvo.
   O motor e cortado na hora pela interrupcao do pino.
-  Fio partido / chave solta = chave aberta = o saco NAO sobe (seguro).
+  Quem ainda usa micro chave NF (C no GND, NF no D11): no firmware,
+  FIM_CIMA_INFRAVERMELHO 0.
 
-FIM DE CURSO DE BAIXO (opcional):
-  micro chave: C -> GND, NA (NO) -> D10
+EMBAIXO NAO HA FIM DE CURSO: a descida termina pelo TEMPO DE CURSO
+(Central, aba SACO). O sensor de cima so ve quando o saco subiu o maximo.
 
-COMO O V4 TRABALHA:
+COMO O V6 TRABALHA:
   - O jogo envia ARM antes de cada soco. Cada ARM permite exatamente um
     HIT. Um retorno da palheta nao gasta o segundo soco.
   - Enquanto o motor anda (e 0,9 s depois) o feixe e ignorado: a palheta
@@ -51,16 +91,21 @@ COMO O V4 TRABALHA:
     sempre atual). Funciona com modulo que da 0 ou 1 no feixe livre.
   - velocidade = largura da palheta / tempo de bloqueio do feixe
     (padrao: palheta 20 mm).
-  - Subida: para quando a chave de cima abre. Se o TEMPO DE CURSO acabar
-    sem a chave abrir, corta, avisa ERROR,FIM_CIMA e TRAVA a subida ate
+  - Subida: para quando o sensor de cima ve o alvo. Se o TEMPO DE CURSO
+    acabar sem ele ver, corta, avisa ERROR,FIM_CIMA e TRAVA a subida ate
     o PARAR da Central (aba SACO).
-  - Linha FIM,<cima>,<baixo>,<trava> a cada 250 ms: a Central mostra
-    "chave de CIMA: ACIONADA/LIVRE".
+  - Descida: pelo tempo de curso.
+  - Velocidade: PWM de 20 kHz no D9/D10 (sem chiado), rampa de 0,3 s na
+    partida. Parado = as duas saidas em LOW = a ponte freia o motor.
+  - Linha FIM,<cima>,<baixo>,<trava> a cada 250 ms (baixo e sempre 0): a
+    Central mostra "sensor de CIMA: ACIONADA/LIVRE".
 
 PRIMEIRA VEZ:
   1. Central (botao MENU) -> aba SACO: ligue o motor, FINS DE CURSO: SIM.
-  2. Aperte a chave de cima com a mao: deve aparecer ACIONADA.
+  2. Ponha a mao (ou o alvo) na frente do sensor de cima: deve aparecer
+     ACIONADA e o LED OBS do sensor acende.
   3. Saco a meia altura, botao SUBIR: tem de subir. Se descer, inverta os
-     fios do motor na ponte H (nao mexa no D7/D8).
+     fios do motor na ponte H (nao mexa no D9/D10).
   4. Cronometre a subida: TEMPO DE CURSO = medido + 10%.
-  5. Passe um cartao no feixe: a Central mostra "feixe INTERROMPIDO".
+  5. VELOCIDADE DO MOTOR: suba/desca e ajuste ate ficar firme sem tranco.
+  6. Passe um cartao no feixe: a Central mostra "feixe INTERROMPIDO".

@@ -295,7 +295,12 @@ static func build_motor(sentido: String) -> String:
 ## ligado. Os limites são os MESMOS do firmware, de propósito: um valor
 ## que o jogo aceita e a placa recusa vira uma configuração que parece
 ## ter sido gravada e não foi.
-static func build_motor_config(curso_ms: int, pausa_ms: int, fim_de_curso: bool) -> String:
-	return "MOTOR,CONFIG,%d,%d,%d" % [
-		int(clamp(curso_ms, 200, 15000)), int(clamp(pausa_ms, 50, 2000)), 1 if fim_de_curso else 0
+##
+## As duas velocidades (em %, 20 a 100) vão no fim da linha: o firmware V6
+## as usa, e um firmware antigo lê só os três primeiros campos e ignora o
+## resto — a linha nova não quebra placa nenhuma.
+static func build_motor_config(curso_ms: int, pausa_ms: int, fim_de_curso: bool, vel_sobe: int = 80, vel_desce: int = 60) -> String:
+	return "MOTOR,CONFIG,%d,%d,%d,%d,%d" % [
+		int(clamp(curso_ms, 200, 15000)), int(clamp(pausa_ms, 50, 2000)), 1 if fim_de_curso else 0,
+		int(clamp(vel_sobe, 20, 100)), int(clamp(vel_desce, 20, 100))
 	]

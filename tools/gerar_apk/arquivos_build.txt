@@ -4,6 +4,8 @@
 ABERTURA_TVBOX.bat
 ARDUINO_SENSOR_DE_FEIXE_LM393/ARDUINO_SENSOR_DE_FEIXE_LM393.ino
 ARDUINO_SENSOR_DE_FEIXE_LM393/LEIA_LIGACOES.txt
+ARDUINO_SENSOR_DE_FEIXE_LM393/TESTE_FEIXE/TESTE_FEIXE.ino
+ARDUINO_SENSOR_DE_FEIXE_LM393/TESTE_PONTE_H/TESTE_PONTE_H.ino
 ATUALIZAR_E_GERAR.bat
 CAMERA_TVBOX.bat
 GERAR_APK_AGORA.bat
@@ -14,9 +16,6 @@ android/plugins/PunchQuadros-release.aar
 android/plugins/PunchQuadros.gdap
 android/plugins/PunchUsbSerial-release.aar
 android/plugins/PunchUsbSerial.gdap
-arduino/punch_sensor/punch_sensor.ino
-arduino/punch_sensor_optico/LEIA.txt
-arduino/teste_sensor/teste_sensor.ino
 assets/arena/brilho.png
 assets/arena/brilho.png.import
 assets/arena/facho.png
@@ -267,8 +266,11 @@ docs/ANDROID-PECAS-E-MUDANCAS.md
 docs/ANDROID-TESTE-DE-BANCADA.md
 docs/ARENA.md
 docs/CONVERTER_PARA_TVBOX_S905L.md
-docs/MONTAGEM_1_LIGACAO_ELETRICA.png
-docs/MONTAGEM_2_MECANICA_FEIXE_E_FIM_DE_CURSO.png
+docs/MONTAGEM_1_MAPA_DO_ARDUINO_NANO.png
+docs/MONTAGEM_2_LIGACOES_POR_PARTE.png
+docs/MONTAGEM_3_MECANICA.png
+docs/MONTAGEM_4_PONTE_H_COMPLETA.png
+docs/MONTAGEM_5_SENSOR_FIM_DE_CURSO_IR.png
 docs/PROTOCOLO-USB-ANDROID.md
 docs/RECURSOS_ARCADE.md
 docs/TESTE_DO_SENSOR.md
@@ -347,8 +349,11 @@ tools/android_usb_plugin/plugin/src/main/java/com/lazersport/punch/usbserial/God
 tools/android_usb_plugin/plugin/src/main/java/com/lazersport/punch/usbserial/UsbAttachActivity.kt
 tools/android_usb_plugin/plugin/src/main/res/xml/punch_usb_devices.xml
 tools/android_usb_plugin/settings.gradle.kts
-tools/diagramas/montagem_1_ligacao_eletrica.html
-tools/diagramas/montagem_2_mecanica.html
+tools/diagramas/montagem_1_mapa_do_nano.py
+tools/diagramas/montagem_2_ligacoes_por_parte.py
+tools/diagramas/montagem_3_mecanica.html
+tools/diagramas/montagem_4_ponte_h.py
+tools/diagramas/montagem_5_sensor_fim_de_curso_ir.py
 tools/gerar_abertura.py
 tools/gerar_apk/EXPORTAR_APK_ANDROID.bat
 tools/gerar_apk/GERAR_APK_COMPLETO.ps1

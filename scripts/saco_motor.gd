@@ -56,6 +56,10 @@ var ligado = false
 var curso_ms = 3500
 var pausa_ms = 350
 var fim_de_curso = true
+## VELOCIDADE do motor em % (firmware V6: PWM na ponte H). A subida leva o
+## peso do saco; a descida tem a gravidade a favor e começa mais devagar.
+var vel_sobe = 80
+var vel_desce = 60
 
 var estado = ArduinoProtocol.MOTOR_PARADO
 var posicao = ArduinoProtocol.POS_DESCONHECIDA
@@ -182,7 +186,7 @@ func ficha() -> String:
 	if not ligado:
 		return "MOTOR DESLIGADO NA CENTRAL"
 	if trava_cima:
-		return "SUBIDA TRAVADA: A CHAVE DE CIMA NÃO ABRIU — APERTE PARAR"
+		return "SUBIDA TRAVADA: O SENSOR DE CIMA NÃO VIU O SACO — APERTE PARAR"
 	if _desistiu:
 		return "MOTOR NÃO RESPONDEU — CONFIRA A LIGAÇÃO"
 	if estado == ArduinoProtocol.MOTOR_DESCENDO:
@@ -195,6 +199,7 @@ func para_salvar() -> Dictionary:
 	return {
 		"ligado": ligado, "curso_ms": curso_ms,
 		"pausa_ms": pausa_ms, "fim_de_curso": fim_de_curso,
+		"vel_sobe": vel_sobe, "vel_desce": vel_desce,
 	}
 
 func carregar(dados: Dictionary) -> void:
@@ -202,3 +207,5 @@ func carregar(dados: Dictionary) -> void:
 	curso_ms = int(clamp(int(dados.get("curso_ms", 3500)), 200, 15000))
 	pausa_ms = int(clamp(int(dados.get("pausa_ms", 350)), 50, 2000))
 	fim_de_curso = bool(dados.get("fim_de_curso", true))
+	vel_sobe = int(clamp(int(dados.get("vel_sobe", 80)), 20, 100))
+	vel_desce = int(clamp(int(dados.get("vel_desce", 60)), 20, 100))
