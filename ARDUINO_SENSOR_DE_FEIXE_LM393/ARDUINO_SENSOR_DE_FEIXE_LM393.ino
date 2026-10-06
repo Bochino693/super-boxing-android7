@@ -1,5 +1,5 @@
 /*
-  PUNCH CHALLENGE - FIRMWARE COMPLETO SENSOR DE FEIXE MH/LM393 V6
+  PUNCH CHALLENGE - FIRMWARE COMPLETO SENSOR DE FEIXE MH/LM393 V7
   Arduino Uno/Nano ATmega328P - serial 115200
 
   Sensor: VCC->5V, GND->GND, D0->D4, A0->A0
@@ -11,6 +11,21 @@
   Fim de curso: SO O DE CIMA, em D11: SENSOR INFRAVERMELHO de obstaculo
          (modulo FC-51/LM393, 3 pinos VCC/GND/OUT): OUT->D11 e um resistor
          de 100k do D11 ao GND. A descida termina pelo tempo de curso.
+
+  O QUE MUDOU NA V7 (motor "morto"):
+    - A SUBIDA NAO TRAVA MAIS PARA SEMPRE. Na V6, se o saco subisse o
+      tempo de curso inteiro sem o sensor de cima ver (curso curto demais,
+      fonte do motor desligada, sensor desalinhado), a placa travava a
+      subida ate alguem apertar PARAR na Central - e o motor ficava
+      "morto". Agora ela para, avisa ERROR,FIM_CIMA e tenta de novo no
+      proximo pedido.
+    - QUEM DIZ SE O SACO ESTA EM CIMA E O SENSOR, e nao a memoria da
+      placa: SOBE com o sensor livre sempre liga o motor, mesmo que a
+      placa "lembre" que o saco estava em cima (alguem baixou na mao).
+    - A SUBIDA TEM TETO PROPRIO: curso + 50% (no minimo +1,5 s), porque
+      ela para pelo sensor; a descida continua sendo o tempo de curso.
+    - Pedido repetido no mesmo sentido responde a linha MOTOR (antes
+      ficava calado e o jogo nao sabia se a placa ouviu).
 
   O QUE MUDOU NA V6:
     - VELOCIDADE: subida e descida com velocidade propria (padrao 80% e
@@ -179,8 +194,8 @@ unsigned long motorInicio = 0;
 volatile bool motorUsaFimDeCurso = true;
 /* A interrupcao do fim de curso cortou o motor; o loop confirma. */
 volatile bool motorCorteFim = false;
-/* Subida sem o sensor de cima ver o saco dentro do tempo: subida travada ate
-   um MOTOR,PARA (botao PARAR da Central). */
+/* V7: a subida NAO trava mais (ver o cabecalho). Fica sempre false; o
+   campo continua na linha FIM para jogos antigos. */
 bool motorTravaCima = false;
 /* AO LIGAR, O SACO E RECOLHIDO SOZINHO (fora da partida ele fica
    enrolado em cima). Espera RECOLHER_APOS_MS depois de ligar; qualquer
@@ -474,17 +489,32 @@ bool motorFimFirme(uint8_t sentido) {
   return true;
 }
 
+/* O teto de tempo do curso. A descida e o proprio curso (ela para pelo
+   tempo). A subida para pelo sensor; o tempo e so a protecao, entao ela
+   ganha folga: um curso medido um pouco curto nao vira subida pela metade. */
+unsigned long motorTeto(uint8_t sentido) {
+  if (sentido == MOTOR_SUBINDO && motorUsaFimDeCurso) {
+    unsigned long folga = motorCursoMs / 2;
+    if (folga < 1500) folga = 1500;
+    unsigned long t = motorCursoMs + folga;
+    return t > 20000UL ? 20000UL : t;
+  }
+  return motorCursoMs;
+}
+
 /* Comeca um curso. IDEMPOTENTE de proposito: mandar DESCE enquanto ja
    desce nao reinicia o cronometro, e mandar DESCE com o saco ja embaixo
    nao faz nada. E o que impede o jogo de manter o motor ligado para
    sempre a forca de repetir o comando. */
 void motorIr(uint8_t sentido) {
   if (sentido != MOTOR_DESCENDO && sentido != MOTOR_SUBINDO) { motorParar(true); return; }
-  if (motorEstado == sentido) return;
-  if (sentido == MOTOR_SUBINDO && motorTravaCima) { Serial.println(F("ERROR,FIM_CIMA")); motorRelatar(); return; }
+  if (motorEstado == sentido) { motorRelatar(); return; }
   uint8_t destino = (sentido == MOTOR_DESCENDO) ? POS_EM_BAIXO : POS_EM_CIMA;
-  if (motorPosicao == destino) { motorRelatar(); return; }
+  /* EM CIMA QUEM DIZ E O SENSOR. Viu o saco: ja chegou. Nao viu: sobe,
+     mesmo que a placa "lembre" que estava em cima. */
   if (motorFimAtingido(sentido)) { motorPosicao = destino; motorRelatar(); return; }
+  bool sensorManda = (sentido == MOTOR_SUBINDO) && motorUsaFimDeCurso;
+  if (!sensorManda && motorPosicao == destino) { motorRelatar(); return; }
   /* Inverter exige parar e esperar o tempo morto. */
   if (motorEstado != MOTOR_PARADO) {
     motorPosicao = POS_DESCONHECIDA;
@@ -500,7 +530,7 @@ void motorIr(uint8_t sentido) {
      embaixo") e a subida seguia. */
   motorPosicao = POS_DESCONHECIDA;
   motorEstado = sentido;
-  motorAte = millis() + motorCursoMs;
+  motorAte = millis() + motorTeto(sentido);
   motorInicio = millis();
   saidaLigar(sentido);
   motorRelatar();
@@ -536,11 +566,10 @@ void motorAtualizar() {
     motorLiberaEm = millis() + motorPausaMs;
     if (sentido == MOTOR_SUBINDO && motorUsaFimDeCurso) {
       /* SUBIU O TEMPO TODO E O SENSOR DE CIMA NAO VIU O SACO. Ou o sensor
-         esta fora do lugar/desregulado, ou sem o GND: o saco pode estar
-         forcando o topo.
-         Nao finge que chegou e trava a subida ate o tecnico ver. */
+         esta fora do lugar/desregulado, o curso esta curto, ou a fonte
+         do motor esta desligada. Nao finge que chegou: para, avisa, e o
+         proximo pedido de subida tenta de novo (V7: sem trava). */
       motorPosicao = POS_DESCONHECIDA;
-      motorTravaCima = true;
       Serial.println(F("ERROR,FIM_CIMA"));
     } else {
       /* Descendo (ou sem fim de curso): o tempo e o curso. */
@@ -581,7 +610,7 @@ void motorComando(char *cmd) {
 }
 
 void comando(char *cmd) {
-  if (!strcasecmp(cmd,"PING")) { Serial.println(F("READY,PUNCH_OPTICAL,V6-MH-LM393")); Serial.println(F("PONG")); }
+  if (!strcasecmp(cmd,"PING")) { Serial.println(F("READY,PUNCH_OPTICAL,V7-MH-LM393")); Serial.println(F("PONG")); }
   else if (!strcasecmp(cmd,"ARM")) armarCaptura();
   else if (!strcasecmp(cmd,"RESET")) { noInterrupts(); capturaArmada=false; pulsoAberto=false; pulsoPendente=false; interrupts(); motorParar(false); Serial.println(F("OK,RESET")); }
   else if (!strcasecmp(cmd,"CALIBRATE")) { calibrar(); Serial.println(F("OK,CALIBRATE")); }
@@ -638,7 +667,7 @@ void setup() {
   fitaEsq.begin(); fitaDir.begin(); fitaEsq.setBrightness(140); fitaDir.setBrightness(140);
   fitaEsq.show(); fitaDir.show();
 #endif
-  Serial.println(F("READY,PUNCH_OPTICAL,V6-MH-LM393")); calibrar();
+  Serial.println(F("READY,PUNCH_OPTICAL,V7-MH-LM393")); calibrar();
 #if defined(__AVR_ATmega328P__)
   PCICR |= _BV(PCIE2); PCMSK2 |= _BV(PCINT20);
   PCICR |= _BV(PCIE0); PCMSK0 |= _BV(PCINT3);   /* D11: fim de curso de cima */

@@ -749,6 +749,14 @@ var _aviso_saco_dado = false
 ## Depois de parar embaixo, o saco ainda balança; o firmware também
 ## ignora o feixe por 0,9 s depois do motor. Esperar um pouco mais.
 const SACO_ASSENTAR_SEGUNDOS = 1.0
+## O START CONFERE O SACO EM CIMA ANTES DA FOTO. Se o sensor de cima não
+## está vendo o saco, o jogo manda subir e a contagem só começa quando ele
+## chegar (ou quando o tempo de curso com folga acabar — a partida nunca
+## fica presa no motor).
+var _recolhendo_saco = false
+var _recolhendo_desde = -1.0
+## O aviso do sensor de cima mentindo sai uma vez por rodada.
+var _aviso_sensor_cima_dado = false
 var _obturador_tardio_aberto = false
 var photo_retained = false
 var ranking_announced = false
@@ -1459,6 +1467,11 @@ func _processar_contagem(delta: float) -> void:
 	# A câmera nunca segura o relógio da partida. Se o quadro estiver vivo,
 	# a foto entra; se não estiver, o ranking usa o avatar e todo o restante
 	# do jogo segue no mesmo tempo, sem aviso de erro para o jogador.
+	if _recolhendo_saco:
+		if _saco_recolhido():
+			_recolhendo_saco = false
+		else:
+			return
 	aguardando_camera = false
 	pose_sem_camera = not (
 		camera_enabled and camera_service != null and camera_service.pronta()
@@ -1499,7 +1512,7 @@ func _processar_contagem(delta: float) -> void:
 		sons.play("shutter", -5.0)
 		# FOTO TIRADA: AGORA O SACO DESCE. É o único lugar do jogo que
 		# pede o saco embaixo.
-		saco.quero(SacoMotor.Onde.EM_BAIXO)
+		saco.exigir(SacoMotor.Onde.EM_BAIXO)
 		_saco_descendo_desde = animation_time
 		return
 	var atual = int(max(0, int(ceil(countdown_left))))
@@ -1535,6 +1548,29 @@ func _processar_contagem(delta: float) -> void:
 ## respondeu), não espera nada. Com motor, espera o saco parar embaixo e
 ## assentar — e nunca mais que o curso inteiro mais uma folga: um saco
 ## que não chega não pode prender a partida para sempre.
+func _motor_em_uso() -> bool:
+	return saco.ligado and saco.placa_tem_motor and link != null and link.is_open()
+
+## O SACO PRECISA SUBIR ANTES DA FOTO? Só se há motor respondendo e o
+## sensor de cima NÃO está vendo o saco agora.
+func _saco_precisa_subir() -> bool:
+	return _motor_em_uso() and not saco.sensor_ve_em_cima()
+
+## A espera do START acabou? Chegou em cima, ou não há mais motor com quem
+## falar, ou passou o curso inteiro com folga — aí a rodada segue e a tela
+## diz o que houve, em vez de prender o jogador.
+func _saco_recolhido() -> bool:
+	if not _motor_em_uso():
+		return true
+	if saco.esta_em_cima():
+		return true
+	var teto = saco.curso_ms * 1.5 / 1000.0 + 3.0
+	if saco.desistiu() or animation_time - _recolhendo_desde > teto:
+		_show_notice(saco.ficha() if saco.subida_sem_sensor or saco.sensor_cima_suspeito
+			else "O SACO NÃO SUBIU — CONFIRA O MOTOR NA CENTRAL")
+		return true
+	return false
+
 func _esperando_o_saco() -> bool:
 	if _saco_descendo_desde < 0.0 or link == null or not link.is_open():
 		return false
@@ -1545,6 +1581,9 @@ func _esperando_o_saco() -> bool:
 	if not saco.em_baixo_parado():
 		_saco_em_baixo_desde = -1.0
 		return true
+	if saco.sensor_cima_suspeito and not _aviso_sensor_cima_dado:
+		_aviso_sensor_cima_dado = true
+		_show_notice("SENSOR DE CIMA COM DEFEITO — O SACO NÃO VAI SUBIR")
 	if _saco_em_baixo_desde < 0.0:
 		_saco_em_baixo_desde = animation_time
 	return animation_time - _saco_em_baixo_desde < SACO_ASSENTAR_SEGUNDOS
@@ -1664,7 +1703,7 @@ func _fechar_rodada() -> void:
 	# rodada foi encerrada), e daqui em diante a tela é placar e ranking.
 	# Subir agora deixa o motor terminar o curso enquanto o jogador lê a
 	# nota, em vez de fazer a próxima pessoa esperar por ele.
-	saco.quero(SacoMotor.Onde.EM_CIMA)
+	saco.exigir(SacoMotor.Onde.EM_CIMA)
 	var melhor = 0
 	var melhor_v = 0.0
 	var simulado = false
@@ -2260,6 +2299,13 @@ func _iniciar_rodada() -> void:
 	_saco_descendo_desde = -1.0
 	_saco_em_baixo_desde = -1.0
 	_aviso_saco_dado = false
+	_aviso_sensor_cima_dado = false
+	# PRIMEIRO O SACO EM CIMA. Se ele não está enrolado (o sensor de cima
+	# não o vê), sobe agora; a contagem e a foto esperam por ele.
+	_recolhendo_saco = _saco_precisa_subir()
+	_recolhendo_desde = animation_time
+	if _recolhendo_saco:
+		saco.exigir(SacoMotor.Onde.EM_CIMA)
 	_discard_round_photo()
 	intro_active = false
 	sons.stop("score_loop")
@@ -4480,7 +4526,10 @@ func _mando_do_motor(onde: int) -> void:
 	if link == null or not link.is_open():
 		_show_notice("SEM PLACA — O MOTOR NÃO RESPONDE")
 		return
-	saco.quero(onde)
+	# EXIGIR, não QUERER: o botão sempre manda o comando, mesmo que o
+	# jogo ache que o saco já está lá. Era aqui que o SUBIR "não fazia
+	# nada" e o motor parecia morto.
+	saco.exigir(onde)
 	_show_notice("DESCENDO O SACO" if onde == SacoMotor.Onde.EM_BAIXO else "SUBINDO O SACO")
 
 ## Cada tentativa abre uma janela nova também na placa. Isto elimina estado
@@ -5610,7 +5659,11 @@ func _draw_partida() -> void:
 				# nos primeiros segundos de qualquer rodada.
 				if camera_enabled:
 					_carregando(rect.get_center() + Vector2(0.0, 210.0), 30.0, Paleta.CIANO)
-			if aguardando_camera:
+			if _recolhendo_saco:
+				# O saco ainda está subindo para a foto: a contagem espera.
+				_carregando(Vector2(540.0, 1400.0), 40.0, Paleta.AMBAR)
+				_rotulo("AGUARDE: RECOLHENDO O SACO", 1490.0, Paleta.AMBAR)
+			elif aguardando_camera:
 				# Enquanto a câmera sobe, a tela diz o que está esperando
 				# — e o anel girando prova que a máquina não travou.
 				_carregando(Vector2(540.0, 1400.0), 40.0, Paleta.CIANO)

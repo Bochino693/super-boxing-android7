@@ -3,8 +3,10 @@ extends Reference
 
 ## O MOTOR QUE BAIXA E LEVANTA O SACO — o lado do jogo.
 ##
-## O QUE ELE FAZ, EM UMA LINHA: o saco desce quando a rodada começa e
-## sobe quando ela acaba, e nada além disso pode ligar o motor.
+## O QUE ELE FAZ, EM UMA LINHA: fora da partida o saco fica ENROLADO em
+## cima; no START o jogo confere que ele está em cima (sobe se não
+## estiver), tira a foto, e só então o saco DESCE para o soco; acabou a
+## rodada, ele sobe de novo.
 ##
 ## POR QUE ISTO É UMA CLASSE E NÃO DUAS LINHAS DENTRO DO `main.gd`.
 ## Porque um motor não é um LED. Um LED aceso por engano é um LED aceso;
@@ -99,6 +101,17 @@ var _enviado = false
 ## A placa já respondeu a algum comando de motor nesta conexão? Sem isso,
 ## o jogo não espera o saco descer (firmware sem motor, placa antiga).
 var placa_tem_motor = false
+## Quantos relatos MOTOR chegaram desde o último `exigir` — para saber se
+## a resposta é DESTE pedido ou um eco velho.
+var relatos_desde_o_pedido = 0
+## A ÚLTIMA SUBIDA ACABOU PELO TEMPO sem o sensor de cima ver o saco
+## (ERROR,FIM_CIMA). Desde o firmware V7 isto é aviso, não trava: a
+## próxima subida é tentada de novo.
+var subida_sem_sensor = false
+## O SENSOR DE CIMA DIZ "CHEGOU" COM O SACO EMBAIXO: fio OUT solto,
+## resistor de 100k sem o sensor, ou o sensor vendo outra coisa. Com isso
+## a placa recusa toda subida — é o "motor morto" mais comum.
+var sensor_cima_suspeito = false
 
 ## O que o jogo chama. Não manda nada por si: só registra a intenção.
 func quero(onde: int) -> void:
@@ -110,6 +123,41 @@ func quero(onde: int) -> void:
 	_enviado = false
 	_pedido_em_ms = Time.get_ticks_msec()
 	_ultimo_envio_ms = Time.get_ticks_msec()
+
+## O PEDIDO QUE SEMPRE SAI, mesmo que o jogo ache que o saco já está lá.
+##
+## `quero` ignora a intenção repetida — é o que impede o laço infinito.
+## Mas o START, a foto, o fim da rodada e os botões da Central PRECISAM
+## que o comando saia: se o jogo "achava" que o saco estava em cima e ele
+## não estava (desceu na mão, a placa religou, a fonte do motor estava
+## desligada), o botão SUBIR não fazia nada — o motor parecia morto.
+## Aqui a posição antiga é esquecida e a placa responde com a verdade.
+func exigir(onde: int) -> void:
+	_querido = onde
+	_desistiu = false
+	_mandar_ja = true
+	_enviado = false
+	posicao = ArduinoProtocol.POS_DESCONHECIDA
+	estado = ArduinoProtocol.MOTOR_PARADO
+	relatos_desde_o_pedido = 0
+	if onde == Onde.EM_CIMA:
+		subida_sem_sensor = false
+	_pedido_em_ms = Time.get_ticks_msec()
+	_ultimo_envio_ms = Time.get_ticks_msec()
+
+## O SACO ESTÁ ENROLADO EM CIMA? Com o sensor de cima ligado, quem diz é
+## ele (a linha FIM chega 4 vezes por segundo). Sem sensor, vale o que a
+## placa disse depois do último pedido.
+func esta_em_cima() -> bool:
+	if fim_de_curso and fim_cima >= 0 and not sensor_cima_suspeito:
+		if fim_cima == 1:
+			return true
+	return relatos_desde_o_pedido > 0 and posicao == ArduinoProtocol.POS_EM_CIMA \
+		and estado == ArduinoProtocol.MOTOR_PARADO
+
+## O sensor de cima está vendo o saco agora (sem pedir nada à placa)?
+func sensor_ve_em_cima() -> bool:
+	return fim_de_curso and fim_cima == 1 and not sensor_cima_suspeito
 
 ## A PLACA (RE)APARECEU: o cabo voltou, a placa religou, o jogo abriu.
 ## Ela não sabe o que o jogo quer, e o jogo não sabe onde o saco está:
@@ -175,6 +223,9 @@ func receber(msg: Dictionary) -> void:
 	posicao = int(msg.get("posicao", ArduinoProtocol.POS_DESCONHECIDA))
 	resta_ms = int(msg.get("resta_ms", 0))
 	placa_tem_motor = true
+	relatos_desde_o_pedido += 1
+	if posicao == ArduinoProtocol.POS_EM_CIMA and estado == ArduinoProtocol.MOTOR_PARADO:
+		subida_sem_sensor = false
 	if estado != ArduinoProtocol.MOTOR_PARADO:
 		# Enquanto anda, o relógio da desistência anda junto: um curso
 		# longo configurado pelo operador não pode virar desistência só
@@ -187,12 +238,19 @@ func receber_fim(msg: Dictionary) -> void:
 	fim_cima = 1 if bool(msg.get("cima", false)) else 0
 	fim_baixo = 1 if bool(msg.get("baixo", false)) else 0
 	trava_cima = bool(msg.get("trava", false))
+	# Saco embaixo e parado, e o sensor de cima jura que ele chegou em
+	# cima: o sensor (ou o fio dele) está mentindo.
+	if fim_cima == 0:
+		sensor_cima_suspeito = false
+	elif fim_de_curso and posicao == ArduinoProtocol.POS_EM_BAIXO \
+			and estado == ArduinoProtocol.MOTOR_PARADO:
+		sensor_cima_suspeito = true
 
 ## ERROR,FIM_CIMA: a placa cortou a subida sem a chave de cima abrir.
 ## O jogo para de pedir — a placa recusaria de qualquer jeito, e repetir
 ## o pedido uma vez por segundo seria barulho na serial e na tela.
 func travou() -> void:
-	trava_cima = true
+	subida_sem_sensor = true
 	_desistiu = true
 	posicao = ArduinoProtocol.POS_DESCONHECIDA
 
@@ -233,6 +291,10 @@ func ficha() -> String:
 		return "MOTOR DESLIGADO NA CENTRAL"
 	if trava_cima:
 		return "SUBIDA TRAVADA: O SENSOR DE CIMA NÃO VIU O SACO — APERTE PARAR"
+	if sensor_cima_suspeito:
+		return "SENSOR DE CIMA ACUSA O SACO COM ELE EMBAIXO — CONFIRA O FIO OUT NO D11"
+	if subida_sem_sensor:
+		return "SUBIU O TEMPO TODO E O SENSOR DE CIMA NÃO VIU O SACO — AUMENTE O CURSO OU AJUSTE O SENSOR"
 	if _desistiu:
 		return "MOTOR NÃO RESPONDEU — CONFIRA A LIGAÇÃO"
 	if estado == ArduinoProtocol.MOTOR_DESCENDO:

@@ -1,4 +1,4 @@
-SUPER BOXING - VERSAO TV BOX S905L (ANDROID 7.1) - BUILD 107
+SUPER BOXING - VERSAO TV BOX S905L (ANDROID 7.1) - BUILD 108
 ===========================================================
 
 PARA QUAL MAQUINA E ESTA VERSAO
@@ -26,9 +26,47 @@ O que muda por dentro (voce nao ve na tela):
 
 O APK tem outro nome de pacote (com.lazersport.superboxing), entao pode
 ficar instalado junto com o Punch Challenge das outras maquinas. Se a
-build 92 a 106 estiver instalada, a 107 instala por cima.
+build 92 a 107 estiver instalada, a 108 instala por cima.
 
-O QUE A BUILD 107 CORRIGE (GRAVE O FIRMWARE V6 DE NOVO NO ARDUINO)
+O QUE A BUILD 108 CORRIGE (GRAVE O FIRMWARE V7 NO ARDUINO)
+-----------------------------------------------------------
+O MOTOR "MORTO" - as duas causas achadas:
+- Os botoes SUBIR/DESCER da Central (aba SACO) nao mandavam nada quando
+  o jogo ACHAVA que o saco ja estava la (ex.: SUBIR com o saco baixado
+  na mao). Agora o botao SEMPRE manda o comando, e a placa responde onde
+  o saco esta de verdade.
+- Firmware V6: se a subida durasse o tempo de curso inteiro sem o sensor
+  de cima ver o saco (curso curto, fonte do motor desligada, sensor
+  desalinhado), a placa TRAVAVA a subida para sempre - so o PARAR da
+  Central soltava. O V7 nao trava: para, avisa, e tenta de novo no
+  proximo pedido. A subida ganhou folga de tempo (curso + 50%, no
+  minimo + 1,5 s), porque quem para a subida e o sensor.
+- V7: quem diz se o saco esta em cima e o SENSOR, nao a memoria da
+  placa. Saco baixado na mao + SOBE = o motor sobe.
+
+O FLUXO DA PARTIDA (fora da partida = ENROLADO; na partida = DESCE):
+1. Aperta START.
+2. O jogo confere o sensor de cima. Viu o saco: segue. NAO viu: manda
+   SUBIR e a tela mostra "AGUARDE: RECOLHENDO O SACO" ate ele chegar.
+3. Contagem 3-2-1 e FOTO (com o saco em cima, fora do quadro).
+4. Depois da foto o saco DESCE. O sino ("pode bater") espera ele chegar.
+5. Acabou a rodada: o saco SOBE e fica enrolado ate o proximo START.
+
+SE AINDA ASSIM O MOTOR NAO ANDAR, a tela agora diz o motivo:
+- "SENSOR DE CIMA ACUSA O SACO COM ELE EMBAIXO": o D11 esta lendo
+  "chegou" sempre (fio OUT solto do D11, sensor sem 5V, ou ele esta vendo
+  outra coisa perto). Com isso a placa recusa toda subida (protecao).
+  Na Central, aba SACO, "sensor de CIMA" deve mudar quando voce poe a mao
+  na frente do sensor.
+- "SUBIU O TEMPO TODO E O SENSOR DE CIMA NAO VIU O SACO": aumente o
+  TEMPO DE CURSO na Central ou aproxime/regule o sensor (trimpot).
+- "MOTOR NAO RESPONDEU": a placa nao respondeu ao comando - firmware
+  antigo (grave o V7) ou Arduino desconectado.
+- Nada na tela e o motor parado: confira R_EN e L_EN no 5V, o GND comum,
+  a fonte do motor ligada em B+/B-, e D9->RPWM, D10->LPWM. Teste sem o
+  jogo com TESTE_PONTE_H.ino (comandos s, d, p).
+
+O QUE A BUILD 107 CORRIGIU
 ---------------------------------------------------------------
 O SACO SO DESCE NA PARTIDA, E SO DEPOIS DA FOTO:
 - Fora da partida o saco fica ENROLADO em cima. Ao ligar a maquina a
@@ -270,7 +308,7 @@ O QUE A BUILD 97 CORRIGIU
 ANTES DE INSTALAR NAS 80: TESTE EM UMA
 --------------------------------------
 Na tela de carregamento aparece, no canto de baixo,
-"BUILD 107 - S905L - Android 7.1". Jogue uma partida inteira, abra a
+"BUILD 108 - S905L - Android 7.1". Jogue uma partida inteira, abra a
 Central Tecnica e confira camera e Arduino antes de passar para as outras.
 
 GERAR O APK

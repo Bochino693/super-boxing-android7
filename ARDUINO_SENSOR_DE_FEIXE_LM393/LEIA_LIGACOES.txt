@@ -1,4 +1,4 @@
-FIRMWARE DEFINITIVO - SENSOR DE FEIXE LM393 - V6
+FIRMWARE DEFINITIVO - SENSOR DE FEIXE LM393 - V7
 ================================================
 
 Grave o arquivo ARDUINO_SENSOR_DE_FEIXE_LM393.ino no Arduino Uno/Nano
@@ -82,7 +82,7 @@ FIM DE CURSO DE CIMA (OBRIGATORIO com "FINS DE CURSO: SIM"):
 EMBAIXO NAO HA FIM DE CURSO: a descida termina pelo TEMPO DE CURSO
 (Central, aba SACO). O sensor de cima so ve quando o saco subiu o maximo.
 
-COMO O V6 TRABALHA:
+COMO O V7 TRABALHA (mesmos pinos do V6):
   - O jogo envia ARM antes de cada soco. Cada ARM permite exatamente um
     HIT. Um retorno da palheta nao gasta o segundo soco.
   - Enquanto o motor anda (e 0,9 s depois) o feixe e ignorado: a palheta
@@ -91,13 +91,16 @@ COMO O V6 TRABALHA:
     sempre atual). Funciona com modulo que da 0 ou 1 no feixe livre.
   - velocidade = largura da palheta / tempo de bloqueio do feixe
     (padrao: palheta 20 mm).
-  - Subida: para quando o sensor de cima ve o alvo. Se o TEMPO DE CURSO
-    acabar sem ele ver, corta, avisa ERROR,FIM_CIMA e TRAVA a subida ate
-    o PARAR da Central (aba SACO).
+  - Subida: para quando o sensor de cima ve o alvo. Quem diz se o saco
+    esta em cima e o SENSOR (nao a memoria da placa). Se o tempo acabar
+    sem ele ver (teto da subida = curso + 50%, no minimo + 1,5 s), corta
+    e avisa ERROR,FIM_CIMA - mas NAO trava mais (V7): o proximo pedido de
+    subida tenta de novo.
   - Descida: pelo tempo de curso.
   - AO LIGAR, a placa recolhe o saco sozinha (1,5 s depois), mesmo sem o
-    jogo: fora da partida o saco fica enrolado em cima. O jogo so pede o
-    saco embaixo depois da FOTO do START.
+    jogo: fora da partida o saco fica enrolado em cima. No START o jogo
+    confere o sensor de cima (manda subir se o saco nao estiver la),
+    tira a FOTO e so entao pede o saco embaixo.
   - Velocidade: PWM de 20 kHz no D9/D10 (sem chiado), rampa de 0,3 s na
     partida. Parado = as duas saidas em LOW = a ponte freia o motor.
   - Linha FIM,<cima>,<baixo>,<trava> a cada 250 ms (baixo e sempre 0): a
