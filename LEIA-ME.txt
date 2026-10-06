@@ -1,4 +1,4 @@
-SUPER BOXING - VERSAO TV BOX S905L (ANDROID 7.1) - BUILD 105
+SUPER BOXING - VERSAO TV BOX S905L (ANDROID 7.1) - BUILD 106
 ===========================================================
 
 PARA QUAL MAQUINA E ESTA VERSAO
@@ -26,9 +26,26 @@ O que muda por dentro (voce nao ve na tela):
 
 O APK tem outro nome de pacote (com.lazersport.superboxing), entao pode
 ficar instalado junto com o Punch Challenge das outras maquinas. Se a
-build 92 a 104 estiver instalada, a 105 instala por cima.
+build 92 a 105 estiver instalada, a 106 instala por cima.
 
-O QUE A BUILD 105 CORRIGE (GRAVE O FIRMWARE V5 NO ARDUINO)
+O QUE A BUILD 106 MUDA (GRAVE O FIRMWARE V6 NO ARDUINO)
+-------------------------------------------------------
+MOTOR DO SACO COM VELOCIDADE. A ponte H e a BTS7960 "BT_2" (IBT-2). O
+motor so faz tres coisas: sobe, desce e velocidade.
+- RPWM -> D9 (DESCE) e LPWM -> D10 (SOBE). O pulso nesses dois fios e a
+  velocidade (PWM de 20 kHz, sem chiado), com partida em rampa.
+- R_EN, L_EN e VCC da ponte no 5V do Nano; GND no GND. R_IS/L_IS livres.
+- O botao CONFIG mudou para o D12 (o D9 agora e da ponte H).
+- Central, aba SACO, secao nova VELOCIDADE DO MOTOR: SUBIDA (80%) e
+  DESCIDA (60%), de 10 em 10%. Fica gravado e vai para a placa.
+- SO O FIM DE CURSO DE CIMA (o sensor infravermelho no D11). Embaixo nao
+  ha sensor: a descida termina pelo tempo de curso.
+- Corrigido: com o saco subindo, um DESCER era ignorado ate ele chegar em
+  cima. Agora o saco para e desce na hora (com a pausa de inversao).
+Desenhos: docs\MONTAGEM_4_PONTE_H_COMPLETA.png (a placa BT_2 e o conector
+2x4) e docs\MONTAGEM_1/2/3/5.
+
+O QUE A BUILD 105 CORRIGIU
 ---------------------------------------------------------
 Arquivo: ARDUINO_SENSOR_DE_FEIXE_LM393\ARDUINO_SENSOR_DE_FEIXE_LM393.ino
 Montagem: docs\MONTAGEM_1_MAPA_DO_ARDUINO_NANO.png (o que vai em cada pino),
@@ -70,7 +87,7 @@ FIM DE CURSO DE CIMA (obrigatorio com "FINS DE CURSO: SIM"):
   aba SACO). Regule o sensor e aperte PARAR para destravar.
 - Na aba SACO aparece "chave de CIMA: ACIONADA/LIVRE": ponha a mao na
   frente do sensor para testar a fiacao sem ligar o motor.
-- O jogo nao muda: o mesmo APK da build 105 funciona com o firmware V5.
+- O sensor de cima funciona igual com o firmware V6 (build 106).
 
 O QUE A BUILD 104 CORRIGE
 -------------------------
@@ -222,7 +239,7 @@ O QUE A BUILD 97 CORRIGIU
 ANTES DE INSTALAR NAS 80: TESTE EM UMA
 --------------------------------------
 Na tela de carregamento aparece, no canto de baixo,
-"BUILD 105 - S905L - Android 7.1". Jogue uma partida inteira, abra a
+"BUILD 106 - S905L - Android 7.1". Jogue uma partida inteira, abra a
 Central Tecnica e confira camera e Arduino antes de passar para as outras.
 
 GERAR O APK

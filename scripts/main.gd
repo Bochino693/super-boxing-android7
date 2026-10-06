@@ -115,6 +115,9 @@ const PASSOS = {
 	# --- página SACO
 	"curso_motor": Rect2(110, 700, 400, LADO_BOTAO),
 	"pausa_motor": Rect2(570, 700, 400, LADO_BOTAO),
+	# A VELOCIDADE fica na última seção da página SACO (SACO_VEL_Y + 110).
+	"vel_sobe": Rect2(110, 1736, 400, LADO_BOTAO),
+	"vel_desce": Rect2(570, 1736, 400, LADO_BOTAO),
 }
 ## Botões simples: chave -> retângulo.
 ## AS TRÊS MOLDURAS DA PÁGINA DADOS, EM UM LUGAR SÓ.
@@ -129,6 +132,9 @@ const PASSOS = {
 const SACO_ESTADO_Y = 1120.0
 const SACO_ESTADO_H = 282.0
 const SACO_SOCORRO_Y = SACO_ESTADO_Y + SACO_ESTADO_H + 24.0
+## A seção da VELOCIDADE vem logo depois do socorro (176 de altura + 24).
+## Os passos "vel_sobe"/"vel_desce" em PASSOS ficam em SACO_VEL_Y + 110.
+const SACO_VEL_Y = SACO_SOCORRO_Y + 200.0
 
 const DADOS_DIAG_Y = 600.0
 const DADOS_RITMO_Y = 1194.0
@@ -206,6 +212,7 @@ const PAGINA_DO_CONTROLE = {
 	"zerar": 3, "zerar_stats": 3, "zerar_ranking": 3, "reconectar": 3,
 	"teto_efeitos": 3,
 	"motor_ligado": 4, "motor_fim_curso": 4, "curso_motor": 4, "pausa_motor": 4,
+	"vel_sobe": 4, "vel_desce": 4,
 	"motor_desce": 4, "motor_sobe": 4, "motor_para": 4, "motor_destrava": 4,
 }
 ## As abas, no topo da caixa.
@@ -4396,7 +4403,7 @@ func _enviar_config() -> void:
 		# a placa precisa conhecer. Mandar junto garante que a placa
 		# nunca fica com um curso antigo depois de uma reconexão.
 		link.send_line(ArduinoProtocol.build_motor_config(
-			saco.curso_ms, saco.pausa_ms, saco.fim_de_curso
+			saco.curso_ms, saco.pausa_ms, saco.fim_de_curso, saco.vel_sobe, saco.vel_desce
 		))
 		link.send_line(ArduinoProtocol.build_motor("ESTADO"))
 
@@ -4408,7 +4415,7 @@ func _enviar_config() -> void:
 func _mandar_config_do_motor() -> void:
 	if link != null and link.is_open():
 		link.send_line(ArduinoProtocol.build_motor_config(
-			saco.curso_ms, saco.pausa_ms, saco.fim_de_curso
+			saco.curso_ms, saco.pausa_ms, saco.fim_de_curso, saco.vel_sobe, saco.vel_desce
 		))
 
 ## O MANDO À MÃO, para montar a máquina e para o conserto.
@@ -5051,6 +5058,15 @@ func _ajustar(chave: String, direcao: int) -> void:
 			_mandar_config_do_motor()
 		"pausa_motor":
 			saco.pausa_ms = int(clamp(saco.pausa_ms + direcao * 50, 100, 2000))
+			_mandar_config_do_motor()
+		# A VELOCIDADE do motor (firmware V6), de 10 em 10%. O piso de 20%
+		# é o do firmware: abaixo disso o motor só zumbe e não tira o saco
+		# do lugar.
+		"vel_sobe":
+			saco.vel_sobe = int(clamp(saco.vel_sobe + direcao * 10, 20, 100))
+			_mandar_config_do_motor()
+		"vel_desce":
+			saco.vel_desce = int(clamp(saco.vel_desce + direcao * 10, 20, 100))
 			_mandar_config_do_motor()
 
 	_aplicar_faixas()
@@ -7474,9 +7490,8 @@ func _central_maquina() -> void:
 		16, Paleta.TINTA_LEVE
 	)
 	_linha(
-		"resta: %d de %d ms  •  chave de CIMA: %s  •  de BAIXO: %s" % [
-			saco.resta_ms, saco.curso_ms,
-			_nome_da_chave(saco.fim_cima), _nome_da_chave(saco.fim_baixo),
+		"resta: %d de %d ms  •  sensor de CIMA: %s" % [
+			saco.resta_ms, saco.curso_ms, _nome_da_chave(saco.fim_cima),
 		],
 		15, Paleta.VERMELHO if saco.trava_cima else Paleta.TINTA_LEVE
 	)
@@ -7502,6 +7517,19 @@ func _central_maquina() -> void:
 			SacoMotor.FOLGA_DA_CONFIRMACAO_MS / 1000.0
 		),
 		SACO_SOCORRO_Y + 158.0, 15, Paleta.TINTA_LEVE, Compat.ESQUERDA, 120.0, 860.0
+	)
+
+	# ---- A VELOCIDADE DO MOTOR (firmware V6)
+	#
+	# A placa aplica a velocidade com PWM na ponte H e parte em rampa. A
+	# subida carrega o saco; a descida tem a gravidade a favor. Os
+	# passos ficam em PASSOS (y = SACO_VEL_Y + 110).
+	_secao(Rect2(80, SACO_VEL_Y, 920, 266), "VELOCIDADE DO MOTOR", Paleta.ROXO)
+	_stepper("vel_sobe", "%d %%" % saco.vel_sobe, "SUBIDA", Paleta.ROXO)
+	_stepper("vel_desce", "%d %%" % saco.vel_desce, "DESCIDA", Paleta.ROXO)
+	_texto(
+		"Mais rápido = mais tranco no topo. Comece com 80% na subida e 60% na descida.",
+		SACO_VEL_Y + 236.0, 15, Paleta.TINTA_LEVE, Compat.ESQUERDA, 120.0, 860.0
 	)
 
 ## Como a chave de fim de curso aparece na Central: aperte com a mão e

@@ -7,11 +7,10 @@ C = {"sig":"#1f6feb","v5":"#d1242f","gnd":"#24292f","mot":"#a333c8","fim":"#1a7f
 uso_esq = {"A0":("AO do sensor de feixe (diagnóstico)", C["fx"]),
            "5V":("VCC dos sensores  •  R_EN + L_EN + VCC da ponte H", C["v5"]),
            "GND":("GND comum (sensores, ponte H, fontes, chaves)", C["gnd"])}
-uso_dir = {"D11":("FIM CIMA: OUT do sensor IR (+100k ao GND)", C["fim"]),
-           "D10":("FIM DE CURSO BAIXO — terminal NA (opcional)", C["fim"]),
-           "D9":("Botão MENU / CONFIG (outro lado no GND)", C["btn"]),
-           "D8":("Ponte H  LPWM  →  motor SOBE", C["mot"]),
-           "D7":("Ponte H  RPWM  →  motor DESCE", C["mot"]),
+uso_dir = {"D12":("Botão MENU / CONFIG (outro lado no GND)", C["btn"]),
+           "D11":("FIM CIMA: OUT do sensor IR (+100k ao GND)", C["fim"]),
+           "D10":("Ponte H  LPWM  →  SOBE (com velocidade)", C["mot"]),
+           "D9":("Ponte H  RPWM  →  DESCE (com velocidade)", C["mot"]),
            "D6":("Fita LED DIREITA — DIN (com 330 Ω)", C["led"]),
            "D5":("Fita LED ESQUERDA — DIN (com 330 Ω)", C["led"]),
            "D4":("DO do sensor de feixe (medida do soco)", C["fx"]),
@@ -26,7 +25,7 @@ a = s.append
 a(f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}" font-family="DejaVu Sans, Arial">')
 a(f'<rect width="{W}" height="{H}" fill="#ffffff"/>')
 a('<text x="60" y="70" font-size="40" font-weight="bold" fill="#111">PUNCH CHALLENGE — MAPA DO ARDUINO NANO</text>')
-a('<text x="60" y="108" font-size="21" fill="#555">Firmware ARDUINO_SENSOR_DE_FEIXE_LM393.ino (V5) • placa vista de cima, conector USB para cima • confira sempre o NOME impresso ao lado de cada pino</text>')
+a('<text x="60" y="108" font-size="21" fill="#555">Firmware ARDUINO_SENSOR_DE_FEIXE_LM393.ino (V6) • placa vista de cima, conector USB para cima • confira sempre o NOME impresso ao lado de cada pino</text>')
 # placa
 ph = y0 + passo*14 + 60 - by
 a(f'<rect x="{bx}" y="{by}" width="{bw}" height="{ph}" rx="18" fill="#0b5cad" stroke="#073f78" stroke-width="4"/>')
@@ -64,7 +63,7 @@ for i, n in enumerate(dir_):
 # legenda
 ly = H - 130
 a(f'<rect x="60" y="{ly-40}" width="{W-120}" height="130" rx="14" fill="#f6f8fa" stroke="#d0d7de"/>')
-leg = [("5V",C["v5"]),("GND",C["gnd"]),("Sensor de feixe",C["fx"]),("Ponte H / motor",C["mot"]),("Fins de curso",C["fim"]),("Fitas de LED",C["led"]),("Botões",C["btn"])]
+leg = [("5V",C["v5"]),("GND",C["gnd"]),("Sensor de feixe",C["fx"]),("Ponte H / motor",C["mot"]),("Fim de curso (cima)",C["fim"]),("Fitas de LED",C["led"]),("Botões",C["btn"])]
 x = 90
 for t, c in leg:
     a(f'<rect x="{x}" y="{ly-18}" width="34" height="20" rx="4" fill="{c}"/>')

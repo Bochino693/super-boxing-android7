@@ -57,7 +57,7 @@ texto(X1+30, Y1+PH-34, "• AO é opcional (diagnóstico na Central). Use sensor
 
 # ---------------- B: botões
 painel(X2, Y1, PW, PH, "2. BOTÕES DO GABINETE (contato NA)", C["btn"])
-bot = [("START", "Nano D2"), ("CRÉDITO", "Nano D3"), ("MENU / CONFIG", "Nano D9")]
+bot = [("START", "Nano D2"), ("CRÉDITO", "Nano D3"), ("MENU / CONFIG", "Nano D12")]
 for i, (n, t) in enumerate(bot):
     cy = Y1 + 130 + i*105
     cx = X2 + 120
@@ -77,12 +77,12 @@ tag(X2+PW-200, Y1+380, "Nano GND", C["gnd"])
 texto(X2+30, Y1+PH-34, "• Terminal C (comum) de todas as chaves junto no GND; terminal NA no pino. Pull-up interno.", 16)
 
 # ---------------- C: ponte H
-painel(X1, Y2, PW, PH, "3. PONTE H IBT-2 / BTS7960 + MOTOR DO SACO", C["mot"])
+painel(X1, Y2, PW, PH, "3. PONTE H BTS7960 (placa BT_2) + MOTOR", C["mot"])
 hx, hy = X1+300, Y2+90
-a(f'<rect x="{hx}" y="{hy}" width="230" height="420" rx="10" fill="#c0392b" stroke="#7d2219" stroke-width="3"/>')
+a(f'<rect x="{hx}" y="{hy}" width="230" height="400" rx="10" fill="#1565c0" stroke="#0d3c7a" stroke-width="3"/>')
 a(f'<rect x="{hx+20}" y="{hy+20}" width="190" height="80" rx="6" fill="#2b2b2b"/>')
-texto(hx+115, hy+66, "dissipador", 15, "#bbb", "normal", "middle")
-ctl = [("RPWM", "Nano D7  (DESCE)", C["mot"]), ("LPWM", "Nano D8  (SOBE)", C["mot"]), ("R_EN", "Nano 5V", C["v5"]), ("L_EN", "Nano 5V", C["v5"]),
+texto(hx+115, hy+56, "BT_2", 17, "#ddd", "bold", "middle"); texto(hx+115, hy+80, "conector 2×4", 13, "#bbb", "normal", "middle")
+ctl = [("RPWM", "Nano D9  (DESCE)", C["mot"]), ("LPWM", "Nano D10  (SOBE)", C["mot"]), ("R_EN", "Nano 5V", C["v5"]), ("L_EN", "Nano 5V", C["v5"]),
        ("R_IS", "livre", "#9aa1a9"), ("L_IS", "livre", "#9aa1a9"), ("VCC", "Nano 5V", C["v5"]), ("GND", "Nano GND", C["gnd"])]
 for i, (n, t, c) in enumerate(ctl):
     py = hy + 120 + i*38
@@ -107,15 +107,16 @@ fio([(fx_+150, fy_+25), (fx_+150+0, fy_+25)], C["v5"], 5)
 fio([(fx_+190, fy_+25), (hx-60, fy_+25), (hx-60, hy+150), (hx-22, hy+150)], C["v5"], 6)
 fio([(fx_+150, fy_+90), (hx-80, fy_+90), (hx-80, hy+202), (hx-22, hy+202)], C["gnd"], 6)
 # motor
-mx2, my2 = X1+120, Y2+420
+mx2, my2 = X1+120, Y2+395
 a(f'<circle cx="{mx2}" cy="{my2}" r="50" fill="#9ca3af" stroke="#4b5563" stroke-width="4"/><circle cx="{mx2}" cy="{my2}" r="14" fill="#4b5563"/>')
 texto(mx2, my2+76, "MOTOR DO SACO", 16, "#222", "bold", "middle")
 fio([(hx-22, hy+254), (hx-100, hy+254), (hx-100, my2-20), (mx2+50, my2-20)], C["mot"], 6)
 fio([(hx-22, hy+306), (hx-120, hy+306), (hx-120, my2+20), (mx2+50, my2+20)], "#6b21a8", 6)
-texto(X1+30, Y2+PH-14, "• Se o saco DESCER quando manda SUBIR: inverta M+ e M− (não mexa no D7/D8).", 16)
+texto(X1+30, Y2+PH-36, "• D9 e D10 levam o pulso (PWM): a largura dele é a VELOCIDADE. Conector 2×4: MONTAGEM_4.", 16)
+texto(X1+30, Y2+PH-12, "• Se o saco DESCER quando manda SUBIR: inverta M+ e M− (não mexa no D9/D10).", 16)
 
 # ---------------- D: fins de curso
-painel(X2, Y2, PW, PH, "4. FINS DE CURSO (cima: sensor IR • baixo: micro chave)", C["fim"])
+painel(X2, Y2, PW, PH, "4. FIM DE CURSO: SÓ O DE CIMA (sensor IR)", C["fim"])
 def chave(x, y, titulo, usa, pino, opc, nota1, nota2, cor_nota):
     texto(x, y-122, nota1, 17, cor_nota, "bold")
     texto(x, y-100, nota2, 15, "#444")
@@ -166,7 +167,13 @@ def sensor_ir(x, y):
     a(f'<rect x="{xr-7}" y="{y+167}" width="14" height="30" rx="5" fill="#e9d8b4" stroke="#9a6700" stroke-width="2"/>')
     texto(xr-14, y+188, "100k", 14, "#9a6700", "bold", "end")
 sensor_ir(X2+40, Y2+205)
-chave(X2+440, Y2+215, "BAIXO", "NA", "Nano D10", True, "BAIXO: opcional", "use C e NA (NO)", "#5a6b5f")
+a(f'<rect x="{X2+440}" y="{Y2+110}" width="340" height="250" rx="12" fill="#f6f8fa" stroke="#d0d7de" stroke-width="2" stroke-dasharray="8 6"/>')
+texto(X2+610, Y2+160, "EMBAIXO: NADA", 19, "#57606a", "bold", "middle")
+texto(X2+610, Y2+200, "A descida termina pelo", 16, "#444", "normal", "middle")
+texto(X2+610, Y2+224, "TEMPO DE CURSO", 16, "#444", "bold", "middle")
+texto(X2+610, Y2+248, "(Central, aba SACO).", 16, "#444", "normal", "middle")
+texto(X2+610, Y2+292, "O sensor só vê quando", 15, "#666", "normal", "middle")
+texto(X2+610, Y2+314, "o saco subiu o máximo.", 15, "#666", "normal", "middle")
 texto(X2+30, Y2+PH-60, "• CIMA vê o alvo branco no braço e o motor corta na hora (detalhe: MONTAGEM_5).", 16)
 texto(X2+30, Y2+PH-34, "• Resistor de 100k do D11 ao GND, no borne do Nano: fio OUT solto = não sobe.", 16)
 
@@ -199,7 +206,7 @@ painel(X2, Y3, PW, PH, "6. ARDUINO, TV BOX E CÂMERA (USB)", "#57606a")
 def caixa(x, y, w, h, t1, t2, cor):
     a(f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="10" fill="{cor}" stroke="#4b5563" stroke-width="2"/>')
     texto(x+w/2, y+h/2-4, t1, 18, "#fff", "bold", "middle"); texto(x+w/2, y+h/2+20, t2, 14, "#eef", "normal", "middle")
-caixa(X2+40, Y3+110, 200, 90, "ARDUINO NANO", "firmware V5", "#0b5cad")
+caixa(X2+40, Y3+110, 200, 90, "ARDUINO NANO", "firmware V6", "#0b5cad")
 caixa(X2+330, Y3+110, 200, 90, "HUB USB", "COM fonte própria", "#57606a")
 caixa(X2+600, Y3+110, 190, 90, "TV BOX", "Android", "#1b1f24")
 caixa(X2+330, Y3+290, 200, 90, "WEBCAM UVC", "câmera do ranking", "#6e7781")

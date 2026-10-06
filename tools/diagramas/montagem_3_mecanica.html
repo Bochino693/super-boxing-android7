@@ -12,7 +12,7 @@
   svg text { font-family:"DejaVu Sans", Arial, sans-serif; }
 </style></head><body><div class="pagina">
 <h1>PUNCH CHALLENGE — MONTAGEM MECÂNICA: MOTOR, FEIXE E FINS DE CURSO</h1>
-<div class="sub">Vista de lado (ilustrativa): o saco desce para jogar e sobe para guardar. Palheta, sensor de feixe e os dois fins de curso.</div>
+<div class="sub">Vista de lado (ilustrativa): o saco desce para jogar e sobe para guardar. Palheta, sensor de feixe e o fim de curso de cima.</div>
 <div class="lado">
 <svg width="880" height="900" viewBox="0 0 880 900">
   <style>
@@ -29,7 +29,7 @@
   <!-- motor e correia -->
   <rect x="660" y="200" width="160" height="84" rx="10" fill="#f3e8ff" stroke="#a333c8" stroke-width="3"/>
   <text x="748" y="236" text-anchor="middle" class="s-t" style="font-weight:bold">MOTOR</text>
-  <text x="742" y="262" text-anchor="middle" class="s-p" style="fill:#6b21a8;font-size:13px">ponte H: D7↓ D8↑</text>
+  <text x="742" y="262" text-anchor="middle" class="s-p" style="fill:#6b21a8;font-size:13px">ponte H: D9↓ D10↑</text>
   <circle cx="676" cy="242" r="13" fill="#a333c8"/>
   <line x1="440" y1="152" x2="676" y2="229" stroke="#a333c8" stroke-width="4"/>
   <line x1="440" y1="188" x2="676" y2="255" stroke="#a333c8" stroke-width="4"/>
@@ -70,12 +70,9 @@
   <text x="640" y="386" class="s-p">DO → D4 • AO → A0</text>
   <text x="640" y="410" class="s-p">a palheta passa ENTRE</text>
   <text x="640" y="430" class="s-p">as duas torres</text>
-  <!-- chave de baixo -->
-  <rect x="368" y="478" width="56" height="32" rx="4" fill="#eef9f0" stroke="#1a7f37" stroke-width="3" stroke-dasharray="6 4"/>
-  <circle cx="428" cy="494" r="8" fill="#1a7f37" opacity=".75"/>
-  <text x="60" y="488" class="s-vd" style="fill:#4d7a5a">FIM DE CURSO BAIXO</text>
-  <text x="60" y="510" class="s-p">opcional • NA → D10</text>
-  <line x1="240" y1="494" x2="362" y2="494" stroke="#1a7f37" stroke-width="2" marker-end="url(#setac)"/>
+  <!-- embaixo: sem fim de curso, a descida termina pelo tempo -->
+  <text x="60" y="488" class="s-vd" style="fill:#57606a">EMBAIXO: SEM SENSOR</text>
+  <text x="60" y="510" class="s-p">a descida termina pelo TEMPO DE CURSO</text>
   <!-- soco e balanço -->
   <path d="M200,700 H352" stroke="#d4a017" stroke-width="6" marker-end="url(#seta)"/>
   <text x="200" y="684" class="s-t">SOCO</text>
@@ -90,8 +87,8 @@
   <div class="passo"><b>1. Palheta.</b> Uma chapinha rígida de <b>20 mm</b> (medidos no sentido em que ela anda), presa no braço perto do eixo. Com o saco parado ela fica <b>fora</b> da fenda. No soco, ela <b>entra e sai</b> da fenda inteira. A largura vai na Central (PALHETA).</div>
   <div class="passo az"><b>2. Sensor de feixe.</b> Use módulo de <b>fenda</b> (fotointerruptor, tipo H206/FC-03) ou emissor + receptor <b>infravermelho</b>. <b>Não use LDR com laser:</b> o fotoresistor demora de 10 a 50 ms para reagir, e um soco tapa o feixe por só 3 a 10 ms. Gire o trimpot até o LED do módulo mudar quando um cartão passa.</div>
   <div class="passo vd"><b>3. Sensor de CIMA (obrigatório).</b> Sensor infravermelho de 3 pinos: <b>VCC → 5V</b>, <b>GND → GND</b>, <b>OUT → D11</b> e um <b>resistor de 100k do D11 ao GND</b>. Cole um <b>alvo branco</b> no braço; o sensor deve vê-lo <b>5 a 10 mm antes do batente</b> (regule no trimpot). O motor é cortado na hora pela interrupção do pino. Fio OUT solto: o saco <b>não sobe</b> (falha segura). Detalhe: MONTAGEM_5.</div>
-  <div class="passo"><b>4. Chave de BAIXO (opcional).</b> <b>C → GND</b> e <b>NA (NO) → D10</b>. Sem ela, a descida para pelo tempo de curso.</div>
-  <div class="passo az"><b>5. Primeiro teste.</b> Grave o firmware V5. Abra a Central (botão MENU) e vá na aba <b>SACO</b>. Ligue o motor e deixe <b>FINS DE CURSO: SIM</b>. Ponha a mão (ou o alvo) na frente do sensor de cima: a linha deve mudar para <b>"chave de CIMA: ACIONADA"</b>. Depois passe um cartão no feixe: o feixe deve aparecer como <b>INTERROMPIDO</b>.</div>
+  <div class="passo"><b>4. Motor e velocidade.</b> Ponte H BTS7960 (BT_2): <b>RPWM → D9</b> (desce) e <b>LPWM → D10</b> (sobe). A velocidade vem do pulso nesses dois fios: ajuste na Central, aba SACO, <b>VELOCIDADE DO MOTOR</b> (subida 80%, descida 60% para começar). Embaixo não há sensor: a descida termina pelo tempo de curso.</div>
+  <div class="passo az"><b>5. Primeiro teste.</b> Grave o firmware V6. Abra a Central (botão MENU) e vá na aba <b>SACO</b>. Ligue o motor e deixe <b>FINS DE CURSO: SIM</b>. Ponha a mão (ou o alvo) na frente do sensor de cima: a linha deve mudar para <b>"chave de CIMA: ACIONADA"</b>. Depois passe um cartão no feixe: o feixe deve aparecer como <b>INTERROMPIDO</b>.</div>
   <div class="passo"><b>6. Tempo de curso.</b> Com o saco no meio, aperte <b>SUBIR</b>. Se ele descer, inverta M+ e M− na ponte H. Cronometre a subida e ponha <b>TEMPO DE CURSO = medido + 10%</b>. Esse tempo é o teto de segurança.</div>
   <div class="passo vm"><b>7. "SUBIDA TRAVADA".</b> O saco subiu o tempo todo e o sensor de cima não viu o alvo. A placa cortou o motor e trava a subida para não forçar o mecanismo. Regule o sensor (posição e trimpot) e aperte <b>PARAR</b> na Central para destravar.</div>
 </div>

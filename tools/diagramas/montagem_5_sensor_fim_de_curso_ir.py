@@ -20,7 +20,7 @@ def guia(x1, y1, x2, y2):
 a(f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}" font-family="DejaVu Sans, Arial">')
 a(f'<rect width="{W}" height="{H}" fill="#fff"/>')
 t(60, 70, "FIM DE CURSO DE CIMA: SENSOR INFRAVERMELHO → ARDUINO NANO", 38, "#111", "bold")
-t(60, 106, "O seu sensor (módulo de obstáculo IR, tipo FC-51 / LM393, 3 pinos). Firmware V5. Siga o NOME impresso ao lado de cada pino: a cor do fio não importa.", 19, "#555")
+t(60, 106, "O seu sensor (módulo de obstáculo IR, tipo FC-51 / LM393, 3 pinos). Firmware V6. Siga o NOME impresso ao lado de cada pino: a cor do fio não importa.", 19, "#555")
 
 # ---------------- o módulo (deitado, pinos para a direita)
 mx, my, mw, mh = 250, 280, 380, 170
