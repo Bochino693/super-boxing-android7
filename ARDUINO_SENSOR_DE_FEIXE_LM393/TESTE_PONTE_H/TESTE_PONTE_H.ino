@@ -1,5 +1,5 @@
 /*
-  TESTE DA PONTE H, DA VELOCIDADE E DO FIM DE CURSO - SEM O JOGO (V6)
+  TESTE DA PONTE H, DA VELOCIDADE E DO FIM DE CURSO - SEM O JOGO (V9)
   Arduino Uno/Nano - Monitor Serial a 115200, "Nova linha"
 
   Serve para montar a maquina: sobe e desce o saco pelo Monitor Serial,
@@ -10,6 +10,8 @@
     D10 -> LPWM da ponte H  (SOBE, com velocidade)
     5V  -> R_EN, L_EN e VCC da ponte H        GND -> GND da ponte H
     D11 <- OUT do sensor infravermelho de CIMA (+ resistor de 100k do D11 ao GND)
+    (D7 = DESCE e D8 = SOBE tambem recebem a ordem, em velocidade cheia:
+     serve para quem ligou a ponte H pela tabela antiga, da V5.)
 
   COMANDOS (digite e aperte Enter):
     s      sobe ate o sensor de cima ver o saco (ou o tempo acabar)
@@ -32,6 +34,8 @@
 #define PIN_DESCE 9    /* RPWM - OC1A */
 #define PIN_SOBE 10    /* LPWM - OC1B */
 #define PIN_FIM_CIMA 11
+#define PIN_ESPELHO_DESCE 7
+#define PIN_ESPELHO_SOBE 8
 /* 1 = sensor infravermelho (LOW = viu o saco); 0 = micro chave NF (HIGH).
    IGUAL ao ARDUINO_SENSOR_DE_FEIXE_LM393.ino. */
 #define FIM_CIMA_INFRAVERMELHO 1
@@ -61,6 +65,7 @@ void saidasDesligar() {
   TCCR1A &= ~(_BV(COM1A1) | _BV(COM1B1));
   OCR1A = 0; OCR1B = 0;
   digitalWrite(PIN_DESCE, LOW); digitalWrite(PIN_SOBE, LOW);
+  digitalWrite(PIN_ESPELHO_DESCE, LOW); digitalWrite(PIN_ESPELHO_SOBE, LOW);
 }
 
 /* Liga/atualiza o pulso do sentido atual, com a rampa de partida. */
@@ -73,9 +78,11 @@ void saidaAtualizar() {
   if (sentido == 2) {
     TCCR1A &= ~_BV(COM1A1); digitalWrite(PIN_DESCE, LOW); OCR1A = 0;
     OCR1B = carga; TCCR1A |= _BV(COM1B1);
+    digitalWrite(PIN_ESPELHO_DESCE, LOW); digitalWrite(PIN_ESPELHO_SOBE, HIGH);
   } else if (sentido == 1) {
     TCCR1A &= ~_BV(COM1B1); digitalWrite(PIN_SOBE, LOW); OCR1B = 0;
     OCR1A = carga; TCCR1A |= _BV(COM1A1);
+    digitalWrite(PIN_ESPELHO_SOBE, LOW); digitalWrite(PIN_ESPELHO_DESCE, HIGH);
   }
 }
 
@@ -117,7 +124,9 @@ void comando(char *c) {
 
 void setup() {
   digitalWrite(PIN_DESCE, LOW); digitalWrite(PIN_SOBE, LOW);
+  digitalWrite(PIN_ESPELHO_DESCE, LOW); digitalWrite(PIN_ESPELHO_SOBE, LOW);
   pinMode(PIN_DESCE, OUTPUT); pinMode(PIN_SOBE, OUTPUT);
+  pinMode(PIN_ESPELHO_DESCE, OUTPUT); pinMode(PIN_ESPELHO_SOBE, OUTPUT);
   digitalWrite(PIN_DESCE, LOW); digitalWrite(PIN_SOBE, LOW);
   /* Timer1: Fast PWM (modo 14), TOPO no ICR1, sem divisor -> 20 kHz. */
   TCCR1A = _BV(WGM11); TCCR1B = 0; TCNT1 = 0;
@@ -125,7 +134,7 @@ void setup() {
   TCCR1B = _BV(WGM13) | _BV(WGM12) | _BV(CS10);
   pinMode(PIN_FIM_CIMA, FIM_CIMA_MODO);
   Serial.begin(115200);
-  Serial.println(F("TESTE DA PONTE H V6 - comandos: s (sobe), d (desce), p (para), t (tempo), v80 (vel. subida %), w60 (vel. descida %), numero (tempo maximo ms)"));
+  Serial.println(F("TESTE DA PONTE H V9 - comandos: s (sobe), d (desce), p (para), t (tempo), v80 (vel. subida %), w60 (vel. descida %), numero (tempo maximo ms)"));
 }
 
 void loop() {

@@ -1,5 +1,5 @@
 /*
-  PUNCH CHALLENGE - FIRMWARE COMPLETO SENSOR DE FEIXE MH/LM393 V8
+  PUNCH CHALLENGE - FIRMWARE COMPLETO SENSOR DE FEIXE MH/LM393 V9
   Arduino Uno/Nano ATmega328P - serial 115200
 
   Sensor: VCC->5V, GND->GND, D0->D4, A0->A0
@@ -11,6 +11,21 @@
   Fim de curso: SO O DE CIMA, em D11: SENSOR INFRAVERMELHO de obstaculo
          (modulo FC-51/LM393, 3 pinos VCC/GND/OUT): OUT->D11 e um resistor
          de 100k do D11 ao GND. A descida termina pelo tempo de curso.
+
+  O QUE MUDOU NA V9 (motor que "nao responde"):
+    - SERVE PARA AS DUAS LIGACOES DA PONTE H. Ate a V5 o motor era no
+      D7 (RPWM/DESCE) e no D8 (LPWM/SOBE); da V6 em diante e no D9/D10
+      com velocidade. Quem montou pela tabela antiga e gravou o firmware
+      novo ficava com o motor MORTO. Agora a placa liga OS DOIS PARES ao
+      mesmo tempo: D9/D10 com velocidade e D7/D8 em velocidade cheia.
+    - AUTOTESTE SEM JOGO: segure o botao START e ligue o Arduino (ou
+      aperte o RESET) e continue segurando 2 s. O motor DESCE 1,5 s, para
+      e SOBE ate 1,5 s (para antes se o sensor de cima ver o saco). Nao
+      depende do jogo, da TV Box nem da comunicacao: se o motor nao mexer
+      no autoteste, o problema e de ligacao ou de fonte.
+    - Comando MOTOR,TESTE (botao TESTE na Central, aba SACO): o mesmo
+      teste pela serial. Linhas TESTE,DESCE / TESTE,PAUSA / TESTE,SOBE /
+      TESTE,FIM.
 
   O QUE MUDOU NA V8 (o motor anda SEMPRE, com ou sem o sensor de cima):
     - O SENSOR DE CIMA E VIGIADO PELA PROPRIA PLACA. Se ele mente, a placa
@@ -153,6 +168,10 @@
 #define PIN_MOTOR_DESCE 9    /* RPWM - OC1A (PB1) */
 #define PIN_MOTOR_SOBE 10    /* LPWM - OC1B (PB2) */
 #define PIN_FIM_CIMA 11
+/* V9: as MESMAS ordens tambem no D7 (DESCE) e no D8 (SOBE), a ligacao da
+   V5 e anteriores, em velocidade cheia (liga/desliga, sem pulso). */
+#define PIN_ESPELHO_DESCE 7   /* PD7 */
+#define PIN_ESPELHO_SOBE 8    /* PB0 */
 
 /* QUAL E O FIM DE CURSO DE CIMA.
    1 = SENSOR INFRAVERMELHO de obstaculo (FC-51 / LM393, VCC-GND-OUT):
@@ -320,7 +339,7 @@ ISR(PCINT0_vect) {
   if (!motorUsaFimDeCurso || sensorCima == SENSOR_PRESO) return;
   uint8_t cima = (PINB & _BV(PB3)) ? HIGH : LOW;
   if (motorEstado == MOTOR_SUBINDO && cima == FIM_CIMA_NIVEL_CHEGOU) {
-    TCCR1A &= ~_BV(COM1B1); PORTB &= ~_BV(PB2); motorCorteFim = true;
+    TCCR1A &= ~_BV(COM1B1); PORTB &= ~(_BV(PB2) | _BV(PB0)); motorCorteFim = true;
   }
 }
 #endif
@@ -456,7 +475,8 @@ void leds(long permil) {
 void saidasDesligar() {
   TCCR1A &= ~(_BV(COM1A1) | _BV(COM1B1));
   OCR1A = 0; OCR1B = 0;
-  PORTB &= ~(_BV(PB1) | _BV(PB2));
+  PORTB &= ~(_BV(PB1) | _BV(PB2) | _BV(PB0));
+  PORTD &= ~_BV(PD7);
 }
 
 uint16_t motorCarga(uint8_t sentido) {
@@ -473,11 +493,11 @@ uint16_t motorCarga(uint8_t sentido) {
 void saidaLigar(uint8_t sentido) {
   uint16_t carga = motorCarga(sentido);
   if (sentido == MOTOR_SUBINDO) {
-    TCCR1A &= ~_BV(COM1A1); PORTB &= ~_BV(PB1); OCR1A = 0;
-    OCR1B = carga; TCCR1A |= _BV(COM1B1);
+    TCCR1A &= ~_BV(COM1A1); PORTB &= ~_BV(PB1); OCR1A = 0; PORTD &= ~_BV(PD7);
+    OCR1B = carga; TCCR1A |= _BV(COM1B1); PORTB |= _BV(PB0);
   } else {
-    TCCR1A &= ~_BV(COM1B1); PORTB &= ~_BV(PB2); OCR1B = 0;
-    OCR1A = carga; TCCR1A |= _BV(COM1A1);
+    TCCR1A &= ~_BV(COM1B1); PORTB &= ~_BV(PB2); OCR1B = 0; PORTB &= ~_BV(PB0);
+    OCR1A = carga; TCCR1A |= _BV(COM1A1); PORTD |= _BV(PD7);
   }
 }
 
@@ -641,6 +661,48 @@ void motorAtualizar() {
   }
 }
 
+/* ---------------------------------------------------------- o teste
+   DESCE 1,5 s, pausa, SOBE ate 1,5 s (para antes se o sensor de cima ver
+   o saco). Velocidade cheia nos dois pares de pinos. Nao passa pela
+   logica de posicao: e o teste da LIGACAO. */
+const unsigned long TESTE_MS = 1500, TESTE_PAUSA_MS = 600;
+uint8_t testeFase = 0;           /* 0 nada, 1 descendo, 2 pausa, 3 subindo */
+unsigned long testeAte = 0, testePisca = 0;
+
+void testeSaida(uint8_t sentido) {
+  saidasDesligar();
+  if (sentido == MOTOR_SUBINDO) { OCR1B = PWM_TOPO; TCCR1A |= _BV(COM1B1); PORTB |= _BV(PB0); }
+  else { OCR1A = PWM_TOPO; TCCR1A |= _BV(COM1A1); PORTD |= _BV(PD7); }
+}
+
+void testeComecar() {
+  recolherPendente = false;
+  motorParar(false);
+  motorPosicao = POS_DESCONHECIDA;
+  testeFase = 1; testeAte = millis() + TESTE_MS;
+  testeSaida(MOTOR_DESCENDO);
+  Serial.println(F("TESTE,DESCE"));
+}
+
+void testeParar() {
+  if (!testeFase) return;
+  testeFase = 0; saidasDesligar(); digitalWrite(LED_STATUS, LOW);
+  motorLiberaEm = millis() + motorPausaMs;
+  Serial.println(F("TESTE,FIM"));
+}
+
+void testeAtualizar() {
+  if (!testeFase) return;
+  if (millis() - testePisca > 100) { testePisca = millis(); digitalWrite(LED_STATUS, !digitalRead(LED_STATUS)); }
+  if (testeFase == 3 && sensorCima != SENSOR_PRESO && cimaLido()) {   /* chegou em cima */
+    motorPosicao = POS_EM_CIMA; testeParar(); return;
+  }
+  if ((long)(millis() - testeAte) < 0) return;
+  if (testeFase == 1) { saidasDesligar(); testeFase = 2; testeAte = millis() + TESTE_PAUSA_MS; Serial.println(F("TESTE,PAUSA")); }
+  else if (testeFase == 2) { testeFase = 3; testeAte = millis() + TESTE_MS; testeSaida(MOTOR_SUBINDO); Serial.println(F("TESTE,SOBE")); }
+  else testeParar();
+}
+
 void motorConfigurar(char *cmd) {
   char *p = strtok(cmd, ","); p = strtok(NULL, ","); /* MOTOR */ p = strtok(NULL, ",");
   if (p) {
@@ -660,6 +722,11 @@ void motorConfigurar(char *cmd) {
 
 void motorComando(char *cmd) {
   recolherPendente = false;   /* o jogo assumiu o motor */
+  if (!strcasecmp(cmd + 6, "TESTE")) { testeComecar(); return; }
+  /* Durante o teste so CONFIG, VEL e ESTADO passam; qualquer ordem de
+     movimento (ou PARA) encerra o teste antes. */
+  if (testeFase && strncasecmp(cmd + 6, "CONFIG", 6) && strncasecmp(cmd + 6, "VEL", 3) && strcasecmp(cmd + 6, "ESTADO"))
+    testeParar();
   if (!strncasecmp(cmd + 6, "CONFIG", 6)) { motorConfigurar(cmd); return; }
   if (!strncasecmp(cmd + 6, "VEL,", 4)) {
     char *p = cmd + 10;
@@ -676,7 +743,7 @@ void motorComando(char *cmd) {
 }
 
 void comando(char *cmd) {
-  if (!strcasecmp(cmd,"PING")) { Serial.println(F("READY,PUNCH_OPTICAL,V8-MH-LM393")); Serial.println(F("PONG")); }
+  if (!strcasecmp(cmd,"PING")) { Serial.println(F("READY,PUNCH_OPTICAL,V9-MH-LM393")); Serial.println(F("PONG")); }
   else if (!strcasecmp(cmd,"ARM")) armarCaptura();
   else if (!strcasecmp(cmd,"RESET")) { noInterrupts(); capturaArmada=false; pulsoAberto=false; pulsoPendente=false; interrupts(); motorParar(false); Serial.println(F("OK,RESET")); }
   else if (!strcasecmp(cmd,"CALIBRATE")) { calibrar(); Serial.println(F("OK,CALIBRATE")); }
@@ -721,7 +788,9 @@ void setup() {
      deixa um pulso de nivel indefinido na ponte H - curto, mas suficiente
      para o saco dar um tranco toda vez que a maquina liga. */
   digitalWrite(PIN_MOTOR_DESCE,LOW); digitalWrite(PIN_MOTOR_SOBE,LOW);
+  digitalWrite(PIN_ESPELHO_DESCE,LOW); digitalWrite(PIN_ESPELHO_SOBE,LOW);
   pinMode(PIN_MOTOR_DESCE,OUTPUT); pinMode(PIN_MOTOR_SOBE,OUTPUT);
+  pinMode(PIN_ESPELHO_DESCE,OUTPUT); pinMode(PIN_ESPELHO_SOBE,OUTPUT);
   digitalWrite(PIN_MOTOR_DESCE,LOW); digitalWrite(PIN_MOTOR_SOBE,LOW);
   /* Timer1 so para a ponte H: Fast PWM (modo 14), TOPO no ICR1, sem
      divisor -> 20 kHz, acima do que o ouvido escuta. As saidas so ligam
@@ -749,11 +818,17 @@ void setup() {
   fitaEsq.begin(); fitaDir.begin(); fitaEsq.setBrightness(140); fitaDir.setBrightness(140);
   fitaEsq.show(); fitaDir.show();
 #endif
-  Serial.println(F("READY,PUNCH_OPTICAL,V8-MH-LM393")); calibrar();
+  Serial.println(F("READY,PUNCH_OPTICAL,V9-MH-LM393")); calibrar();
 #if defined(__AVR_ATmega328P__)
   PCICR |= _BV(PCIE2); PCMSK2 |= _BV(PCINT20);
   PCICR |= _BV(PCIE0); PCMSK0 |= _BV(PCINT3);   /* D11: fim de curso de cima */
 #endif
+  /* AUTOTESTE: START segurado ao ligar (2 s firmes) = teste do motor. */
+  unsigned long t0 = millis(); bool segurou = true;
+  while (millis() - t0 < 2000) {
+    if (digitalRead(PIN_START) != LOW) { segurou = false; break; }
+  }
+  if (segurou) { Serial.println(F("AUTOTESTE,START SEGURADO")); testeComecar(); }
 }
 
 void loop() {
@@ -771,6 +846,7 @@ void loop() {
     recolherPendente = false;
     if (motorEstado == MOTOR_PARADO) motorIr(MOTOR_SUBINDO);
   }
-  serialReceber(); botoes(); motorAtualizar(); feixeAtualizarMudo(); feixeAcompanharRepouso(); medir();
+  serialReceber(); botoes();
+  if (testeFase) testeAtualizar(); else motorAtualizar(); feixeAtualizarMudo(); feixeAcompanharRepouso(); medir();
   if (millis()-ultimaTelemetriaMs >= 250) { ultimaTelemetriaMs=millis(); telemetria(); }
 }

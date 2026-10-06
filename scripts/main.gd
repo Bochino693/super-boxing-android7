@@ -184,9 +184,10 @@ const BOTOES_SIMPLES = {
 	# --- página SACO
 	"motor_ligado": Rect2(110, 400, 400, 64),
 	"motor_fim_curso": Rect2(570, 400, 400, 64),
-	"motor_desce": Rect2(110, 950, 275, 64),
-	"motor_sobe": Rect2(402, 950, 275, 64),
-	"motor_para": Rect2(695, 950, 275, 64),
+	"motor_desce": Rect2(110, 950, 204, 64),
+	"motor_sobe": Rect2(328, 950, 204, 64),
+	"motor_teste": Rect2(546, 950, 204, 64),
+	"motor_para": Rect2(764, 950, 206, 64),
 	"motor_destrava": Rect2(110, SACO_SOCORRO_Y + 66.0, 400, 60),
 	# --- sempre visíveis
 	"padroes": Rect2(110, 1782, 400, 68),
@@ -214,6 +215,7 @@ const PAGINA_DO_CONTROLE = {
 	"motor_ligado": 4, "motor_fim_curso": 4, "curso_motor": 4, "pausa_motor": 4,
 	"vel_sobe": 4, "vel_desce": 4,
 	"motor_desce": 4, "motor_sobe": 4, "motor_para": 4, "motor_destrava": 4,
+	"motor_teste": 4,
 }
 ## As abas, no topo da caixa.
 const ABA_LARGURA = 184.0
@@ -613,8 +615,13 @@ var _placa_achada_em = -99.0
 ## build 108 em diante precisa do V8: as versões até a V5 usavam outros
 ## pinos para a ponte H, e com elas a fiação nova deixa o motor morto.
 var firmware_versao = ""
-const FIRMWARE_DO_MOTOR = 8
+const FIRMWARE_DO_MOTOR = 9
 var _motor_identificado_em = -99.0
+## A CONVERSA COM O MOTOR, para a Central mostrar se a placa responde:
+## quantas linhas MOTOR chegaram, quando chegou a última, e o teste.
+var _motor_relatos = 0
+var _motor_ultimo_relato_em = -99.0
+var _motor_teste_fase = ""
 ## A abertura confere de tempos em tempos que o saco segue recolhido.
 const VIGIA_DO_SACO_SEGUNDOS = 15.0
 var _vigia_saco = 0.0
@@ -4145,6 +4152,16 @@ func _on_serial_line(line: String) -> void:
 			# conta o curso, lê o fim de curso e desliga o motor é o
 			# firmware — inclusive se este programa fechar no meio.
 			saco.receber(msg)
+			_motor_relatos += 1
+			_motor_ultimo_relato_em = animation_time
+		"TESTE":
+			# O TESTE DO MOTOR (firmware V9): desce 1,5 s, pausa, sobe.
+			_motor_teste_fase = str(msg.get("fase", ""))
+			_motor_ultimo_relato_em = animation_time
+			match _motor_teste_fase:
+				"DESCE": _show_notice("TESTE: O MOTOR ESTÁ DESCENDO — OLHE O SACO")
+				"SOBE": _show_notice("TESTE: O MOTOR ESTÁ SUBINDO — OLHE O SACO")
+				"FIM": _show_notice("TESTE TERMINADO — SE O SACO NÃO MEXEU, É LIGAÇÃO OU FONTE")
 		"PONG":
 			if not porta_atual.empty() and not serial_status.begins_with("CONECTADO"):
 				serial_status = "CONECTADO %s" % porta_atual
@@ -4554,15 +4571,15 @@ func _diagnostico_do_motor() -> Array:
 	if link == null or not link.available() or not link.is_open():
 		return ["SEM ARDUINO CONECTADO", "nenhum comando chega ao motor", "Confira o cabo USB do Nano e se o Android liberou o Arduino.", true]
 	if not firmware_optico_identificado:
-		return ["O ARDUINO NÃO SE IDENTIFICOU", "aguardando o READY da placa", "Grave no Nano o ARDUINO_SENSOR_DE_FEIXE_LM393.ino (V8).", true]
+		return ["O ARDUINO NÃO SE IDENTIFICOU", "aguardando o READY da placa", "Grave no Nano o ARDUINO_SENSOR_DE_FEIXE_LM393.ino (V9).", true]
 	var n = _numero_do_firmware()
 	if n >= 0 and n < FIRMWARE_DO_MOTOR:
 		return [
 			"FIRMWARE ANTIGO NO ARDUINO (V%d)" % n, "grave o V8",
-			"Grave no Nano o ARDUINO_SENSOR_DE_FEIXE_LM393.ino V8 (o antigo usa outros pinos ou trava a subida).", true
+			"Grave no Nano o ARDUINO_SENSOR_DE_FEIXE_LM393.ino V9 (serve para a ligação D7/D8 e D9/D10).", true
 		]
 	if not saco.placa_tem_motor and animation_time - _motor_identificado_em > 5.0:
-		return ["A PLACA NÃO RESPONDE AO MOTOR", "nenhuma linha MOTOR veio", "Grave o firmware V8 no Nano.", true]
+		return ["A PLACA NÃO RESPONDE AO MOTOR", "nenhuma linha MOTOR veio", "Grave o firmware V9 no Nano.", true]
 	if saco.desistiu():
 		return ["A PLACA NÃO CONFIRMOU O CURSO", "o jogo parou de pedir", "Confira o cabo USB e toque em TENTAR DE NOVO.", true]
 	if saco.sensor_estado == 1 or saco.sensor_cima_suspeito:
@@ -4988,6 +5005,15 @@ func _click_central(p: Vector2) -> void:
 		)
 	elif _tocou("motor_desce", p):
 		_mando_do_motor(SacoMotor.Onde.EM_BAIXO)
+	elif _tocou("motor_teste", p):
+		# O TESTE DA LIGAÇÃO: vai direto à placa, sem passar pela lógica
+		# de posição. Se ele não mexe o saco, o defeito é de fio ou fonte.
+		if link == null or not link.is_open():
+			_show_notice("SEM ARDUINO — USE O AUTOTESTE: SEGURE START E LIGUE O ARDUINO")
+		else:
+			link.send_line(ArduinoProtocol.build_motor("TESTE"))
+			_motor_teste_fase = "PEDIDO"
+			_show_notice("TESTE PEDIDO: DESCE 1,5 s E SOBE — OLHE O SACO")
 	elif _tocou("motor_sobe", p):
 		_mando_do_motor(SacoMotor.Onde.EM_CIMA)
 	elif _tocou("motor_para", p):
@@ -7633,13 +7659,14 @@ func _central_maquina() -> void:
 	var pode = saco.ligado and link != null and link.is_open()
 	_botao(BOTOES_SIMPLES["motor_desce"], "DESCER", false, Paleta.CIANO, 20, not pode)
 	_botao(BOTOES_SIMPLES["motor_sobe"], "SUBIR", false, Paleta.CIANO, 20, not pode)
+	_botao(BOTOES_SIMPLES["motor_teste"], "TESTE", false, Paleta.AMBAR, 20)
 	# PARAR NUNCA FICA DESBOTADO. É o botão de emergência da página, e um
 	# botão de emergência que às vezes não responde não é botão de
 	# emergência — ele vale com a função desligada e sem curso em
 	# andamento.
 	_botao(BOTOES_SIMPLES["motor_para"], "PARAR", false, Paleta.VERMELHO, 20)
 	_texto(
-		"Use com o gabinete aberto para acertar a altura do saco e conferir os fins de curso.",
+		"TESTE = desce 1,5 s e sobe, direto na placa. Sem o jogo: segure START e ligue o Arduino.",
 		1052.0, 15, Paleta.TINTA_LEVE, Compat.ESQUERDA, 120.0, 860.0
 	)
 
@@ -7684,6 +7711,15 @@ func _central_maquina() -> void:
 			saco.resta_ms, saco.curso_ms, _nome_da_chave(saco.fim_cima),
 		],
 		15, Paleta.VERMELHO if saco.trava_cima else Paleta.TINTA_LEVE
+	)
+	_linha(
+		"firmware: %s  •  respostas do motor: %d  •  última: %s%s" % [
+			firmware_versao if not firmware_versao.empty() else "?",
+			_motor_relatos,
+			("há %d s" % int(animation_time - _motor_ultimo_relato_em)) if _motor_ultimo_relato_em > 0.0 else "NUNCA",
+			("  •  teste: " + _motor_teste_fase) if not _motor_teste_fase.empty() else "",
+		],
+		15, Paleta.VERDE if _motor_relatos > 0 else Paleta.VERMELHO
 	)
 	_linha(
 		"caminho até a placa: %s" % (

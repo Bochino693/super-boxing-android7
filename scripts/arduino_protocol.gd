@@ -168,6 +168,9 @@ static func parse(line: String) -> Dictionary:
 				"baixo": parts[2].strip_edges() == "1",
 				"trava": parts[3].strip_edges() == "1",
 			}
+		"TESTE":
+			# TESTE,<DESCE|PAUSA|SOBE|FIM> — o teste do motor (firmware V9).
+			return {"type": "TESTE", "fase": parts[1].strip_edges().to_upper() if parts.size() > 1 else ""}
 		"SENSOR_CIMA":
 			# SENSOR_CIMA,<0 ok|1 preso em "chegou"|2 nunca vê> — firmware V8.
 			# A placa vigia o sensor de cima e, se ele mente, sobe pelo tempo.

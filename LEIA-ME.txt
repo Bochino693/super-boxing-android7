@@ -1,4 +1,4 @@
-SUPER BOXING - VERSAO TV BOX S905L (ANDROID 7.1) - BUILD 108
+SUPER BOXING - VERSAO TV BOX S905L (ANDROID 7.1) - BUILD 109
 ===========================================================
 
 PARA QUAL MAQUINA E ESTA VERSAO
@@ -26,9 +26,37 @@ O que muda por dentro (voce nao ve na tela):
 
 O APK tem outro nome de pacote (com.lazersport.superboxing), entao pode
 ficar instalado junto com o Punch Challenge das outras maquinas. Se a
-build 92 a 107 estiver instalada, a 108 instala por cima.
+build 92 a 108 estiver instalada, a 109 instala por cima.
 
-O QUE A BUILD 108 CORRIGE (GRAVE O FIRMWARE V8 NO ARDUINO)
+O QUE A BUILD 109 CORRIGE (GRAVE O FIRMWARE V9 NO ARDUINO)
+-----------------------------------------------------------
+DIAGRAMAS NOVOS (na pasta docs):
+- MONTAGEM_0_LIGACAO_COMPLETA_DO_MOTOR.png: tudo o que liga no Nano para
+  o motor, fio por fio (ponte H BT_2, fonte, motor, sensor de cima, 100k,
+  botoes, USB da TV Box).
+- MONTAGEM_6_TESTE_DO_MOTOR_PASSO_A_PASSO.png: o que fazer, em ordem,
+  quando o motor nao anda (autoteste, multimetro, botao TESTE).
+
+O MOTOR SERVE PARA AS DUAS LIGACOES (firmware V9):
+- Ate o V5 a ponte H era no D7 (RPWM) e no D8 (LPWM). Do V6 em diante e
+  no D9/D10. Quem ligou pela tabela antiga e gravou o firmware novo
+  ficava com o motor MORTO e "nada acontecia" nem na Central. Agora a
+  placa manda nos dois pares ao mesmo tempo (D9/D10 com velocidade,
+  D7/D8 em velocidade cheia): funciona com qualquer uma das ligacoes.
+
+AUTOTESTE SEM JOGO:
+- Fonte do motor ligada, SEGURE O BOTAO START e ligue o Arduino (ou
+  aperte o RESET do Nano), segurando uns 3 s. O LED "L" pisca e o motor
+  DESCE 1,5 s, para e SOBE ate 1,5 s. Nao depende do jogo, da TV Box nem
+  da comunicacao. Nao mexeu = defeito de fio ou de fonte (veja a folha
+  MONTAGEM_6, passo 3, com o multimetro).
+
+BOTAO TESTE NA CENTRAL (aba SACO):
+- O mesmo teste, pelo jogo. A caixa ONDE O SACO ESTA mostra agora a
+  versao do firmware, quantas respostas do motor chegaram e ha quanto
+  tempo: "respostas 0" = o jogo nao esta falando com a placa.
+
+O QUE A BUILD 108 CORRIGIU (FIRMWARE V8)
 -----------------------------------------------------------
 GRAVE O V8 NO NANO: ARDUINO_SENSOR_DE_FEIXE_LM393\ARDUINO_SENSOR_DE_FEIXE_LM393.ino
 (Placa "Arduino Nano", processador "ATmega328P" ou "ATmega328P (Old
@@ -331,7 +359,7 @@ O QUE A BUILD 97 CORRIGIU
 ANTES DE INSTALAR NAS 80: TESTE EM UMA
 --------------------------------------
 Na tela de carregamento aparece, no canto de baixo,
-"BUILD 108 - S905L - Android 7.1". Jogue uma partida inteira, abra a
+"BUILD 109 - S905L - Android 7.1". Jogue uma partida inteira, abra a
 Central Tecnica e confira camera e Arduino antes de passar para as outras.
 
 GERAR O APK

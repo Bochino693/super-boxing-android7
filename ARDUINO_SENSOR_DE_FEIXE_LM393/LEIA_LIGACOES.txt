@@ -1,4 +1,4 @@
-FIRMWARE DEFINITIVO - SENSOR DE FEIXE LM393 - V8
+FIRMWARE DEFINITIVO - SENSOR DE FEIXE LM393 - V9
 ================================================
 
 Grave o arquivo ARDUINO_SENSOR_DE_FEIXE_LM393.ino no Arduino Uno/Nano
@@ -82,7 +82,14 @@ FIM DE CURSO DE CIMA (OBRIGATORIO com "FINS DE CURSO: SIM"):
 EMBAIXO NAO HA FIM DE CURSO: a descida termina pelo TEMPO DE CURSO
 (Central, aba SACO). O sensor de cima so ve quando o saco subiu o maximo.
 
-COMO O V8 TRABALHA (mesmos pinos do V6/V7):
+COMO O V9 TRABALHA (mesmos pinos do V6/V7/V8, e tambem os da V5):
+  - A ponte H pode estar no D9/D10 (RPWM/LPWM, com velocidade) OU no
+    D7/D8 (ligacao antiga, velocidade cheia): a placa manda nos dois.
+  - AUTOTESTE: segure START e ligue o Arduino (3 s): desce 1,5 s e sobe.
+  - Comando MOTOR,TESTE (botao TESTE na Central) faz o mesmo.
+  - Diagrama: docs/MONTAGEM_0_LIGACAO_COMPLETA_DO_MOTOR.png e
+    docs/MONTAGEM_6_TESTE_DO_MOTOR_PASSO_A_PASSO.png.
+
   - O MOTOR ANDA SEMPRE. A placa vigia o sensor de cima: se ele fica
     preso em "chegou" (fio OUT solto, sem 5V) ou nunca ve o saco, ela
     percebe sozinha e passa a SUBIR PELO TEMPO DE CURSO. Arrumou o
