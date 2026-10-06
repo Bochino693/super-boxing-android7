@@ -1,5 +1,5 @@
 /*
-  PUNCH CHALLENGE - FIRMWARE COMPLETO SENSOR DE FEIXE MH/LM393 V7
+  PUNCH CHALLENGE - FIRMWARE COMPLETO SENSOR DE FEIXE MH/LM393 V8
   Arduino Uno/Nano ATmega328P - serial 115200
 
   Sensor: VCC->5V, GND->GND, D0->D4, A0->A0
@@ -11,6 +11,21 @@
   Fim de curso: SO O DE CIMA, em D11: SENSOR INFRAVERMELHO de obstaculo
          (modulo FC-51/LM393, 3 pinos VCC/GND/OUT): OUT->D11 e um resistor
          de 100k do D11 ao GND. A descida termina pelo tempo de curso.
+
+  O QUE MUDOU NA V8 (o motor anda SEMPRE, com ou sem o sensor de cima):
+    - O SENSOR DE CIMA E VIGIADO PELA PROPRIA PLACA. Se ele mente, a placa
+      percebe sozinha e passa a SUBIR PELO TEMPO DE CURSO:
+        * PRESO EM "CHEGOU": o saco desceu o curso inteiro e o sensor nunca
+          ficou livre (fio OUT solto do D11, sensor sem 5V, ou vendo outra
+          coisa). Antes a placa recusava toda subida = motor "morto".
+        * NUNCA VE: a subida durou o teto todo e ele nao viu o saco.
+      Linha SENSOR_CIMA,<0 ok|1 preso em chegou|2 nunca ve> a cada 250 ms.
+      Voltou a funcionar (ficou livre / viu o saco subindo): volta ao normal.
+    - A PLACA LEMBRA (EEPROM) onde o saco ficou e o estado do sensor. Ao
+      ligar, se o saco nao estava em cima, ela o recolhe sozinha - mesmo
+      com o sensor com defeito (pelo tempo).
+    - SEM SENSOR CONFIAVEL, a subida pelo tempo usa o TEMPO DE CURSO da
+      Central (aba SACO): acerte-o com o TESTE_PONTE_H (comando t).
 
   O QUE MUDOU NA V7 (motor "morto"):
     - A SUBIDA NAO TRAVA MAIS PARA SEMPRE. Na V6, se o saco subisse o
@@ -81,6 +96,7 @@
 */
 #include <Arduino.h>
 #include <stdlib.h>
+#include <avr/eeprom.h>
 #if defined(__has_include)
   #if __has_include(<Adafruit_NeoPixel.h>)
     #include <Adafruit_NeoPixel.h>
@@ -205,6 +221,20 @@ bool motorTravaCima = false;
 const unsigned long RECOLHER_APOS_MS = 1500;
 bool recolherPendente = RECOLHER_AO_LIGAR;
 
+/* O SENSOR DE CIMA E VIGIADO (V8). Ver o cabecalho. */
+#define SENSOR_OK 0
+#define SENSOR_PRESO 1      /* diz "chegou" sempre */
+#define SENSOR_NUNCA_VE 2   /* nunca ve o saco */
+volatile uint8_t sensorCima = SENSOR_OK;
+bool descidaViuLivre = false;      /* o sensor ficou livre durante a descida? */
+unsigned long sensorLivreDesde = 0; /* para sair do PRESO: livre firme */
+/* EEPROM: 0 = marca, 1 = estado do sensor, 2 = onde o saco ficou. */
+#define EE_MARCA 0
+#define EE_SENSOR 1
+#define EE_POSICAO 2
+#define EE_CURSO 3          /* 2 bytes: o tempo de curso da Central */
+#define EE_VALOR_MARCA 0xB8
+
 /* O feixe nao mede enquanto o motor anda nem logo depois: o saco ainda
    balanca do tranco do motor. */
 const unsigned long ASSENTAR_MS = 900;
@@ -287,7 +317,7 @@ ISR(PCINT2_vect) { observar((PIND & _BV(PD4)) ? HIGH : LOW, micros()); }
    escrevendo na serial). D10 = PB2/OC1B (sobe), D11 = PB3 (cima:
    FIM_CIMA_NIVEL_CHEGOU). Cortar = desligar o PWM do pino e po-lo em LOW. */
 ISR(PCINT0_vect) {
-  if (!motorUsaFimDeCurso) return;
+  if (!motorUsaFimDeCurso || sensorCima == SENSOR_PRESO) return;
   uint8_t cima = (PINB & _BV(PB3)) ? HIGH : LOW;
   if (motorEstado == MOTOR_SUBINDO && cima == FIM_CIMA_NIVEL_CHEGOU) {
     TCCR1A &= ~_BV(COM1B1); PORTB &= ~_BV(PB2); motorCorteFim = true;
@@ -472,10 +502,30 @@ void motorParar(bool avisar) {
   if (avisar && mudou) motorRelatar();
 }
 
+bool cimaLido() { return digitalRead(PIN_FIM_CIMA) == FIM_CIMA_NIVEL_CHEGOU; }
+
+/* O sensor de cima vale para parar/recusar a subida? Preso em "chegou" nao
+   vale (a subida e pelo tempo). "Nunca ve" ainda vale: se ele ver, para. */
+bool sensorValeParaParar() { return motorUsaFimDeCurso && sensorCima != SENSOR_PRESO; }
+/* O sensor e quem diz se o saco esta em cima (e nao a memoria)? */
+bool sensorManda() { return motorUsaFimDeCurso && sensorCima == SENSOR_OK; }
+
+/* A posicao so vai para a EEPROM com o sensor ruim: com ele bom, quem diz
+   onde o saco esta ao ligar e o proprio sensor (e a EEPROM nao gasta). */
+void guardarPosicao() {
+  if (sensorCima != SENSOR_OK) eeprom_update_byte((uint8_t *)EE_POSICAO, motorPosicao);
+}
+void guardarSensor(uint8_t novo) {
+  if (sensorCima == novo) return;
+  sensorCima = novo;
+  eeprom_update_byte((uint8_t *)EE_SENSOR, novo);
+  eeprom_update_byte((uint8_t *)EE_POSICAO, motorPosicao);
+}
+
 bool motorFimAtingido(uint8_t sentido) {
-  if (!motorUsaFimDeCurso) return false;
+  if (!sensorValeParaParar()) return false;
   /* So ha fim de curso EM CIMA: a descida termina pelo tempo. */
-  if (sentido == MOTOR_SUBINDO) return digitalRead(PIN_FIM_CIMA) == FIM_CIMA_NIVEL_CHEGOU;
+  if (sentido == MOTOR_SUBINDO) return cimaLido();
   return false;
 }
 
@@ -493,7 +543,7 @@ bool motorFimFirme(uint8_t sentido) {
    tempo). A subida para pelo sensor; o tempo e so a protecao, entao ela
    ganha folga: um curso medido um pouco curto nao vira subida pela metade. */
 unsigned long motorTeto(uint8_t sentido) {
-  if (sentido == MOTOR_SUBINDO && motorUsaFimDeCurso) {
+  if (sentido == MOTOR_SUBINDO && sensorManda()) {
     unsigned long folga = motorCursoMs / 2;
     if (folga < 1500) folga = 1500;
     unsigned long t = motorCursoMs + folga;
@@ -513,8 +563,8 @@ void motorIr(uint8_t sentido) {
   /* EM CIMA QUEM DIZ E O SENSOR. Viu o saco: ja chegou. Nao viu: sobe,
      mesmo que a placa "lembre" que estava em cima. */
   if (motorFimAtingido(sentido)) { motorPosicao = destino; motorRelatar(); return; }
-  bool sensorManda = (sentido == MOTOR_SUBINDO) && motorUsaFimDeCurso;
-  if (!sensorManda && motorPosicao == destino) { motorRelatar(); return; }
+  bool peloSensor = (sentido == MOTOR_SUBINDO) && sensorManda();
+  if (!peloSensor && motorPosicao == destino) { motorRelatar(); return; }
   /* Inverter exige parar e esperar o tempo morto. */
   if (motorEstado != MOTOR_PARADO) {
     motorPosicao = POS_DESCONHECIDA;
@@ -529,7 +579,9 @@ void motorIr(uint8_t sentido) {
      DESCE no meio de uma subida que saiu de baixo era ignorado ("ja esta
      embaixo") e a subida seguia. */
   motorPosicao = POS_DESCONHECIDA;
+  guardarPosicao();
   motorEstado = sentido;
+  descidaViuLivre = false;
   motorAte = millis() + motorTeto(sentido);
   motorInicio = millis();
   saidaLigar(sentido);
@@ -548,6 +600,8 @@ void motorAtualizar() {
     uint8_t sentido = motorEstado;
     if (motorFimFirme(sentido)) {
       motorPosicao = (sentido == MOTOR_DESCENDO) ? POS_EM_BAIXO : POS_EM_CIMA;
+      guardarPosicao();
+      if (sentido == MOTOR_SUBINDO) guardarSensor(SENSOR_OK);   /* viu o saco subindo: funciona */
       motorParar(false);
       motorLiberaEm = millis() + motorPausaMs;
       motorRelatar();
@@ -558,30 +612,42 @@ void motorAtualizar() {
     motorCorteFim = false;
     saidaLigar(sentido);
   }
+  if (motorEstado == MOTOR_DESCENDO && !cimaLido()) descidaViuLivre = true;
   /* Rampa: a carga sobe ate a velocidade escolhida. */
   if (!motorCorteFim && millis() - motorInicio <= RAMPA_MS + 20) saidaLigar(motorEstado);
   if ((long)(millis() - motorAte) >= 0) {
     uint8_t sentido = motorEstado;
     motorParar(false);
     motorLiberaEm = millis() + motorPausaMs;
-    if (sentido == MOTOR_SUBINDO && motorUsaFimDeCurso) {
-      /* SUBIU O TEMPO TODO E O SENSOR DE CIMA NAO VIU O SACO. Ou o sensor
-         esta fora do lugar/desregulado, o curso esta curto, ou a fonte
-         do motor esta desligada. Nao finge que chegou: para, avisa, e o
-         proximo pedido de subida tenta de novo (V7: sem trava). */
-      motorPosicao = POS_DESCONHECIDA;
+    if (sentido == MOTOR_SUBINDO && sensorManda()) {
+      /* SUBIU O TETO TODO (curso + 50%) E O SENSOR DE CIMA NAO VIU O SACO.
+         O saco esta em cima (andou mais que o curso), o sensor e que nao
+         ve: daqui em diante a subida e pelo tempo, ate ele voltar a ver. */
+      guardarSensor(SENSOR_NUNCA_VE);
       Serial.println(F("ERROR,FIM_CIMA"));
+      motorPosicao = POS_EM_CIMA;
     } else {
-      /* Descendo (ou sem fim de curso): o tempo e o curso. */
+      /* Descendo (ou subida pelo tempo): o tempo e o curso. */
       motorPosicao = (sentido == MOTOR_DESCENDO) ? POS_EM_BAIXO : POS_EM_CIMA;
+      /* DESCEU O CURSO INTEIRO E O SENSOR DE CIMA NUNCA FICOU LIVRE: ele
+         esta preso em "chegou". Sem isto a placa recusaria toda subida. */
+      if (sentido == MOTOR_DESCENDO && motorUsaFimDeCurso && !descidaViuLivre && cimaLido()) {
+        guardarSensor(SENSOR_PRESO);
+        Serial.println(F("ERROR,SENSOR_CIMA_PRESO"));
+      }
     }
+    guardarPosicao();
     motorRelatar();
   }
 }
 
 void motorConfigurar(char *cmd) {
   char *p = strtok(cmd, ","); p = strtok(NULL, ","); /* MOTOR */ p = strtok(NULL, ",");
-  if (p) motorCursoMs = constrain(atol(p), 200L, (long)MOTOR_CURSO_MAX_MS);
+  if (p) {
+    motorCursoMs = constrain(atol(p), 200L, (long)MOTOR_CURSO_MAX_MS);
+    /* Guardado: ao ligar, a subida pelo tempo (sensor ruim) usa este. */
+    eeprom_update_word((uint16_t *)EE_CURSO, (uint16_t)motorCursoMs);
+  }
   p = strtok(NULL, ","); if (p) motorPausaMs = constrain(atol(p), 50L, 2000L);
   p = strtok(NULL, ","); if (p) motorUsaFimDeCurso = atoi(p) != 0;
   /* Opcionais (Central da build 106 em diante): velocidade de subida e
@@ -610,7 +676,7 @@ void motorComando(char *cmd) {
 }
 
 void comando(char *cmd) {
-  if (!strcasecmp(cmd,"PING")) { Serial.println(F("READY,PUNCH_OPTICAL,V7-MH-LM393")); Serial.println(F("PONG")); }
+  if (!strcasecmp(cmd,"PING")) { Serial.println(F("READY,PUNCH_OPTICAL,V8-MH-LM393")); Serial.println(F("PONG")); }
   else if (!strcasecmp(cmd,"ARM")) armarCaptura();
   else if (!strcasecmp(cmd,"RESET")) { noInterrupts(); capturaArmada=false; pulsoAberto=false; pulsoPendente=false; interrupts(); motorParar(false); Serial.println(F("OK,RESET")); }
   else if (!strcasecmp(cmd,"CALIBRATE")) { calibrar(); Serial.println(F("OK,CALIBRATE")); }
@@ -643,6 +709,7 @@ void telemetria() {
      e veja o numero mudar. */
   Serial.print(F("FIM,")); Serial.print(digitalRead(PIN_FIM_CIMA)==FIM_CIMA_NIVEL_CHEGOU?1:0); Serial.print(',');
   Serial.print(0); Serial.print(','); Serial.println(motorTravaCima?1:0);   /* sem fim de curso de baixo */
+  Serial.print(F("SENSOR_CIMA,")); Serial.println(sensorCima);
 }
 
 void setup() {
@@ -663,11 +730,26 @@ void setup() {
   ICR1 = PWM_TOPO - 1; OCR1A = 0; OCR1B = 0;
   TCCR1B = _BV(WGM13) | _BV(WGM12) | _BV(CS10);
   pinMode(PIN_FIM_CIMA,FIM_CIMA_MODO);
+  /* O QUE A PLACA LEMBRA da ultima vez que ficou ligada. */
+  if (eeprom_read_byte((uint8_t *)EE_MARCA) == EE_VALOR_MARCA) {
+    uint8_t sv = eeprom_read_byte((uint8_t *)EE_SENSOR);
+    uint8_t pv = eeprom_read_byte((uint8_t *)EE_POSICAO);
+    sensorCima = sv <= SENSOR_NUNCA_VE ? sv : SENSOR_OK;
+    /* Com o sensor confiavel quem diz e ele; sem, vale a memoria. */
+    if (sensorCima != SENSOR_OK && pv <= POS_EM_BAIXO) motorPosicao = pv;
+    uint16_t cv = eeprom_read_word((uint16_t *)EE_CURSO);
+    if (cv >= 200 && cv <= MOTOR_CURSO_MAX_MS) motorCursoMs = cv;
+  } else {
+    eeprom_update_byte((uint8_t *)EE_MARCA, EE_VALOR_MARCA);
+    eeprom_update_byte((uint8_t *)EE_SENSOR, SENSOR_OK);
+    eeprom_update_byte((uint8_t *)EE_POSICAO, POS_DESCONHECIDA);
+    eeprom_update_word((uint16_t *)EE_CURSO, (uint16_t)motorCursoMs);
+  }
 #if TEM_FITAS
   fitaEsq.begin(); fitaDir.begin(); fitaEsq.setBrightness(140); fitaDir.setBrightness(140);
   fitaEsq.show(); fitaDir.show();
 #endif
-  Serial.println(F("READY,PUNCH_OPTICAL,V7-MH-LM393")); calibrar();
+  Serial.println(F("READY,PUNCH_OPTICAL,V8-MH-LM393")); calibrar();
 #if defined(__AVR_ATmega328P__)
   PCICR |= _BV(PCIE2); PCMSK2 |= _BV(PCINT20);
   PCICR |= _BV(PCIE0); PCMSK0 |= _BV(PCINT3);   /* D11: fim de curso de cima */
@@ -675,9 +757,19 @@ void setup() {
 }
 
 void loop() {
+  /* PRESO EM "CHEGOU" QUE FICOU LIVRE (meio segundo firme): o sensor
+     voltou a funcionar (fio arrumado). */
+  if (sensorCima == SENSOR_PRESO) {
+    if (cimaLido()) sensorLivreDesde = 0;
+    else if (!sensorLivreDesde) sensorLivreDesde = millis() | 1;
+    else if (millis() - sensorLivreDesde > 500) { guardarSensor(SENSOR_OK); sensorLivreDesde = 0; }
+  }
+  /* AO LIGAR: recolhe o saco. Com sensor bom, sobe ate ele ver (se ja ve,
+     nao mexe). Com sensor ruim, sobe pelo tempo se a placa nao lembra do
+     saco em cima. */
   if (recolherPendente && millis() >= RECOLHER_APOS_MS) {
     recolherPendente = false;
-    if (motorUsaFimDeCurso && motorEstado == MOTOR_PARADO) motorIr(MOTOR_SUBINDO);
+    if (motorEstado == MOTOR_PARADO) motorIr(MOTOR_SUBINDO);
   }
   serialReceber(); botoes(); motorAtualizar(); feixeAtualizarMudo(); feixeAcompanharRepouso(); medir();
   if (millis()-ultimaTelemetriaMs >= 250) { ultimaTelemetriaMs=millis(); telemetria(); }

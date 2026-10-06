@@ -609,6 +609,15 @@ var _porta_recem_chegada = ""
 ## QUANDO A PLACA FALOU PELA PRIMEIRA VEZ. Só serve para a Central
 ## comemorar por um instante — ver `_seletor_porta_refinado`.
 var _placa_achada_em = -99.0
+## A versão que o firmware anunciou no READY ("V8-MH-LM393"). O motor da
+## build 108 em diante precisa do V8: as versões até a V5 usavam outros
+## pinos para a ponte H, e com elas a fiação nova deixa o motor morto.
+var firmware_versao = ""
+const FIRMWARE_DO_MOTOR = 8
+var _motor_identificado_em = -99.0
+## A abertura confere de tempos em tempos que o saco segue recolhido.
+const VIGIA_DO_SACO_SEGUNDOS = 15.0
+var _vigia_saco = 0.0
 
 ## 2) DURANTE O SOCO, A BUSCA ESPERA. Quando a porta não está aberta, o
 ##    golpe não vai ser lido de qualquer jeito — reconectar meio segundo
@@ -1410,6 +1419,7 @@ func soltar_entrada() -> void:
 	ritmo = Ritmo.new()
 
 func _processar_abertura(delta: float) -> void:
+	_vigiar_saco_recolhido(delta)
 	if intro_active and entrada_segurada:
 		return
 	if intro_active:
@@ -4071,6 +4081,7 @@ func _on_serial_line(line: String) -> void:
 			serial_status = "CONECTADO %s" % porta_atual
 			var ja_identificado = firmware_optico_identificado
 			var dispositivo = str(msg.get("device", "")).strip_edges().to_upper()
+			firmware_versao = str(msg.get("version", "")).strip_edges().to_upper()
 			# Aceita as identificações das revisões do firmware MH/LM393. O
 			# hardware óptico não deve ser rejeitado apenas porque a etiqueta
 			# mudou entre PUNCH_OPTICAL, PUNCH_MH e PUNCH_LM393.
@@ -4087,6 +4098,7 @@ func _on_serial_line(line: String) -> void:
 				# A placa acabou de aparecer: o jogo repete na hora o que
 				# quer do saco (fora da partida: enrolado em cima).
 				saco.reafirmar()
+				_motor_identificado_em = animation_time
 				porta_arduino_identificada = porta_atual
 				placa_calibrando = true
 				progresso_calibracao = 0
@@ -4126,6 +4138,8 @@ func _on_serial_line(line: String) -> void:
 			pino_credito = bool(msg["credit"])
 		"FIM":
 			saco.receber_fim(msg)
+		"SENSOR_CIMA":
+			saco.receber_sensor(int(msg["estado"]))
 		"MOTOR":
 			# A PLACA É QUEM SABE ONDE O SACO ESTÁ. O jogo só pede; quem
 			# conta o curso, lê o fim de curso e desliga o motor é o
@@ -4247,7 +4261,12 @@ func _on_serial_line(line: String) -> void:
 				# não abriu: a placa cortou o motor e travou a subida, para
 				# o mecanismo não ficar forçando o topo rodada após rodada.
 				saco.travou()
-				_show_notice("FIM DE CURSO DE CIMA NÃO ACIONOU — SUBIDA TRAVADA")
+				_show_notice("O SENSOR DE CIMA NÃO VIU O SACO — A PLACA SOBE PELO TEMPO")
+			elif str(msg["code"]) == "SENSOR_CIMA_PRESO":
+				# Firmware V8: o saco desceu o curso todo e o sensor de cima
+				# nunca ficou livre. A placa passa a subir pelo tempo.
+				saco.receber_sensor(1)
+				_show_notice("SENSOR DE CIMA PRESO — A PLACA SOBE PELO TEMPO")
 			elif str(msg["code"]) == "CALIB_LEITURA":
 				sensor_presente = false
 				placa_calibrando = true
@@ -4511,6 +4530,69 @@ func _mandar_config_do_motor() -> void:
 		link.send_line(ArduinoProtocol.build_motor_config(
 			saco.curso_ms, saco.pausa_ms, saco.fim_de_curso, saco.vel_sobe, saco.vel_desce
 		))
+
+## O NÚMERO DA VERSÃO do firmware ("V8-MH-LM393" → 8; -1 = não disse).
+func _numero_do_firmware() -> int:
+	var v = firmware_versao.trim_prefix("V")
+	var n = ""
+	for c in v:
+		if c in "0123456789":
+			n += c
+		else:
+			break
+	return int(n) if not n.empty() else -1
+
+## POR QUE O MOTOR NÃO ANDA — em uma frase, para a Central e a abertura.
+##
+## Devolve [o que há, o que a máquina faz por conta, o que conferir, grave].
+## "Grave" = o motor não vai andar até alguém mexer. Os defeitos do sensor
+## de cima não são graves: a placa V8 sobe o saco pelo tempo.
+## A ordem é a ordem do conserto: do que impede tudo ao que só atrapalha.
+func _diagnostico_do_motor() -> Array:
+	if not saco.ligado:
+		return ["MOTOR DESLIGADO NESTA PÁGINA", "o jogo não mexe no saco", "Toque em LIGADO (MOTOR DO SACO, no alto da página).", true]
+	if link == null or not link.available() or not link.is_open():
+		return ["SEM ARDUINO CONECTADO", "nenhum comando chega ao motor", "Confira o cabo USB do Nano e se o Android liberou o Arduino.", true]
+	if not firmware_optico_identificado:
+		return ["O ARDUINO NÃO SE IDENTIFICOU", "aguardando o READY da placa", "Grave no Nano o ARDUINO_SENSOR_DE_FEIXE_LM393.ino (V8).", true]
+	var n = _numero_do_firmware()
+	if n >= 0 and n < FIRMWARE_DO_MOTOR:
+		return [
+			"FIRMWARE ANTIGO NO ARDUINO (V%d)" % n, "grave o V8",
+			"Grave no Nano o ARDUINO_SENSOR_DE_FEIXE_LM393.ino V8 (o antigo usa outros pinos ou trava a subida).", true
+		]
+	if not saco.placa_tem_motor and animation_time - _motor_identificado_em > 5.0:
+		return ["A PLACA NÃO RESPONDE AO MOTOR", "nenhuma linha MOTOR veio", "Grave o firmware V8 no Nano.", true]
+	if saco.desistiu():
+		return ["A PLACA NÃO CONFIRMOU O CURSO", "o jogo parou de pedir", "Confira o cabo USB e toque em TENTAR DE NOVO.", true]
+	if saco.sensor_estado == 1 or saco.sensor_cima_suspeito:
+		return [
+			"SENSOR DE CIMA PRESO EM \"CHEGOU\"", "o saco sobe PELO TEMPO",
+			"Fio OUT solto do D11, sensor sem 5V ou vendo outra coisa. Mão na frente: \"sensor de CIMA\" muda?", false
+		]
+	if saco.sensor_estado == 2 or saco.subida_sem_sensor:
+		return [
+			"SENSOR DE CIMA NÃO VÊ O SACO", "o saco sobe PELO TEMPO",
+			"Aproxime o alvo branco do sensor ou gire o trimpot dele. Acerte o TEMPO DE CURSO.", false
+		]
+	return [
+		"MOTOR OK — A PLACA ESTÁ MANDANDO", "",
+		"Placa diz SUBINDO e o saco parado? R_EN/L_EN no 5V, GND comum, fonte em B+/B-, D9→RPWM, D10→LPWM.", false
+	]
+
+## FORA DA PARTIDA O SACO FICA RECOLHIDO — e a abertura confere isso.
+##
+## De tempos em tempos (e não a cada quadro), se o saco não está em cima
+## e o motor está parado, pede de novo. Pega o saco baixado à mão, a
+## placa que religou, e a fonte do motor que foi ligada depois do jogo.
+func _vigiar_saco_recolhido(delta: float) -> void:
+	_vigia_saco += delta
+	if _vigia_saco < VIGIA_DO_SACO_SEGUNDOS:
+		return
+	_vigia_saco = 0.0
+	if not _motor_em_uso() or saco.andando() or saco.recolhido():
+		return
+	saco.exigir(SacoMotor.Onde.EM_CIMA)
 
 ## O MANDO À MÃO, para montar a máquina e para o conserto.
 ##
@@ -7529,7 +7611,7 @@ func _central_maquina() -> void:
 		saco.fim_de_curso, Paleta.CIANO, 18
 	)
 	_texto(
-		"O saco desce no START e sobe quando os dois socos terminam. Sem motor, o jogo é exatamente o mesmo.",
+		"Fora da partida o saco fica RECOLHIDO. Só desce no START, depois da foto; sobe no fim da rodada.",
 		522.0, 15, Paleta.TINTA_LEVE, Compat.ESQUERDA, 120.0, 860.0
 	)
 
@@ -7618,13 +7700,28 @@ func _central_maquina() -> void:
 	# outro lado, não pode ser definitivo — senão um fio que alguém
 	# reencaixa em dez segundos deixa o saco parado até alguém fechar o
 	# jogo.
-	_secao(Rect2(80, SACO_SOCORRO_Y, 920, 176), "SE O MOTOR NÃO RESPONDER", Paleta.VERMELHO)
+	# O MOTIVO, E NÃO SÓ O SINTOMA. Antes esta caixa só tinha o botão; o
+	# técnico via o saco parado e não tinha por onde começar.
+	var diag = _diagnostico_do_motor()
+	var cor_diag = Paleta.VERMELHO if bool(diag[3]) else (
+		Paleta.VERDE if str(diag[1]).empty() else Paleta.AMBAR
+	)
+	_secao(Rect2(80, SACO_SOCORRO_Y, 920, 176), "DIAGNÓSTICO — POR QUE O MOTOR NÃO ANDA", cor_diag)
 	_botao(BOTOES_SIMPLES["motor_destrava"], "TENTAR DE NOVO", false, Paleta.AMBAR, 18, not saco.desistiu())
+	var titulo_diag = str(diag[0])
 	_texto(
-		"O jogo desiste depois de %.0f s sem confirmação, em vez de insistir para sempre." % (
-			SacoMotor.FOLGA_DA_CONFIRMACAO_MS / 1000.0
-		),
-		SACO_SOCORRO_Y + 158.0, 15, Paleta.TINTA_LEVE, Compat.ESQUERDA, 120.0, 860.0
+		titulo_diag, SACO_SOCORRO_Y + 92.0, _tamanho_que_cabe(titulo_diag, 22, 440.0),
+		Paleta.para_texto(cor_diag), Compat.ESQUERDA, 540.0, 440.0
+	)
+	if not str(diag[1]).empty():
+		_texto(
+			str(diag[1]).to_upper(), SACO_SOCORRO_Y + 122.0, 15, Paleta.TINTA_LEVE,
+			Compat.ESQUERDA, 540.0, 440.0
+		)
+	var dica = str(diag[2])
+	_texto(
+		dica, SACO_SOCORRO_Y + 158.0, _tamanho_que_cabe(dica, 15, 860.0), Paleta.TINTA,
+		Compat.ESQUERDA, 120.0, 860.0
 	)
 
 	# ---- A VELOCIDADE DO MOTOR (firmware V6)
@@ -8080,6 +8177,14 @@ func _draw_alertas_graves() -> void:
 	if camera_enabled and camera_service != null and not camera_service.pronta() \
 			and _camera_ja_teve_tempo():
 		recados.append("SEM CÂMERA — O JOGO SEGUE SEM FOTO  •  " + camera_service.motivo_curto())
+	# O MOTOR DO SACO: o motivo aparece também aqui, para quem não abre a
+	# Central. Só depois que a placa se apresentou (a falta de placa já
+	# tem o aviso dela) e só com o motor ligado.
+	if saco.ligado and firmware_optico_identificado and link != null and link.is_open() \
+			and animation_time - _motor_identificado_em > 6.0:
+		var diag = _diagnostico_do_motor()
+		if bool(diag[3]) or not str(diag[1]).empty():
+			recados.append("MOTOR DO SACO: %s — VEJA NA CENTRAL, ABA SACO" % str(diag[0]))
 	# Câmera é tratada na tela da pose com linguagem comum. O rodapé do jogo
 	# nunca expõe DLL, pacote, backend ou instruções de manutenção ao jogador.
 	if recados.empty():

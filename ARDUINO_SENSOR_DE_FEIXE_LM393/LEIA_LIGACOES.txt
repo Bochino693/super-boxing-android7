@@ -1,4 +1,4 @@
-FIRMWARE DEFINITIVO - SENSOR DE FEIXE LM393 - V7
+FIRMWARE DEFINITIVO - SENSOR DE FEIXE LM393 - V8
 ================================================
 
 Grave o arquivo ARDUINO_SENSOR_DE_FEIXE_LM393.ino no Arduino Uno/Nano
@@ -82,7 +82,13 @@ FIM DE CURSO DE CIMA (OBRIGATORIO com "FINS DE CURSO: SIM"):
 EMBAIXO NAO HA FIM DE CURSO: a descida termina pelo TEMPO DE CURSO
 (Central, aba SACO). O sensor de cima so ve quando o saco subiu o maximo.
 
-COMO O V7 TRABALHA (mesmos pinos do V6):
+COMO O V8 TRABALHA (mesmos pinos do V6/V7):
+  - O MOTOR ANDA SEMPRE. A placa vigia o sensor de cima: se ele fica
+    preso em "chegou" (fio OUT solto, sem 5V) ou nunca ve o saco, ela
+    percebe sozinha e passa a SUBIR PELO TEMPO DE CURSO. Arrumou o
+    sensor: ela volta a parar por ele. Linha SENSOR_CIMA,<0|1|2>.
+  - A placa guarda na EEPROM o estado do sensor, onde o saco ficou e o
+    tempo de curso: ao ligar, se o saco nao estava em cima, ela recolhe.
   - O jogo envia ARM antes de cada soco. Cada ARM permite exatamente um
     HIT. Um retorno da palheta nao gasta o segundo soco.
   - Enquanto o motor anda (e 0,9 s depois) o feixe e ignorado: a palheta

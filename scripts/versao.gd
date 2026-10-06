@@ -14,7 +14,7 @@ extends Reference
 
 const NUMERO = 108
 const DATA = "06/10/2026"
-const NOTA = "START confere o saco em cima (sobe se precisar), foto, depois desce; botões SUBIR/DESCER sempre mandam; firmware V7 sem trava de subida"
+const NOTA = "motor sempre anda (firmware V8 vigia o sensor de cima e sobe pelo tempo se ele falhar); diagnóstico do motor na Central; saco recolhido fora da partida"
 
 ## Rodapé da abertura: cabe em uma linha discreta.
 static func curta() -> String:

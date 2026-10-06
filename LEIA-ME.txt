@@ -28,8 +28,31 @@ O APK tem outro nome de pacote (com.lazersport.superboxing), entao pode
 ficar instalado junto com o Punch Challenge das outras maquinas. Se a
 build 92 a 107 estiver instalada, a 108 instala por cima.
 
-O QUE A BUILD 108 CORRIGE (GRAVE O FIRMWARE V7 NO ARDUINO)
+O QUE A BUILD 108 CORRIGE (GRAVE O FIRMWARE V8 NO ARDUINO)
 -----------------------------------------------------------
+GRAVE O V8 NO NANO: ARDUINO_SENSOR_DE_FEIXE_LM393\ARDUINO_SENSOR_DE_FEIXE_LM393.ino
+(Placa "Arduino Nano", processador "ATmega328P" ou "ATmega328P (Old
+Bootloader)"). Com firmware antigo a Central e a abertura avisam:
+"FIRMWARE ANTIGO NO ARDUINO (Vx)".
+
+O MOTOR ANDA SEMPRE (firmware V8):
+- A placa vigia o sensor de cima. Se ele fica preso em "chegou" (era o
+  que deixava o motor MORTO: a placa achava que o saco ja estava em cima
+  e recusava subir) ou se ele nunca ve o saco, a placa percebe sozinha e
+  passa a SUBIR PELO TEMPO DE CURSO. Arrumou o sensor: volta ao normal.
+- A placa lembra (EEPROM) onde o saco ficou: ao ligar, se ele nao estava
+  em cima, ela o recolhe sozinha - antes mesmo do jogo abrir.
+- Na abertura o jogo confere a cada 15 s se o saco segue recolhido e,
+  se nao, manda subir (saco baixado na mao, fonte do motor ligada depois).
+
+POR QUE O MOTOR NAO ANDA - AGORA A MAQUINA DIZ:
+- Central (botao MENU) -> aba SACO -> caixa "DIAGNOSTICO - POR QUE O
+  MOTOR NAO ANDA": mostra o motivo e o que conferir. O mesmo motivo
+  aparece no rodape da abertura ("MOTOR DO SACO: ...").
+- "MOTOR OK - A PLACA ESTA MANDANDO" e o saco parado = a placa esta
+  ligando as saidas: o defeito e de ligacao/fonte (R_EN e L_EN no 5V,
+  GND comum, fonte do motor em B+/B-, D9->RPWM, D10->LPWM).
+
 O MOTOR "MORTO" - as duas causas achadas:
 - Os botoes SUBIR/DESCER da Central (aba SACO) nao mandavam nada quando
   o jogo ACHAVA que o saco ja estava la (ex.: SUBIR com o saco baixado
@@ -38,10 +61,10 @@ O MOTOR "MORTO" - as duas causas achadas:
 - Firmware V6: se a subida durasse o tempo de curso inteiro sem o sensor
   de cima ver o saco (curso curto, fonte do motor desligada, sensor
   desalinhado), a placa TRAVAVA a subida para sempre - so o PARAR da
-  Central soltava. O V7 nao trava: para, avisa, e tenta de novo no
+  Central soltava. O V7/V8 nao trava: para, avisa, e tenta de novo no
   proximo pedido. A subida ganhou folga de tempo (curso + 50%, no
   minimo + 1,5 s), porque quem para a subida e o sensor.
-- V7: quem diz se o saco esta em cima e o SENSOR, nao a memoria da
+- V7/V8: quem diz se o saco esta em cima e o SENSOR, nao a memoria da
   placa. Saco baixado na mao + SOBE = o motor sobe.
 
 O FLUXO DA PARTIDA (fora da partida = ENROLADO; na partida = DESCE):
@@ -61,7 +84,7 @@ SE AINDA ASSIM O MOTOR NAO ANDAR, a tela agora diz o motivo:
 - "SUBIU O TEMPO TODO E O SENSOR DE CIMA NAO VIU O SACO": aumente o
   TEMPO DE CURSO na Central ou aproxime/regule o sensor (trimpot).
 - "MOTOR NAO RESPONDEU": a placa nao respondeu ao comando - firmware
-  antigo (grave o V7) ou Arduino desconectado.
+  antigo (grave o V8) ou Arduino desconectado.
 - Nada na tela e o motor parado: confira R_EN e L_EN no 5V, o GND comum,
   a fonte do motor ligada em B+/B-, e D9->RPWM, D10->LPWM. Teste sem o
   jogo com TESTE_PONTE_H.ino (comandos s, d, p).
