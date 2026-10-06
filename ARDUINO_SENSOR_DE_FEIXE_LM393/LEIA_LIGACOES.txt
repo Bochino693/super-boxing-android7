@@ -1,58 +1,66 @@
-FIRMWARE DEFINITIVO - SENSOR DE FEIXE LM393
-===========================================
+FIRMWARE DEFINITIVO - SENSOR DE FEIXE LM393 - V4
+================================================
 
-Grave o arquivo ARDUINO_SENSOR_DE_FEIXE_LM393.ino no Arduino Uno/Nano.
+Grave o arquivo ARDUINO_SENSOR_DE_FEIXE_LM393.ino no Arduino Uno/Nano
+(biblioteca Adafruit NeoPixel instalada pelo Gerenciador de Bibliotecas).
 
-SENSOR:
+DIAGRAMAS (abra e siga o NOME de cada pino):
+  docs\MONTAGEM_1_LIGACAO_ELETRICA.png
+  docs\MONTAGEM_2_MECANICA_FEIXE_E_FIM_DE_CURSO.png
+
+SENSOR DE FEIXE:
   VCC -> 5V
   GND -> GND
-  D0  -> D4   (medicao rapida por interrupcao PCINT20)
-  A0  -> A0   (diagnostico na Central Tecnica)
+  DO  -> D4   (medicao rapida por interrupcao)   <- CONFIRA: nao e o D2!
+  AO  -> A0   (diagnostico na Central Tecnica)
+  Use modulo de FENDA (fotointerruptor) ou emissor+receptor INFRAVERMELHO.
+  LDR (fotoresistor) com laser e lento demais: o soco tapa o feixe por
+  3 a 10 ms e o LDR leva 10 a 50 ms para reagir.
 
-BOTOES:
-  START  -> D2 e GND
-  CREDIT -> D3 e GND
+BOTOES (contato NA, o outro terminal no GND):
+  START  -> D2
+  CREDIT -> D3
+  CONFIG -> D9
 
 FITAS WS2812B:
-  dados esquerda -> D5
-  dados direita  -> D6
+  dados esquerda -> 330 ohm -> D5
+  dados direita  -> 330 ohm -> D6
   alimentacao por fonte 5V externa, com GND comum ao Arduino
-  biblioteca: Adafruit NeoPixel
 
-FUNCIONAMENTO DOS DOIS SOCOS:
-  O jogo envia ARM antes do primeiro soco e envia outro ARM ao rearmar o
-  segundo. Cada ARM limpa bordas antigas e permite exatamente um HIT. Um
-  retorno da palheta nao gasta o segundo soco.
+MOTOR DO SACO (ponte H IBT-2 / BTS7960):
+  D7  -> RPWM (DESCE)
+  D8  -> LPWM (SOBE)
+  R_EN, L_EN e VCC da ponte -> 5V do Nano; GND -> GND comum
+  B+/B- -> fonte propria do motor (com fusivel); M+/M- -> motor
 
-MEDIDA:
-  velocidade = largura da palheta / tempo de bloqueio do feixe
+FIM DE CURSO DE CIMA (OBRIGATORIO com "FINS DE CURSO: SIM"):
+  micro chave com rolete: C -> GND, NF (NC) -> D11, NA livre
+  Deve ABRIR quando o saco chega em cima, 5 a 10 mm antes do batente.
+  O motor e cortado na hora pela interrupcao do pino.
+  Fio partido / chave solta = chave aberta = o saco NAO sobe (seguro).
 
-Padrao: palheta 20 mm, pulso minimo 0,70 ms, polaridade AUTO. Ligue a
-maquina com a fenda livre. A palheta deve entrar e sair completamente.
+FIM DE CURSO DE BAIXO (opcional):
+  micro chave: C -> GND, NA (NO) -> D10
 
+COMO O V4 TRABALHA:
+  - O jogo envia ARM antes de cada soco. Cada ARM permite exatamente um
+    HIT. Um retorno da palheta nao gasta o segundo soco.
+  - Enquanto o motor anda (e 0,9 s depois) o feixe e ignorado: a palheta
+    empurrada pelo motor nao vira soco.
+  - O nivel do feixe que fica parado 1,5 s e o "livre" (polaridade AUTO
+    sempre atual). Funciona com modulo que da 0 ou 1 no feixe livre.
+  - velocidade = largura da palheta / tempo de bloqueio do feixe
+    (padrao: palheta 20 mm).
+  - Subida: para quando a chave de cima abre. Se o TEMPO DE CURSO acabar
+    sem a chave abrir, corta, avisa ERROR,FIM_CIMA e TRAVA a subida ate
+    o PARAR da Central (aba SACO).
+  - Linha FIM,<cima>,<baixo>,<trava> a cada 250 ms: a Central mostra
+    "chave de CIMA: ACIONADA/LIVRE".
 
-MOTOR DO SACO (opcional)
-------------------------
-O saco desce no START e sobe no fim da rodada. Sem ele ligado, o jogo
-funciona exatamente igual.
-
-  D7  -> IN1 da ponte H  (DESCE)
-  D8  -> IN2 da ponte H  (SOBE)
-  D10 -> fim de curso DE BAIXO, contato para GND  (opcional)
-  D11 -> fim de curso DE CIMA,  contato para GND  (opcional)
-
-A ponte H tem fonte PROPRIA para o motor. O GND dela e o GND do Arduino
-precisam estar juntos, senao os comandos chegam como ruido.
-
-AS DUAS SAIDAS NUNCA FICAM ALTAS AO MESMO TEMPO. Numa ponte H isso e
-conducao cruzada e queima o componente; num par de reles e um curto entre
-as duas polaridades. O firmware garante isso num lugar so (motorParar).
-
-O CURSO E POR TEMPO, ajustado na Central em "MOTOR DO SACO". Meça quanto
-o seu motor leva de cima a baixo e ponha esse valor mais uns 10%. Os fins
-de curso, se existirem, param antes; o tempo e o teto que vale mesmo se
-um deles falhar.
-
-PRIMEIRA VEZ: use o botao SOBE da Central com o saco a meia altura e
-confira que ele sobe. Se descer, inverta os dois fios do motor na ponte H
-(nao mexa no D7/D8).
+PRIMEIRA VEZ:
+  1. Central (botao MENU) -> aba SACO: ligue o motor, FINS DE CURSO: SIM.
+  2. Aperte a chave de cima com a mao: deve aparecer ACIONADA.
+  3. Saco a meia altura, botao SUBIR: tem de subir. Se descer, inverta os
+     fios do motor na ponte H (nao mexa no D7/D8).
+  4. Cronometre a subida: TEMPO DE CURSO = medido + 10%.
+  5. Passe um cartao no feixe: a Central mostra "feixe INTERROMPIDO".

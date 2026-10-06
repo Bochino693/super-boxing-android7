@@ -1,10 +1,31 @@
 /*
-  PUNCH CHALLENGE - FIRMWARE COMPLETO SENSOR DE FEIXE MH/LM393 V3
+  PUNCH CHALLENGE - FIRMWARE COMPLETO SENSOR DE FEIXE MH/LM393 V4
   Arduino Uno/Nano ATmega328P - serial 115200
 
   Sensor: VCC->5V, GND->GND, D0->D4, A0->A0
   Botoes: START->D2/GND, CREDIT->D3/GND, CONFIG->D9/GND
   Fitas: dados esquerda D5, dados direita D6, fonte externa e GND comum
+  Motor: D7 desce, D8 sobe (ponte H). Fim de curso de CIMA em D11
+         (contato NF/NC da micro chave), de BAIXO em D10 (NA, opcional).
+
+  O QUE MUDOU NA V4 (sensor que "nao funcionava" e saco subindo demais):
+    - O FEIXE FICA SURDO ENQUANTO O MOTOR ANDA, e mais ASSENTAR_MS depois.
+      O saco desce na contagem e o jogo arma o sensor logo em seguida: a
+      palheta passando pela fenda empurrada pelo MOTOR gastava o soco
+      (ou virava "soco fraco") antes de o jogador bater.
+    - O REPOUSO DO FEIXE E APRENDIDO SOZINHO (polaridade AUTO): o nivel
+      que fica parado por REPOUSO_MS e o "livre". Antes ele era medido uma
+      vez so, no arranque; se a palheta estivesse na fenda naquela hora, a
+      placa passava a medir ao contrario e nenhum soco valia.
+    - FIM DE CURSO DE CIMA OBRIGATORIO, contato NF (normalmente fechado):
+      o saco sobe ate abrir a chave, e quem corta o motor e a INTERRUPCAO
+      do pino, no mesmo instante, sem esperar o loop. Fio partido ou chave
+      solta = chave aberta = o motor NAO sobe (falha segura).
+    - Se o tempo de curso acabar subindo sem a chave abrir, o motor TRAVA
+      a subida (ERROR,FIM_CIMA) ate o tecnico apertar PARAR na Central.
+      Assim o mecanismo nunca fica forcando o fim do curso rodada apos
+      rodada.
+    - Linha FIM,<cima>,<baixo>,<trava> na telemetria para a Central.
 
   Recursos mantidos:
     - descoberta/reconexao pelo protocolo PUNCH_OPTICAL;
@@ -50,8 +71,15 @@
 
      D7  -> DESCE   (IN1 ou RPWM)
      D8  -> SOBE    (IN2 ou LPWM)
-     D10 -> fim de curso DE BAIXO  (para GND, opcional)
-     D11 -> fim de curso DE CIMA   (para GND, opcional)
+     D10 -> fim de curso DE BAIXO  (C e NA da chave: C no GND; opcional)
+     D11 -> fim de curso DE CIMA   (C e NF da chave: C no GND; obrigatorio
+            com "FINS DE CURSO: SIM" na Central)
+
+   O DE CIMA E NF (NC) DE PROPOSITO. Em repouso a chave esta FECHADA e o
+   pino le LOW. Quando o saco chega, a chave abre e o pino le HIGH. Um fio
+   partido, um conector solto ou a chave arrancada tambem leem HIGH: o
+   firmware entende "ja chegou" e NAO liga a subida. O defeito vira saco
+   parado, e nunca motor forcando o mecanismo.
 
    POR QUE O CURSO E POR TEMPO. Um motor de saco de pancada nao tem
    encoder e nao precisa de um: o curso e sempre o mesmo, e cronometrar
@@ -82,7 +110,7 @@
 #define POS_EM_CIMA 1
 #define POS_EM_BAIXO 2
 
-uint8_t motorEstado = MOTOR_PARADO;
+volatile uint8_t motorEstado = MOTOR_PARADO;  /* lido tambem na interrupcao */
 uint8_t motorPosicao = POS_DESCONHECIDA;
 unsigned long motorAte = 0;        /* quando o curso atual expira */
 unsigned long motorLiberaEm = 0;   /* pausa obrigatoria antes de inverter */
@@ -96,7 +124,22 @@ const unsigned long MOTOR_CURSO_MAX_MS = 15000;
 /* Tempo morto ao inverter o sentido: protege a ponte H de conducao
    cruzada e a caixa de reducao do tranco. */
 unsigned long motorPausaMs = 350;
-bool motorUsaFimDeCurso = true;
+volatile bool motorUsaFimDeCurso = true;
+/* A interrupcao do fim de curso cortou o motor; o loop confirma. */
+volatile bool motorCorteFim = false;
+/* Subida sem a chave de cima abrir dentro do tempo: subida travada ate
+   um MOTOR,PARA (botao PARAR da Central). */
+bool motorTravaCima = false;
+
+/* O feixe nao mede enquanto o motor anda nem logo depois: o saco ainda
+   balanca do tranco do motor. */
+const unsigned long ASSENTAR_MS = 900;
+unsigned long feixeLiberaEm = 0;
+volatile bool feixeMudo = false;
+
+/* Repouso do feixe aprendido (polaridade AUTO): o nivel que fica parado
+   esse tempo todo e o livre. Um soco bloqueia por milissegundos. */
+const unsigned long REPOUSO_MS = 1500;
 
 #if TEM_FITAS
 Adafruit_NeoPixel fitaEsq(LEDS_POR_FITA, PIN_FITA_ESQ, NEO_GRB + NEO_KHZ800);
@@ -129,7 +172,7 @@ char entrada[80];
 uint8_t entradaUso = 0;
 
 void observar(uint8_t nivel, unsigned long agora) {
-	if (!pronto || !capturaArmada || nivel == ultimoNivel) return;
+  if (!pronto || !capturaArmada || feixeMudo || nivel == ultimoNivel) return;
   if ((unsigned long)(agora - ultimaBordaUs) < 80) return;
   ultimaBordaUs = agora;
   ultimoNivel = nivel;
@@ -164,7 +207,54 @@ void armarCaptura() {
 
 #if defined(__AVR_ATmega328P__)
 ISR(PCINT2_vect) { observar((PIND & _BV(PD4)) ? HIGH : LOW, micros()); }
+
+/* FIM DE CURSO POR INTERRUPCAO: corta a saida do sentido no mesmo
+   microssegundo em que a chave muda, sem esperar o loop (que pode estar
+   escrevendo na serial). D8 = PB0 (sobe), D7 = PD7 (desce),
+   D11 = PB3 (cima, NF: HIGH = chegou), D10 = PB2 (baixo, NA: LOW = chegou). */
+ISR(PCINT0_vect) {
+  if (!motorUsaFimDeCurso) return;
+  if (motorEstado == MOTOR_SUBINDO && (PINB & _BV(PB3))) { PORTB &= ~_BV(PB0); motorCorteFim = true; }
+  if (motorEstado == MOTOR_DESCENDO && !(PINB & _BV(PB2))) { PORTD &= ~_BV(PD7); motorCorteFim = true; }
+}
 #endif
+
+/* Solta o feixe depois do motor: comeca do nivel de agora, sem pulso
+   meio-aberto herdado do movimento. */
+void feixeAtualizarMudo() {
+  bool mudo = motorEstado != MOTOR_PARADO || (long)(millis() - feixeLiberaEm) < 0;
+  if (mudo == feixeMudo) return;
+  if (!mudo) {
+    noInterrupts();
+    ultimoNivel = digitalRead(PIN_D0);
+    pulsoAberto = false;
+    pulsoPendente = false;
+    ultimaBordaUs = micros();
+    interrupts();
+    digitalWrite(LED_STATUS, LOW);
+  }
+  feixeMudo = mudo;
+}
+
+/* POLARIDADE AUTO SEMPRE ATUAL. O nivel que fica parado REPOUSO_MS e o
+   do feixe livre; o ativo e o outro. So muda fora de um pulso. */
+void feixeAcompanharRepouso() {
+  static uint8_t visto = HIGH;
+  static unsigned long desde = 0;
+  if (polaridade != 'A' || !pronto) return;
+  uint8_t n = digitalRead(PIN_D0);
+  if (n != visto) { visto = n; desde = millis(); return; }
+  if (millis() - desde < REPOUSO_MS || pulsoAberto) return;
+  uint8_t ativo = (n == HIGH) ? LOW : HIGH;
+  if (ativo == nivelAtivo) return;
+  noInterrupts();
+  nivelAtivo = ativo;
+  ultimoNivel = n;
+  pulsoAberto = false;
+  pulsoPendente = false;
+  interrupts();
+  Serial.print(F("OK,REPOUSO,")); Serial.println((int)n);
+}
 
 void botoes() {
   static bool sAnt = HIGH, cAnt = HIGH, cfgAnt = HIGH;
@@ -271,14 +361,26 @@ void motorParar(bool avisar) {
   bool mudou = motorEstado != MOTOR_PARADO;
   motorEstado = MOTOR_PARADO;
   motorProximo = MOTOR_PARADO;
+  motorCorteFim = false;
+  if (mudou) feixeLiberaEm = millis() + ASSENTAR_MS;
   if (avisar && mudou) motorRelatar();
 }
 
 bool motorFimAtingido(uint8_t sentido) {
   if (!motorUsaFimDeCurso) return false;
-  if (sentido == MOTOR_DESCENDO) return digitalRead(PIN_FIM_BAIXO) == LOW;
-  if (sentido == MOTOR_SUBINDO) return digitalRead(PIN_FIM_CIMA) == LOW;
+  if (sentido == MOTOR_DESCENDO) return digitalRead(PIN_FIM_BAIXO) == LOW;   /* NA */
+  if (sentido == MOTOR_SUBINDO) return digitalRead(PIN_FIM_CIMA) == HIGH;    /* NF */
   return false;
+}
+
+/* A chave mudou de verdade, ou foi um pico no fio? Quatro leituras em
+   2 ms. O motor ja esta cortado enquanto isso. */
+bool motorFimFirme(uint8_t sentido) {
+  for (uint8_t i = 0; i < 4; i++) {
+    if (!motorFimAtingido(sentido)) return false;
+    delayMicroseconds(500);
+  }
+  return true;
 }
 
 /* Comeca um curso. IDEMPOTENTE de proposito: mandar DESCE enquanto ja
@@ -288,6 +390,7 @@ bool motorFimAtingido(uint8_t sentido) {
 void motorIr(uint8_t sentido) {
   if (sentido != MOTOR_DESCENDO && sentido != MOTOR_SUBINDO) { motorParar(true); return; }
   if (motorEstado == sentido) return;
+  if (sentido == MOTOR_SUBINDO && motorTravaCima) { Serial.println(F("ERROR,FIM_CIMA")); motorRelatar(); return; }
   uint8_t destino = (sentido == MOTOR_DESCENDO) ? POS_EM_BAIXO : POS_EM_CIMA;
   if (motorPosicao == destino) { motorRelatar(); return; }
   if (motorFimAtingido(sentido)) { motorPosicao = destino; motorRelatar(); return; }
@@ -315,19 +418,36 @@ void motorAtualizar() {
     }
     return;
   }
-  if (motorFimAtingido(motorEstado)) {
-    motorPosicao = (motorEstado == MOTOR_DESCENDO) ? POS_EM_BAIXO : POS_EM_CIMA;
-    motorParar(false);
-    motorLiberaEm = millis() + motorPausaMs;
-    motorRelatar();
-    return;
+  if (motorCorteFim || motorFimAtingido(motorEstado)) {
+    uint8_t sentido = motorEstado;
+    if (motorFimFirme(sentido)) {
+      motorPosicao = (sentido == MOTOR_DESCENDO) ? POS_EM_BAIXO : POS_EM_CIMA;
+      motorParar(false);
+      motorLiberaEm = millis() + motorPausaMs;
+      motorRelatar();
+      return;
+    }
+    /* Pico no fio: a chave nao ficou aberta. Religa o mesmo sentido; o
+       cronometro do curso continua o mesmo, entao o teto nao muda. */
+    motorCorteFim = false;
+    digitalWrite(sentido == MOTOR_DESCENDO ? PIN_MOTOR_DESCE : PIN_MOTOR_SOBE, HIGH);
   }
   if ((long)(millis() - motorAte) >= 0) {
-    /* O tempo acabou: assume que chegou. E o caso normal quando nao ha
-       fim de curso ligado, e a rede de seguranca quando ha. */
-    motorPosicao = (motorEstado == MOTOR_DESCENDO) ? POS_EM_BAIXO : POS_EM_CIMA;
+    uint8_t sentido = motorEstado;
     motorParar(false);
     motorLiberaEm = millis() + motorPausaMs;
+    if (sentido == MOTOR_SUBINDO && motorUsaFimDeCurso) {
+      /* SUBIU O TEMPO TODO E A CHAVE DE CIMA NAO ABRIU. Ou a chave esta
+         fora do lugar, ou em curto: o saco pode estar forcando o topo.
+         Nao finge que chegou e trava a subida ate o tecnico ver. */
+      motorPosicao = POS_DESCONHECIDA;
+      motorTravaCima = true;
+      Serial.println(F("ERROR,FIM_CIMA"));
+    } else {
+      /* Sem fins de curso (ou descendo sem a chave de baixo): o tempo e
+         o curso. */
+      motorPosicao = (sentido == MOTOR_DESCENDO) ? POS_EM_BAIXO : POS_EM_CIMA;
+    }
     motorRelatar();
   }
 }
@@ -345,13 +465,13 @@ void motorComando(char *cmd) {
   if (!strncasecmp(cmd + 6, "CONFIG", 6)) { motorConfigurar(cmd); return; }
   if (!strcasecmp(cmd + 6, "DESCE")) motorIr(MOTOR_DESCENDO);
   else if (!strcasecmp(cmd + 6, "SOBE")) motorIr(MOTOR_SUBINDO);
-  else if (!strcasecmp(cmd + 6, "PARA")) motorParar(true);
+  else if (!strcasecmp(cmd + 6, "PARA")) { motorTravaCima = false; motorParar(true); }
   else if (!strcasecmp(cmd + 6, "ESTADO")) motorRelatar();
   else Serial.println(F("ERROR,MOTOR"));
 }
 
 void comando(char *cmd) {
-  if (!strcasecmp(cmd,"PING")) { Serial.println(F("READY,PUNCH_OPTICAL,V3-MH-LM393")); Serial.println(F("PONG")); }
+  if (!strcasecmp(cmd,"PING")) { Serial.println(F("READY,PUNCH_OPTICAL,V4-MH-LM393")); Serial.println(F("PONG")); }
   else if (!strcasecmp(cmd,"ARM")) armarCaptura();
   else if (!strcasecmp(cmd,"RESET")) { noInterrupts(); capturaArmada=false; pulsoAberto=false; pulsoPendente=false; interrupts(); motorParar(false); Serial.println(F("OK,RESET")); }
   else if (!strcasecmp(cmd,"CALIBRATE")) { calibrar(); Serial.println(F("OK,CALIBRATE")); }
@@ -379,6 +499,10 @@ void telemetria() {
   Serial.print(F("PINS,")); Serial.print(digitalRead(PIN_START)==LOW?1:0); Serial.print(',');
   Serial.print(digitalRead(PIN_CREDIT)==LOW?1:0); Serial.print(','); Serial.println(digitalRead(PIN_CONFIG)==LOW?1:0);
   Serial.print(F("STATUS,")); Serial.print(pulsoAberto?1:0); Serial.print(','); Serial.print(ultimoA0,3); Serial.print(','); Serial.println(pulsoMinUs/1000.0f,2);
+  /* FIM,<cima chegou>,<baixo chegou>,<subida travada> - cru, para a
+     Central: aperte a chave com a mao e veja o numero mudar. */
+  Serial.print(F("FIM,")); Serial.print(digitalRead(PIN_FIM_CIMA)==HIGH?1:0); Serial.print(',');
+  Serial.print(digitalRead(PIN_FIM_BAIXO)==LOW?1:0); Serial.print(','); Serial.println(motorTravaCima?1:0);
 }
 
 void setup() {
@@ -397,13 +521,14 @@ void setup() {
   fitaEsq.begin(); fitaDir.begin(); fitaEsq.setBrightness(140); fitaDir.setBrightness(140);
   fitaEsq.show(); fitaDir.show();
 #endif
-  Serial.println(F("READY,PUNCH_OPTICAL,V3-MH-LM393")); calibrar();
+  Serial.println(F("READY,PUNCH_OPTICAL,V4-MH-LM393")); calibrar();
 #if defined(__AVR_ATmega328P__)
   PCICR |= _BV(PCIE2); PCMSK2 |= _BV(PCINT20);
+  PCICR |= _BV(PCIE0); PCMSK0 |= _BV(PCINT2) | _BV(PCINT3);   /* D10, D11 */
 #endif
 }
 
 void loop() {
-  serialReceber(); botoes(); medir(); motorAtualizar();
+  serialReceber(); botoes(); motorAtualizar(); feixeAtualizarMudo(); feixeAcompanharRepouso(); medir();
   if (millis()-ultimaTelemetriaMs >= 250) { ultimaTelemetriaMs=millis(); telemetria(); }
 }

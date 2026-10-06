@@ -4025,6 +4025,8 @@ func _on_serial_line(line: String) -> void:
 		"PINS":
 			pino_start = bool(msg["start"])
 			pino_credito = bool(msg["credit"])
+		"FIM":
+			saco.receber_fim(msg)
 		"MOTOR":
 			# A PLACA É QUEM SABE ONDE O SACO ESTÁ. O jogo só pede; quem
 			# conta o curso, lê o fim de curso e desliga o motor é o
@@ -4139,6 +4141,12 @@ func _on_serial_line(line: String) -> void:
 				mensagem_sensor_publica = "MANTENHA O ALVO PARADO"
 				serial_status = "CALIBRAÇÃO INTERROMPIDA POR MOVIMENTO"
 				_show_notice("MANTENHA O ALVO PARADO")
+			elif str(msg["code"]) == "FIM_CIMA":
+				# O saco subiu o tempo de curso inteiro e a chave de cima
+				# não abriu: a placa cortou o motor e travou a subida, para
+				# o mecanismo não ficar forçando o topo rodada após rodada.
+				saco.travou()
+				_show_notice("FIM DE CURSO DE CIMA NÃO ACIONOU — SUBIDA TRAVADA")
 			elif str(msg["code"]) == "CALIB_LEITURA":
 				sensor_presente = false
 				placa_calibrando = true
@@ -7466,8 +7474,11 @@ func _central_maquina() -> void:
 		16, Paleta.TINTA_LEVE
 	)
 	_linha(
-		"resta do curso: %d ms  •  curso ajustado: %d ms" % [saco.resta_ms, saco.curso_ms],
-		15, Paleta.TINTA_LEVE
+		"resta: %d de %d ms  •  chave de CIMA: %s  •  de BAIXO: %s" % [
+			saco.resta_ms, saco.curso_ms,
+			_nome_da_chave(saco.fim_cima), _nome_da_chave(saco.fim_baixo),
+		],
+		15, Paleta.VERMELHO if saco.trava_cima else Paleta.TINTA_LEVE
 	)
 	_linha(
 		"caminho até a placa: %s" % (
@@ -7492,6 +7503,13 @@ func _central_maquina() -> void:
 		),
 		SACO_SOCORRO_Y + 158.0, 15, Paleta.TINTA_LEVE, Compat.ESQUERDA, 120.0, 860.0
 	)
+
+## Como a chave de fim de curso aparece na Central: aperte com a mão e
+## veja a palavra mudar — é o teste da fiação sem ligar o motor.
+func _nome_da_chave(v: int) -> String:
+	if v < 0:
+		return "?"
+	return "ACIONADA" if v == 1 else "LIVRE"
 
 ## Os índices achados, em uma linha. Escrito à mão porque um `map` com
 ## lambda aqui não deixa o GDScript inferir o tipo, e tipo inferido é o
