@@ -7,7 +7,7 @@ Todo o código do Arduino desta máquina fica em **uma pasta só**:
 | --- | --- |
 | `ARDUINO_SENSOR_DE_FEIXE_LM393.ino` | **O firmware do jogo**: sensor de feixe, botões, fitas de LED, ponte H do motor do saco e fins de curso. É este que fica gravado na máquina. |
 | `TESTE_FEIXE/TESTE_FEIXE.ino` | Teste do sensor de feixe sem o jogo. |
-| `TESTE_PONTE_H/TESTE_PONTE_H.ino` | Teste da ponte H (sobe/desce o saco) e das chaves de fim de curso, sem o jogo. |
+| `TESTE_PONTE_H/TESTE_PONTE_H.ino` | Teste da ponte H (sobe/desce o saco) e dos fins de curso (sensor IR de cima), sem o jogo. |
 
 Os testes ficam em subpastas de propósito: a IDE do Arduino só junta ao
 firmware os `.ino` que estão na pasta dele, nunca os das subpastas.
@@ -28,10 +28,13 @@ firmware os `.ino` que estão na pasta dele, nunca os das subpastas.
 
 1. Abra `TESTE_PONTE_H/TESTE_PONTE_H.ino` e grave.
 2. Abra o **Monitor Serial** em **115200**, com **Nova linha**.
-3. A cada segundo aparece o estado das chaves. Aperte a chave de cima
-   com a mão: tem de mudar para `ACIONADA`.
+3. A cada segundo aparece o estado dos fins de curso. Ponha a mão (ou o
+   alvo branco) na frente do sensor de cima: tem de mudar para `ACIONADA`
+   e o LED OBS do sensor acende. Se não mudar, gire o trimpot do sensor e
+   confira o OUT no D11 e o resistor de 100k do D11 ao GND
+   (`docs/MONTAGEM_5_SENSOR_FIM_DE_CURSO_IR.png`).
 4. Com o saco no meio, digite `s` e Enter: o saco **sobe** e para quando
-   a chave de cima abre. Se ele descer, inverta M+ e M− na ponte H (não
+   o sensor de cima vê o alvo. Se ele descer, inverta M+ e M− na ponte H (não
    mexa no D7/D8).
 5. `d` desce, `p` para na hora, `t` mostra quanto tempo o último curso
    levou: no jogo, use esse tempo **+ 10%** em TEMPO DE CURSO (aba SACO).

@@ -12,7 +12,7 @@
   svg text { font-family:"DejaVu Sans", Arial, sans-serif; }
 </style></head><body><div class="pagina">
 <h1>PUNCH CHALLENGE — MONTAGEM MECÂNICA: MOTOR, FEIXE E FINS DE CURSO</h1>
-<div class="sub">Vista de lado (ilustrativa): o saco desce para jogar e sobe para guardar. Palheta, sensor de feixe e as duas chaves.</div>
+<div class="sub">Vista de lado (ilustrativa): o saco desce para jogar e sobe para guardar. Palheta, sensor de feixe e os dois fins de curso.</div>
 <div class="lado">
 <svg width="880" height="900" viewBox="0 0 880 900">
   <style>
@@ -38,14 +38,18 @@
   <line x1="440" y1="170" x2="140" y2="178" stroke="#7f93a8" stroke-width="12" stroke-dasharray="18 10" stroke-linecap="round"/>
   <rect x="40" y="150" width="70" height="52" rx="26" fill="none" stroke="#7f93a8" stroke-width="4" stroke-dasharray="10 8"/>
   <text x="44" y="224" class="s-p">saco</text><text x="44" y="242" class="s-p">guardado</text>
-  <!-- chave de cima: o braço desce sobre o rolete quando chega -->
-  <rect x="250" y="196" width="60" height="34" rx="4" fill="#dafbe1" stroke="#1a7f37" stroke-width="3"/>
-  <circle cx="280" cy="188" r="9" fill="#1a7f37"/>
+  <!-- sensor IR de cima: vê o alvo branco do braço quando ele chega -->
+  <rect x="256" y="181" width="48" height="6" fill="#ffffff" stroke="#24292f" stroke-width="1.5"/>
+  <line x1="268" y1="196" x2="270" y2="189" stroke="#d1242f" stroke-width="2" stroke-dasharray="3 2"/>
+  <line x1="292" y1="196" x2="290" y2="189" stroke="#d1242f" stroke-width="2" stroke-dasharray="3 2"/>
+  <rect x="261" y="196" width="14" height="14" rx="6" fill="#e8f1fb" stroke="#8aa4c0" stroke-width="1.5"/>
+  <rect x="285" y="196" width="14" height="14" rx="6" fill="#2b2f36"/>
+  <rect x="246" y="210" width="68" height="20" rx="4" fill="#1565c0" stroke="#0d3c7a" stroke-width="2"/>
   <rect x="160" y="190" width="26" height="40" fill="#7a1f2b"/>
   <text x="173" y="250" class="s-p" text-anchor="middle">batente</text>
-  <text x="60" y="300" class="s-vd">FIM DE CURSO CIMA (NF → D11)</text>
-  <text x="60" y="322" class="s-p">aperta o rolete antes do batente</text>
-  <line x1="300" y1="282" x2="284" y2="238" stroke="#1a7f37" stroke-width="2" marker-end="url(#setac)"/>
+  <text x="60" y="300" class="s-vd">FIM DE CURSO CIMA (IR → D11)</text>
+  <text x="60" y="322" class="s-p">vê o alvo branco do braço antes do batente</text>
+  <line x1="300" y1="282" x2="286" y2="236" stroke="#1a7f37" stroke-width="2" marker-end="url(#setac)"/>
   <!-- eixo -->
   <circle cx="440" cy="170" r="20" fill="#6e7781" stroke="#24292f" stroke-width="4"/>
   <text x="470" y="160" class="s-p">eixo do braço</text>
@@ -85,11 +89,11 @@
 <div class="passos">
   <div class="passo"><b>1. Palheta.</b> Uma chapinha rígida de <b>20 mm</b> (medidos no sentido em que ela anda), presa no braço perto do eixo. Com o saco parado ela fica <b>fora</b> da fenda. No soco, ela <b>entra e sai</b> da fenda inteira. A largura vai na Central (PALHETA).</div>
   <div class="passo az"><b>2. Sensor de feixe.</b> Use módulo de <b>fenda</b> (fotointerruptor, tipo H206/FC-03) ou emissor + receptor <b>infravermelho</b>. <b>Não use LDR com laser:</b> o fotoresistor demora de 10 a 50 ms para reagir, e um soco tapa o feixe por só 3 a 10 ms. Gire o trimpot até o LED do módulo mudar quando um cartão passa.</div>
-  <div class="passo vd"><b>3. Chave de CIMA (obrigatória).</b> Micro chave com rolete, terminais <b>C → GND</b> e <b>NF (NC) → D11</b>. Ela deve abrir quando o saco chega em cima, <b>5 a 10 mm antes do batente</b>. O motor é cortado na hora pela interrupção do pino. Se o fio soltar, o saco <b>não sobe</b>: é a falha segura.</div>
+  <div class="passo vd"><b>3. Sensor de CIMA (obrigatório).</b> Sensor infravermelho de 3 pinos: <b>VCC → 5V</b>, <b>GND → GND</b>, <b>OUT → D11</b> e um <b>resistor de 100k do D11 ao GND</b>. Cole um <b>alvo branco</b> no braço; o sensor deve vê-lo <b>5 a 10 mm antes do batente</b> (regule no trimpot). O motor é cortado na hora pela interrupção do pino. Fio OUT solto: o saco <b>não sobe</b> (falha segura). Detalhe: MONTAGEM_5.</div>
   <div class="passo"><b>4. Chave de BAIXO (opcional).</b> <b>C → GND</b> e <b>NA (NO) → D10</b>. Sem ela, a descida para pelo tempo de curso.</div>
-  <div class="passo az"><b>5. Primeiro teste.</b> Grave o firmware V4. Abra a Central (botão MENU) e vá na aba <b>SACO</b>. Ligue o motor e deixe <b>FINS DE CURSO: SIM</b>. Aperte a chave de cima com a mão: a linha deve mudar para <b>"chave de CIMA: ACIONADA"</b>. Depois passe um cartão no feixe: o feixe deve aparecer como <b>INTERROMPIDO</b>.</div>
+  <div class="passo az"><b>5. Primeiro teste.</b> Grave o firmware V5. Abra a Central (botão MENU) e vá na aba <b>SACO</b>. Ligue o motor e deixe <b>FINS DE CURSO: SIM</b>. Ponha a mão (ou o alvo) na frente do sensor de cima: a linha deve mudar para <b>"chave de CIMA: ACIONADA"</b>. Depois passe um cartão no feixe: o feixe deve aparecer como <b>INTERROMPIDO</b>.</div>
   <div class="passo"><b>6. Tempo de curso.</b> Com o saco no meio, aperte <b>SUBIR</b>. Se ele descer, inverta M+ e M− na ponte H. Cronometre a subida e ponha <b>TEMPO DE CURSO = medido + 10%</b>. Esse tempo é o teto de segurança.</div>
-  <div class="passo vm"><b>7. "SUBIDA TRAVADA".</b> O saco subiu o tempo todo e a chave não abriu. A placa cortou o motor e trava a subida para não forçar o mecanismo. Arrume a posição da chave e aperte <b>PARAR</b> na Central para destravar.</div>
+  <div class="passo vm"><b>7. "SUBIDA TRAVADA".</b> O saco subiu o tempo todo e o sensor de cima não viu o alvo. A placa cortou o motor e trava a subida para não forçar o mecanismo. Regule o sensor (posição e trimpot) e aperte <b>PARAR</b> na Central para destravar.</div>
 </div>
 </div>
 </div></body></html>

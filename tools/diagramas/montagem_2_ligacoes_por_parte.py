@@ -115,7 +115,7 @@ fio([(hx-22, hy+306), (hx-120, hy+306), (hx-120, my2+20), (mx2+50, my2+20)], "#6
 texto(X1+30, Y2+PH-14, "• Se o saco DESCER quando manda SUBIR: inverta M+ e M− (não mexa no D7/D8).", 16)
 
 # ---------------- D: fins de curso
-painel(X2, Y2, PW, PH, "4. FINS DE CURSO (micro chave com rolete)", C["fim"])
+painel(X2, Y2, PW, PH, "4. FINS DE CURSO (cima: sensor IR • baixo: micro chave)", C["fim"])
 def chave(x, y, titulo, usa, pino, opc, nota1, nota2, cor_nota):
     texto(x, y-122, nota1, 17, cor_nota, "bold")
     texto(x, y-100, nota2, 15, "#444")
@@ -136,10 +136,39 @@ def chave(x, y, titulo, usa, pino, opc, nota1, nota2, cor_nota):
     tag(x+200, y+225, "Nano GND", C["gnd"])
     livre = [n for n in ("NA", "NF") if n != usa][0]
     texto(x+30 + (1 if livre == "NA" else 2)*60, y+150, "livre", 13, "#8a9199", "normal", "middle")
-chave(X2+40, Y2+215, "CIMA", "NF", "Nano D11", False, "CIMA: OBRIGATÓRIA", "use C e NF (NC)", C["fim"])
+def sensor_ir(x, y):
+    texto(x, y-122, "CIMA: OBRIGATÓRIO", 17, C["fim"], "bold")
+    texto(x, y-100, "sensor infravermelho (3 pinos)", 15, "#444")
+    # LEDs (emissor transparente e receptor preto) olhando para cima
+    a(f'<rect x="{x+40}" y="{y-46}" width="30" height="50" rx="14" fill="#e8f1fb" stroke="#8aa4c0" stroke-width="2"/>')
+    a(f'<rect x="{x+110}" y="{y-46}" width="30" height="50" rx="14" fill="#2b2f36"/>')
+    a(f'<rect x="{x}" y="{y}" width="180" height="80" rx="8" fill="#1565c0" stroke="#0d3c7a" stroke-width="3"/>')
+    a(f'<rect x="{x+20}" y="{y+18}" width="40" height="40" rx="4" fill="#2f6fd6" stroke="#0d3c7a" stroke-width="2"/>')
+    a(f'<circle cx="{x+40}" cy="{y+38}" r="12" fill="#e8eef7"/>')
+    a(f'<rect x="{x+80}" y="{y+22}" width="34" height="36" rx="3" fill="#1f2328"/>')
+    a(f'<rect x="{x+132}" y="{y+18}" width="14" height="9" rx="2" fill="#ff5a5a"/>')
+    a(f'<rect x="{x+132}" y="{y+52}" width="14" height="9" rx="2" fill="#3ddc84"/>')
+    for j, n in enumerate(["VCC", "GND", "OUT"]):
+        tx = x + 30 + j*60
+        a(f'<rect x="{tx-10}" y="{y+80}" width="20" height="26" fill="#c9a227"/>')
+        texto(tx, y+126, n, 15, "#222", "bold", "middle")
+    # OUT -> D11, GND -> GND, VCC -> 5V
+    fio([(x+150, y+132), (x+150, y+160), (x+200, y+160)], C["fim"], 5)
+    tag(x+200, y+160, "Nano D11", C["fim"])
+    fio([(x+90, y+132), (x+90, y+205), (x+200, y+205)], C["gnd"], 4)
+    tag(x+200, y+205, "Nano GND", C["gnd"])
+    fio([(x+30, y+132), (x+30, y+250), (x+200, y+250)], C["v5"], 4)
+    tag(x+200, y+250, "Nano 5V", C["v5"])
+    # resistor de 100k entre D11 e GND
+    xr = x + 182
+    a(f'<circle cx="{xr}" cy="{y+160}" r="5" fill="{C["fim"]}"/>')
+    a(f'<circle cx="{xr}" cy="{y+205}" r="5" fill="{C["gnd"]}"/>')
+    a(f'<rect x="{xr-7}" y="{y+167}" width="14" height="30" rx="5" fill="#e9d8b4" stroke="#9a6700" stroke-width="2"/>')
+    texto(xr-14, y+188, "100k", 14, "#9a6700", "bold", "end")
+sensor_ir(X2+40, Y2+205)
 chave(X2+440, Y2+215, "BAIXO", "NA", "Nano D10", True, "BAIXO: opcional", "use C e NA (NO)", "#5a6b5f")
-texto(X2+30, Y2+PH-60, "• CIMA abre quando o saco chega em cima: o motor corta na hora. Fio solto = não sobe.", 16)
-texto(X2+30, Y2+PH-34, "• Fio longo: capacitor de 100 nF entre D11 e GND perto do Nano (evita disparo falso).", 16)
+texto(X2+30, Y2+PH-60, "• CIMA vê o alvo branco no braço e o motor corta na hora (detalhe: MONTAGEM_5).", 16)
+texto(X2+30, Y2+PH-34, "• Resistor de 100k do D11 ao GND, no borne do Nano: fio OUT solto = não sobe.", 16)
 
 # ---------------- E: fitas
 painel(X1, Y3, PW, PH, "5. FITAS DE LED WS2812B (30 LEDs cada)", C["led"])
@@ -170,7 +199,7 @@ painel(X2, Y3, PW, PH, "6. ARDUINO, TV BOX E CÂMERA (USB)", "#57606a")
 def caixa(x, y, w, h, t1, t2, cor):
     a(f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="10" fill="{cor}" stroke="#4b5563" stroke-width="2"/>')
     texto(x+w/2, y+h/2-4, t1, 18, "#fff", "bold", "middle"); texto(x+w/2, y+h/2+20, t2, 14, "#eef", "normal", "middle")
-caixa(X2+40, Y3+110, 200, 90, "ARDUINO NANO", "firmware V4", "#0b5cad")
+caixa(X2+40, Y3+110, 200, 90, "ARDUINO NANO", "firmware V5", "#0b5cad")
 caixa(X2+330, Y3+110, 200, 90, "HUB USB", "COM fonte própria", "#57606a")
 caixa(X2+600, Y3+110, 190, 90, "TV BOX", "Android", "#1b1f24")
 caixa(X2+330, Y3+290, 200, 90, "WEBCAM UVC", "câmera do ranking", "#6e7781")

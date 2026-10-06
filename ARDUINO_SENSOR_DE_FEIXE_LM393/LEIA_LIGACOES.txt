@@ -1,4 +1,4 @@
-FIRMWARE DEFINITIVO - SENSOR DE FEIXE LM393 - V4
+FIRMWARE DEFINITIVO - SENSOR DE FEIXE LM393 - V5
 ================================================
 
 Grave o arquivo ARDUINO_SENSOR_DE_FEIXE_LM393.ino no Arduino Uno/Nano
@@ -10,7 +10,7 @@ nesta pasta (a pasta "arduino" antiga, do sensor MPU-6050, saiu).
 TESTES SEM O JOGO (subpastas; a IDE nao junta ao firmware):
   TESTE_FEIXE\TESTE_FEIXE.ino       - o feixe ve a palheta? a que velocidade?
   TESTE_PONTE_H\TESTE_PONTE_H.ino   - sobe/desce o saco pelo Monitor Serial
-                                      (s, d, p, t) e mostra as chaves.
+                                      (s, d, p, t) e mostra os fins de curso.
   Depois do teste, grave de novo o ARDUINO_SENSOR_DE_FEIXE_LM393.ino.
   Passo a passo: docs\TESTE_DO_SENSOR.md
 
@@ -19,6 +19,7 @@ DIAGRAMAS (abra e siga o NOME de cada pino):
   docs\MONTAGEM_2_LIGACOES_POR_PARTE.png      (cada peca, terminal por terminal)
   docs\MONTAGEM_3_MECANICA.png                (palheta, feixe, motor, chaves)
   docs\MONTAGEM_4_PONTE_H_COMPLETA.png        (ponte H: pino por pino ate o Nano)
+  docs\MONTAGEM_5_SENSOR_FIM_DE_CURSO_IR.png  (sensor IR de cima: ligacao e ajuste)
 
 SENSOR DE FEIXE:
   VCC -> 5V
@@ -54,15 +55,28 @@ MOTOR DO SACO (ponte H IBT-2 / BTS7960) - desenho: docs\MONTAGEM_4_PONTE_H_COMPL
     M+ e M- -> os dois fios do motor (saco desce no SOBE? inverta M+ e M-)
 
 FIM DE CURSO DE CIMA (OBRIGATORIO com "FINS DE CURSO: SIM"):
-  micro chave com rolete: C -> GND, NF (NC) -> D11, NA livre
-  Deve ABRIR quando o saco chega em cima, 5 a 10 mm antes do batente.
+  SENSOR INFRAVERMELHO de obstaculo (modulo de 3 pinos, tipo FC-51/LM393)
+  - desenho: docs\MONTAGEM_5_SENSOR_FIM_DE_CURSO_IR.png
+    VCC -> 5V do Nano
+    GND -> GND do Nano
+    OUT -> D11
+    + RESISTOR DE 100k (47k a 100k; marrom-preto-amarelo) do D11 ao GND,
+      no borne do Nano. OBRIGATORIO: e ele que faz o fio OUT solto (ou o
+      sensor sem 5V) ler "chegou" -> o saco NAO sobe (falha segura).
+  Siga o NOME impresso ao lado de cada pino do sensor (a ordem muda de
+  placa para placa; a cor do fio nao importa).
+  Cole um ALVO BRANCO (plastico branco ou fita branca fosca) no braco do
+  saco. O sensor, preso no gabinete, deve VER o alvo 5 a 10 mm antes do
+  batente, a 1-3 cm de distancia. Regule no trimpot azul: o LED OBS do
+  sensor acende quando ele ve o alvo.
   O motor e cortado na hora pela interrupcao do pino.
-  Fio partido / chave solta = chave aberta = o saco NAO sobe (seguro).
+  Quem ainda usa micro chave NF (C no GND, NF no D11): no firmware,
+  FIM_CIMA_INFRAVERMELHO 0.
 
 FIM DE CURSO DE BAIXO (opcional):
   micro chave: C -> GND, NA (NO) -> D10
 
-COMO O V4 TRABALHA:
+COMO O V5 TRABALHA:
   - O jogo envia ARM antes de cada soco. Cada ARM permite exatamente um
     HIT. Um retorno da palheta nao gasta o segundo soco.
   - Enquanto o motor anda (e 0,9 s depois) o feixe e ignorado: a palheta
@@ -71,15 +85,16 @@ COMO O V4 TRABALHA:
     sempre atual). Funciona com modulo que da 0 ou 1 no feixe livre.
   - velocidade = largura da palheta / tempo de bloqueio do feixe
     (padrao: palheta 20 mm).
-  - Subida: para quando a chave de cima abre. Se o TEMPO DE CURSO acabar
-    sem a chave abrir, corta, avisa ERROR,FIM_CIMA e TRAVA a subida ate
+  - Subida: para quando o sensor de cima ve o alvo. Se o TEMPO DE CURSO
+    acabar sem ele ver, corta, avisa ERROR,FIM_CIMA e TRAVA a subida ate
     o PARAR da Central (aba SACO).
   - Linha FIM,<cima>,<baixo>,<trava> a cada 250 ms: a Central mostra
     "chave de CIMA: ACIONADA/LIVRE".
 
 PRIMEIRA VEZ:
   1. Central (botao MENU) -> aba SACO: ligue o motor, FINS DE CURSO: SIM.
-  2. Aperte a chave de cima com a mao: deve aparecer ACIONADA.
+  2. Ponha a mao (ou o alvo) na frente do sensor de cima: deve aparecer
+     ACIONADA e o LED OBS do sensor acende.
   3. Saco a meia altura, botao SUBIR: tem de subir. Se descer, inverta os
      fios do motor na ponte H (nao mexa no D7/D8).
   4. Cronometre a subida: TEMPO DE CURSO = medido + 10%.

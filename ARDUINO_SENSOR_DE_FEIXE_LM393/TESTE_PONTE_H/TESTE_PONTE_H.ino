@@ -1,17 +1,18 @@
 /*
-  TESTE DA PONTE H E DOS FINS DE CURSO - SEM O JOGO
+  TESTE DA PONTE H E DOS FINS DE CURSO - SEM O JOGO (V5)
   Arduino Uno/Nano - Monitor Serial a 115200, "Nova linha"
 
   Serve para montar a maquina: sobe e desce o saco pelo Monitor Serial e
-  mostra as chaves de fim de curso. Usa os MESMOS pinos e as MESMAS
+  mostra os fins de curso. Usa os MESMOS pinos e as MESMAS
   protecoes do firmware do jogo (ARDUINO_SENSOR_DE_FEIXE_LM393.ino):
 
-    D7  -> RPWM da ponte H (DESCE)      D11 <- fim de curso de CIMA (NF)
+    D7  -> RPWM da ponte H (DESCE)      D11 <- OUT do sensor infravermelho de CIMA
+                                           (+ resistor de 100k do D11 ao GND)
     D8  -> LPWM da ponte H (SOBE)       D10 <- fim de curso de BAIXO (NA, opcional)
     R_EN e L_EN da ponte -> 5V          GND da ponte = GND do Arduino
 
   COMANDOS (digite e aperte Enter):
-    s  sobe ate a chave de cima abrir (ou o tempo acabar)
+    s  sobe ate o sensor de cima ver o saco (ou o tempo acabar)
     d  desce ate a chave de baixo (ou o tempo acabar)
     p  para na hora
     t  mostra quanto tempo o ultimo curso levou
@@ -26,7 +27,17 @@
 #define PIN_DESCE 7
 #define PIN_SOBE 8
 #define PIN_FIM_BAIXO 10   /* NA: LOW = chegou embaixo */
-#define PIN_FIM_CIMA 11    /* NF: HIGH = chegou em cima (ou fio solto) */
+#define PIN_FIM_CIMA 11    /* sensor IR: LOW = viu o saco (ou fio OUT solto) */
+/* 1 = sensor infravermelho (LOW = chegou); 0 = micro chave NF (HIGH = chegou).
+   IGUAL ao ARDUINO_SENSOR_DE_FEIXE_LM393.ino. */
+#define FIM_CIMA_INFRAVERMELHO 1
+#if FIM_CIMA_INFRAVERMELHO
+  #define FIM_CIMA_NIVEL_CHEGOU LOW
+  #define FIM_CIMA_MODO INPUT
+#else
+  #define FIM_CIMA_NIVEL_CHEGOU HIGH
+  #define FIM_CIMA_MODO INPUT_PULLUP
+#endif
 
 const unsigned long PAUSA_MS = 350;
 unsigned long cursoMaxMs = 4000;
@@ -36,7 +47,7 @@ unsigned long inicio = 0, ultimoCurso = 0, paradoEm = 0, ultimaLinha = 0;
 char linha[16];
 uint8_t uso = 0;
 
-bool cimaChegou() { return digitalRead(PIN_FIM_CIMA) == HIGH; }
+bool cimaChegou() { return digitalRead(PIN_FIM_CIMA) == FIM_CIMA_NIVEL_CHEGOU; }
 bool baixoChegou() { return digitalRead(PIN_FIM_BAIXO) == LOW; }
 
 void parar(const __FlashStringHelper *motivo) {
@@ -54,7 +65,7 @@ void parar(const __FlashStringHelper *motivo) {
 void ir(uint8_t novo) {
   if (sentido == novo) return;
   if (sentido != 0) parar(F("inversao"));
-  if (novo == 2 && cimaChegou()) { Serial.println(F("JA ESTA EM CIMA (ou a chave de cima esta solta: confira o NF no D11)")); return; }
+  if (novo == 2 && cimaChegou()) { Serial.println(F("JA ESTA EM CIMA (ou o fio OUT do sensor de cima esta solto: confira o D11)")); return; }
   if (novo == 1 && baixoChegou()) { Serial.println(F("JA ESTA EMBAIXO")); return; }
   while (millis() - paradoEm < PAUSA_MS) { }   /* pausa ao inverter */
   sentido = novo;
@@ -78,7 +89,7 @@ void setup() {
   digitalWrite(PIN_DESCE, LOW); digitalWrite(PIN_SOBE, LOW);
   pinMode(PIN_DESCE, OUTPUT); pinMode(PIN_SOBE, OUTPUT);
   digitalWrite(PIN_DESCE, LOW); digitalWrite(PIN_SOBE, LOW);
-  pinMode(PIN_FIM_CIMA, INPUT_PULLUP); pinMode(PIN_FIM_BAIXO, INPUT_PULLUP);
+  pinMode(PIN_FIM_CIMA, FIM_CIMA_MODO); pinMode(PIN_FIM_BAIXO, INPUT_PULLUP);
   Serial.begin(115200);
   Serial.println(F("TESTE DA PONTE H - comandos: s (sobe), d (desce), p (para), t (tempo), numero (tempo maximo ms)"));
 }
@@ -89,13 +100,13 @@ void loop() {
     if (c == '\n' || c == '\r') { if (uso) { linha[uso] = 0; comando(linha); uso = 0; } }
     else if (uso < sizeof(linha) - 1) linha[uso++] = c;
   }
-  if (sentido == 2 && cimaChegou()) parar(F("chave de CIMA abriu"));
+  if (sentido == 2 && cimaChegou()) parar(F("sensor de CIMA viu o saco"));
   if (sentido == 1 && baixoChegou()) parar(F("chave de BAIXO"));
   if (sentido != 0 && millis() - inicio >= cursoMaxMs)
-    parar(sentido == 2 ? F("TEMPO ACABOU SUBINDO SEM A CHAVE DE CIMA ABRIR - ajuste a chave!") : F("tempo do curso"));
+    parar(sentido == 2 ? F("TEMPO ACABOU SUBINDO SEM O SENSOR DE CIMA VER O SACO - ajuste o sensor/trimpot!") : F("tempo do curso"));
   if (millis() - ultimaLinha >= 1000) {
     ultimaLinha = millis();
-    Serial.print(F("chave CIMA: ")); Serial.print(cimaChegou() ? F("ACIONADA") : F("livre"));
+    Serial.print(F("sensor CIMA: ")); Serial.print(cimaChegou() ? F("ACIONADA") : F("livre"));
     Serial.print(F("   chave BAIXO: ")); Serial.print(baixoChegou() ? F("ACIONADA") : F("livre"));
     Serial.print(F("   motor: ")); Serial.println(sentido == 0 ? F("parado") : (sentido == 1 ? F("descendo") : F("subindo")));
   }

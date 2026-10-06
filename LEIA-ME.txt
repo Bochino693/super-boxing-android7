@@ -28,13 +28,14 @@ O APK tem outro nome de pacote (com.lazersport.superboxing), entao pode
 ficar instalado junto com o Punch Challenge das outras maquinas. Se a
 build 92 a 104 estiver instalada, a 105 instala por cima.
 
-O QUE A BUILD 105 CORRIGE (GRAVE O FIRMWARE V4 NO ARDUINO)
+O QUE A BUILD 105 CORRIGE (GRAVE O FIRMWARE V5 NO ARDUINO)
 ---------------------------------------------------------
 Arquivo: ARDUINO_SENSOR_DE_FEIXE_LM393\ARDUINO_SENSOR_DE_FEIXE_LM393.ino
 Montagem: docs\MONTAGEM_1_MAPA_DO_ARDUINO_NANO.png (o que vai em cada pino),
           docs\MONTAGEM_2_LIGACOES_POR_PARTE.png (sensor, botoes, ponte H,
           fins de curso, fitas, USB), docs\MONTAGEM_3_MECANICA.png e
-          docs\MONTAGEM_4_PONTE_H_COMPLETA.png (ponte H pino por pino)
+          docs\MONTAGEM_4_PONTE_H_COMPLETA.png (ponte H pino por pino) e
+          docs\MONTAGEM_5_SENSOR_FIM_DE_CURSO_IR.png (sensor de cima)
 
 O SENSOR DE FEIXE "NAO FUNCIONAVA" por tres motivos:
 - O MOTOR GASTAVA O SOCO. O saco desce na contagem e o jogo arma o
@@ -57,15 +58,19 @@ docs\TESTE_DO_SENSOR.md). A pasta "arduino" antiga (sensor MPU-6050, que
 esta maquina nao usa mais) saiu: apague-a da pasta do PC se ela estiver la.
 
 FIM DE CURSO DE CIMA (obrigatorio com "FINS DE CURSO: SIM"):
-- Micro chave com rolete: C no GND, NF (NC) no D11. O saco sobe ate a
-  chave abrir e o motor e cortado NA HORA pela interrupcao do pino.
-- Fio solto ou chave arrancada = chave aberta = o saco NAO sobe (falha
-  segura: nunca fica forcando o topo).
-- Se subir o tempo de curso inteiro sem a chave abrir, a placa corta e
-  TRAVA a subida ("SUBIDA TRAVADA" na aba SACO). Ajuste a chave e aperte
-  PARAR para destravar.
-- Na aba SACO aparece "chave de CIMA: ACIONADA/LIVRE": aperte a chave com
-  a mao para testar a fiacao sem ligar o motor.
+- SENSOR INFRAVERMELHO de 3 pinos (firmware V5): VCC no 5V, GND no GND,
+  OUT no D11 e um RESISTOR DE 100k do D11 ao GND (no borne do Nano).
+  Um ALVO BRANCO colado no braco do saco; o sensor ve o alvo 5 a 10 mm
+  antes do batente e o motor e cortado NA HORA pela interrupcao do pino.
+  Desenho: docs\MONTAGEM_5_SENSOR_FIM_DE_CURSO_IR.png.
+- Fio OUT solto ou sensor sem 5V = o resistor puxa para "chegou" = o saco
+  NAO sobe (falha segura: nunca fica forcando o topo).
+- Se subir o tempo de curso inteiro sem o sensor ver o alvo (sensor sem
+  GND, desregulado), a placa corta e TRAVA a subida ("SUBIDA TRAVADA" na
+  aba SACO). Regule o sensor e aperte PARAR para destravar.
+- Na aba SACO aparece "chave de CIMA: ACIONADA/LIVRE": ponha a mao na
+  frente do sensor para testar a fiacao sem ligar o motor.
+- O jogo nao muda: o mesmo APK da build 105 funciona com o firmware V5.
 
 O QUE A BUILD 104 CORRIGE
 -------------------------
