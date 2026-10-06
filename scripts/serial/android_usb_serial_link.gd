@@ -31,6 +31,8 @@ const ABRINDO = 1
 const ABERTA = 2
 
 var _plugin: Object = null
+## O relatório de permissões USB (getCameraReport) é do PunchUsbSerial.
+var _relatorio: Object = null
 var _motivo = "plugin PunchUsbSerial nao foi carregado"
 var _assincrono = false
 var _estado = FECHADA
@@ -38,8 +40,21 @@ var _porta = ""
 var _porta_pedida = ""
 var _portas = PoolStringArray()
 
+## O ARDUINO PELO PLUGIN SEGURO. O PunchUsbSerial (Kotlin) lia a USB sem
+## tempo limite e fechava a porta com a leitura presa: crash nativo
+## (usb_request_wait) toda vez que o Arduino sumia e voltava — e o tranco
+## do motor reinicia a USB do Nano. O PunchSerialSeguro (Java, no mesmo
+## .aar) le com tempo limite e só fecha depois que a leitura sai. As
+## funções têm os mesmos nomes; o plugin antigo fica só de reserva.
+const PLUGIN_SEGURO = "PunchSerialSeguro"
+
 func _init() -> void:
 	if Engine.has_singleton("PunchUsbSerial"):
+		_relatorio = Engine.get_singleton("PunchUsbSerial")
+	if Engine.has_singleton(PLUGIN_SEGURO):
+		_plugin = Engine.get_singleton(PLUGIN_SEGURO)
+		_motivo = ""
+	elif Engine.has_singleton("PunchUsbSerial"):
 		_plugin = Engine.get_singleton("PunchUsbSerial")
 		_motivo = ""
 		# SÓ AS CHAMADAS QUE TODA VERSÃO DO PLUGIN TEM. Perguntar por uma
@@ -80,7 +95,8 @@ func open_port(port: String, baud: int = GameDef.SERIAL_BAUD) -> bool:
 	if _plugin == null:
 		return false
 	_porta_pedida = port
-	if Lembranca.sabe(Lembranca.ARDUINO) and not Lembranca.porta_tem_permissao(_plugin, port):
+	if Lembranca.sabe(Lembranca.ARDUINO) and _relatorio != null \
+			and not Lembranca.porta_tem_permissao(_relatorio, port):
 		var agora = OS.get_ticks_msec()
 		if not _sem_permissao_desde.has(port):
 			_sem_permissao_desde[port] = agora

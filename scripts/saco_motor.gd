@@ -58,9 +58,16 @@ const REPETIR_A_CADA_MS = 1000
 ## não mexia o motor de jeito nenhum até alguém achar a chave na Central
 ## — e o saco ficava parado onde estava, parecendo defeito da placa.
 var ligado = true
+## OS DOIS TEMPOS DO CURSO INTEIRO (firmware V10, SEM SENSOR): descer de
+## cima até embaixo e subir de embaixo até em cima — um o inverso do
+## outro. A placa conta onde o saco está pelo tempo.
 var curso_ms = 3500
+var curso_sobe_ms = 3500
+## Onde a placa diz que o saco está, em milésimos (0 = em cima).
+var permil = -1
 var pausa_ms = 350
-var fim_de_curso = true
+## Não há mais sensor de fim de curso (build 110 / firmware V10).
+var fim_de_curso = false
 ## VELOCIDADE do motor em % (firmware V6: PWM na ponte H). A subida leva o
 ## peso do saco; a descida tem a gravidade a favor e começa mais devagar.
 var vel_sobe = 80
@@ -153,21 +160,37 @@ func exigir(onde: int) -> void:
 ## ele (a linha FIM chega 4 vezes por segundo). Sem sensor, vale o que a
 ## placa disse depois do último pedido.
 func esta_em_cima() -> bool:
-	if fim_de_curso and fim_cima >= 0 and not sensor_cima_suspeito and sensor_estado <= 0:
-		if fim_cima == 1:
-			return true
 	return relatos_desde_o_pedido > 0 and posicao == ArduinoProtocol.POS_EM_CIMA \
+		and estado == ArduinoProtocol.MOTOR_PARADO
+
+## O SENSOR DE CIMA É CONFIÁVEL AGORA? Ligado na Central, a placa já disse
+## o que ele lê (linha FIM), não está preso nem cego (SENSOR_CIMA) e não
+## acusou o saco com ele embaixo.
+func sensor_confiavel() -> bool:
+	return false   # build 110: o saco anda só por tempo
+
+## TOPO CONFIRMADO (build 110) — a condição para a foto e para descer.
+## Com o sensor bom, quem diz é ele (o saco está ali, agora). Sem ele, só
+## vale a placa dizendo, DEPOIS do último pedido, que parou em cima.
+func topo_confirmado() -> bool:
+	if sensor_confiavel():
+		return fim_cima == 1
+	return relatos_desde_o_pedido > 0 and posicao == ArduinoProtocol.POS_EM_CIMA \
+		and estado == ArduinoProtocol.MOTOR_PARADO
+
+## EMBAIXO CONFIRMADO (build 110) — a condição para liberar o soco: a
+## placa disse, depois do último pedido, que terminou a descida e parou.
+func baixo_confirmado() -> bool:
+	return relatos_desde_o_pedido > 0 and posicao == ArduinoProtocol.POS_EM_BAIXO \
 		and estado == ArduinoProtocol.MOTOR_PARADO
 
 ## O sensor de cima está vendo o saco agora (sem pedir nada à placa)?
 func sensor_ve_em_cima() -> bool:
-	return fim_de_curso and fim_cima == 1 and not sensor_cima_suspeito and sensor_estado <= 0
+	return false   # build 110: sem sensor
 
 ## FORA DA PARTIDA, O SACO ESTÁ ENROLADO? Com o sensor bom, pergunta a
 ## ele (pega o saco baixado à mão); sem ele, vale o que a placa confirmou.
 func recolhido() -> bool:
-	if fim_de_curso and sensor_estado == 0 and fim_cima >= 0:
-		return fim_cima == 1
 	return posicao == ArduinoProtocol.POS_EM_CIMA and estado == ArduinoProtocol.MOTOR_PARADO
 
 ## A linha SENSOR_CIMA da placa V8.
@@ -299,6 +322,10 @@ func desistiu() -> bool:
 func progresso() -> float:
 	if estado == ArduinoProtocol.MOTOR_PARADO or curso_ms <= 0:
 		return 1.0
+	# Firmware V10: a posição de verdade (SACO,<milésimos>).
+	if permil >= 0:
+		var p = clamp(permil / 1000.0, 0.0, 1.0)
+		return p if estado == ArduinoProtocol.MOTOR_DESCENDO else 1.0 - p
 	return clamp(1.0 - float(resta_ms) / float(curso_ms), 0.0, 1.0)
 
 ## Uma frase pronta para a tela, e ela nunca mente: quando o jogo não
@@ -306,16 +333,6 @@ func progresso() -> float:
 func ficha() -> String:
 	if not ligado:
 		return "MOTOR DESLIGADO NA CENTRAL"
-	if trava_cima:
-		return "SUBIDA TRAVADA: O SENSOR DE CIMA NÃO VIU O SACO — APERTE PARAR"
-	if sensor_estado == 1:
-		return "SENSOR DE CIMA PRESO EM \"CHEGOU\" — O SACO SOBE PELO TEMPO"
-	if sensor_estado == 2:
-		return "SENSOR DE CIMA NÃO VÊ O SACO — O SACO SOBE PELO TEMPO"
-	if sensor_cima_suspeito:
-		return "SENSOR DE CIMA ACUSA O SACO COM ELE EMBAIXO — CONFIRA O FIO OUT NO D11"
-	if subida_sem_sensor:
-		return "SUBIU O TEMPO TODO E O SENSOR DE CIMA NÃO VIU O SACO — AUMENTE O CURSO OU AJUSTE O SENSOR"
 	if _desistiu:
 		return "MOTOR NÃO RESPONDEU — CONFIRA A LIGAÇÃO"
 	if estado == ArduinoProtocol.MOTOR_DESCENDO:
@@ -326,7 +343,7 @@ func ficha() -> String:
 
 func para_salvar() -> Dictionary:
 	return {
-		"ligado": ligado, "curso_ms": curso_ms,
+		"ligado": ligado, "curso_ms": curso_ms, "curso_sobe_ms": curso_sobe_ms,
 		"pausa_ms": pausa_ms, "fim_de_curso": fim_de_curso,
 		"vel_sobe": vel_sobe, "vel_desce": vel_desce,
 		"versao": 2,
@@ -340,7 +357,8 @@ func carregar(dados: Dictionary) -> void:
 	if int(dados.get("versao", 1)) < 2:
 		ligado = true
 	curso_ms = int(clamp(int(dados.get("curso_ms", 3500)), 200, 15000))
+	curso_sobe_ms = int(clamp(int(dados.get("curso_sobe_ms", curso_ms)), 200, 15000))
 	pausa_ms = int(clamp(int(dados.get("pausa_ms", 350)), 50, 2000))
-	fim_de_curso = bool(dados.get("fim_de_curso", true))
+	fim_de_curso = false
 	vel_sobe = int(clamp(int(dados.get("vel_sobe", 80)), 20, 100))
 	vel_desce = int(clamp(int(dados.get("vel_desce", 60)), 20, 100))

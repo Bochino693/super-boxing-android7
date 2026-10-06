@@ -263,7 +263,12 @@ func _passo_do_arduino() -> void:
 	if not Engine.has_singleton("PunchUsbSerial"):
 		_proxima_permissao()
 		return
-	var plugin = Engine.get_singleton("PunchUsbSerial")
+	# A camera fica no PunchUsbSerial; o Arduino abre e fecha pelo
+	# PunchSerialSeguro (leitura com tempo limite - fechar a porta logo
+	# depois de abrir era o crash nativo usb_request_wait do plugin antigo).
+	var camera = Engine.get_singleton("PunchUsbSerial")
+	var plugin = Engine.get_singleton("PunchSerialSeguro") \
+		if Engine.has_singleton("PunchSerialSeguro") else camera
 	if _perm_pedido:
 		if _respondida():
 			# O ARDUINO É A ALMA DO JOGO: sem ele não há ficha, START nem
@@ -300,7 +305,7 @@ func _passo_do_arduino() -> void:
 		if _relogio < _proxima_consulta:
 			return
 		_proxima_consulta = _relogio + 0.5
-		if not Lembranca.porta_tem_permissao(plugin, porta):
+		if not Lembranca.porta_tem_permissao(camera, porta):
 			_perm_texto = "CONECTANDO O ARDUINO"
 			return
 	Diario.marca("PERMISSOES: arduino %s" % porta)

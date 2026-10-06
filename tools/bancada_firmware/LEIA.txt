@@ -1,0 +1,15 @@
+BANCADA DO FIRMWARE DO SACO (Linux, simavr) - nao vai no APK.
+
+banco_tempo.c  - firmware V10 de verdade no simulador do ATmega328P, com um
+                 modelo da corda (sem limite em cima nem embaixo: passar
+                 do curso aparece como erro). 10 cenarios: partida, inverter
+                 no meio, 20 ciclos com interrupcoes, faltar luz descendo e
+                 SUBINDO (nao pode forcar o topo), ZERA/AJUSTE, jogo antigo,
+                 TESTE, feixe surdo com o motor andando.
+ponte_boxe.c   - o firmware em tempo real ligado ao JOGO por TCP (a serial
+                 do jogo vai ate o simulador): START, socos e o saco
+                 andando de verdade, com registro de cada passo.
+
+Compilar (Ubuntu: apt install simavr libsimavr-dev):
+  gcc -O2 -o banco_tempo banco_tempo.c -lsimavr -lm
+  ./banco_tempo sketch.elf          (sketch.elf = o .ino compilado para o Nano)

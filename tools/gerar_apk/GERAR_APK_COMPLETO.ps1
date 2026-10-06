@@ -13,7 +13,7 @@ Set-Location $Raiz
 # (SUPERBOXING_BUILD=...): se a pasta tiver arquivos de builds diferentes
 # misturados (zip novo extraido por cima de um velho), a geracao para aqui,
 # antes de fazer qualquer coisa.
-$Build = 109
+$Build = 110
 $VersaoGodot = "3.6.2"
 $VersaoModelos = "3.6.2.stable"
 $UrlBase = "https://github.com/godotengine/godot/releases/download/3.6.2-stable"
@@ -499,17 +499,15 @@ $env:Path = (Join-Path $Java "bin") + ";" + $env:Path
 Write-Host "[2/4] Plugin USB/UVC pronto: $PluginPronto" -ForegroundColor Cyan
 
 # ------------------------------------------------------------------
-# [3/4] A ASSINATURA. A mesma chave de sempre (a de depuracao do Godot, em
-# %APPDATA%\Godot\keystores): o APK novo instala POR CIMA do anterior sem
-# apagar ranking e ajustes. Se este PC nunca gerou APK, a chave e criada.
-$Chave = Join-Path $env:APPDATA "Godot\keystores\debug.keystore"
-if (-not (Test-Path $Chave)) {
-    Write-Host "      Criando a chave de assinatura (primeira vez neste PC)..." -ForegroundColor Yellow
-    New-Item -ItemType Directory -Path (Split-Path $Chave) -Force | Out-Null
-    & (Join-Path $Java "bin\keytool.exe") -genkeypair -v -keystore $Chave -storepass android `
-        -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 `
-        -dname "CN=Android Debug,O=Android,C=US" | Out-Null
-    if (-not (Test-Path $Chave)) { throw "Nao foi possivel criar a chave de assinatura em $Chave" }
+# [3/4] A ASSINATURA. UMA CHAVE SO, DENTRO DO PROJETO
+# (tools\gerar_apk\superboxing.keystore): o APK sai com a MESMA assinatura em
+# qualquer PC. Antes era a chave de depuracao do Godot em %APPDATA%, que cada
+# PC cria sozinho: um APK gerado noutro PC (ou depois de a chave sumir) tinha
+# outra assinatura e o Android recusava instalar por cima ("App nao
+# instalado"). Da build 110 em diante e sempre esta.
+$Chave = Join-Path $Raiz "tools\gerar_apk\superboxing.keystore"
+if (-not (Test-Path -LiteralPath $Chave)) {
+    throw "A chave de assinatura do jogo sumiu: $Chave (extraia o zip inteiro de novo)."
 }
 $ChaveGodot = $Chave -replace '\\', '/'
 $JavaGodot = $Java -replace '\\', '/'
@@ -537,8 +535,8 @@ function Garantir-Chave([string]$Nome, [string]$Valor) {
 Garantir-Chave "export/android/android_sdk_path" "C:/AndroidSdk"
 Garantir-Chave "export/android/java_sdk_path" $JavaGodot
 Garantir-Chave "export/android/debug_keystore" $ChaveGodot
-Garantir-Chave "export/android/debug_keystore_user" "androiddebugkey"
-Garantir-Chave "export/android/debug_keystore_pass" "android"
+Garantir-Chave "export/android/debug_keystore_user" "superboxing"
+Garantir-Chave "export/android/debug_keystore_pass" "superboxing"
 [System.IO.File]::WriteAllText($Configuracao, $Texto, $SemBom)
 
 # APK de RELEASE assinado com a mesma chave: o Godot 3 le a chave de release
@@ -546,8 +544,8 @@ Garantir-Chave "export/android/debug_keystore_pass" "android"
 $Preset = Join-Path $Raiz "export_presets.cfg"
 $PresetTexto = [System.IO.File]::ReadAllText($Preset)
 $PresetTexto = [regex]::Replace($PresetTexto, '(?m)^keystore/release=.*$', "keystore/release=`"$ChaveGodot`"")
-$PresetTexto = [regex]::Replace($PresetTexto, '(?m)^keystore/release_user=.*$', 'keystore/release_user="androiddebugkey"')
-$PresetTexto = [regex]::Replace($PresetTexto, '(?m)^keystore/release_password=.*$', 'keystore/release_password="android"')
+$PresetTexto = [regex]::Replace($PresetTexto, '(?m)^keystore/release_user=.*$', 'keystore/release_user="superboxing"')
+$PresetTexto = [regex]::Replace($PresetTexto, '(?m)^keystore/release_password=.*$', 'keystore/release_password="superboxing"')
 [System.IO.File]::WriteAllText($Preset, $PresetTexto, $SemBom)
 
 # ------------------------------------------------------------------
@@ -611,6 +609,14 @@ try {
         if ($Conteudo.Contains("Lcom/lazersport/punch/usbserial/GodotAndroidPlugin;")) { $TemPlugin = $true; break }
     }
     if (-not $TemPlugin) { Parar "O APK saiu SEM o plugin USB (Arduino e camera nao funcionariam)." }
+    $TemSerialSeguro = $false
+    foreach ($Dex in ($Zip.Entries | Where-Object { $_.FullName -match '^classes\d*\.dex$' })) {
+        $Leitor = New-Object System.IO.StreamReader($Dex.Open(), [System.Text.Encoding]::GetEncoding(28591))
+        $Conteudo = $Leitor.ReadToEnd()
+        $Leitor.Close()
+        if ($Conteudo.Contains("Lcom/lazersport/punch/usbserial/PunchSerialSeguro;")) { $TemSerialSeguro = $true; break }
+    }
+    if (-not $TemSerialSeguro) { Parar "O APK saiu SEM o PunchSerialSeguro (a USB do Arduino voltaria a derrubar o jogo)." }
     $TemQuadros = $false
     foreach ($Dex in ($Zip.Entries | Where-Object { $_.FullName -match '^classes\d*\.dex$' })) {
         $Leitor = New-Object System.IO.StreamReader($Dex.Open(), [System.Text.Encoding]::GetEncoding(28591))

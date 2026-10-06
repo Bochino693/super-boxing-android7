@@ -12,9 +12,9 @@ extends Reference
 ## NUMERO em um e escreva em NOTA o que mudou. Um carimbo que não sobe
 ## mente, e um carimbo que mente é pior do que carimbo nenhum.
 
-const NUMERO = 109
+const NUMERO = 110
 const DATA = "06/10/2026"
-const NOTA = "firmware V9: motor nas duas ligações (D7/D8 e D9/D10), autoteste com START e botão TESTE na Central"
+const NOTA = "saco SEM sensor (firmware V10: descida e subida por tempo), ciclo do saco validado passo a passo, USB do Arduino sem crash, APK com assinatura fixa, classificação maior"
 
 ## Rodapé da abertura: cabe em uma linha discreta.
 static func curta() -> String:

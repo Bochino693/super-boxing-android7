@@ -1,4 +1,4 @@
-SUPER BOXING - VERSAO TV BOX S905L (ANDROID 7.1) - BUILD 109
+SUPER BOXING - VERSAO TV BOX S905L (ANDROID 7.1) - BUILD 110
 ===========================================================
 
 PARA QUAL MAQUINA E ESTA VERSAO
@@ -26,9 +26,61 @@ O que muda por dentro (voce nao ve na tela):
 
 O APK tem outro nome de pacote (com.lazersport.superboxing), entao pode
 ficar instalado junto com o Punch Challenge das outras maquinas. Se a
-build 92 a 108 estiver instalada, a 109 instala por cima.
+build 92 a 109 estiver instalada, veja INSTALAR abaixo (assinatura nova).
 
-O QUE A BUILD 109 CORRIGE (GRAVE O FIRMWARE V9 NO ARDUINO)
+O QUE A BUILD 110 CORRIGE (GRAVE O FIRMWARE V10 NO ARDUINO)
+-----------------------------------------------------------
+1. O JOGO PARAVA ("o app parou") - ERA O PLUGIN USB DO ARDUINO.
+   Ele lia a USB sem tempo limite e fechava a porta com a leitura ainda
+   presa: crash nativo (usb_request_wait) toda vez que o Arduino sumia e
+   voltava - e o tranco do motor reinicia a USB do Nano. Acontecia ate na
+   abertura (o jogo abria e fechava a porta para testar a permissao).
+   Agora o Arduino fala por um plugin novo (PunchSerialSeguro, em Java):
+   le com tempo limite e so fecha a porta depois que a leitura sai. E o
+   mesmo conserto do Dragon Bowling (build 5). A camera continua no
+   plugin de antes.
+
+2. "NAO CONSIGO NEM INSTALAR" - ERA A ASSINATURA DO APK.
+   Cada PC criava a sua propria chave para assinar o APK: um APK gerado
+   em outro PC (ou depois de a chave sumir) tinha OUTRA assinatura, e o
+   Android recusa instalar por cima ("App nao instalado"). Agora a chave
+   fica DENTRO do projeto (tools\gerar_apk\superboxing.keystore): o APK
+   sai com a mesma assinatura em qualquer PC, para sempre.
+   INSTALAR: o INSTALAR_NA_TVBOX.bat percebe a assinatura antiga,
+   desinstala o jogo velho UMA vez e instala o novo (o ranking e as
+   fotos do jogo velho sao apagados nessa troca). Pelo pendrive:
+   desinstale o Super Boxing antigo UMA vez antes de instalar a 110.
+   Da 110 em diante, sempre por cima.
+
+3. O SACO SEM SENSOR - SO POR TEMPO (firmware V10).
+   O sensor de fim de curso de cima saiu (o D11 fica livre). A placa sabe
+   onde o saco esta a todo momento pelo tempo: DESCIDA = tempo do curso
+   inteiro para baixo, SUBIDA = o inverso (tempo do curso inteiro para
+   cima). Descer anda so o que falta, subir anda so o que desceu - parar
+   ou inverter no meio nao estraga a conta. A posicao fica guardada na
+   EEPROM; faltou luz, ao religar ela recolhe o saco sem forcar o topo.
+   Central, aba SACO: DESCIDA, SUBIDA, PAUSA; ESTA EM CIMA (zera a conta);
+   AJUSTE SOBE / AJUSTE DESCE (toque de 0,2 s que nao mexe na conta).
+   PRIMEIRA VEZ: enrole o saco em cima ANTES de gravar o V10 e siga o
+   ARDUINO_SENSOR_DE_FEIXE_LM393\LEIA_LIGACOES.txt (PRIMEIRA VEZ COM O V10).
+
+4. A PARTIDA COM VALIDACAO EM CADA PASSO (o "ciclo do saco"):
+   fora da partida o saco fica EM CIMA (o jogo confere a cada 6 s) ->
+   START: o jogo manda subir e so conta 3-2-1 com a placa CONFIRMANDO em
+   cima -> FOTO -> confere EM CIMA de novo -> DESCE -> o soco so e liberado
+   com a placa CONFIRMANDO embaixo e o saco assentado -> SOCO 1 -> SOCO 2
+   -> SOBE. NOCAUTE do jogador: sobe na hora. Tempo esgotado ou rodada
+   cancelada: sobe. Se o saco sair de baixo no meio da partida (a placa
+   religou), o relogio do soco PARA ate ele voltar. Sem a confirmacao da
+   placa no tempo, a rodada NAO segue as cegas: o credito volta e a tela
+   diz o motivo. A Central (aba SACO) mostra o ciclo e a posicao em %.
+   Conferido com o firmware V10 de verdade rodando no simulador do
+   Arduino ligado ao jogo: 2 rodadas completas e 1 com nocaute.
+
+5. CLASSIFICACAO MAIOR: as linhas do TOP 20 (fim da partida e abertura)
+   ficaram mais altas, com numero, foto, nivel e pontos maiores.
+
+O QUE A BUILD 109 CORRIGIU (FIRMWARE V9)
 -----------------------------------------------------------
 DIAGRAMAS NOVOS (na pasta docs):
 - MONTAGEM_0_LIGACAO_COMPLETA_DO_MOTOR.png: tudo o que liga no Nano para
@@ -359,7 +411,7 @@ O QUE A BUILD 97 CORRIGIU
 ANTES DE INSTALAR NAS 80: TESTE EM UMA
 --------------------------------------
 Na tela de carregamento aparece, no canto de baixo,
-"BUILD 109 - S905L - Android 7.1". Jogue uma partida inteira, abra a
+"BUILD 110 - S905L - Android 7.1". Jogue uma partida inteira, abra a
 Central Tecnica e confira camera e Arduino antes de passar para as outras.
 
 GERAR O APK

@@ -134,6 +134,16 @@ static func parse(line: String) -> Dictionary:
 			return {"type": "SATURATION", "source": fonte}
 		"ERROR":
 			return {"type": "ERROR", "code": parts[1].strip_edges().to_upper() if parts.size() > 1 else "DESCONHECIDO"}
+		"SACO":
+			# Firmware V10: SACO,<milésimos> — onde o saco está agora
+			# (0 = enrolado em cima, 1000 = embaixo).
+			if parts.size() < 2 or not parts[1].strip_edges().is_valid_integer():
+				return {"type": ""}
+			return {"type": "SACO", "permil": int(parts[1].strip_edges())}
+		"AVISO":
+			# Firmware V10: AVISO,DESCE_SO_DO_TOPO = o saco não estava em
+			# cima; a placa sobe primeiro e desce em seguida, sozinha.
+			return {"type": "AVISO", "code": parts[1].strip_edges().to_upper() if parts.size() > 1 else ""}
 		"MOTOR":
 			# MOTOR,<estado>,<posicao>,<resta_ms>
 			#
@@ -308,8 +318,11 @@ static func build_motor(sentido: String) -> String:
 ## As duas velocidades (em %, 20 a 100) vão no fim da linha: o firmware V6
 ## as usa, e um firmware antigo lê só os três primeiros campos e ignora o
 ## resto — a linha nova não quebra placa nenhuma.
-static func build_motor_config(curso_ms: int, pausa_ms: int, fim_de_curso: bool, vel_sobe: int = 80, vel_desce: int = 60) -> String:
+## Firmware V10 (sem sensor de fim de curso): MOTOR,CONFIG,<descida ms>,
+## <pausa ms>,<subida ms>,<vel sobe>,<vel desce>. A subida é o INVERSO da
+## descida: o tempo de subir o curso inteiro.
+static func build_motor_config(desce_ms: int, pausa_ms: int, sobe_ms: int, vel_sobe: int = 80, vel_desce: int = 60) -> String:
 	return "MOTOR,CONFIG,%d,%d,%d,%d,%d" % [
-		int(clamp(curso_ms, 200, 15000)), int(clamp(pausa_ms, 50, 2000)), 1 if fim_de_curso else 0,
+		int(clamp(desce_ms, 200, 15000)), int(clamp(pausa_ms, 50, 2000)), int(clamp(sobe_ms, 200, 15000)),
 		int(clamp(vel_sobe, 20, 100)), int(clamp(vel_desce, 20, 100))
 	]
