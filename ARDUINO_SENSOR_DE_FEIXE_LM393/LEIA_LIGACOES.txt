@@ -18,6 +18,7 @@ DIAGRAMAS (abra e siga o NOME de cada pino):
   docs\MONTAGEM_1_MAPA_DO_ARDUINO_NANO.png   (o que vai em cada pino)
   docs\MONTAGEM_2_LIGACOES_POR_PARTE.png      (cada peca, terminal por terminal)
   docs\MONTAGEM_3_MECANICA.png                (palheta, feixe, motor, chaves)
+  docs\MONTAGEM_4_PONTE_H_COMPLETA.png        (ponte H: pino por pino ate o Nano)
 
 SENSOR DE FEIXE:
   VCC -> 5V
@@ -38,11 +39,19 @@ FITAS WS2812B:
   dados direita  -> 330 ohm -> D6
   alimentacao por fonte 5V externa, com GND comum ao Arduino
 
-MOTOR DO SACO (ponte H IBT-2 / BTS7960):
-  D7  -> RPWM (DESCE)
-  D8  -> LPWM (SOBE)
-  R_EN, L_EN e VCC da ponte -> 5V do Nano; GND -> GND comum
-  B+/B- -> fonte propria do motor (com fusivel); M+/M- -> motor
+MOTOR DO SACO (ponte H IBT-2 / BTS7960) - desenho: docs\MONTAGEM_4_PONTE_H_COMPLETA.png
+  Conector de 8 pinos da ponte (numerado na placa):
+    1 RPWM -> D7  (DESCE)
+    2 LPWM -> D8  (SOBE)
+    3 R_EN -> 5V do Nano
+    4 L_EN -> 5V do Nano
+    5 R_IS -> nao ligar
+    6 L_IS -> nao ligar
+    7 VCC  -> 5V do Nano
+    8 GND  -> GND do Nano
+  Borne azul (parafusos):
+    B+ -> fusivel -> V+ da fonte do motor     B- -> V- da fonte do motor
+    M+ e M- -> os dois fios do motor (saco desce no SOBE? inverta M+ e M-)
 
 FIM DE CURSO DE CIMA (OBRIGATORIO com "FINS DE CURSO: SIM"):
   micro chave com rolete: C -> GND, NF (NC) -> D11, NA livre
