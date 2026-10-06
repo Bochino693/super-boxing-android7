@@ -805,6 +805,8 @@ var ciclo_saco = CicloSaco.OCIOSO
 var _ciclo_desde = 0.0
 ## Desde quando o saco saiu de baixo no meio da partida (-1 = não saiu).
 var _saco_fora_de_baixo_desde = -1.0
+## No ringue, esperando o saco descer para liberar o soco.
+var _lutar_quando_descer = false
 
 ## O START CONFERE O SACO EM CIMA ANTES DA FOTO. Se o sensor de cima não
 ## está vendo o saco, o jogo manda subir e a contagem só começa quando ele
@@ -1568,33 +1570,19 @@ func _processar_contagem(delta: float) -> void:
 			)
 		clarao = 0.65
 		sons.play("shutter", -5.0)
-		# FOTO TIRADA: AGORA O SACO DESCE — só a partir do topo. É o único
-		# lugar do jogo que pede o saco embaixo.
-		_pedir_descida_do_saco()
+		# FOTO TIRADA. O saco continua EM CIMA: ele só desce quando a
+		# cena do ringue entrar (ver logo abaixo).
 		return
 	var atual = int(max(0, int(ceil(countdown_left))))
 	if atual > 0 and atual < last_count:
 		last_count = atual
 		sons.play("count")
 		sons.duck(8.0, 0.5)
-	if pose_finished and ciclo_saco == CicloSaco.TOPO_ANTES_DE_DESCER:
-		if saco.topo_confirmado():
-			saco.exigir(SacoMotor.Onde.EM_BAIXO)
-			_saco_descendo_desde = animation_time
-			_mudar_ciclo(CicloSaco.DESCENDO, "topo confirmado depois da foto")
-		elif saco.desistiu() or animation_time - _ciclo_desde > _teto_da_subida():
-			_abortar_rodada_pelo_saco("O SACO NÃO VOLTOU PARA CIMA ANTES DE DESCER")
-			return
-	if countdown_left <= -1.2 and _esperando_o_saco():
-		if state != GameDef.State.COUNTDOWN:
-			return
-		if not _aviso_saco_dado:
-			_aviso_saco_dado = true
-			_show_notice("PREPARE-SE: O SACO ESTÁ DESCENDO")
-		return
 	if countdown_left <= -1.2:
+		# A CENA DO RINGUE ENTRA E SÓ AGORA O SACO DESCE (3 s). O soco só é
+		# liberado com a placa confirmando o saco EMBAIXO (ver
+		# `_esperando_saco_no_ringue`).
 		state = GameDef.State.ARMED
-		_armar_sensor_optico()
 		_iniciar_transicao()
 		state_time = 0.0
 		espera_left = GameDef.ESPERA_DO_SOCO
@@ -1604,10 +1592,47 @@ func _processar_contagem(delta: float) -> void:
 		saturacao_recente = ""
 		_ultima_reacao = ""
 		_soco_na_tela_em = _tempo_do_ataque()
-		sons.play("round_bell", -2.0)
-		sons.play("go")
 		sons.music(-19.0)
 		moldura.set_estado(LedFrame.ARMADA)
+		if _motor_em_uso():
+			_lutar_quando_descer = true
+			_pedir_descida_do_saco()
+			_show_notice("PREPARE-SE: O SACO ESTÁ DESCENDO")
+		else:
+			_lutar_quando_descer = false
+			_comecar_a_luta()
+
+## O SACO CHEGOU EMBAIXO (ou não há motor): agora vale soco.
+func _comecar_a_luta() -> void:
+	_lutar_quando_descer = false
+	_armar_sensor_optico()
+	espera_left = GameDef.ESPERA_DO_SOCO
+	_soco_na_tela_em = _tempo_do_ataque()
+	sons.play("round_bell", -2.0)
+	sons.play("go")
+
+## NO RINGUE, ESPERANDO O SACO DESCER. Devolve true enquanto o soco ainda
+## não vale (o relógio da rodada fica parado e o lutador não ataca).
+func _esperando_saco_no_ringue() -> bool:
+	if not _lutar_quando_descer:
+		return false
+	if not _motor_em_uso():
+		_comecar_a_luta()
+		return false
+	if ciclo_saco == CicloSaco.TOPO_ANTES_DE_DESCER:
+		if saco.topo_confirmado():
+			saco.exigir(SacoMotor.Onde.EM_BAIXO)
+			_saco_descendo_desde = animation_time
+			_mudar_ciclo(CicloSaco.DESCENDO, "topo confirmado no ringue")
+		elif saco.desistiu() or animation_time - _ciclo_desde > _teto_da_subida():
+			_abortar_rodada_pelo_saco("O SACO NÃO VOLTOU PARA CIMA ANTES DE DESCER")
+		return true
+	if _esperando_o_saco():
+		if state == GameDef.State.ARMED:
+			_show_notice("PREPARE-SE: O SACO ESTÁ DESCENDO")
+		return true
+	_comecar_a_luta()
+	return false
 
 ## O SOCO ESPERA O SACO CHEGAR EMBAIXO.
 ##
@@ -1616,7 +1641,14 @@ func _processar_contagem(delta: float) -> void:
 ## assentar — e nunca mais que o curso inteiro mais uma folga: um saco
 ## que não chega não pode prender a partida para sempre.
 func _motor_em_uso() -> bool:
-	return saco.ligado and saco.placa_tem_motor and link != null and link.is_open()
+	return saco.ligado and saco.placa_tem_motor and link != null and link.is_open() \
+		and _firmware_do_motor_ok()
+
+## SÓ COM O FIRMWARE V10 O MOTOR ANDA. O V9 e anteriores usam o sensor de
+## cima e entendem a configuração de outro jeito: com eles o jogo NÃO
+## mexe no motor e a tela pede para gravar o V10.
+func _firmware_do_motor_ok() -> bool:
+	return _numero_do_firmware() >= FIRMWARE_DO_MOTOR
 
 ## A espera do START acabou? Chegou em cima, ou não há mais motor com quem
 ## falar, ou passou o curso inteiro com folga — aí a rodada segue e a tela
@@ -1702,6 +1734,9 @@ func _esperando_o_saco() -> bool:
 	return false
 
 func _processar_armado(delta: float) -> void:
+	# ACABOU DE ENTRAR NO RINGUE: o saco está descendo.
+	if _esperando_saco_no_ringue():
+		return
 	# O SACO PRECISA CONTINUAR EMBAIXO. Se ele sair (a placa religou e
 	# recolheu, alguém mexeu), o relógio do soco PARA, o jogo pede o saco
 	# embaixo de novo e a tela avisa; sem volta no tempo, a rodada fecha.
@@ -2559,6 +2594,7 @@ func _entrar_em_abertura() -> void:
 	_recolhendo_saco = false
 	_saco_descendo_desde = -1.0
 	_saco_fora_de_baixo_desde = -1.0
+	_lutar_quando_descer = false
 	state = GameDef.State.IDLE
 	state_time = 0.0
 	verdict_time = -1.0
@@ -3824,7 +3860,7 @@ func _hora_de_procurar() -> bool:
 ## porta cair no meio de um curso, a placa desliga o motor sozinha pelo
 ## tempo, e este lado apenas para de pedir.
 func _passo_do_motor() -> void:
-	if link == null or not link.is_open():
+	if link == null or not link.is_open() or not _firmware_do_motor_ok():
 		return
 	var linha = saco.passo()
 	if not linha.empty():
@@ -4552,6 +4588,10 @@ func _receber_hit(msg: Dictionary) -> void:
 			else "a máquina não está esperando soco (estado %d)" % state
 		)
 		return
+	# 1b) O SACO AINDA ESTÁ DESCENDO: o soco ainda não vale.
+	if _lutar_quando_descer:
+		ultima_recusa = "o jogo ignorou: o saco ainda está descendo"
+		return
 	# 2) UM GOLPE POR RODADA.
 	if golpe_registrado:
 		ultima_recusa = "o jogo ignorou: esta tentativa já teve o golpe dela"
@@ -4676,9 +4716,10 @@ func _enviar_config() -> void:
 		# a largura da palheta: um número que o operador regula uma vez e
 		# a placa precisa conhecer. Mandar junto garante que a placa
 		# nunca fica com um curso antigo depois de uma reconexão.
-		link.send_line(ArduinoProtocol.build_motor_config(
-			saco.curso_ms, saco.pausa_ms, saco.curso_sobe_ms, saco.vel_sobe, saco.vel_desce
-		))
+		if _firmware_do_motor_ok():
+			link.send_line(ArduinoProtocol.build_motor_config(
+				saco.curso_ms, saco.pausa_ms, saco.curso_sobe_ms, saco.vel_sobe, saco.vel_desce
+			))
 		link.send_line(ArduinoProtocol.build_motor("ESTADO"))
 
 ## SÓ O AJUSTE DO MOTOR, sem arrastar junto a config do sensor.
@@ -4687,7 +4728,7 @@ func _enviar_config() -> void:
 ## placa reabre a janela de medida ao receber CONFIG, e fazer isso no
 ## meio de uma partida perderia o soco de quem está batendo.
 func _mandar_config_do_motor() -> void:
-	if link != null and link.is_open():
+	if link != null and link.is_open() and _firmware_do_motor_ok():
 		link.send_line(ArduinoProtocol.build_motor_config(
 			saco.curso_ms, saco.pausa_ms, saco.curso_sobe_ms, saco.vel_sobe, saco.vel_desce
 		))
@@ -4758,6 +4799,9 @@ func _mando_do_motor(onde: int) -> void:
 		return
 	if link == null or not link.is_open():
 		_show_notice("SEM PLACA — O MOTOR NÃO RESPONDE")
+		return
+	if not _firmware_do_motor_ok():
+		_show_notice("GRAVE O FIRMWARE V10 NO ARDUINO — O MOTOR SÓ ANDA COM ELE")
 		return
 	# EXIGIR, não QUERER: o botão sempre manda o comando, mesmo que o
 	# jogo ache que o saco já está lá. Era aqui que o SUBIR "não fazia
@@ -5133,6 +5177,8 @@ func _click_central(p: Vector2) -> void:
 		# "O SACO ESTÁ EM CIMA AGORA": a placa zera a conta (só parado).
 		if link == null or not link.is_open():
 			_show_notice("SEM ARDUINO")
+		elif not _firmware_do_motor_ok():
+			_show_notice("GRAVE O FIRMWARE V10 NO ARDUINO")
 		elif saco.andando():
 			_show_notice("ESPERE O MOTOR PARAR PARA MARCAR EM CIMA")
 		else:
@@ -5144,6 +5190,8 @@ func _click_central(p: Vector2) -> void:
 		# topo antes de marcar EM CIMA.
 		if link == null or not link.is_open():
 			_show_notice("SEM ARDUINO")
+		elif not _firmware_do_motor_ok():
+			_show_notice("GRAVE O FIRMWARE V10 NO ARDUINO")
 		elif saco.andando():
 			_show_notice("ESPERE O MOTOR PARAR")
 		else:

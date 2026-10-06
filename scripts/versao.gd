@@ -14,7 +14,7 @@ extends Reference
 
 const NUMERO = 110
 const DATA = "06/10/2026"
-const NOTA = "saco SEM sensor (firmware V10: descida e subida por tempo), ciclo do saco validado passo a passo, USB do Arduino sem crash, APK com assinatura fixa, classificação maior"
+const NOTA = "saco só por tempo (3 s desce, 3 s sobe, firmware V10); desce ao entrar no ringue; motor parado com firmware antigo"
 
 ## Rodapé da abertura: cabe em uma linha discreta.
 static func curta() -> String:

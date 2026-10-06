@@ -61,8 +61,8 @@ var ligado = true
 ## OS DOIS TEMPOS DO CURSO INTEIRO (firmware V10, SEM SENSOR): descer de
 ## cima até embaixo e subir de embaixo até em cima — um o inverso do
 ## outro. A placa conta onde o saco está pelo tempo.
-var curso_ms = 3500
-var curso_sobe_ms = 3500
+var curso_ms = 3000
+var curso_sobe_ms = 3000
 ## Onde a placa diz que o saco está, em milésimos (0 = em cima).
 var permil = -1
 var pausa_ms = 350
@@ -346,7 +346,7 @@ func para_salvar() -> Dictionary:
 		"ligado": ligado, "curso_ms": curso_ms, "curso_sobe_ms": curso_sobe_ms,
 		"pausa_ms": pausa_ms, "fim_de_curso": fim_de_curso,
 		"vel_sobe": vel_sobe, "vel_desce": vel_desce,
-		"versao": 2,
+		"versao": 3,
 	}
 
 func carregar(dados: Dictionary) -> void:
@@ -358,6 +358,11 @@ func carregar(dados: Dictionary) -> void:
 		ligado = true
 	curso_ms = int(clamp(int(dados.get("curso_ms", 3500)), 200, 15000))
 	curso_sobe_ms = int(clamp(int(dados.get("curso_sobe_ms", curso_ms)), 200, 15000))
+	# Build 110: 3 s para descer e 3 s para subir (padrão pedido). Ajuste
+	# gravado antes disso (3,5 s, com sensor) volta para 3 s / 3 s uma vez.
+	if int(dados.get("versao", 1)) < 3:
+		curso_ms = 3000
+		curso_sobe_ms = 3000
 	pausa_ms = int(clamp(int(dados.get("pausa_ms", 350)), 50, 2000))
 	fim_de_curso = false
 	vel_sobe = int(clamp(int(dados.get("vel_sobe", 80)), 20, 100))
