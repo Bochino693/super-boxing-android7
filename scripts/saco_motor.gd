@@ -61,8 +61,8 @@ var ligado = true
 ## OS DOIS TEMPOS DO CURSO INTEIRO (firmware V10, SEM SENSOR): descer de
 ## cima até embaixo e subir de embaixo até em cima — um o inverso do
 ## outro. A placa conta onde o saco está pelo tempo.
-var curso_ms = 2000
-var curso_sobe_ms = 2000
+var curso_ms = 1800
+var curso_sobe_ms = 1800
 ## Onde a placa diz que o saco está, em milésimos (0 = em cima).
 var permil = -1
 var pausa_ms = 350
@@ -88,6 +88,11 @@ var trava_cima = false
 ## FORA DA PARTIDA O SACO FICA ENROLADO (em cima). É a intenção com que
 ## o jogo nasce: assim que a placa responde, ele pede para recolher.
 var _querido: int = Onde.EM_CIMA
+## BUILD 111 / FIRMWARE V12: SUBIDA INTEIRA FORÇADA pendente. Nasce ligada
+## (a máquina acabou de ligar — pode ter faltado energia com o saco no
+## meio) e religa quando a placa reaparece. O jogo manda o RECOLHE na
+## primeira chegada à tela da ficha e apaga a bandeira.
+var recolher_total_pendente = true
 var _pedido_em_ms = 0
 var _ultimo_envio_ms = 0
 var _desistiu = false
@@ -203,6 +208,7 @@ func receber_sensor(estado_do_sensor: int) -> void:
 ## Ela não sabe o que o jogo quer, e o jogo não sabe onde o saco está:
 ## pede de novo, na hora, a intenção de agora (fora da partida = em cima).
 func reafirmar() -> void:
+	recolher_total_pendente = true
 	_desistiu = false
 	_mandar_ja = true
 	_enviado = false
@@ -211,6 +217,15 @@ func reafirmar() -> void:
 	posicao = ArduinoProtocol.POS_DESCONHECIDA
 	_pedido_em_ms = Time.get_ticks_msec()
 	_ultimo_envio_ms = Time.get_ticks_msec()
+
+## A SUBIDA INTEIRA FORÇADA (firmware V12): a placa sobe o curso todo,
+## mesmo que a conta dela diga "em cima", e zera a conta. Devolve a linha.
+func recolher_total() -> String:
+	recolher_total_pendente = false
+	exigir(Onde.EM_CIMA)
+	_enviado = true
+	_mandar_ja = false
+	return ArduinoProtocol.build_motor("RECOLHE")
 
 ## O saco está embaixo e parado (pronto para o soco)?
 func em_baixo_parado() -> bool:
@@ -346,7 +361,7 @@ func para_salvar() -> Dictionary:
 		"ligado": ligado, "curso_ms": curso_ms, "curso_sobe_ms": curso_sobe_ms,
 		"pausa_ms": pausa_ms, "fim_de_curso": fim_de_curso,
 		"vel_sobe": vel_sobe, "vel_desce": vel_desce,
-		"versao": 4,
+		"versao": 5,
 	}
 
 func carregar(dados: Dictionary) -> void:
@@ -358,11 +373,12 @@ func carregar(dados: Dictionary) -> void:
 		ligado = true
 	curso_ms = int(clamp(int(dados.get("curso_ms", 3500)), 200, 15000))
 	curso_sobe_ms = int(clamp(int(dados.get("curso_sobe_ms", curso_ms)), 200, 15000))
-	# Build 111: 2 s para descer e 2 s para subir (padrão pedido). Ajuste
-	# gravado antes disso (3 s / 3,5 s) volta para 2 s / 2 s uma vez.
-	if int(dados.get("versao", 1)) < 4:
-		curso_ms = 2000
-		curso_sobe_ms = 2000
+	# Build 111: 1,8 s para descer e 1,8 s para subir (padrão pedido).
+	# Ajuste gravado antes disso (2 s, 3 s, 3,5 s) vira 1,8 s uma vez;
+	# depois vale o que o operador regular na Central.
+	if int(dados.get("versao", 1)) < 5:
+		curso_ms = 1800
+		curso_sobe_ms = 1800
 	pausa_ms = int(clamp(int(dados.get("pausa_ms", 350)), 50, 2000))
 	fim_de_curso = false
 	vel_sobe = int(clamp(int(dados.get("vel_sobe", 80)), 20, 100))

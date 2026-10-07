@@ -1,4 +1,4 @@
-SUPER BOXING - VERSAO TV BOX S905L (ANDROID 7.1) - BUILD 110 (FIRMWARE V11)
+SUPER BOXING - VERSAO TV BOX S905L (ANDROID 7.1) - BUILD 111
 ===========================================================
 
 PARA QUAL MAQUINA E ESTA VERSAO
@@ -28,26 +28,41 @@ O APK tem outro nome de pacote (com.lazersport.superboxing), entao pode
 ficar instalado junto com o Punch Challenge das outras maquinas. Se a
 build 92 a 109 estiver instalada, veja INSTALAR abaixo (assinatura nova).
 
-O QUE A BUILD 110 CORRIGE (GRAVE O FIRMWARE V10 NO ARDUINO)
------------------------------------------------------------
-LIGACAO DEFINITIVA DO MOTOR (FIRMWARE V11): docs\MONTAGEM_DEFINITIVA_V11.png
-  D9  -> RPWM (1) = DESCER        D10 -> LPWM (2) = SUBIR
-  5V  -> R_EN (3) + L_EN (4) + VCC (7)        GND -> GND (8)
-  B+/B- = fonte do motor (com fusivel)        M+/M- = motor
-  Um pino por sentido, liga/desliga, velocidade cheia. D7, D8 e D11 nao
-  sao usados. Os diagramas antigos foram para docs\ANTIGOS_NAO_USAR.
+O QUE A BUILD 111 MUDA (BASE: A 110d, QUE FUNCIONOU) - FIRMWARE V12
+--------------------------------------------------------------------
+- A ligacao e a logica do motor sao as MESMAS da 110d / firmware V10
+  (a V11 foi descartada). O firmware V12 e o V10 com duas coisas a mais.
+- TEMPO PADRAO 1,8 s para descer e 1,8 s para subir (ajusta na Central,
+  aba SACO). Quem atualiza vem com 1,8 s uma vez; depois vale o ajuste.
+- A TELA DA FICHA SEMPRE MANDA SUBIR. Toda vez que o jogo volta para a
+  tela inicial (ficha / START), sai o comando de subir (a placa anda so
+  o que falta).
+- VOLTA DA ENERGIA: na primeira vez que o jogo chega na tela da ficha
+  depois de ligar a maquina (ou de o Arduino religar), o saco SOBE O
+  CURSO INTEIRO (1,8 s), mesmo que a placa ache que ele ja esta em cima,
+  e a conta zera. Assim o saco desregulado por queda de energia volta
+  para o lugar. Isso precisa do firmware V12 (com o V10 so sai o subir
+  normal).
+- MODO LIVRE DE FABRICA (sem ficha). Para cobrar, toque em 1 FICHA na
+  Central. Quem atualiza passa para LIVRE uma vez.
 
-ATENCAO - SEM O FIRMWARE V11 O MOTOR NAO ANDA. Com firmware anterior no
-Arduino o jogo NAO mexe no motor e a abertura mostra o painel vermelho
-"FIRMWARE ANTIGO - GRAVE O V11". Grave o ARDUINO_SENSOR_DE_FEIXE_LM393.ino
-(V11) com o saco ENROLADO EM CIMA.
+GRAVAR O V12: ARDUINO_SENSOR_DE_FEIXE_LM393.ino, mesmos fios do V10
+(D9 RPWM, D10 LPWM, R_EN/L_EN/VCC no 5V, GND). A placa responde
+READY,PUNCH_OPTICAL,V12-MH-LM393.
+
+O QUE A BUILD 110 CORRIGIU (FIRMWARE V10, AGORA V12)
+-----------------------------------------------------------
+ATENCAO - SEM O FIRMWARE V10 O MOTOR NAO ANDA. O V9 (e anteriores) ainda
+usa o sensor de cima: com ele no Arduino o jogo NAO mexe no motor e o
+rodape da tela diz "FIRMWARE ANTIGO NO ARDUINO - GRAVE O V10". Grave o
+ARDUINO_SENSOR_DE_FEIXE_LM393.ino (V10) com o saco ENROLADO EM CIMA.
 
 SE SO UM SENTIDO ANDA (so sobe, ou so desce, e trocando M+/M- o sentido
 que anda inverte): grave o ARDUINO_SENSOR_DE_FEIXE_LM393\TESTE_SOBE_DESCE
 e olhe o saco (desce 2 s, sobe 2 s, em laco, sem jogo). Se so um sentido
 andar nele tambem, um dos fios de comando nao chega na ponte H: RPWM->D9,
-LPWM->D10, R_EN e L_EN->5V, VCC->5V, GND comum (docs\MONTAGEM_DEFINITIVA_V11.png).
-Os dois sentidos andando no teste: grave o V11 e jogue.
+LPWM->D10, R_EN e L_EN->5V, VCC->5V, GND comum (o texto do teste explica).
+Os dois sentidos andando no teste: grave o V10 e jogue.
 
 O SACO, SO ISSO: 2 s para descer e 2 s para subir (padrao; ajusta na
 Central, aba SACO). Fora da partida: em cima. START -> foto -> entra a
@@ -239,17 +254,17 @@ motor so faz tres coisas: sobe, desce e velocidade.
   ha sensor: a descida termina pelo tempo de curso.
 - Corrigido: com o saco subindo, um DESCER era ignorado ate ele chegar em
   cima. Agora o saco para e desce na hora (com a pausa de inversao).
-Desenhos: docs\ANTIGOS_NAO_USAR\MONTAGEM_4_PONTE_H_COMPLETA.png (a placa BT_2 e o conector
+Desenhos: docs\MONTAGEM_4_PONTE_H_COMPLETA.png (a placa BT_2 e o conector
 2x4) e docs\MONTAGEM_1/2/3/5.
 
 O QUE A BUILD 105 CORRIGIU
 ---------------------------------------------------------
 Arquivo: ARDUINO_SENSOR_DE_FEIXE_LM393\ARDUINO_SENSOR_DE_FEIXE_LM393.ino
-Montagem: docs\ANTIGOS_NAO_USAR\MONTAGEM_1_MAPA_DO_ARDUINO_NANO.png (o que vai em cada pino),
-          docs\ANTIGOS_NAO_USAR\MONTAGEM_2_LIGACOES_POR_PARTE.png (sensor, botoes, ponte H,
-          fins de curso, fitas, USB), docs\ANTIGOS_NAO_USAR\MONTAGEM_3_MECANICA.png e
-          docs\ANTIGOS_NAO_USAR\MONTAGEM_4_PONTE_H_COMPLETA.png (ponte H pino por pino) e
-          docs\ANTIGOS_NAO_USAR\MONTAGEM_5_SENSOR_FIM_DE_CURSO_IR.png (sensor de cima)
+Montagem: docs\MONTAGEM_1_MAPA_DO_ARDUINO_NANO.png (o que vai em cada pino),
+          docs\MONTAGEM_2_LIGACOES_POR_PARTE.png (sensor, botoes, ponte H,
+          fins de curso, fitas, USB), docs\MONTAGEM_3_MECANICA.png e
+          docs\MONTAGEM_4_PONTE_H_COMPLETA.png (ponte H pino por pino) e
+          docs\MONTAGEM_5_SENSOR_FIM_DE_CURSO_IR.png (sensor de cima)
 
 O SENSOR DE FEIXE "NAO FUNCIONAVA" por tres motivos:
 - O MOTOR GASTAVA O SOCO. O saco desce na contagem e o jogo arma o
@@ -276,7 +291,7 @@ FIM DE CURSO DE CIMA (obrigatorio com "FINS DE CURSO: SIM"):
   OUT no D11 e um RESISTOR DE 100k do D11 ao GND (no borne do Nano).
   Um ALVO BRANCO colado no braco do saco; o sensor ve o alvo 5 a 10 mm
   antes do batente e o motor e cortado NA HORA pela interrupcao do pino.
-  Desenho: docs\ANTIGOS_NAO_USAR\MONTAGEM_5_SENSOR_FIM_DE_CURSO_IR.png.
+  Desenho: docs\MONTAGEM_5_SENSOR_FIM_DE_CURSO_IR.png.
 - Fio OUT solto ou sensor sem 5V = o resistor puxa para "chegou" = o saco
   NAO sobe (falha segura: nunca fica forcando o topo).
 - Se subir o tempo de curso inteiro sem o sensor ver o alvo (sensor sem

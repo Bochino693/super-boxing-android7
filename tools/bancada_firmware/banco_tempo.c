@@ -54,7 +54,7 @@ int main(int argc, char **argv) {
   setvbuf(stdout, NULL, _IOLBF, 0);
   printf("== 1. primeira vez com o V10 (saco enrolado em cima)\n");
   ligar(0); rodar(4000);
-  ok(tem("READY,PUNCH_OPTICAL,V10") && parado() && pos == 0, "READY V10, conta o saco em cima e nao mexe");
+  ok((tem("READY,PUNCH_OPTICAL,V10") || tem("READY,PUNCH_OPTICAL,V12")) && parado() && pos == 0, "READY V10, conta o saco em cima e nao mexe");
   ok(!tem("FIM,") && !tem("SENSOR_CIMA"), "sem linhas de sensor (FIM / SENSOR_CIMA)");
   manda("MOTOR,CONFIG,3000,350,2500,80,60\n"); rodar(200);
   ok(tem("OK,MOTOR"), "CONFIG com descida 3,0 s e subida 2,5 s");
@@ -107,6 +107,15 @@ int main(int argc, char **argv) {
   avr_raise_irq(pin('D', 4), 1); rodar(6); avr_raise_irq(pin('D', 4), 0); rodar(100);
   ok(!tem("HIT,"), "palheta com o motor descendo: ignorada");
   rodar(3000); manda("MOTOR,SOBE\n"); rodar(3000);
+  printf("== 10. V12: MOTOR,RECOLHE (subida inteira forcada na tela da ficha)\n");
+  /* A contagem diz "em cima", mas o saco ficou a 60% (desregulou). */
+  pos = 0.6; pmin = pos; limpa(); manda("MOTOR,RECOLHE\n"); rodar(100);
+  ok(tem("OK,RECOLHE") && sobe() && !desce(), "RECOLHE com a contagem em cima: sobe mesmo assim");
+  rodar(2700);
+  ok(parado() && pos < 0.001 && ultimo_saco() == 0, "subiu o curso inteiro (2,5 s) e a contagem voltou a zero");
+  limpa(); manda("MOTOR,DESCE\n"); rodar(2000); manda("MOTOR,RECOLHE\n"); rodar(4000);
+  ok(parado() && ultimo_saco() == 0 && !tem("CURTO"), "RECOLHE no meio da descida: para, espera e sobe (sem curto)");
+  pos = 0; pmin = 0;
   printf("\n%s: %d falha(s)\n", falhas ? "REPROVADO" : "APROVADO", falhas);
   return falhas != 0;
 }

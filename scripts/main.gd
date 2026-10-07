@@ -234,7 +234,9 @@ var central_aberta = false
 const SEGURAR_OK_S = 6.0
 const TECLAS_OK = [KEY_ENTER, KEY_KP_ENTER, KEY_SPACE]
 var _ok_segurado = -1.0
-var game_mode = "credit"
+## MODO LIVRE DE FÁBRICA (build 111): a máquina joga sem ficha até o
+## operador escolher 1 FICHA na Central.
+var game_mode = "free"
 var credits = 0
 var plays = 0
 ## AS CINCO MELHORES MARCAS, em ordem decrescente.
@@ -619,7 +621,9 @@ var _placa_achada_em = -99.0
 ## build 108 em diante precisa do V8: as versões até a V5 usavam outros
 ## pinos para a ponte H, e com elas a fiação nova deixa o motor morto.
 var firmware_versao = ""
-const FIRMWARE_DO_MOTOR = 11
+const FIRMWARE_DO_MOTOR = 10
+## Do V12 em diante a placa entende MOTOR,RECOLHE (subida inteira forçada).
+const FIRMWARE_DO_RECOLHE = 12
 var _motor_identificado_em = -99.0
 ## A CONVERSA COM O MOTOR, para a Central mostrar se a placa responde:
 ## quantas linhas MOTOR chegaram, quando chegou a última, e o teste.
@@ -1644,7 +1648,7 @@ func _motor_em_uso() -> bool:
 	return saco.ligado and saco.placa_tem_motor and link != null and link.is_open() \
 		and _firmware_do_motor_ok()
 
-## SÓ COM O FIRMWARE V11 O MOTOR ANDA. O V9 e anteriores usam o sensor de
+## SÓ COM O FIRMWARE V10 O MOTOR ANDA. O V9 e anteriores usam o sensor de
 ## cima e entendem a configuração de outro jeito: com eles o jogo NÃO
 ## mexe no motor e a tela pede para gravar o V10.
 func _firmware_do_motor_ok() -> bool:
@@ -2586,10 +2590,12 @@ func _entrar_em_abertura() -> void:
 	# saco; repetido depois do `_fechar_rodada`, não faz nada.
 	# Build 110: vindo do meio de uma partida (cancelada, tempo, abortada)
 	# o pedido de SUBIR sai na hora, mesmo que o jogo "ache" que está lá.
-	if ciclo_saco != CicloSaco.OCIOSO and ciclo_saco != CicloSaco.SUBINDO:
-		saco.exigir(SacoMotor.Onde.EM_CIMA)
-	else:
+	# Build 111: a tela da ficha SEMPRE manda SUBIR (o pedido sai mesmo que
+	# o jogo ache que o saco já está lá; a placa só anda o que falta).
+	if ciclo_saco == CicloSaco.SUBINDO and saco.andando():
 		saco.quero(SacoMotor.Onde.EM_CIMA)
+	else:
+		saco.exigir(SacoMotor.Onde.EM_CIMA)
 	_mudar_ciclo(CicloSaco.OCIOSO, "abertura")
 	_recolhendo_saco = false
 	_saco_descendo_desde = -1.0
@@ -3862,6 +3868,19 @@ func _hora_de_procurar() -> bool:
 func _passo_do_motor() -> void:
 	if link == null or not link.is_open() or not _firmware_do_motor_ok():
 		return
+	# VOLTA DA ENERGIA (build 111): na primeira chegada à tela da ficha
+	# depois de ligar (ou de a placa religar), o saco sobe o curso INTEIRO,
+	# mesmo que a conta da placa diga "em cima" — se faltou luz com ele no
+	# meio, ele volta enrolado e a conta zera. Só depois da config do
+	# motor chegar à placa (ela para o motor ao receber CONFIG).
+	if saco.recolher_total_pendente and saco.ligado and state == GameDef.State.IDLE \
+			and ciclo_saco == CicloSaco.OCIOSO and not placa_calibrando \
+			and _numero_do_firmware() >= FIRMWARE_DO_RECOLHE \
+			and animation_time - _config_enviada_em > 0.5:
+		print("SACO: tela da ficha depois de ligar — subida inteira forçada (RECOLHE)")
+		Diario.marca("SACO: RECOLHE (subida inteira forçada)")
+		link.send_line(saco.recolher_total())
+		return
 	var linha = saco.passo()
 	if not linha.empty():
 		link.send_line(linha)
@@ -4756,20 +4775,20 @@ func _diagnostico_do_motor() -> Array:
 	if link == null or not link.available() or not link.is_open():
 		return ["SEM ARDUINO CONECTADO", "nenhum comando chega ao motor", "Confira o cabo USB do Nano e se o Android liberou o Arduino.", true]
 	if not firmware_optico_identificado:
-		return ["O ARDUINO NÃO SE IDENTIFICOU", "aguardando o READY da placa", "Grave no Nano o ARDUINO_SENSOR_DE_FEIXE_LM393.ino (V11).", true]
+		return ["O ARDUINO NÃO SE IDENTIFICOU", "aguardando o READY da placa", "Grave no Nano o ARDUINO_SENSOR_DE_FEIXE_LM393.ino (V12).", true]
 	var n = _numero_do_firmware()
 	if n >= 0 and n < FIRMWARE_DO_MOTOR:
 		return [
-			"FIRMWARE ANTIGO NO ARDUINO (V%d)" % n, "grave o V11",
-			"Grave no Nano o ARDUINO_SENSOR_DE_FEIXE_LM393.ino V11 (D9 desce, D10 sobe, sem sensor).", true
+			"FIRMWARE ANTIGO NO ARDUINO (V%d)" % n, "grave o V12",
+			"Grave no Nano o ARDUINO_SENSOR_DE_FEIXE_LM393.ino V12 (sem sensor: descida e subida por tempo).", true
 		]
 	if not saco.placa_tem_motor and animation_time - _motor_identificado_em > 5.0:
-		return ["A PLACA NÃO RESPONDE AO MOTOR", "nenhuma linha MOTOR veio", "Grave o firmware V11 no Nano.", true]
+		return ["A PLACA NÃO RESPONDE AO MOTOR", "nenhuma linha MOTOR veio", "Grave o firmware V12 no Nano.", true]
 	if saco.desistiu():
 		return ["A PLACA NÃO CONFIRMOU O CURSO", "o jogo parou de pedir", "Confira o cabo USB e toque em TENTAR DE NOVO.", true]
 	return [
 		"MOTOR OK — A PLACA ESTÁ MANDANDO", "",
-		"Placa diz SUBINDO e o saco parado? D10→LPWM (SOBE), D9→RPWM (DESCE), R_EN/L_EN/VCC no 5V, GND comum, fonte em B+/B-.", false
+		"Placa diz SUBINDO e o saco parado? R_EN/L_EN no 5V, GND comum, fonte em B+/B-, D9→RPWM, D10→LPWM.", false
 	]
 
 ## FORA DA PARTIDA O SACO FICA RECOLHIDO — e a abertura confere isso.
@@ -4801,7 +4820,7 @@ func _mando_do_motor(onde: int) -> void:
 		_show_notice("SEM PLACA — O MOTOR NÃO RESPONDE")
 		return
 	if not _firmware_do_motor_ok():
-		_show_notice("GRAVE O FIRMWARE V11 NO ARDUINO — O MOTOR SÓ ANDA COM ELE")
+		_show_notice("GRAVE O FIRMWARE V12 NO ARDUINO — O MOTOR SÓ ANDA COM ELE")
 		return
 	# EXIGIR, não QUERER: o botão sempre manda o comando, mesmo que o
 	# jogo ache que o saco já está lá. Era aqui que o SUBIR "não fazia
@@ -5178,7 +5197,7 @@ func _click_central(p: Vector2) -> void:
 		if link == null or not link.is_open():
 			_show_notice("SEM ARDUINO")
 		elif not _firmware_do_motor_ok():
-			_show_notice("GRAVE O FIRMWARE V11 NO ARDUINO")
+			_show_notice("GRAVE O FIRMWARE V12 NO ARDUINO")
 		elif saco.andando():
 			_show_notice("ESPERE O MOTOR PARAR PARA MARCAR EM CIMA")
 		else:
@@ -5191,7 +5210,7 @@ func _click_central(p: Vector2) -> void:
 		if link == null or not link.is_open():
 			_show_notice("SEM ARDUINO")
 		elif not _firmware_do_motor_ok():
-			_show_notice("GRAVE O FIRMWARE V11 NO ARDUINO")
+			_show_notice("GRAVE O FIRMWARE V12 NO ARDUINO")
 		elif saco.andando():
 			_show_notice("ESPERE O MOTOR PARAR")
 		else:
@@ -5391,7 +5410,7 @@ func _click_central(p: Vector2) -> void:
 		_iniciar_serial()
 		_show_notice("PROCURANDO O ARDUINO DE NOVO, DO ZERO")
 	elif _tocou("padroes", p):
-		game_mode = "credit"
+		game_mode = "free"
 		porta_configurada = ""
 		hit_min_speed = ScoreCurve.DEFAULT_MIN_SPEED
 		hit_max_speed = ScoreCurve.DEFAULT_MAX_SPEED
@@ -5540,6 +5559,11 @@ func _carregar() -> void:
 	if data.empty():
 		return
 	game_mode = str(data.get("mode", game_mode))
+	# Build 111: o padrão passou a ser o MODO LIVRE. Quem atualiza vem com
+	# "credit" gravado só porque era o padrão antigo: vira livre UMA vez;
+	# depois vale o que o operador escolher na Central.
+	if not bool(data.get("modo_livre_padrao", false)):
+		game_mode = "free"
 	saco.carregar(data.get("saco_motor", {}))
 	credits = int(data.get("credits", credits))
 	plays = int(data.get("plays", plays))
@@ -5641,6 +5665,7 @@ func _carregar() -> void:
 func _salvar() -> void:
 	SettingsStore.save_data_async({
 		"mode": game_mode,
+		"modo_livre_padrao": true,
 		"credits": credits,
 		"plays": plays,
 		"ranking": ranking,
@@ -6249,7 +6274,7 @@ func _aviso_do_firmware_antigo() -> void:
 	_cartao(caixa, Color("2a0610"), Compat.cor(Paleta.VERMELHO, pisca), 1.0, 5.0)
 	_texto("ARDUINO COM FIRMWARE ANTIGO%s" % ((" (V%d)" % n) if n >= 0 else ""), caixa.position.y + 64.0, 40, Paleta.VERMELHO, Compat.CENTRO, caixa.position.x, caixa.size.x)
 	_texto("O SACO NÃO VAI DESCER NEM SUBIR", caixa.position.y + 120.0, 34, Paleta.CREME, Compat.CENTRO, caixa.position.x, caixa.size.x)
-	_texto("GRAVE O FIRMWARE V11 NO ARDUINO (pasta ARDUINO_SENSOR_DE_FEIXE_LM393)", caixa.position.y + 172.0, _tamanho_que_cabe("GRAVE O FIRMWARE V11 NO ARDUINO (pasta ARDUINO_SENSOR_DE_FEIXE_LM393)", 24, caixa.size.x - 40.0), Paleta.AMBAR, Compat.CENTRO, caixa.position.x, caixa.size.x)
+	_texto("GRAVE O FIRMWARE V12 NO ARDUINO (pasta ARDUINO_SENSOR_DE_FEIXE_LM393)", caixa.position.y + 172.0, _tamanho_que_cabe("GRAVE O FIRMWARE V12 NO ARDUINO (pasta ARDUINO_SENSOR_DE_FEIXE_LM393)", 24, caixa.size.x - 40.0), Paleta.AMBAR, Compat.CENTRO, caixa.position.x, caixa.size.x)
 	_texto("com o saco ENROLADO EM CIMA", caixa.position.y + 214.0, 24, Paleta.TINTA_LEVE, Compat.CENTRO, caixa.position.x, caixa.size.x)
 
 func _draw_show_idle() -> void:
@@ -7993,7 +8018,7 @@ func _central_maquina() -> void:
 	_stepper("vel_sobe", "%d %%" % saco.vel_sobe, "SUBIDA", Paleta.ROXO)
 	_stepper("vel_desce", "%d %%" % saco.vel_desce, "DESCIDA", Paleta.ROXO)
 	_texto(
-		"Firmware V11: o motor anda sempre em velocidade cheia (D9/D10 liga-desliga); este ajuste não é usado.",
+		"Mais rápido = mais tranco no topo. Comece com 80% na subida e 60% na descida.",
 		SACO_VEL_Y + 236.0, 15, Paleta.TINTA_LEVE, Compat.ESQUERDA, 120.0, 860.0
 	)
 

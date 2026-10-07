@@ -1,43 +1,47 @@
 /*
-  TESTE SOBE / DESCE - SEM JOGO, SEM SERIAL, SEM SENSOR (mesmos pinos do V11).
+  TESTE SOBE / DESCE - SEM JOGO, SEM SERIAL, SEM SENSOR.
   Grave, ligue a fonte do motor e OLHE O SACO. Em laco, para sempre:
-    DESCE 2 s (D9 em 5V)  ->  para 1 s  ->  SOBE 2 s (D10 em 5V)  ->  para 3 s
+    DESCE 2 s  ->  para 1 s  ->  SOBE 2 s  ->  para 3 s
   O LED "L" do Nano fica ACESO enquanto o motor deve andar.
 
-  LIGACAO (docs\MONTAGEM_DEFINITIVA_V11.png):
-    D9  -> RPWM (pino 1 do IBT-2)  = DESCER
-    D10 -> LPWM (pino 2 do IBT-2)  = SUBIR
-    5V  -> R_EN (3), L_EN (4) e VCC (7)      GND -> GND (8)
-    R_IS (5) e L_IS (6): sem ligacao.
-
   O QUE O RESULTADO DIZ:
-  - Desce E sobe: tudo certo. Grave o ARDUINO_SENSOR_DE_FEIXE_LM393.ino (V11).
-  - Desce quando devia subir (e vice-versa): troque M+ com M- no borne verde.
-  - So UM sentido anda: o fio do outro sentido (D9->RPWM ou D10->LPWM) nao
-    chega, ou R_EN/L_EN nao estao no 5V. Fio certo e ainda so um sentido: a
-    ponte H esta com defeito (troque a placa).
-  - Nao mexe nada: fonte do motor (B+/B-), VCC/R_EN/L_EN sem 5V, GND solto.
+  - Desce E sobe: ponte H e fios OK. Grave de novo o firmware
+    ARDUINO_SENSOR_DE_FEIXE_LM393.ino (V10) e jogue.
+  - So UM sentido anda (e trocando M+/M- o sentido que anda inverte):
+    um dos dois fios de comando NAO chega na ponte H. Confira na BTS7960:
+      RPWM -> D9      LPWM -> D10
+      R_EN -> 5V      L_EN -> 5V      VCC -> 5V      GND -> GND do Nano
+    (quem montou pela ligacao antiga: RPWM -> D7 e LPWM -> D8 tambem vale -
+    este teste liga os dois pares ao mesmo tempo, igual ao firmware).
+    Fio certo e mesmo assim so um sentido: a metade da ponte H queimou.
+  - Nao mexe nada: fonte do motor (B+/B-), R_EN/L_EN sem 5V ou GND solto.
 */
-const int DESCER = 9;    // RPWM
-const int SUBIR = 10;    // LPWM
+const int DESCE_PWM = 9, SOBE_PWM = 10;     // ligacao atual (RPWM / LPWM)
+const int DESCE_ANT = 7, SOBE_ANT = 8;      // ligacao antiga (RPWM / LPWM)
 const unsigned long TEMPO = 2000;
 
-void parado() {
-  digitalWrite(DESCER, LOW); digitalWrite(SUBIR, LOW); digitalWrite(LED_BUILTIN, LOW);
+void tudoParado() {
+  digitalWrite(DESCE_PWM, LOW); digitalWrite(SOBE_PWM, LOW);
+  digitalWrite(DESCE_ANT, LOW); digitalWrite(SOBE_ANT, LOW);
+  digitalWrite(LED_BUILTIN, LOW);
 }
 
 void setup() {
-  digitalWrite(DESCER, LOW); digitalWrite(SUBIR, LOW);
-  pinMode(DESCER, OUTPUT); pinMode(SUBIR, OUTPUT); pinMode(LED_BUILTIN, OUTPUT);
-  parado();
+  int pinos[] = {DESCE_PWM, SOBE_PWM, DESCE_ANT, SOBE_ANT, LED_BUILTIN};
+  for (int i = 0; i < 5; i++) { digitalWrite(pinos[i], LOW); pinMode(pinos[i], OUTPUT); }
+  tudoParado();
   delay(1500);
 }
 
 void loop() {
-  digitalWrite(SUBIR, LOW); digitalWrite(DESCER, HIGH); digitalWrite(LED_BUILTIN, HIGH);
+  // DESCE: so o lado da descida em HIGH, o outro em LOW
+  digitalWrite(SOBE_PWM, LOW); digitalWrite(SOBE_ANT, LOW);
+  digitalWrite(DESCE_PWM, HIGH); digitalWrite(DESCE_ANT, HIGH); digitalWrite(LED_BUILTIN, HIGH);
   delay(TEMPO);
-  parado(); delay(1000);
-  digitalWrite(DESCER, LOW); digitalWrite(SUBIR, HIGH); digitalWrite(LED_BUILTIN, HIGH);
+  tudoParado(); delay(1000);
+  // SOBE
+  digitalWrite(DESCE_PWM, LOW); digitalWrite(DESCE_ANT, LOW);
+  digitalWrite(SOBE_PWM, HIGH); digitalWrite(SOBE_ANT, HIGH); digitalWrite(LED_BUILTIN, HIGH);
   delay(TEMPO);
-  parado(); delay(3000);
+  tudoParado(); delay(3000);
 }

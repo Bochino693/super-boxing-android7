@@ -1,13 +1,12 @@
-FIRMWARE DEFINITIVO - SENSOR DE FEIXE LM393 - V11
+FIRMWARE DEFINITIVO - SENSOR DE FEIXE LM393 - V12
 =================================================
 
-MOTOR (V11) - UM PINO PARA CADA SENTIDO - docs\MONTAGEM_DEFINITIVA_V11.png
-  D9  -> RPWM (pino 1 da ponte H)  = DESCER  (5V = desce)
-  D10 -> LPWM (pino 2 da ponte H)  = SUBIR   (5V = sobe)
-  5V  -> R_EN (3), L_EN (4) e VCC (7)      GND -> GND (8)
-  Liga/desliga, velocidade cheia, sem PWM. D7, D8 e D11 NAO sao usados.
-  Os diagramas MONTAGEM_0 a 6 antigos estao em docs\ANTIGOS_NAO_USAR.
-
+V12 = o V10 (que funcionou), MESMOS FIOS, mais:
+  - tempo padrao 1,8 s para descer e 1,8 s para subir;
+  - MOTOR,RECOLHE: subida do curso inteiro forcada (o jogo manda na
+    primeira chegada a tela da ficha depois de ligar: se faltou energia
+    com o saco no meio, ele volta enrolado e a conta zera).
+A V11 foi descartada: nao use.
 
 Grave o arquivo ARDUINO_SENSOR_DE_FEIXE_LM393.ino no Arduino Uno/Nano
 (biblioteca Adafruit NeoPixel instalada pelo Gerenciador de Bibliotecas).
@@ -27,11 +26,11 @@ TESTES SEM O JOGO (subpastas; a IDE nao junta ao firmware):
   Passo a passo: docs\TESTE_DO_SENSOR.md
 
 DIAGRAMAS (abra e siga o NOME de cada pino):
-  docs\ANTIGOS_NAO_USAR\MONTAGEM_1_MAPA_DO_ARDUINO_NANO.png   (o que vai em cada pino)
-  docs\ANTIGOS_NAO_USAR\MONTAGEM_2_LIGACOES_POR_PARTE.png      (cada peca, terminal por terminal)
-  docs\ANTIGOS_NAO_USAR\MONTAGEM_3_MECANICA.png                (palheta, feixe, motor, chaves)
-  docs\ANTIGOS_NAO_USAR\MONTAGEM_4_PONTE_H_COMPLETA.png        (ponte H: pino por pino ate o Nano)
-  docs\ANTIGOS_NAO_USAR\MONTAGEM_5_SENSOR_FIM_DE_CURSO_IR.png  (V10: NAO USADO MAIS - o sensor de cima saiu)
+  docs\MONTAGEM_1_MAPA_DO_ARDUINO_NANO.png   (o que vai em cada pino)
+  docs\MONTAGEM_2_LIGACOES_POR_PARTE.png      (cada peca, terminal por terminal)
+  docs\MONTAGEM_3_MECANICA.png                (palheta, feixe, motor, chaves)
+  docs\MONTAGEM_4_PONTE_H_COMPLETA.png        (ponte H: pino por pino ate o Nano)
+  docs\MONTAGEM_5_SENSOR_FIM_DE_CURSO_IR.png  (V10: NAO USADO MAIS - o sensor de cima saiu)
   ATENCAO V10: nos diagramas, ignore o sensor de cima e o resistor de 100k
   no D11. Pode retira-los: o D11 fica livre.
 
@@ -55,7 +54,7 @@ FITAS WS2812B:
   alimentacao por fonte 5V externa, com GND comum ao Arduino
 
 MOTOR DO SACO (ponte H BTS7960, placa "BT_2" / IBT-2)
-  desenho: docs\ANTIGOS_NAO_USAR\MONTAGEM_4_PONTE_H_COMPLETA.png
+  desenho: docs\MONTAGEM_4_PONTE_H_COMPLETA.png
   O motor so faz 3 coisas: SOBE, DESCE e VELOCIDADE. Dois fios mandam nele:
     RPWM -> D9   DESCE  (o pulso neste fio e a velocidade da descida)
     LPWM -> D10  SOBE   (o pulso neste fio e a velocidade da subida)

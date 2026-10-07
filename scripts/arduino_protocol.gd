@@ -306,7 +306,9 @@ static func nome_da_posicao(posicao: int) -> String:
 ## "PARA": num comando que liga um motor, o padrão seguro é desligar.
 static func build_motor(sentido: String) -> String:
 	var s = sentido.strip_edges().to_upper()
-	if s != "DESCE" and s != "SOBE" and s != "ESTADO":
+	# Só as ordens que a placa conhece; o resto vira PARA (seguro). ZERA,
+	# AJUSTE e TESTE são da Central; RECOLHE (V12) é a subida inteira.
+	if not s in ["DESCE", "SOBE", "ESTADO", "RECOLHE", "ZERA", "TESTE", "AJUSTE,SOBE", "AJUSTE,DESCE"]:
 		s = "PARA"
 	return "MOTOR,%s" % s
 
