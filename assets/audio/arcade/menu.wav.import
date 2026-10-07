@@ -2,10 +2,12 @@
 
 importer="wav"
 type="AudioStreamSample"
+path="res://.import/menu.wav-9521eef243d41d6332490d1bffe694b3.sample"
 
 [deps]
 
 source_file="res://assets/audio/arcade/menu.wav"
+dest_files=[ "res://.import/menu.wav-9521eef243d41d6332490d1bffe694b3.sample" ]
 
 [params]
 

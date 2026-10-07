@@ -2,10 +2,12 @@
 
 importer="wav"
 type="AudioStreamSample"
+path="res://.import/nivel_nocaute.wav-2a367a2cab17a867a7acf1596505bf50.sample"
 
 [deps]
 
 source_file="res://assets/audio/arcade/nivel_nocaute.wav"
+dest_files=[ "res://.import/nivel_nocaute.wav-2a367a2cab17a867a7acf1596505bf50.sample" ]
 
 [params]
 

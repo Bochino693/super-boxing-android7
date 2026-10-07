@@ -2,10 +2,17 @@
 
 importer="texture"
 type="StreamTexture"
+path.s3tc="res://.import/pele_poros.png-0ab06cfa3b4cee69e8a36fe580763e0d.s3tc.stex"
+path.etc="res://.import/pele_poros.png-0ab06cfa3b4cee69e8a36fe580763e0d.etc.stex"
+metadata={
+"imported_formats": [ "s3tc", "etc" ],
+"vram_texture": true
+}
 
 [deps]
 
 source_file="res://assets/lutador3d/pele_poros.png"
+dest_files=[ "res://.import/pele_poros.png-0ab06cfa3b4cee69e8a36fe580763e0d.s3tc.stex", "res://.import/pele_poros.png-0ab06cfa3b4cee69e8a36fe580763e0d.etc.stex" ]
 
 [params]
 

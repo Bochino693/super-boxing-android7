@@ -2,10 +2,12 @@
 
 importer="wav"
 type="AudioStreamSample"
+path="res://.import/aviso.wav-e2d170a94ea1cfaa8254d23cfe0feff9.sample"
 
 [deps]
 
 source_file="res://assets/audio/aviso.wav"
+dest_files=[ "res://.import/aviso.wav-e2d170a94ea1cfaa8254d23cfe0feff9.sample" ]
 
 [params]
 

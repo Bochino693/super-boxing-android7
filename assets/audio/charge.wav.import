@@ -2,10 +2,12 @@
 
 importer="wav"
 type="AudioStreamSample"
+path="res://.import/charge.wav-ffc4f06ae916ca41abd901c150a776f2.sample"
 
 [deps]
 
 source_file="res://assets/audio/charge.wav"
+dest_files=[ "res://.import/charge.wav-ffc4f06ae916ca41abd901c150a776f2.sample" ]
 
 [params]
 

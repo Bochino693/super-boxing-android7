@@ -2,10 +2,12 @@
 
 importer="wav"
 type="AudioStreamSample"
+path="res://.import/count.wav-0657591ab9a62a690e6972019c563a10.sample"
 
 [deps]
 
 source_file="res://assets/audio/arcade/count.wav"
+dest_files=[ "res://.import/count.wav-0657591ab9a62a690e6972019c563a10.sample" ]
 
 [params]
 

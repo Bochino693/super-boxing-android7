@@ -46,6 +46,11 @@
         <meta-data
             android:name="org.godotengine.plugin.v1.${godotPluginName}"
             android:value="${godotPluginPackageName}.GodotAndroidPlugin"/>
+        <!-- O Arduino (saco e sensor) le e fecha a USB pelo PunchSerialSeguro
+        (Java, leitura com tempo limite): o PunchUsbSerial fica so com a camera. -->
+        <meta-data
+            android:name="org.godotengine.plugin.v1.PunchSerialSeguro"
+            android:value="${godotPluginPackageName}.PunchSerialSeguro"/>
     </application>
 
 </manifest>

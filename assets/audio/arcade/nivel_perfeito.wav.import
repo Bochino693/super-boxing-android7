@@ -2,10 +2,12 @@
 
 importer="wav"
 type="AudioStreamSample"
+path="res://.import/nivel_perfeito.wav-ead70ed113710cf1ebf2a528e9f3f6e8.sample"
 
 [deps]
 
 source_file="res://assets/audio/arcade/nivel_perfeito.wav"
+dest_files=[ "res://.import/nivel_perfeito.wav-ead70ed113710cf1ebf2a528e9f3f6e8.sample" ]
 
 [params]
 

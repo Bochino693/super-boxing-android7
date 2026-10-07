@@ -2,10 +2,12 @@
 
 importer="wav"
 type="AudioStreamSample"
+path="res://.import/medium.wav-6df653959695237c12568400404eacfe.sample"
 
 [deps]
 
 source_file="res://assets/audio/medium.wav"
+dest_files=[ "res://.import/medium.wav-6df653959695237c12568400404eacfe.sample" ]
 
 [params]
 

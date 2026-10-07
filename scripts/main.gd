@@ -113,8 +113,9 @@ const PASSOS = {
 	"vol_musica": Rect2(110, 1586, 400, LADO_BOTAO),
 	"vol_efeitos": Rect2(570, 1586, 400, LADO_BOTAO),
 	# --- página SACO
-	"curso_motor": Rect2(110, 700, 400, LADO_BOTAO),
-	"pausa_motor": Rect2(570, 700, 400, LADO_BOTAO),
+	"curso_motor": Rect2(110, 700, 250, LADO_BOTAO),
+	"sobe_motor": Rect2(415, 700, 250, LADO_BOTAO),
+	"pausa_motor": Rect2(720, 700, 250, LADO_BOTAO),
 	# A VELOCIDADE fica na última seção da página SACO (SACO_VEL_Y + 110).
 	"vel_sobe": Rect2(110, 1736, 400, LADO_BOTAO),
 	"vel_desce": Rect2(570, 1736, 400, LADO_BOTAO),
@@ -130,7 +131,7 @@ const PASSOS = {
 ## nasceu 246 px acima da moldura a que pertence, por cima da linha que
 ## diz onde o saco está — o mesmo defeito, no mesmo dia.
 const SACO_ESTADO_Y = 1120.0
-const SACO_ESTADO_H = 282.0
+const SACO_ESTADO_H = 304.0
 const SACO_SOCORRO_Y = SACO_ESTADO_Y + SACO_ESTADO_H + 24.0
 ## A seção da VELOCIDADE vem logo depois do socorro (176 de altura + 24).
 ## Os passos "vel_sobe"/"vel_desce" em PASSOS ficam em SACO_VEL_Y + 110.
@@ -182,11 +183,14 @@ const BOTOES_SIMPLES = {
 	"reconectar": Rect2(761, DADOS_APAGAR_Y + 70.0, 209, 60),
 	"teto_efeitos": Rect2(110, DADOS_RITMO_Y + 196.0, 400, 56),
 	# --- página SACO
-	"motor_ligado": Rect2(110, 400, 400, 64),
-	"motor_fim_curso": Rect2(570, 400, 400, 64),
-	"motor_desce": Rect2(110, 950, 275, 64),
-	"motor_sobe": Rect2(402, 950, 275, 64),
-	"motor_para": Rect2(695, 950, 275, 64),
+	"motor_ligado": Rect2(110, 400, 204, 64),
+	"motor_zerar": Rect2(328, 400, 204, 64),
+	"motor_ajuste_sobe": Rect2(546, 400, 204, 64),
+	"motor_ajuste_desce": Rect2(764, 400, 206, 64),
+	"motor_desce": Rect2(110, 950, 204, 64),
+	"motor_sobe": Rect2(328, 950, 204, 64),
+	"motor_teste": Rect2(546, 950, 204, 64),
+	"motor_para": Rect2(764, 950, 206, 64),
 	"motor_destrava": Rect2(110, SACO_SOCORRO_Y + 66.0, 400, 60),
 	# --- sempre visíveis
 	"padroes": Rect2(110, 1782, 400, 68),
@@ -211,9 +215,11 @@ const PAGINA_DO_CONTROLE = {
 	"vol_musica": 2, "vol_efeitos": 2, "testar_som": 2,
 	"zerar": 3, "zerar_stats": 3, "zerar_ranking": 3, "reconectar": 3,
 	"teto_efeitos": 3,
-	"motor_ligado": 4, "motor_fim_curso": 4, "curso_motor": 4, "pausa_motor": 4,
+	"motor_ligado": 4, "motor_zerar": 4, "motor_ajuste_sobe": 4, "motor_ajuste_desce": 4,
+	"curso_motor": 4, "sobe_motor": 4, "pausa_motor": 4,
 	"vel_sobe": 4, "vel_desce": 4,
 	"motor_desce": 4, "motor_sobe": 4, "motor_para": 4, "motor_destrava": 4,
+	"motor_teste": 4,
 }
 ## As abas, no topo da caixa.
 const ABA_LARGURA = 184.0
@@ -228,7 +234,9 @@ var central_aberta = false
 const SEGURAR_OK_S = 6.0
 const TECLAS_OK = [KEY_ENTER, KEY_KP_ENTER, KEY_SPACE]
 var _ok_segurado = -1.0
-var game_mode = "credit"
+## MODO LIVRE DE FÁBRICA (build 111): a máquina joga sem ficha até o
+## operador escolher 1 FICHA na Central.
+var game_mode = "free"
 var credits = 0
 var plays = 0
 ## AS CINCO MELHORES MARCAS, em ordem decrescente.
@@ -613,10 +621,17 @@ var _placa_achada_em = -99.0
 ## build 108 em diante precisa do V8: as versões até a V5 usavam outros
 ## pinos para a ponte H, e com elas a fiação nova deixa o motor morto.
 var firmware_versao = ""
-const FIRMWARE_DO_MOTOR = 8
+const FIRMWARE_DO_MOTOR = 10
+## Do V12 em diante a placa entende MOTOR,RECOLHE (subida inteira forçada).
+const FIRMWARE_DO_RECOLHE = 12
 var _motor_identificado_em = -99.0
+## A CONVERSA COM O MOTOR, para a Central mostrar se a placa responde:
+## quantas linhas MOTOR chegaram, quando chegou a última, e o teste.
+var _motor_relatos = 0
+var _motor_ultimo_relato_em = -99.0
+var _motor_teste_fase = ""
 ## A abertura confere de tempos em tempos que o saco segue recolhido.
-const VIGIA_DO_SACO_SEGUNDOS = 15.0
+const VIGIA_DO_SACO_SEGUNDOS = 6.0
 var _vigia_saco = 0.0
 
 ## 2) DURANTE O SOCO, A BUSCA ESPERA. Quando a porta não está aberta, o
@@ -758,6 +773,45 @@ var _aviso_saco_dado = false
 ## Depois de parar embaixo, o saco ainda balança; o firmware também
 ## ignora o feixe por 0,9 s depois do motor. Esperar um pouco mais.
 const SACO_ASSENTAR_SEGUNDOS = 1.0
+## O CICLO DO SACO NA PARTIDA (build 110). Um estado só, sempre conhecido,
+## e cada passagem tem uma condição que precisa ser VERDADE — não um
+## palpite nem um "já deu o tempo":
+##
+##   OCIOSO ............ fora da partida: o saco fica em cima (a vigia
+##                       confere e recolhe se alguém o baixar).
+##   TOPO_ANTES_DA_FOTO  START: o jogo manda subir SEMPRE e só conta 3-2-1
+##                       com o topo confirmado (sensor vendo o saco, ou a
+##                       placa dizendo que parou em cima).
+##   TOPO_ANTES_DE_DESCER foto tirada: confere o topo de novo. A descida é
+##                       por TEMPO (não há sensor embaixo); descer de fora
+##                       do topo desenrola corda demais, e dali em diante
+##                       cima e baixo ficam errados para sempre.
+##   DESCENDO .......... só com o topo confirmado; o soco espera a placa
+##                       dizer que parou EMBAIXO, e mais o saco assentar.
+##   EM_BAIXO .......... soco 1, soco 2. Se o saco sair de baixo (a placa
+##                       religou), o relógio do soco para até ele voltar.
+##   SUBINDO ........... 2 socos dados, nocaute do jogador, tempo esgotado
+##                       ou rodada cancelada.
+## Se uma confirmação não chega no tempo do curso com folga, a rodada NÃO
+## segue às cegas: o crédito volta, o saco é mandado para cima e a tela
+## diz o motivo. Sem motor (desligado na Central / placa sem motor), o
+## jogo é o mesmo de sempre.
+enum CicloSaco { OCIOSO, TOPO_ANTES_DA_FOTO, TOPO_ANTES_DE_DESCER, DESCENDO, EM_BAIXO, SUBINDO }
+const NOMES_DO_CICLO = [
+	"FORA DA PARTIDA — SACO EM CIMA",
+	"START — CONFERINDO O SACO EM CIMA",
+	"FOTO TIRADA — CONFERINDO O TOPO ANTES DE DESCER",
+	"DESCENDO PARA O SOCO",
+	"EMBAIXO — SOCO LIBERADO",
+	"SUBINDO — FIM DA PARTIDA",
+]
+var ciclo_saco = CicloSaco.OCIOSO
+var _ciclo_desde = 0.0
+## Desde quando o saco saiu de baixo no meio da partida (-1 = não saiu).
+var _saco_fora_de_baixo_desde = -1.0
+## No ringue, esperando o saco descer para liberar o soco.
+var _lutar_quando_descer = false
+
 ## O START CONFERE O SACO EM CIMA ANTES DA FOTO. Se o sensor de cima não
 ## está vendo o saco, o jogo manda subir e a contagem só começa quando ele
 ## chegar (ou quando o tempo de curso com folga acabar — a partida nunca
@@ -1520,24 +1574,19 @@ func _processar_contagem(delta: float) -> void:
 			)
 		clarao = 0.65
 		sons.play("shutter", -5.0)
-		# FOTO TIRADA: AGORA O SACO DESCE. É o único lugar do jogo que
-		# pede o saco embaixo.
-		saco.exigir(SacoMotor.Onde.EM_BAIXO)
-		_saco_descendo_desde = animation_time
+		# FOTO TIRADA. O saco continua EM CIMA: ele só desce quando a
+		# cena do ringue entrar (ver logo abaixo).
 		return
 	var atual = int(max(0, int(ceil(countdown_left))))
 	if atual > 0 and atual < last_count:
 		last_count = atual
 		sons.play("count")
 		sons.duck(8.0, 0.5)
-	if countdown_left <= -1.2 and _esperando_o_saco():
-		if not _aviso_saco_dado:
-			_aviso_saco_dado = true
-			_show_notice("PREPARE-SE: O SACO ESTÁ DESCENDO")
-		return
 	if countdown_left <= -1.2:
+		# A CENA DO RINGUE ENTRA E SÓ AGORA O SACO DESCE (3 s). O soco só é
+		# liberado com a placa confirmando o saco EMBAIXO (ver
+		# `_esperando_saco_no_ringue`).
 		state = GameDef.State.ARMED
-		_armar_sensor_optico()
 		_iniciar_transicao()
 		state_time = 0.0
 		espera_left = GameDef.ESPERA_DO_SOCO
@@ -1547,10 +1596,47 @@ func _processar_contagem(delta: float) -> void:
 		saturacao_recente = ""
 		_ultima_reacao = ""
 		_soco_na_tela_em = _tempo_do_ataque()
-		sons.play("round_bell", -2.0)
-		sons.play("go")
 		sons.music(-19.0)
 		moldura.set_estado(LedFrame.ARMADA)
+		if _motor_em_uso():
+			_lutar_quando_descer = true
+			_pedir_descida_do_saco()
+			_show_notice("PREPARE-SE: O SACO ESTÁ DESCENDO")
+		else:
+			_lutar_quando_descer = false
+			_comecar_a_luta()
+
+## O SACO CHEGOU EMBAIXO (ou não há motor): agora vale soco.
+func _comecar_a_luta() -> void:
+	_lutar_quando_descer = false
+	_armar_sensor_optico()
+	espera_left = GameDef.ESPERA_DO_SOCO
+	_soco_na_tela_em = _tempo_do_ataque()
+	sons.play("round_bell", -2.0)
+	sons.play("go")
+
+## NO RINGUE, ESPERANDO O SACO DESCER. Devolve true enquanto o soco ainda
+## não vale (o relógio da rodada fica parado e o lutador não ataca).
+func _esperando_saco_no_ringue() -> bool:
+	if not _lutar_quando_descer:
+		return false
+	if not _motor_em_uso():
+		_comecar_a_luta()
+		return false
+	if ciclo_saco == CicloSaco.TOPO_ANTES_DE_DESCER:
+		if saco.topo_confirmado():
+			saco.exigir(SacoMotor.Onde.EM_BAIXO)
+			_saco_descendo_desde = animation_time
+			_mudar_ciclo(CicloSaco.DESCENDO, "topo confirmado no ringue")
+		elif saco.desistiu() or animation_time - _ciclo_desde > _teto_da_subida():
+			_abortar_rodada_pelo_saco("O SACO NÃO VOLTOU PARA CIMA ANTES DE DESCER")
+		return true
+	if _esperando_o_saco():
+		if state == GameDef.State.ARMED:
+			_show_notice("PREPARE-SE: O SACO ESTÁ DESCENDO")
+		return true
+	_comecar_a_luta()
+	return false
 
 ## O SOCO ESPERA O SACO CHEGAR EMBAIXO.
 ##
@@ -1559,12 +1645,14 @@ func _processar_contagem(delta: float) -> void:
 ## assentar — e nunca mais que o curso inteiro mais uma folga: um saco
 ## que não chega não pode prender a partida para sempre.
 func _motor_em_uso() -> bool:
-	return saco.ligado and saco.placa_tem_motor and link != null and link.is_open()
+	return saco.ligado and saco.placa_tem_motor and link != null and link.is_open() \
+		and _firmware_do_motor_ok()
 
-## O SACO PRECISA SUBIR ANTES DA FOTO? Só se há motor respondendo e o
-## sensor de cima NÃO está vendo o saco agora.
-func _saco_precisa_subir() -> bool:
-	return _motor_em_uso() and not saco.sensor_ve_em_cima()
+## SÓ COM O FIRMWARE V10 O MOTOR ANDA. O V9 e anteriores usam o sensor de
+## cima e entendem a configuração de outro jeito: com eles o jogo NÃO
+## mexe no motor e a tela pede para gravar o V10.
+func _firmware_do_motor_ok() -> bool:
+	return _numero_do_firmware() >= FIRMWARE_DO_MOTOR
 
 ## A espera do START acabou? Chegou em cima, ou não há mais motor com quem
 ## falar, ou passou o curso inteiro com folga — aí a rodada segue e a tela
@@ -1572,33 +1660,92 @@ func _saco_precisa_subir() -> bool:
 func _saco_recolhido() -> bool:
 	if not _motor_em_uso():
 		return true
-	if saco.esta_em_cima():
+	if saco.topo_confirmado():
 		return true
-	var teto = saco.curso_ms * 1.5 / 1000.0 + 3.0
-	if saco.desistiu() or animation_time - _recolhendo_desde > teto:
-		_show_notice(saco.ficha() if saco.subida_sem_sensor or saco.sensor_cima_suspeito
-			else "O SACO NÃO SUBIU — CONFIRA O MOTOR NA CENTRAL")
-		return true
+	if saco.desistiu() or animation_time - _recolhendo_desde > _teto_da_subida():
+		_abortar_rodada_pelo_saco("O SACO NÃO CONFIRMOU QUE ESTÁ EM CIMA")
 	return false
 
+## Quanto esperar uma subida: o teto do firmware (curso + 50%) com folga.
+func _teto_da_subida() -> float:
+	return (saco.curso_sobe_ms + saco.pausa_ms) / 1000.0 + 3.0
+
+## Quanto esperar a descida (o curso inteiro, com folga).
+func _teto_da_descida() -> float:
+	return (saco.curso_ms + saco.pausa_ms) / 1000.0 + 3.0
+
+## Uma passagem do ciclo: guardada na caixa-preta (Diário) e no console.
+func _mudar_ciclo(novo: int, motivo: String) -> void:
+	if novo == ciclo_saco:
+		return
+	var linha = "SACO: %s -> %s (%s)" % [NOMES_DO_CICLO[ciclo_saco], NOMES_DO_CICLO[novo], motivo]
+	print(linha)
+	Diario.marca(linha)
+	ciclo_saco = novo
+	_ciclo_desde = animation_time
+
+## A RODADA NÃO SEGUE ÀS CEGAS. Sem a confirmação do saco, devolve o
+## crédito, manda o saco para cima e diz o motivo.
+func _abortar_rodada_pelo_saco(motivo: String) -> void:
+	print("SACO: rodada cancelada — " + motivo)
+	Diario.marca("SACO: rodada cancelada — " + motivo)
+	sons.play("error", -4.0)
+	_devolver_credito()
+	_entrar_em_abertura()
+	_show_notice(motivo + " — CRÉDITO DEVOLVIDO • VEJA A CENTRAL, ABA SACO")
+
+## FOTO TIRADA: o saco só desce de cima. Topo confirmado = desce já;
+## senão sobe primeiro e a descida sai quando o topo for confirmado.
+func _pedir_descida_do_saco() -> void:
+	_saco_em_baixo_desde = -1.0
+	if not _motor_em_uso():
+		saco.exigir(SacoMotor.Onde.EM_BAIXO)
+		_saco_descendo_desde = animation_time
+		return
+	if saco.topo_confirmado():
+		saco.exigir(SacoMotor.Onde.EM_BAIXO)
+		_saco_descendo_desde = animation_time
+		_mudar_ciclo(CicloSaco.DESCENDO, "foto tirada, topo confirmado")
+	else:
+		saco.exigir(SacoMotor.Onde.EM_CIMA)
+		_saco_descendo_desde = -1.0
+		_mudar_ciclo(CicloSaco.TOPO_ANTES_DE_DESCER, "foto tirada, saco fora do topo")
+
+## FIM DA PARTIDA (dois socos, nocaute, tempo, cancelada): o saco sobe.
+func _subir_saco_no_fim(motivo: String) -> void:
+	if ciclo_saco == CicloSaco.SUBINDO:
+		return
+	saco.exigir(SacoMotor.Onde.EM_CIMA)
+	_mudar_ciclo(CicloSaco.SUBINDO, motivo)
+
 func _esperando_o_saco() -> bool:
-	if _saco_descendo_desde < 0.0 or link == null or not link.is_open():
-		return false
-	if not saco.vale_esperar():
-		return false
-	if animation_time - _saco_descendo_desde > saco.curso_ms / 1000.0 + 2.5:
-		return false
-	if not saco.em_baixo_parado():
-		_saco_em_baixo_desde = -1.0
+	if ciclo_saco == CicloSaco.TOPO_ANTES_DE_DESCER:
 		return true
-	if saco.sensor_cima_suspeito and not _aviso_sensor_cima_dado:
-		_aviso_sensor_cima_dado = true
-		_show_notice("SENSOR DE CIMA COM DEFEITO — O SACO NÃO VAI SUBIR")
+	if _saco_descendo_desde < 0.0 or not _motor_em_uso():
+		return false
+	if not saco.ligado:
+		return false
+	if not saco.baixo_confirmado():
+		_saco_em_baixo_desde = -1.0
+		if saco.desistiu() or animation_time - _saco_descendo_desde > _teto_da_descida():
+			_abortar_rodada_pelo_saco("O SACO NÃO CONFIRMOU QUE DESCEU")
+		return true
 	if _saco_em_baixo_desde < 0.0:
 		_saco_em_baixo_desde = animation_time
-	return animation_time - _saco_em_baixo_desde < SACO_ASSENTAR_SEGUNDOS
+	if animation_time - _saco_em_baixo_desde < SACO_ASSENTAR_SEGUNDOS:
+		return true
+	_mudar_ciclo(CicloSaco.EM_BAIXO, "placa confirmou embaixo e o saco assentou")
+	return false
 
 func _processar_armado(delta: float) -> void:
+	# ACABOU DE ENTRAR NO RINGUE: o saco está descendo.
+	if _esperando_saco_no_ringue():
+		return
+	# O SACO PRECISA CONTINUAR EMBAIXO. Se ele sair (a placa religou e
+	# recolheu, alguém mexeu), o relógio do soco PARA, o jogo pede o saco
+	# embaixo de novo e a tela avisa; sem volta no tempo, a rodada fecha.
+	if not _jogador_nocauteado and _saco_saiu_de_baixo():
+		return
 	_passo_do_ko(delta)
 	if _jogador_nocauteado:
 		# No chão: espera a luva, o "K.O." e a queda, e encerra a rodada.
@@ -1641,6 +1788,27 @@ func _processar_armado(delta: float) -> void:
 			_entrar_em_abertura()
 		else:
 			_entrar_em_resultado()
+
+func _saco_saiu_de_baixo() -> bool:
+	if ciclo_saco != CicloSaco.EM_BAIXO or not _motor_em_uso():
+		_saco_fora_de_baixo_desde = -1.0
+		return false
+	if saco.em_baixo_parado():
+		_saco_fora_de_baixo_desde = -1.0
+		return false
+	if _saco_fora_de_baixo_desde < 0.0:
+		_saco_fora_de_baixo_desde = animation_time
+		print("SACO: saiu de baixo no meio da partida — relógio do soco parado")
+		Diario.marca("SACO: saiu de baixo no meio da partida")
+		saco.quero(SacoMotor.Onde.EM_BAIXO)
+	_show_notice("AGUARDE: O SACO ESTÁ VOLTANDO PARA BAIXO")
+	if animation_time - _saco_fora_de_baixo_desde > _teto_da_descida():
+		_saco_fora_de_baixo_desde = -1.0
+		if socos.empty():
+			_abortar_rodada_pelo_saco("O SACO NÃO VOLTOU PARA BAIXO")
+		else:
+			_entrar_em_resultado(true)
+	return true
 
 ## QUANDO O LUTADOR VEM PARA CIMA, conforme o que o jogador acabou de
 ## fazer: nada ainda (a primeira espera), um soco fraco (ele desdenhou e
@@ -1713,7 +1881,7 @@ func _fechar_rodada() -> void:
 	# rodada foi encerrada), e daqui em diante a tela é placar e ranking.
 	# Subir agora deixa o motor terminar o curso enquanto o jogador lê a
 	# nota, em vez de fazer a próxima pessoa esperar por ele.
-	saco.exigir(SacoMotor.Onde.EM_CIMA)
+	_subir_saco_no_fim("fim da rodada")
 	var melhor = 0
 	var melhor_v = 0.0
 	var simulado = false
@@ -2312,10 +2480,15 @@ func _iniciar_rodada() -> void:
 	_aviso_sensor_cima_dado = false
 	# PRIMEIRO O SACO EM CIMA. Se ele não está enrolado (o sensor de cima
 	# não o vê), sobe agora; a contagem e a foto esperam por ele.
-	_recolhendo_saco = _saco_precisa_subir()
+	# Build 110: com motor, o pedido de SUBIR sai SEMPRE (a placa responde a
+	# verdade na hora se ele já estiver lá) e a contagem só começa com o
+	# topo CONFIRMADO.
+	_recolhendo_saco = _motor_em_uso()
 	_recolhendo_desde = animation_time
+	_saco_fora_de_baixo_desde = -1.0
 	if _recolhendo_saco:
 		saco.exigir(SacoMotor.Onde.EM_CIMA)
+		_mudar_ciclo(CicloSaco.TOPO_ANTES_DA_FOTO, "START")
 	_discard_round_photo()
 	intro_active = false
 	sons.stop("score_loop")
@@ -2415,7 +2588,19 @@ func _entrar_em_abertura() -> void:
 	# FORA DA PARTIDA O SACO FICA ENROLADO. Qualquer caminho de volta à
 	# abertura (rodada encerrada, tempo esgotado, cancelada) recolhe o
 	# saco; repetido depois do `_fechar_rodada`, não faz nada.
-	saco.quero(SacoMotor.Onde.EM_CIMA)
+	# Build 110: vindo do meio de uma partida (cancelada, tempo, abortada)
+	# o pedido de SUBIR sai na hora, mesmo que o jogo "ache" que está lá.
+	# Build 111: a tela da ficha SEMPRE manda SUBIR (o pedido sai mesmo que
+	# o jogo ache que o saco já está lá; a placa só anda o que falta).
+	if ciclo_saco == CicloSaco.SUBINDO and saco.andando():
+		saco.quero(SacoMotor.Onde.EM_CIMA)
+	else:
+		saco.exigir(SacoMotor.Onde.EM_CIMA)
+	_mudar_ciclo(CicloSaco.OCIOSO, "abertura")
+	_recolhendo_saco = false
+	_saco_descendo_desde = -1.0
+	_saco_fora_de_baixo_desde = -1.0
+	_lutar_quando_descer = false
 	state = GameDef.State.IDLE
 	state_time = 0.0
 	verdict_time = -1.0
@@ -3014,6 +3199,8 @@ func _nocaute_do_jogador() -> void:
 	if _jogador_nocauteado:
 		return
 	_jogador_nocauteado = true
+	# NOCAUTE: o saco sobe JÁ, enquanto a queda é mostrada.
+	_subir_saco_no_fim("jogador nocauteado")
 	vida_jogador = 0.0
 	golpe_registrado = true   # nenhum soco conta mais nesta rodada
 	sons.stop("torcida_incentivo")
@@ -3679,7 +3866,20 @@ func _hora_de_procurar() -> bool:
 ## porta cair no meio de um curso, a placa desliga o motor sozinha pelo
 ## tempo, e este lado apenas para de pedir.
 func _passo_do_motor() -> void:
-	if link == null or not link.is_open():
+	if link == null or not link.is_open() or not _firmware_do_motor_ok():
+		return
+	# VOLTA DA ENERGIA (build 111): na primeira chegada à tela da ficha
+	# depois de ligar (ou de a placa religar), o saco sobe o curso INTEIRO,
+	# mesmo que a conta da placa diga "em cima" — se faltou luz com ele no
+	# meio, ele volta enrolado e a conta zera. Só depois da config do
+	# motor chegar à placa (ela para o motor ao receber CONFIG).
+	if saco.recolher_total_pendente and saco.ligado and state == GameDef.State.IDLE \
+			and ciclo_saco == CicloSaco.OCIOSO and not placa_calibrando \
+			and _numero_do_firmware() >= FIRMWARE_DO_RECOLHE \
+			and animation_time - _config_enviada_em > 0.5:
+		print("SACO: tela da ficha depois de ligar — subida inteira forçada (RECOLHE)")
+		Diario.marca("SACO: RECOLHE (subida inteira forçada)")
+		link.send_line(saco.recolher_total())
 		return
 	var linha = saco.passo()
 	if not linha.empty():
@@ -4145,6 +4345,22 @@ func _on_serial_line(line: String) -> void:
 			# conta o curso, lê o fim de curso e desliga o motor é o
 			# firmware — inclusive se este programa fechar no meio.
 			saco.receber(msg)
+			_motor_relatos += 1
+			_motor_ultimo_relato_em = animation_time
+		"SACO":
+			saco.permil = int(msg["permil"])
+		"AVISO":
+			if str(msg.get("code", "")) == "DESCE_SO_DO_TOPO":
+				print("SACO: a placa sobe ate o topo antes de descer (AVISO,DESCE_SO_DO_TOPO)")
+				Diario.marca("SACO: placa subiu ate o topo antes de descer")
+		"TESTE":
+			# O TESTE DO MOTOR (firmware V9): desce 1,5 s, pausa, sobe.
+			_motor_teste_fase = str(msg.get("fase", ""))
+			_motor_ultimo_relato_em = animation_time
+			match _motor_teste_fase:
+				"DESCE": _show_notice("TESTE: O MOTOR ESTÁ DESCENDO — OLHE O SACO")
+				"SOBE": _show_notice("TESTE: O MOTOR ESTÁ SUBINDO — OLHE O SACO")
+				"FIM": _show_notice("TESTE TERMINADO — SE O SACO NÃO MEXEU, É LIGAÇÃO OU FONTE")
 		"PONG":
 			if not porta_atual.empty() and not serial_status.begins_with("CONECTADO"):
 				serial_status = "CONECTADO %s" % porta_atual
@@ -4391,6 +4607,10 @@ func _receber_hit(msg: Dictionary) -> void:
 			else "a máquina não está esperando soco (estado %d)" % state
 		)
 		return
+	# 1b) O SACO AINDA ESTÁ DESCENDO: o soco ainda não vale.
+	if _lutar_quando_descer:
+		ultima_recusa = "o jogo ignorou: o saco ainda está descendo"
+		return
 	# 2) UM GOLPE POR RODADA.
 	if golpe_registrado:
 		ultima_recusa = "o jogo ignorou: esta tentativa já teve o golpe dela"
@@ -4515,9 +4735,10 @@ func _enviar_config() -> void:
 		# a largura da palheta: um número que o operador regula uma vez e
 		# a placa precisa conhecer. Mandar junto garante que a placa
 		# nunca fica com um curso antigo depois de uma reconexão.
-		link.send_line(ArduinoProtocol.build_motor_config(
-			saco.curso_ms, saco.pausa_ms, saco.fim_de_curso, saco.vel_sobe, saco.vel_desce
-		))
+		if _firmware_do_motor_ok():
+			link.send_line(ArduinoProtocol.build_motor_config(
+				saco.curso_ms, saco.pausa_ms, saco.curso_sobe_ms, saco.vel_sobe, saco.vel_desce
+			))
 		link.send_line(ArduinoProtocol.build_motor("ESTADO"))
 
 ## SÓ O AJUSTE DO MOTOR, sem arrastar junto a config do sensor.
@@ -4526,9 +4747,9 @@ func _enviar_config() -> void:
 ## placa reabre a janela de medida ao receber CONFIG, e fazer isso no
 ## meio de uma partida perderia o soco de quem está batendo.
 func _mandar_config_do_motor() -> void:
-	if link != null and link.is_open():
+	if link != null and link.is_open() and _firmware_do_motor_ok():
 		link.send_line(ArduinoProtocol.build_motor_config(
-			saco.curso_ms, saco.pausa_ms, saco.fim_de_curso, saco.vel_sobe, saco.vel_desce
+			saco.curso_ms, saco.pausa_ms, saco.curso_sobe_ms, saco.vel_sobe, saco.vel_desce
 		))
 
 ## O NÚMERO DA VERSÃO do firmware ("V8-MH-LM393" → 8; -1 = não disse).
@@ -4554,27 +4775,17 @@ func _diagnostico_do_motor() -> Array:
 	if link == null or not link.available() or not link.is_open():
 		return ["SEM ARDUINO CONECTADO", "nenhum comando chega ao motor", "Confira o cabo USB do Nano e se o Android liberou o Arduino.", true]
 	if not firmware_optico_identificado:
-		return ["O ARDUINO NÃO SE IDENTIFICOU", "aguardando o READY da placa", "Grave no Nano o ARDUINO_SENSOR_DE_FEIXE_LM393.ino (V8).", true]
+		return ["O ARDUINO NÃO SE IDENTIFICOU", "aguardando o READY da placa", "Grave no Nano o ARDUINO_SENSOR_DE_FEIXE_LM393.ino (V12).", true]
 	var n = _numero_do_firmware()
 	if n >= 0 and n < FIRMWARE_DO_MOTOR:
 		return [
-			"FIRMWARE ANTIGO NO ARDUINO (V%d)" % n, "grave o V8",
-			"Grave no Nano o ARDUINO_SENSOR_DE_FEIXE_LM393.ino V8 (o antigo usa outros pinos ou trava a subida).", true
+			"FIRMWARE ANTIGO NO ARDUINO (V%d)" % n, "grave o V12",
+			"Grave no Nano o ARDUINO_SENSOR_DE_FEIXE_LM393.ino V12 (sem sensor: descida e subida por tempo).", true
 		]
 	if not saco.placa_tem_motor and animation_time - _motor_identificado_em > 5.0:
-		return ["A PLACA NÃO RESPONDE AO MOTOR", "nenhuma linha MOTOR veio", "Grave o firmware V8 no Nano.", true]
+		return ["A PLACA NÃO RESPONDE AO MOTOR", "nenhuma linha MOTOR veio", "Grave o firmware V12 no Nano.", true]
 	if saco.desistiu():
 		return ["A PLACA NÃO CONFIRMOU O CURSO", "o jogo parou de pedir", "Confira o cabo USB e toque em TENTAR DE NOVO.", true]
-	if saco.sensor_estado == 1 or saco.sensor_cima_suspeito:
-		return [
-			"SENSOR DE CIMA PRESO EM \"CHEGOU\"", "o saco sobe PELO TEMPO",
-			"Fio OUT solto do D11, sensor sem 5V ou vendo outra coisa. Mão na frente: \"sensor de CIMA\" muda?", false
-		]
-	if saco.sensor_estado == 2 or saco.subida_sem_sensor:
-		return [
-			"SENSOR DE CIMA NÃO VÊ O SACO", "o saco sobe PELO TEMPO",
-			"Aproxime o alvo branco do sensor ou gire o trimpot dele. Acerte o TEMPO DE CURSO.", false
-		]
 	return [
 		"MOTOR OK — A PLACA ESTÁ MANDANDO", "",
 		"Placa diz SUBINDO e o saco parado? R_EN/L_EN no 5V, GND comum, fonte em B+/B-, D9→RPWM, D10→LPWM.", false
@@ -4607,6 +4818,9 @@ func _mando_do_motor(onde: int) -> void:
 		return
 	if link == null or not link.is_open():
 		_show_notice("SEM PLACA — O MOTOR NÃO RESPONDE")
+		return
+	if not _firmware_do_motor_ok():
+		_show_notice("GRAVE O FIRMWARE V12 NO ARDUINO — O MOTOR SÓ ANDA COM ELE")
 		return
 	# EXIGIR, não QUERER: o botão sempre manda o comando, mesmo que o
 	# jogo ache que o saco já está lá. Era aqui que o SUBIR "não fazia
@@ -4978,16 +5192,42 @@ func _click_central(p: Vector2) -> void:
 				link.send_line(freio)
 		_salvar()
 		_show_notice("MOTOR DO SACO LIGADO" if saco.ligado else "MOTOR DO SACO DESLIGADO")
-	elif _tocou("motor_fim_curso", p):
-		saco.fim_de_curso = not saco.fim_de_curso
-		_mandar_config_do_motor()
-		_salvar()
-		_show_notice(
-			"USANDO OS FINS DE CURSO" if saco.fim_de_curso
-			else "SÓ POR TEMPO — SEM FIM DE CURSO"
-		)
+	elif _tocou("motor_zerar", p):
+		# "O SACO ESTÁ EM CIMA AGORA": a placa zera a conta (só parado).
+		if link == null or not link.is_open():
+			_show_notice("SEM ARDUINO")
+		elif not _firmware_do_motor_ok():
+			_show_notice("GRAVE O FIRMWARE V12 NO ARDUINO")
+		elif saco.andando():
+			_show_notice("ESPERE O MOTOR PARAR PARA MARCAR EM CIMA")
+		else:
+			link.send_line(ArduinoProtocol.build_motor("ZERA"))
+			saco.exigir(SacoMotor.Onde.EM_CIMA)
+			_show_notice("MARCADO: O SACO ESTÁ EM CIMA")
+	elif _tocou("motor_ajuste_sobe", p) or _tocou("motor_ajuste_desce", p):
+		# UM TOQUE de 0,2 s que NÃO mexe na conta: para alinhar o saco no
+		# topo antes de marcar EM CIMA.
+		if link == null or not link.is_open():
+			_show_notice("SEM ARDUINO")
+		elif not _firmware_do_motor_ok():
+			_show_notice("GRAVE O FIRMWARE V12 NO ARDUINO")
+		elif saco.andando():
+			_show_notice("ESPERE O MOTOR PARAR")
+		else:
+			var sobe = _tocou("motor_ajuste_sobe", p)
+			link.send_line(ArduinoProtocol.build_motor("AJUSTE,SOBE" if sobe else "AJUSTE,DESCE"))
+			_show_notice("AJUSTE: UM TOQUE PARA " + ("CIMA" if sobe else "BAIXO"))
 	elif _tocou("motor_desce", p):
 		_mando_do_motor(SacoMotor.Onde.EM_BAIXO)
+	elif _tocou("motor_teste", p):
+		# O TESTE DA LIGAÇÃO: vai direto à placa, sem passar pela lógica
+		# de posição. Se ele não mexe o saco, o defeito é de fio ou fonte.
+		if link == null or not link.is_open():
+			_show_notice("SEM ARDUINO — USE O AUTOTESTE: SEGURE START E LIGUE O ARDUINO")
+		else:
+			link.send_line(ArduinoProtocol.build_motor("TESTE"))
+			_motor_teste_fase = "PEDIDO"
+			_show_notice("TESTE PEDIDO: DESCE 1,5 s E SOBE — OLHE O SACO")
 	elif _tocou("motor_sobe", p):
 		_mando_do_motor(SacoMotor.Onde.EM_CIMA)
 	elif _tocou("motor_para", p):
@@ -5170,7 +5410,7 @@ func _click_central(p: Vector2) -> void:
 		_iniciar_serial()
 		_show_notice("PROCURANDO O ARDUINO DE NOVO, DO ZERO")
 	elif _tocou("padroes", p):
-		game_mode = "credit"
+		game_mode = "free"
 		porta_configurada = ""
 		hit_min_speed = ScoreCurve.DEFAULT_MIN_SPEED
 		hit_max_speed = ScoreCurve.DEFAULT_MAX_SPEED
@@ -5240,7 +5480,12 @@ func _ajustar(chave: String, direcao: int) -> void:
 		# número maior na Central viraria uma promessa que a placa não
 		# cumpre — e o operador confiaria nela.
 		"curso_motor":
-			saco.curso_ms = int(clamp(saco.curso_ms + direcao * 250, 500, 15000))
+			saco.curso_ms = int(clamp(saco.curso_ms + direcao * 100, 500, 15000))
+			_mandar_config_do_motor()
+		# A SUBIDA É O INVERSO DA DESCIDA: o tempo de subir o curso inteiro.
+		# Ajuste até o saco voltar exatamente ao mesmo ponto em cima.
+		"sobe_motor":
+			saco.curso_sobe_ms = int(clamp(saco.curso_sobe_ms + direcao * 100, 500, 15000))
 			_mandar_config_do_motor()
 		"pausa_motor":
 			saco.pausa_ms = int(clamp(saco.pausa_ms + direcao * 50, 100, 2000))
@@ -5314,6 +5559,11 @@ func _carregar() -> void:
 	if data.empty():
 		return
 	game_mode = str(data.get("mode", game_mode))
+	# Build 111: o padrão passou a ser o MODO LIVRE. Quem atualiza vem com
+	# "credit" gravado só porque era o padrão antigo: vira livre UMA vez;
+	# depois vale o que o operador escolher na Central.
+	if not bool(data.get("modo_livre_padrao", false)):
+		game_mode = "free"
 	saco.carregar(data.get("saco_motor", {}))
 	credits = int(data.get("credits", credits))
 	plays = int(data.get("plays", plays))
@@ -5415,6 +5665,7 @@ func _carregar() -> void:
 func _salvar() -> void:
 	SettingsStore.save_data_async({
 		"mode": game_mode,
+		"modo_livre_padrao": true,
 		"credits": credits,
 		"plays": plays,
 		"ranking": ranking,
@@ -5646,24 +5897,26 @@ func _pagina_recordes(alpha: float) -> void:
 		var i = page * 5 + row
 		if i >= ranking.size():
 			break
-		var y = 466.0 + row * 116.0
+		var y = 462.0 + row * 136.0
 		var cor = _cor_da_posicao(i + 1)
-		var linha = Rect2(MARGEM + 40.0, y, LARGURA_UTIL - 80.0, 98.0)
+		var linha = Rect2(MARGEM + 30.0, y, LARGURA_UTIL - 60.0, 120.0)
 		var vazia = i >= ranking.size()
 		_cartao(linha, Paleta.CARTAO if not vazia else Paleta.VAZIO, Paleta.CARTAO_BORDA, alpha, 2.0)
 		# Tarja lateral colorida: identifica a posição sem pintar a linha.
 		draw_rect(Rect2(linha.position, Vector2(9.0, linha.size.y)), Compat.cor(cor, alpha))
-		var meio = linha.position.y + 64.0
-		_texto("%dº" % (i + 1), meio, 34, Compat.cor(cor, alpha), Compat.CENTRO, linha.position.x + 30.0, 90.0)
+		var meio = linha.position.y + 78.0
+		_texto("%dº" % (i + 1), meio, 46, Compat.cor(cor, alpha), Compat.CENTRO, linha.position.x + 24.0, 110.0)
 		if i < 3:
-			Icones.trofeu(self, Vector2(linha.position.x + 168.0, meio - 11.0), 19.0, Compat.cor(cor, alpha))
+			Icones.trofeu(self, Vector2(linha.position.x + 176.0, meio - 14.0), 24.0, Compat.cor(cor, alpha))
 		if vazia:
 			_texto("—", meio, 34, Compat.cor(Paleta.TINTA_LEVE, alpha), Compat.DIREITA, linha.position.x, linha.size.x - 40.0)
 		else:
-			_draw_player_photo(Rect2(linha.position + Vector2(210.0, 11.0), Vector2(76.0, 76.0)), str(ranking[i].get("photo_path", "")), alpha)
-			_texto("%04d" % RankingStore.score_at(ranking, i), meio, 44, Compat.cor(Paleta.TINTA, alpha), Compat.DIREITA, linha.position.x, linha.size.x - 40.0)
-			_texto("PONTOS", meio, 18, Compat.cor(Paleta.TINTA_LEVE, alpha), Compat.DIREITA, linha.position.x, linha.size.x - 190.0)
-	_texto("POSIÇÕES %02d–%02d" % [page * 5 + 1, int(min(page * 5 + 5, ranking.size()))], 1152.0, 26, Compat.cor(Paleta.CIANO, alpha))
+			_draw_player_photo(Rect2(linha.position + Vector2(214.0, 11.0), Vector2(98.0, 98.0)), str(ranking[i].get("photo_path", "")), alpha)
+			var nota = RankingStore.score_at(ranking, i)
+			_texto(ScoreTier.nome_de(nota), meio - 4.0, _tamanho_que_cabe(ScoreTier.nome_de(nota), 28, 250.0), Compat.cor(Paleta.texto_sobre(Paleta.CARTAO, ScoreTier.cor_de(nota)), alpha), Compat.ESQUERDA, linha.position.x + 336.0, 250.0)
+			_texto("%04d" % nota, meio + 4.0, 60, Compat.cor(Paleta.TINTA, alpha), Compat.DIREITA, linha.position.x, linha.size.x - 34.0)
+			_texto("PONTOS", meio + 4.0, 22, Compat.cor(Paleta.TINTA_LEVE, alpha), Compat.DIREITA, linha.position.x, linha.size.x - 212.0)
+	_texto("POSIÇÕES %02d–%02d" % [page * 5 + 1, int(min(page * 5 + 5, ranking.size()))], 1186.0, 30, Compat.cor(Paleta.CIANO, alpha))
 
 ## Página 3 — os três passos, do tamanho de quem lê de longe.
 func _pagina_como_jogar(alpha: float) -> void:
@@ -6008,6 +6261,22 @@ func _titulo_da_abertura_visivel() -> bool:
 		and int(state_time / ABERTURA_DURACAO) % ABERTURA_CAPITULOS == 0 \
 		and not central_aberta and not calib_ativo and transicao < 0.0
 
+## O ARDUINO AINDA COM O FIRMWARE ANTIGO (V9 ou antes, com o sensor de
+## cima): o saco NÃO vai descer, porque o jogo não manda o motor de um
+## firmware que entende os comandos de outro jeito. O aviso é GRANDE, na
+## abertura, para ninguém achar que é defeito do motor.
+func _aviso_do_firmware_antigo() -> void:
+	if not saco.ligado or not firmware_optico_identificado or _firmware_do_motor_ok():
+		return
+	var n = _numero_do_firmware()
+	var caixa = Rect2(60.0, 1236.0, 960.0, 250.0)
+	var pisca = 0.75 + 0.25 * sin(animation_time * 4.0)
+	_cartao(caixa, Color("2a0610"), Compat.cor(Paleta.VERMELHO, pisca), 1.0, 5.0)
+	_texto("ARDUINO COM FIRMWARE ANTIGO%s" % ((" (V%d)" % n) if n >= 0 else ""), caixa.position.y + 64.0, 40, Paleta.VERMELHO, Compat.CENTRO, caixa.position.x, caixa.size.x)
+	_texto("O SACO NÃO VAI DESCER NEM SUBIR", caixa.position.y + 120.0, 34, Paleta.CREME, Compat.CENTRO, caixa.position.x, caixa.size.x)
+	_texto("GRAVE O FIRMWARE V12 NO ARDUINO (pasta ARDUINO_SENSOR_DE_FEIXE_LM393)", caixa.position.y + 172.0, _tamanho_que_cabe("GRAVE O FIRMWARE V12 NO ARDUINO (pasta ARDUINO_SENSOR_DE_FEIXE_LM393)", 24, caixa.size.x - 40.0), Paleta.AMBAR, Compat.CENTRO, caixa.position.x, caixa.size.x)
+	_texto("com o saco ENROLADO EM CIMA", caixa.position.y + 214.0, 24, Paleta.TINTA_LEVE, Compat.CENTRO, caixa.position.x, caixa.size.x)
+
 func _draw_show_idle() -> void:
 	var chegada = ease(abertura_chegada, 0.4)
 	_marca_da_casa(146.0, 132.0, chegada)
@@ -6023,6 +6292,7 @@ func _draw_show_idle() -> void:
 		_:
 			_capitulo_da_marca(entrada)
 	_pontos_do_capitulo(capitulo, chegada)
+	_aviso_do_firmware_antigo()
 	var pulse = 0.8 + 0.2 * sin(animation_time * 2.6)
 	# A MÁQUINA NÃO CONVIDA PARA O QUE ELA NÃO PODE FAZER.
 	#
@@ -6551,11 +6821,12 @@ func _cor_da_posicao(posicao: int) -> Color:
 ## Nada é desenhado por cima da tabela depois que ela aparece: os fogos
 ## do resultado param (ver `_manter_festa`) e o confete mora na camada
 ## de fundo dos efeitos.
-const LINHA_ALTURA = 126.0
+## Build 110: linhas maiores (mais visíveis de longe) — 7 por vez.
+const LINHA_ALTURA = 148.0
 const LISTA_TOPO = 336.0
-const LINHAS_VISIVEIS = 8
+const LINHAS_VISIVEIS = 7
 const LISTA_RECORTE_TOPO = 330.0
-const LISTA_RECORTE_BASE = 1350.0
+const LISTA_RECORTE_BASE = 1400.0
 const LINHA_CASCATA = 0.035
 const LINHA_ENTRADA = 0.24
 const LINHA_DESLIZE = 36.0
@@ -6654,7 +6925,7 @@ func _ranking_linha(i: int, y: float, entrada: float, e_do_jogador: bool, destaq
 		return
 		_placa(card, 10.0, Compat.cor("0f081a", tinta * 0.85))
 		draw_rect(card, Compat.cor("291846", tinta * 0.8), false, 1.5)
-		_texto("%02d" % posicao, y + 66.0, 34, Compat.cor(Paleta.TINTA_LEVE, tinta), Compat.CENTRO, card.position.x + 24.0, 82.0)
+		_texto("%02d" % posicao, y + 78.0, 44, Compat.cor(Paleta.TINTA_LEVE, tinta), Compat.CENTRO, card.position.x + 24.0, 104.0)
 		_texto("VAGA ABERTA", y + 64.0, 26, Compat.cor(Paleta.TINTA_FRACA, tinta * 0.8), Compat.ESQUERDA, card.position.x + 232.0)
 		return
 
@@ -6675,30 +6946,30 @@ func _ranking_linha(i: int, y: float, entrada: float, e_do_jogador: bool, destaq
 	draw_rect(Rect2(card.position, Vector2(8.0, card.size.y)), Compat.cor(cor, tinta))
 
 	# A ficha do número: no pódio é a medalha cheia; abaixo, neutra.
-	var ficha = Rect2(card.position.x + 24.0, y + 14.0, 82.0, 82.0)
+	var ficha = Rect2(card.position.x + 22.0, y + 14.0, 104.0, 104.0)
 	_placa(ficha, 10.0, Compat.cor(cor, tinta) if alta else Compat.cor("0c0517", tinta * 0.92))
 	if not alta:
 		draw_rect(ficha, Compat.cor(cor, tinta * 0.35), false, 1.5)
 	_texto(
-		"%02d" % posicao, ficha.position.y + 56.0, 36,
+		"%02d" % posicao, ficha.position.y + 70.0, 48,
 		Compat.cor(Color("0f071e") if alta else cor, tinta),
 		Compat.CENTRO, ficha.position.x, ficha.size.x
 	)
-	_draw_player_photo(Rect2(card.position + Vector2(126.0, 14.0), Vector2(82.0, 82.0)), str(ranking[i].get("photo_path", "")), tinta)
+	_draw_player_photo(Rect2(card.position + Vector2(142.0, 14.0), Vector2(104.0, 104.0)), str(ranking[i].get("photo_path", "")), tinta)
 
-	var x_texto = card.position.x + 232.0
+	var x_texto = card.position.x + 270.0
 	var nivel = ScoreTier.nome_de(nota)
 	var cor_nivel = Paleta.texto_sobre(fundo, ScoreTier.cor_de(nota))
 	if e_do_jogador:
-		_texto("VOCÊ", y + 50.0, 31, Compat.cor(Paleta.CREME, tinta), Compat.ESQUERDA, x_texto, 300.0)
-		_texto(nivel, y + 84.0, 20, Compat.cor(cor_nivel, tinta), Compat.ESQUERDA, x_texto, 320.0)
+		_texto("VOCÊ", y + 58.0, 40, Compat.cor(Paleta.CREME, tinta), Compat.ESQUERDA, x_texto, 330.0)
+		_texto(nivel, y + 100.0, 26, Compat.cor(cor_nivel, tinta), Compat.ESQUERDA, x_texto, 340.0)
 	else:
-		_texto(nivel, y + 50.0, 25, Compat.cor(cor_nivel, tinta), Compat.ESQUERDA, x_texto, 320.0)
+		_texto(nivel, y + 58.0, _tamanho_que_cabe(nivel, 32, 340.0), Compat.cor(cor_nivel, tinta), Compat.ESQUERDA, x_texto, 340.0)
 		var quando = _data_curta(str(ranking[i].get("created_at", "")))
 		if not quando.empty():
-			_texto(quando, y + 84.0, 20, Compat.cor(Paleta.TINTA_LEVE, tinta), Compat.ESQUERDA, x_texto, 320.0)
+			_texto(quando, y + 100.0, 24, Compat.cor(Paleta.TINTA_LEVE, tinta), Compat.ESQUERDA, x_texto, 340.0)
 	_texto(
-		"%04d" % nota, y + 78.0, 56 if (alta or e_do_jogador) else 48,
+		"%04d" % nota, y + 92.0, 72 if (alta or e_do_jogador) else 62,
 		Compat.cor(Paleta.TINTA, tinta), Compat.DIREITA,
 		card.position.x, card.size.x - 32.0
 	)
@@ -6707,12 +6978,12 @@ func _ranking_linha(i: int, y: float, entrada: float, e_do_jogador: bool, destaq
 func _ranking_rodape() -> void:
 	if _perdeu_sem_soco():
 		# Nocauteado sem ter socado: não houve soco para mostrar.
-		_rotulo("VOCÊ FOI NOCAUTEADO", 1428.0, Paleta.TINTA_FRACA)
-		_texto_arcade("K.O.", 1546.0, 100, Paleta.VERMELHO, LARGURA_UTIL)
+		_rotulo("VOCÊ FOI NOCAUTEADO", 1456.0, Paleta.TINTA_FRACA)
+		_texto_arcade("K.O.", 1570.0, 100, Paleta.VERMELHO, LARGURA_UTIL)
 	else:
-		_rotulo("SEU SOCO", 1428.0, Paleta.TINTA_FRACA)
-		_texto_arcade("%04d" % result_score, 1546.0, 100, ScoreTier.cor_de(result_score), LARGURA_UTIL)
-	_rotulo("START • JOGAR NOVAMENTE", 1706.0, Paleta.AMBAR)
+		_rotulo("SEU SOCO", 1456.0, Paleta.TINTA_FRACA)
+		_texto_arcade("%04d" % result_score, 1570.0, 100, ScoreTier.cor_de(result_score), LARGURA_UTIL)
+	_rotulo("START • JOGAR NOVAMENTE", 1720.0, Paleta.AMBAR)
 	_marca_lateral(1770.0, 0.95, 104.0)
 
 ## Chegada com batida (passa do ponto e volta). Só o selo do anúncio usa.
@@ -7605,26 +7876,29 @@ func _central_maquina() -> void:
 	# saco chega — é o certo. Sem elas (montagem mais simples, ou uma
 	# chave que quebrou no meio da festa), sobra o tempo de curso, e a
 	# máquina continua funcionando enquanto a peça não chega.
-	_botao(
-		BOTOES_SIMPLES["motor_fim_curso"],
-		"FINS DE CURSO: SIM" if saco.fim_de_curso else "FINS DE CURSO: NÃO",
-		saco.fim_de_curso, Paleta.CIANO, 18
-	)
+	# SEM SENSOR (build 110): a placa conta onde o saco está pelo tempo.
+	# Se a conta e o saco se desencontrarem, AJUSTE alinha o saco no topo
+	# (toques de 0,2 s que não mexem na conta) e ESTÁ EM CIMA zera a conta.
+	var pode_mao = link != null and link.is_open() and not saco.andando()
+	_botao(BOTOES_SIMPLES["motor_zerar"], "ESTÁ EM CIMA", false, Paleta.VERDE, 17, not pode_mao)
+	_botao(BOTOES_SIMPLES["motor_ajuste_sobe"], "AJUSTE SOBE", false, Paleta.CIANO, 17, not pode_mao)
+	_botao(BOTOES_SIMPLES["motor_ajuste_desce"], "AJUSTE DESCE", false, Paleta.CIANO, 17, not pode_mao)
 	_texto(
-		"Fora da partida o saco fica RECOLHIDO. Só desce no START, depois da foto; sobe no fim da rodada.",
+		"Sem sensor: a placa conta o saco pelo tempo. Desalinhou? AJUSTE até o topo e toque ESTÁ EM CIMA.",
 		522.0, 15, Paleta.TINTA_LEVE, Compat.ESQUERDA, 120.0, 860.0
 	)
 
 	# ---- OS DOIS NÚMEROS QUE A PLACA PRECISA CONHECER
 	_secao(Rect2(80, 590, 920, 266), "TEMPOS DO CURSO", Paleta.AMBAR)
-	_stepper("curso_motor", "%.1f s" % (saco.curso_ms / 1000.0), "TEMPO DE CURSO", Paleta.AMBAR)
+	_stepper("curso_motor", "%.1f s" % (saco.curso_ms / 1000.0), "DESCIDA (CURSO TODO)", Paleta.AMBAR)
+	_stepper("sobe_motor", "%.1f s" % (saco.curso_sobe_ms / 1000.0), "SUBIDA (O INVERSO)", Paleta.AMBAR)
 	_stepper("pausa_motor", "%d ms" % saco.pausa_ms, "PAUSA AO INVERTER", Paleta.CIANO)
 	# ESTE É O FREIO DE SEGURANÇA, e o técnico precisa ler isso na tela.
 	# Quem regula um "tempo" sem saber que ele DESLIGA o motor o encurta
 	# achando que está acelerando a descida — e passa a ter um saco que
 	# para no meio do caminho toda vez.
 	_texto(
-		"Passado o tempo de curso, a placa DESLIGA o motor sozinha, mesmo sem fim de curso.",
+		"O saco sobe exatamente o que desceu. Ajuste a SUBIDA até ele parar sempre no mesmo ponto em cima.",
 		826.0, 15, Paleta.TINTA_LEVE, Compat.ESQUERDA, 120.0, 860.0
 	)
 
@@ -7633,13 +7907,14 @@ func _central_maquina() -> void:
 	var pode = saco.ligado and link != null and link.is_open()
 	_botao(BOTOES_SIMPLES["motor_desce"], "DESCER", false, Paleta.CIANO, 20, not pode)
 	_botao(BOTOES_SIMPLES["motor_sobe"], "SUBIR", false, Paleta.CIANO, 20, not pode)
+	_botao(BOTOES_SIMPLES["motor_teste"], "TESTE", false, Paleta.AMBAR, 20)
 	# PARAR NUNCA FICA DESBOTADO. É o botão de emergência da página, e um
 	# botão de emergência que às vezes não responde não é botão de
 	# emergência — ele vale com a função desligada e sem curso em
 	# andamento.
 	_botao(BOTOES_SIMPLES["motor_para"], "PARAR", false, Paleta.VERMELHO, 20)
 	_texto(
-		"Use com o gabinete aberto para acertar a altura do saco e conferir os fins de curso.",
+		"TESTE = desce 1,5 s e sobe, direto na placa. Sem o jogo: segure START e ligue o Arduino.",
 		1052.0, 15, Paleta.TINTA_LEVE, Compat.ESQUERDA, 120.0, 860.0
 	)
 
@@ -7672,6 +7947,7 @@ func _central_maquina() -> void:
 	_pilha(caixa_estado)
 	_pilha_y += 34.0
 	_linha(saco.ficha(), 20, cor_estado)
+	_linha("ciclo: " + NOMES_DO_CICLO[ciclo_saco], 16, Paleta.CIANO)
 	_linha(
 		"placa diz: %s  •  %s" % [
 			ArduinoProtocol.nome_do_estado(saco.estado),
@@ -7680,10 +7956,19 @@ func _central_maquina() -> void:
 		16, Paleta.TINTA_LEVE
 	)
 	_linha(
-		"resta: %d de %d ms  •  sensor de CIMA: %s" % [
-			saco.resta_ms, saco.curso_ms, _nome_da_chave(saco.fim_cima),
+		"resta: %d ms  •  saco a %s do curso (0%% = em cima)" % [
+			saco.resta_ms, ("%d%%" % int(round(saco.permil / 10.0))) if saco.permil >= 0 else "?",
 		],
 		15, Paleta.VERMELHO if saco.trava_cima else Paleta.TINTA_LEVE
+	)
+	_linha(
+		"firmware: %s  •  respostas do motor: %d  •  última: %s%s" % [
+			firmware_versao if not firmware_versao.empty() else "?",
+			_motor_relatos,
+			("há %d s" % int(animation_time - _motor_ultimo_relato_em)) if _motor_ultimo_relato_em > 0.0 else "NUNCA",
+			("  •  teste: " + _motor_teste_fase) if not _motor_teste_fase.empty() else "",
+		],
+		15, Paleta.VERDE if _motor_relatos > 0 else Paleta.VERMELHO
 	)
 	_linha(
 		"caminho até a placa: %s" % (

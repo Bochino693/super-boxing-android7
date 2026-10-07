@@ -2,10 +2,12 @@
 
 importer="wav"
 type="AudioStreamSample"
+path="res://.import/torcida_incentivo.wav-df034ab501a5582dbddd9b4d31f517a5.sample"
 
 [deps]
 
 source_file="res://assets/audio/arcade/torcida_incentivo.wav"
+dest_files=[ "res://.import/torcida_incentivo.wav-df034ab501a5582dbddd9b4d31f517a5.sample" ]
 
 [params]
 

@@ -2,10 +2,17 @@
 
 importer="texture"
 type="StreamTexture"
+path.s3tc="res://.import/boxeador_0.jpg-71776e77fcbdf85009acf2b01cbb90b2.s3tc.stex"
+path.etc="res://.import/boxeador_0.jpg-71776e77fcbdf85009acf2b01cbb90b2.etc.stex"
+metadata={
+"imported_formats": [ "s3tc", "etc" ],
+"vram_texture": true
+}
 
 [deps]
 
 source_file="res://assets/lutador3d/boxeador_0.jpg"
+dest_files=[ "res://.import/boxeador_0.jpg-71776e77fcbdf85009acf2b01cbb90b2.s3tc.stex", "res://.import/boxeador_0.jpg-71776e77fcbdf85009acf2b01cbb90b2.etc.stex" ]
 
 [params]
 

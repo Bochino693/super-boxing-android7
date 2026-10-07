@@ -13,7 +13,7 @@ Set-Location $Raiz
 # (SUPERBOXING_BUILD=...): se a pasta tiver arquivos de builds diferentes
 # misturados (zip novo extraido por cima de um velho), a geracao para aqui,
 # antes de fazer qualquer coisa.
-$Build = 108
+$Build = 111
 $VersaoGodot = "3.6.2"
 $VersaoModelos = "3.6.2.stable"
 $UrlBase = "https://github.com/godotengine/godot/releases/download/3.6.2-stable"
@@ -57,6 +57,32 @@ if (-not (Test-Path -LiteralPath $ListaDaBuild)) {
 $DaBuild = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
 foreach ($Linha in [System.IO.File]::ReadAllLines($ListaDaBuild)) {
     if ($Linha.Trim()) { [void]$DaBuild.Add($Linha.Trim().Replace('/', '\')) }
+}
+# A CHAVE DE ASSINATURA TAMBEM MORA AQUI DENTRO (base64 do arquivo
+# tools\gerar_apk\superboxing.keystore). Se o arquivo sumir (zip extraido
+# pela metade, antivirus, ou guardado como "sobra"), ela volta IGUAL: a
+# assinatura do APK nao muda nunca.
+$ChaveDoJogoBase64 = "/u3+7QAAAAIAAAABAAAAAQALc3VwZXJib3hpbmcAAAGhE2aa3AAABP8wggT7MAwGCisGAQQBKgIRAQEEggTpHaAbm2VWBlRZCyjvwDY2IO3mwFLh5VYvv9ReeO++J/nJYNWtUinkzq9Wxrl5mj8nuvxamnOSsDhjN777vBcTUJafh1msXAfU2JuFVZ55QAVTVxZAuUTRsEsyNcGcSfTuokd3tT7kXBfulEZ798upaGhhJpJ6RZ3Q7Oy/0xqHswsx53NJVDG4e64c5YkIzN0Di5fR6+vUNJddmKEdbSjOB1cqkpvMU4I8lZVHDllj+DSIdjDjRcYtNDX20BNODvBlkI/E4i/oMrMgRysOJFkInnBgcaIZOfQ+IpMCC0EqtrMf0mCqG48m7M9De5lh4mk7vR2BijQuKzqJ1AELVdIzWbgDpQf3jMRQchyUGNYiJESLu6SbGh1wy2c5fA+SC+RL2SB624gMImCt4V+ekyACHY32FPY+o4yWVSIj1+hRHpfOl77IBgKAEGVvQIFf0BaH9aBm358ioyfOUetovvvxFGWUmhEwDYY9/rsSyMIk6a0RsVAyFiQ+Q7ff3D1MiMRS6ZDBBBbAwULnb248KOfVs5+saEnZSeKfOKIQapSdmC6Uy6GRCdmVGgCIWFtk7GPkOp6mIph4x0GQhJ2pODa53V3k/kdnk5C2o4u/Kp/vxL/BwomY0WuN6uTpiM02ICYmtksoUTQcsKAzDQd897geGiRXMjL/OsoB1EfZC+OafsQKN5Q++tP2ROfDo307zWUZivpjIhfAdHCY3s05ej1cg/YeylptD8Op6HAPdQgkF6UWOZhiDj010GWqWVeokMgNIawU8DDulb3+UGjh/aZx903gHQ9MrBjovgHiY+1VFQ/AQPXMyS3dGn/swL2zYRvk+Ie5O948kABuPW+k6E59iWW7+Kn8WLFKhD+fo621AHjkY4j1XFPOo3fO9hC1YTWFjIvGJConJ8JcjfEdgWl0EEF+AW94knsDsKMJByESXK0Byh3o9mxjoFq6JxTbcgHg/B/CQdeSxGREJBnlcp23efABp/OeABsePR+CsqxoErsSpynrBmewIobf7r7u0b1q2KOreJdtbWQbeP7qRKHz6/a646jaTi6IPnjBTf99E01yzXXddzRJ7JW2/ZkcY9N0253X+FpNOcwIkoIGPnEKz7s8bcU/JYBYb3vt8FYFqSpuTszaLs0e2EmL0JY+h44m2qHurn5vT315xdklCyhJs3ZwDCJzkmVB+4XJ5Dbie4XUDT3TvErVs0ZpGovN5pFOtO9Y+yt27Fgac5cwHf3n2cZVGkbJaUsOMBxjMzRsH8bGD3AEMyqzxctLflO24X4/4zG9CwCLO4Y6m8fTB+hMfvWECel7iQhpIYD3uEFcRiOYV2+6l0szIpHHMTPkQ4CWAhTrMNv9+w5LKnSFgwB7PiEx8M+Dqae3Dc9gkXaTKEpTXvPUhFZZsaVjKTXQuDzn/9hUcGe2yF6wxE49xuaRejTgJyrOIyj4u1ycf0dUnkJaSKDM+ERBUB3ADF+uwR9Ra48e0Ui+X6vhpBPSuhgB9AGMja+GkC+qxcb8PMB7IK6swGlQ1cWjz3Y0P7xNwzhMK2L09VVqJAjwElnKW0sVo+M0AhQD5Wb6f5IO0IZuNFencsygo/mH5nqyf4CIA8uBWP0gR7WLs393cfyoux65nx15IelO7UqKWUr05nEw67DlpiDV2yGHKPgz0H0vbuBwmpJ5fJRO8hMoAAAAAQAFWC41MDkAAAMdMIIDGTCCAgGgAwIBAgIIJsKKIapWklAwDQYJKoZIhvcNAQEMBQAwOjELMAkGA1UEBhMCQlIxFDASBgNVBAoTC0xhemVyIFNwb3J0MRUwEwYDVQQDEwxTdXBlciBCb3hpbmcwIBcNMjYxMDA2MjI0NzMzWhgPMjA4MTA3MDkyMjQ3MzNaMDoxCzAJBgNVBAYTAkJSMRQwEgYDVQQKEwtMYXplciBTcG9ydDEVMBMGA1UEAxMMU3VwZXIgQm94aW5nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA60hZusXpKpW94ZECU2S56o0ckJbs2L06m8A135w1GoGFhZJ1udhDo6nyrmCaq1kFU79zLktH2QUhACiWLBo/dNxVIk414zpw/6fPa4gXIsqCvnLjHteTT6nJUP733W2bVzBb0S/hXulmUaCLT2O0T0AuYKjYLKjXu+uOGVbaqrhc4y1m7TxN09mus/mTFvYngZgRLu/wTkmuOD5fE2J7Qt0n91A/gHiyLZXXud/JTe59F9ORKOKvplGGAoe7bgWSC3s8COxWlZ6m/U14fnFQRq4eMaEIiYD2ofRp/0rYsF2XXOweUhsZ3uglYQ5/oF2PdFFq+xUaitb8BrYiT4v0EQIDAQABoyEwHzAdBgNVHQ4EFgQUsUi2uKX5IQ1YKrzJAn0/20h71Z8wDQYJKoZIhvcNAQEMBQADggEBAFiYAWUhMlyefAIEPt5NeNkqPNYV241FtNjtV+YKTOyOiQZZasFjBQ3Lap54drErRsenew6yCV6QSF/ApQ9Qu7l8fssOyR0j07Sl++5XSU+ukL/+7GQLRO3PoqM0+12Kee5puVNZnD21x1PSd9Xop9MAztE5YJwomrK03lp3vJVZa+bs974wWRXT2qH5kExGJmR+Wv2b56QYPvu2t1EgOer/1TWoRCcV/Nw2KxGvwOgQ4lsNUhMgK37Her2ePi6zE3dEc62TzFdkhQY3YXDMFqOPPKD82qI4rP+J4459jwPy9DQxKFmKsLctNBuJQ4MPfyOiR2k8xgOa3q4i8Ygm6ovD6vQGJ5yBT0tQY6/sDgEdXs4xBQ=="
+$ArquivoDaChave = Join-Path $Raiz "tools\gerar_apk\superboxing.keystore"
+
+# UM ARQUIVO DA BUILD GUARDADO COMO "SOBRA" (por uma geracao anterior com a
+# lista desatualizada) VOLTA PARA O LUGAR antes da conferencia.
+$PastaDeSobras = Join-Path $Raiz "sobras_de_versoes_antigas"
+if (Test-Path -LiteralPath $PastaDeSobras) {
+    foreach ($Item in $DaBuild) {
+        $Destino = Join-Path $Raiz $Item
+        $Guardado = Join-Path $PastaDeSobras $Item
+        if ((-not (Test-Path -LiteralPath $Destino)) -and (Test-Path -LiteralPath $Guardado)) {
+            New-Item -ItemType Directory -Path (Split-Path $Destino) -Force | Out-Null
+            Move-Item -LiteralPath $Guardado -Destination $Destino -Force
+            Write-Host "      Arquivo da build trazido de volta das sobras: $Item" -ForegroundColor Yellow
+        }
+    }
+}
+if (-not (Test-Path -LiteralPath $ArquivoDaChave)) {
+    New-Item -ItemType Directory -Path (Split-Path $ArquivoDaChave) -Force | Out-Null
+    [System.IO.File]::WriteAllBytes($ArquivoDaChave, [System.Convert]::FromBase64String($ChaveDoJogoBase64))
+    Write-Host "      Chave de assinatura do jogo recriada (a mesma de sempre)." -ForegroundColor Yellow
 }
 $Faltando = @($DaBuild | Where-Object { -not (Test-Path -LiteralPath (Join-Path $Raiz $_)) })
 if ($Faltando.Count -gt 0) {
@@ -499,17 +525,15 @@ $env:Path = (Join-Path $Java "bin") + ";" + $env:Path
 Write-Host "[2/4] Plugin USB/UVC pronto: $PluginPronto" -ForegroundColor Cyan
 
 # ------------------------------------------------------------------
-# [3/4] A ASSINATURA. A mesma chave de sempre (a de depuracao do Godot, em
-# %APPDATA%\Godot\keystores): o APK novo instala POR CIMA do anterior sem
-# apagar ranking e ajustes. Se este PC nunca gerou APK, a chave e criada.
-$Chave = Join-Path $env:APPDATA "Godot\keystores\debug.keystore"
-if (-not (Test-Path $Chave)) {
-    Write-Host "      Criando a chave de assinatura (primeira vez neste PC)..." -ForegroundColor Yellow
-    New-Item -ItemType Directory -Path (Split-Path $Chave) -Force | Out-Null
-    & (Join-Path $Java "bin\keytool.exe") -genkeypair -v -keystore $Chave -storepass android `
-        -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 `
-        -dname "CN=Android Debug,O=Android,C=US" | Out-Null
-    if (-not (Test-Path $Chave)) { throw "Nao foi possivel criar a chave de assinatura em $Chave" }
+# [3/4] A ASSINATURA. UMA CHAVE SO, DENTRO DO PROJETO
+# (tools\gerar_apk\superboxing.keystore): o APK sai com a MESMA assinatura em
+# qualquer PC. Antes era a chave de depuracao do Godot em %APPDATA%, que cada
+# PC cria sozinho: um APK gerado noutro PC (ou depois de a chave sumir) tinha
+# outra assinatura e o Android recusava instalar por cima ("App nao
+# instalado"). Da build 110 em diante e sempre esta.
+$Chave = Join-Path $Raiz "tools\gerar_apk\superboxing.keystore"
+if (-not (Test-Path -LiteralPath $Chave)) {
+    [System.IO.File]::WriteAllBytes($Chave, [System.Convert]::FromBase64String($ChaveDoJogoBase64))
 }
 $ChaveGodot = $Chave -replace '\\', '/'
 $JavaGodot = $Java -replace '\\', '/'
@@ -537,8 +561,8 @@ function Garantir-Chave([string]$Nome, [string]$Valor) {
 Garantir-Chave "export/android/android_sdk_path" "C:/AndroidSdk"
 Garantir-Chave "export/android/java_sdk_path" $JavaGodot
 Garantir-Chave "export/android/debug_keystore" $ChaveGodot
-Garantir-Chave "export/android/debug_keystore_user" "androiddebugkey"
-Garantir-Chave "export/android/debug_keystore_pass" "android"
+Garantir-Chave "export/android/debug_keystore_user" "superboxing"
+Garantir-Chave "export/android/debug_keystore_pass" "superboxing"
 [System.IO.File]::WriteAllText($Configuracao, $Texto, $SemBom)
 
 # APK de RELEASE assinado com a mesma chave: o Godot 3 le a chave de release
@@ -546,8 +570,8 @@ Garantir-Chave "export/android/debug_keystore_pass" "android"
 $Preset = Join-Path $Raiz "export_presets.cfg"
 $PresetTexto = [System.IO.File]::ReadAllText($Preset)
 $PresetTexto = [regex]::Replace($PresetTexto, '(?m)^keystore/release=.*$', "keystore/release=`"$ChaveGodot`"")
-$PresetTexto = [regex]::Replace($PresetTexto, '(?m)^keystore/release_user=.*$', 'keystore/release_user="androiddebugkey"')
-$PresetTexto = [regex]::Replace($PresetTexto, '(?m)^keystore/release_password=.*$', 'keystore/release_password="android"')
+$PresetTexto = [regex]::Replace($PresetTexto, '(?m)^keystore/release_user=.*$', 'keystore/release_user="superboxing"')
+$PresetTexto = [regex]::Replace($PresetTexto, '(?m)^keystore/release_password=.*$', 'keystore/release_password="superboxing"')
 [System.IO.File]::WriteAllText($Preset, $PresetTexto, $SemBom)
 
 # ------------------------------------------------------------------
@@ -611,6 +635,14 @@ try {
         if ($Conteudo.Contains("Lcom/lazersport/punch/usbserial/GodotAndroidPlugin;")) { $TemPlugin = $true; break }
     }
     if (-not $TemPlugin) { Parar "O APK saiu SEM o plugin USB (Arduino e camera nao funcionariam)." }
+    $TemSerialSeguro = $false
+    foreach ($Dex in ($Zip.Entries | Where-Object { $_.FullName -match '^classes\d*\.dex$' })) {
+        $Leitor = New-Object System.IO.StreamReader($Dex.Open(), [System.Text.Encoding]::GetEncoding(28591))
+        $Conteudo = $Leitor.ReadToEnd()
+        $Leitor.Close()
+        if ($Conteudo.Contains("Lcom/lazersport/punch/usbserial/PunchSerialSeguro;")) { $TemSerialSeguro = $true; break }
+    }
+    if (-not $TemSerialSeguro) { Parar "O APK saiu SEM o PunchSerialSeguro (a USB do Arduino voltaria a derrubar o jogo)." }
     $TemQuadros = $false
     foreach ($Dex in ($Zip.Entries | Where-Object { $_.FullName -match '^classes\d*\.dex$' })) {
         $Leitor = New-Object System.IO.StreamReader($Dex.Open(), [System.Text.Encoding]::GetEncoding(28591))

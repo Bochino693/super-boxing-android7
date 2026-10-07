@@ -2,10 +2,15 @@
 
 importer="texture"
 type="StreamTexture"
+path="res://.import/icon-android-frente.png-377b17bfa65990bb3de12b8d0cea7bb7.stex"
+metadata={
+"vram_texture": false
+}
 
 [deps]
 
 source_file="res://assets/icon-android-frente.png"
+dest_files=[ "res://.import/icon-android-frente.png-377b17bfa65990bb3de12b8d0cea7bb7.stex" ]
 
 [params]
 

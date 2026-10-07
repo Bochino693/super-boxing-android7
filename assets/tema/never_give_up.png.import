@@ -2,10 +2,15 @@
 
 importer="texture"
 type="StreamTexture"
+path="res://.import/never_give_up.png-56bf54126a861850e8f59f3fa7ed5d00.stex"
+metadata={
+"vram_texture": false
+}
 
 [deps]
 
 source_file="res://assets/tema/never_give_up.png"
+dest_files=[ "res://.import/never_give_up.png-56bf54126a861850e8f59f3fa7ed5d00.stex" ]
 
 [params]
 

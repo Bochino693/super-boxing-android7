@@ -2,10 +2,12 @@
 
 importer="wav"
 type="AudioStreamSample"
+path="res://.import/couro.wav-66374572eeace5fb39618dd5be389b8c.sample"
 
 [deps]
 
 source_file="res://assets/audio/arcade/couro.wav"
+dest_files=[ "res://.import/couro.wav-66374572eeace5fb39618dd5be389b8c.sample" ]
 
 [params]
 

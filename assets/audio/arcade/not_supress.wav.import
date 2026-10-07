@@ -2,10 +2,12 @@
 
 importer="wav"
 type="AudioStreamSample"
+path="res://.import/not_supress.wav-30cf83b4b76a37d53a8c9ca0e179c965.sample"
 
 [deps]
 
 source_file="res://assets/audio/arcade/not_supress.wav"
+dest_files=[ "res://.import/not_supress.wav-30cf83b4b76a37d53a8c9ca0e179c965.sample" ]
 
 [params]
 

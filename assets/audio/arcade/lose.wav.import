@@ -2,10 +2,12 @@
 
 importer="wav"
 type="AudioStreamSample"
+path="res://.import/lose.wav-e2fa21393fbcbd044583ac6138bf52b5.sample"
 
 [deps]
 
 source_file="res://assets/audio/arcade/lose.wav"
+dest_files=[ "res://.import/lose.wav-e2fa21393fbcbd044583ac6138bf52b5.sample" ]
 
 [params]
 

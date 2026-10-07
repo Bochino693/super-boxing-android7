@@ -2,10 +2,12 @@
 
 importer="wav"
 type="AudioStreamSample"
+path="res://.import/legendary.wav-f83bbf4823e6001b330abcc4de9ac859.sample"
 
 [deps]
 
 source_file="res://assets/audio/legendary.wav"
+dest_files=[ "res://.import/legendary.wav-f83bbf4823e6001b330abcc4de9ac859.sample" ]
 
 [params]
 

@@ -2,10 +2,17 @@
 
 importer="texture"
 type="StreamTexture"
+path.s3tc="res://.import/fundo.jpg-0ab6c91cbf3a49d71e636c21b067c06e.s3tc.stex"
+path.etc="res://.import/fundo.jpg-0ab6c91cbf3a49d71e636c21b067c06e.etc.stex"
+metadata={
+"imported_formats": [ "s3tc", "etc" ],
+"vram_texture": true
+}
 
 [deps]
 
 source_file="res://assets/tema/fundo.jpg"
+dest_files=[ "res://.import/fundo.jpg-0ab6c91cbf3a49d71e636c21b067c06e.s3tc.stex", "res://.import/fundo.jpg-0ab6c91cbf3a49d71e636c21b067c06e.etc.stex" ]
 
 [params]
 

@@ -1,4 +1,4 @@
-SUPER BOXING - VERSAO TV BOX S905L (ANDROID 7.1) - BUILD 108
+SUPER BOXING - VERSAO TV BOX S905L (ANDROID 7.1) - BUILD 111
 ===========================================================
 
 PARA QUAL MAQUINA E ESTA VERSAO
@@ -26,9 +26,129 @@ O que muda por dentro (voce nao ve na tela):
 
 O APK tem outro nome de pacote (com.lazersport.superboxing), entao pode
 ficar instalado junto com o Punch Challenge das outras maquinas. Se a
-build 92 a 107 estiver instalada, a 108 instala por cima.
+build 92 a 109 estiver instalada, veja INSTALAR abaixo (assinatura nova).
 
-O QUE A BUILD 108 CORRIGE (GRAVE O FIRMWARE V8 NO ARDUINO)
+O QUE A BUILD 111 MUDA (BASE: A 110d, QUE FUNCIONOU) - FIRMWARE V12
+--------------------------------------------------------------------
+- A ligacao e a logica do motor sao as MESMAS da 110d / firmware V10
+  (a V11 foi descartada). O firmware V12 e o V10 com duas coisas a mais.
+- TEMPO PADRAO 1,8 s para descer e 1,8 s para subir (ajusta na Central,
+  aba SACO). Quem atualiza vem com 1,8 s uma vez; depois vale o ajuste.
+- A TELA DA FICHA SEMPRE MANDA SUBIR. Toda vez que o jogo volta para a
+  tela inicial (ficha / START), sai o comando de subir (a placa anda so
+  o que falta).
+- VOLTA DA ENERGIA: na primeira vez que o jogo chega na tela da ficha
+  depois de ligar a maquina (ou de o Arduino religar), o saco SOBE O
+  CURSO INTEIRO (1,8 s), mesmo que a placa ache que ele ja esta em cima,
+  e a conta zera. Assim o saco desregulado por queda de energia volta
+  para o lugar. Isso precisa do firmware V12 (com o V10 so sai o subir
+  normal).
+- MODO LIVRE DE FABRICA (sem ficha). Para cobrar, toque em 1 FICHA na
+  Central. Quem atualiza passa para LIVRE uma vez.
+
+GRAVAR O V12: ARDUINO_SENSOR_DE_FEIXE_LM393.ino, mesmos fios do V10
+(D9 RPWM, D10 LPWM, R_EN/L_EN/VCC no 5V, GND). A placa responde
+READY,PUNCH_OPTICAL,V12-MH-LM393.
+
+O QUE A BUILD 110 CORRIGIU (FIRMWARE V10, AGORA V12)
+-----------------------------------------------------------
+ATENCAO - SEM O FIRMWARE V10 O MOTOR NAO ANDA. O V9 (e anteriores) ainda
+usa o sensor de cima: com ele no Arduino o jogo NAO mexe no motor e o
+rodape da tela diz "FIRMWARE ANTIGO NO ARDUINO - GRAVE O V10". Grave o
+ARDUINO_SENSOR_DE_FEIXE_LM393.ino (V10) com o saco ENROLADO EM CIMA.
+
+SE SO UM SENTIDO ANDA (so sobe, ou so desce, e trocando M+/M- o sentido
+que anda inverte): grave o ARDUINO_SENSOR_DE_FEIXE_LM393\TESTE_SOBE_DESCE
+e olhe o saco (desce 2 s, sobe 2 s, em laco, sem jogo). Se so um sentido
+andar nele tambem, um dos fios de comando nao chega na ponte H: RPWM->D9,
+LPWM->D10, R_EN e L_EN->5V, VCC->5V, GND comum (o texto do teste explica).
+Os dois sentidos andando no teste: grave o V10 e jogue.
+
+O SACO, SO ISSO: 2 s para descer e 2 s para subir (padrao; ajusta na
+Central, aba SACO). Fora da partida: em cima. START -> foto -> entra a
+cena do RINGUE e SO ENTAO o saco desce (2 s) -> com ele embaixo o soco
+vale -> soco 1, soco 2 -> sobe (2 s). Nocaute: sobe na hora. Soco dado
+enquanto o saco ainda desce nao conta.
+
+1. O JOGO PARAVA ("o app parou") - ERA O PLUGIN USB DO ARDUINO.
+   Ele lia a USB sem tempo limite e fechava a porta com a leitura ainda
+   presa: crash nativo (usb_request_wait) toda vez que o Arduino sumia e
+   voltava - e o tranco do motor reinicia a USB do Nano. Acontecia ate na
+   abertura (o jogo abria e fechava a porta para testar a permissao).
+   Agora o Arduino fala por um plugin novo (PunchSerialSeguro, em Java):
+   le com tempo limite e so fecha a porta depois que a leitura sai. E o
+   mesmo conserto do Dragon Bowling (build 5). A camera continua no
+   plugin de antes.
+
+2. "NAO CONSIGO NEM INSTALAR" - ERA A ASSINATURA DO APK.
+   Cada PC criava a sua propria chave para assinar o APK: um APK gerado
+   em outro PC (ou depois de a chave sumir) tinha OUTRA assinatura, e o
+   Android recusa instalar por cima ("App nao instalado"). Agora a chave
+   fica DENTRO do projeto (tools\gerar_apk\superboxing.keystore): o APK
+   sai com a mesma assinatura em qualquer PC, para sempre.
+   INSTALAR: o INSTALAR_NA_TVBOX.bat percebe a assinatura antiga,
+   desinstala o jogo velho UMA vez e instala o novo (o ranking e as
+   fotos do jogo velho sao apagados nessa troca). Pelo pendrive:
+   desinstale o Super Boxing antigo UMA vez antes de instalar a 110.
+   Da 110 em diante, sempre por cima.
+
+3. O SACO SEM SENSOR - SO POR TEMPO (firmware V10).
+   O sensor de fim de curso de cima saiu (o D11 fica livre). A placa sabe
+   onde o saco esta a todo momento pelo tempo: DESCIDA = tempo do curso
+   inteiro para baixo, SUBIDA = o inverso (tempo do curso inteiro para
+   cima). Descer anda so o que falta, subir anda so o que desceu - parar
+   ou inverter no meio nao estraga a conta. A posicao fica guardada na
+   EEPROM; faltou luz, ao religar ela recolhe o saco sem forcar o topo.
+   Central, aba SACO: DESCIDA, SUBIDA, PAUSA; ESTA EM CIMA (zera a conta);
+   AJUSTE SOBE / AJUSTE DESCE (toque de 0,2 s que nao mexe na conta).
+   PRIMEIRA VEZ: enrole o saco em cima ANTES de gravar o V10 e siga o
+   ARDUINO_SENSOR_DE_FEIXE_LM393\LEIA_LIGACOES.txt (PRIMEIRA VEZ COM O V10).
+
+4. A PARTIDA COM VALIDACAO EM CADA PASSO (o "ciclo do saco"):
+   fora da partida o saco fica EM CIMA (o jogo confere a cada 6 s) ->
+   START: o jogo manda subir e so conta 3-2-1 com a placa CONFIRMANDO em
+   cima -> FOTO -> confere EM CIMA de novo -> DESCE -> o soco so e liberado
+   com a placa CONFIRMANDO embaixo e o saco assentado -> SOCO 1 -> SOCO 2
+   -> SOBE. NOCAUTE do jogador: sobe na hora. Tempo esgotado ou rodada
+   cancelada: sobe. Se o saco sair de baixo no meio da partida (a placa
+   religou), o relogio do soco PARA ate ele voltar. Sem a confirmacao da
+   placa no tempo, a rodada NAO segue as cegas: o credito volta e a tela
+   diz o motivo. A Central (aba SACO) mostra o ciclo e a posicao em %.
+   Conferido com o firmware V10 de verdade rodando no simulador do
+   Arduino ligado ao jogo: 2 rodadas completas e 1 com nocaute.
+
+5. CLASSIFICACAO MAIOR: as linhas do TOP 20 (fim da partida e abertura)
+   ficaram mais altas, com numero, foto, nivel e pontos maiores.
+
+O QUE A BUILD 109 CORRIGIU (FIRMWARE V9)
+-----------------------------------------------------------
+DIAGRAMAS NOVOS (na pasta docs):
+- MONTAGEM_0_LIGACAO_COMPLETA_DO_MOTOR.png: tudo o que liga no Nano para
+  o motor, fio por fio (ponte H BT_2, fonte, motor, sensor de cima, 100k,
+  botoes, USB da TV Box).
+- MONTAGEM_6_TESTE_DO_MOTOR_PASSO_A_PASSO.png: o que fazer, em ordem,
+  quando o motor nao anda (autoteste, multimetro, botao TESTE).
+
+O MOTOR SERVE PARA AS DUAS LIGACOES (firmware V9):
+- Ate o V5 a ponte H era no D7 (RPWM) e no D8 (LPWM). Do V6 em diante e
+  no D9/D10. Quem ligou pela tabela antiga e gravou o firmware novo
+  ficava com o motor MORTO e "nada acontecia" nem na Central. Agora a
+  placa manda nos dois pares ao mesmo tempo (D9/D10 com velocidade,
+  D7/D8 em velocidade cheia): funciona com qualquer uma das ligacoes.
+
+AUTOTESTE SEM JOGO:
+- Fonte do motor ligada, SEGURE O BOTAO START e ligue o Arduino (ou
+  aperte o RESET do Nano), segurando uns 3 s. O LED "L" pisca e o motor
+  DESCE 1,5 s, para e SOBE ate 1,5 s. Nao depende do jogo, da TV Box nem
+  da comunicacao. Nao mexeu = defeito de fio ou de fonte (veja a folha
+  MONTAGEM_6, passo 3, com o multimetro).
+
+BOTAO TESTE NA CENTRAL (aba SACO):
+- O mesmo teste, pelo jogo. A caixa ONDE O SACO ESTA mostra agora a
+  versao do firmware, quantas respostas do motor chegaram e ha quanto
+  tempo: "respostas 0" = o jogo nao esta falando com a placa.
+
+O QUE A BUILD 108 CORRIGIU (FIRMWARE V8)
 -----------------------------------------------------------
 GRAVE O V8 NO NANO: ARDUINO_SENSOR_DE_FEIXE_LM393\ARDUINO_SENSOR_DE_FEIXE_LM393.ino
 (Placa "Arduino Nano", processador "ATmega328P" ou "ATmega328P (Old
@@ -331,7 +451,7 @@ O QUE A BUILD 97 CORRIGIU
 ANTES DE INSTALAR NAS 80: TESTE EM UMA
 --------------------------------------
 Na tela de carregamento aparece, no canto de baixo,
-"BUILD 108 - S905L - Android 7.1". Jogue uma partida inteira, abra a
+"BUILD 110 - S905L - Android 7.1". Jogue uma partida inteira, abra a
 Central Tecnica e confira camera e Arduino antes de passar para as outras.
 
 GERAR O APK

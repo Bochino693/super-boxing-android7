@@ -2,10 +2,12 @@
 
 importer="wav"
 type="AudioStreamSample"
+path="res://.import/count.wav-f71ad5fe262fc3f8c90fc92e158abdfe.sample"
 
 [deps]
 
 source_file="res://assets/audio/count.wav"
+dest_files=[ "res://.import/count.wav-f71ad5fe262fc3f8c90fc92e158abdfe.sample" ]
 
 [params]
 

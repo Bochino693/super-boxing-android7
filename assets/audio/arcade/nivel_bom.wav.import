@@ -2,10 +2,12 @@
 
 importer="wav"
 type="AudioStreamSample"
+path="res://.import/nivel_bom.wav-9ffcfd30163f1ce277582a7f8d57bb0b.sample"
 
 [deps]
 
 source_file="res://assets/audio/arcade/nivel_bom.wav"
+dest_files=[ "res://.import/nivel_bom.wav-9ffcfd30163f1ce277582a7f8d57bb0b.sample" ]
 
 [params]
 

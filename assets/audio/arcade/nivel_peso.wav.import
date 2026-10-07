@@ -2,10 +2,12 @@
 
 importer="wav"
 type="AudioStreamSample"
+path="res://.import/nivel_peso.wav-4fa3489c5e5af7c298a3906ba091cade.sample"
 
 [deps]
 
 source_file="res://assets/audio/arcade/nivel_peso.wav"
+dest_files=[ "res://.import/nivel_peso.wav-4fa3489c5e5af7c298a3906ba091cade.sample" ]
 
 [params]
 

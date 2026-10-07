@@ -2,10 +2,12 @@
 
 importer="wav"
 type="AudioStreamSample"
+path="res://.import/armado.wav-9af8eca57a369518ba09ed36e53c2dab.sample"
 
 [deps]
 
 source_file="res://assets/audio/arcade/armado.wav"
+dest_files=[ "res://.import/armado.wav-9af8eca57a369518ba09ed36e53c2dab.sample" ]
 
 [params]
 

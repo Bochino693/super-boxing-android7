@@ -2,10 +2,15 @@
 
 importer="texture"
 type="StreamTexture"
+path="res://.import/abertura_tvbox.png-4ae6d0a5b9f5b8c6b7a180dac2da36c8.stex"
+metadata={
+"vram_texture": false
+}
 
 [deps]
 
 source_file="res://assets/branding/abertura_tvbox.png"
+dest_files=[ "res://.import/abertura_tvbox.png-4ae6d0a5b9f5b8c6b7a180dac2da36c8.stex" ]
 
 [params]
 

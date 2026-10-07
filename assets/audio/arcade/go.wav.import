@@ -2,10 +2,12 @@
 
 importer="wav"
 type="AudioStreamSample"
+path="res://.import/go.wav-5aa517970006f5bb3f29571f709b4059.sample"
 
 [deps]
 
 source_file="res://assets/audio/arcade/go.wav"
+dest_files=[ "res://.import/go.wav-5aa517970006f5bb3f29571f709b4059.sample" ]
 
 [params]
 

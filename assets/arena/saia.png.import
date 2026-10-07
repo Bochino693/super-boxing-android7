@@ -2,10 +2,17 @@
 
 importer="texture"
 type="StreamTexture"
+path.s3tc="res://.import/saia.png-da0961918a1b12feff5b50dcaae24be3.s3tc.stex"
+path.etc="res://.import/saia.png-da0961918a1b12feff5b50dcaae24be3.etc.stex"
+metadata={
+"imported_formats": [ "s3tc", "etc" ],
+"vram_texture": true
+}
 
 [deps]
 
 source_file="res://assets/arena/saia.png"
+dest_files=[ "res://.import/saia.png-da0961918a1b12feff5b50dcaae24be3.s3tc.stex", "res://.import/saia.png-da0961918a1b12feff5b50dcaae24be3.etc.stex" ]
 
 [params]
 

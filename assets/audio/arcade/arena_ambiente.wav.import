@@ -2,10 +2,12 @@
 
 importer="wav"
 type="AudioStreamSample"
+path="res://.import/arena_ambiente.wav-71a259c6de0581c688b358e8fd6d3e82.sample"
 
 [deps]
 
 source_file="res://assets/audio/arcade/arena_ambiente.wav"
+dest_files=[ "res://.import/arena_ambiente.wav-71a259c6de0581c688b358e8fd6d3e82.sample" ]
 
 [params]
 

@@ -2,10 +2,12 @@
 
 importer="wav"
 type="AudioStreamSample"
+path="res://.import/torcida_top20.wav-607b41449a003856188d0d1d484ec8fe.sample"
 
 [deps]
 
 source_file="res://assets/audio/arcade/torcida_top20.wav"
+dest_files=[ "res://.import/torcida_top20.wav-607b41449a003856188d0d1d484ec8fe.sample" ]
 
 [params]
 

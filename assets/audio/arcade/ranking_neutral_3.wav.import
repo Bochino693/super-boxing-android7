@@ -2,10 +2,12 @@
 
 importer="wav"
 type="AudioStreamSample"
+path="res://.import/ranking_neutral_3.wav-970ef1dd175171353cff22f26dc6a1ab.sample"
 
 [deps]
 
 source_file="res://assets/audio/arcade/ranking_neutral_3.wav"
+dest_files=[ "res://.import/ranking_neutral_3.wav-970ef1dd175171353cff22f26dc6a1ab.sample" ]
 
 [params]
 

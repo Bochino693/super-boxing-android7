@@ -2,10 +2,15 @@
 
 importer="texture"
 type="StreamTexture"
+path="res://.import/selo_lazer.png-83eb7646c51c8d3635adb549f001bd93.stex"
+metadata={
+"vram_texture": false
+}
 
 [deps]
 
 source_file="res://assets/branding/selo_lazer.png"
+dest_files=[ "res://.import/selo_lazer.png-83eb7646c51c8d3635adb549f001bd93.stex" ]
 
 [params]
 
