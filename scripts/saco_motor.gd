@@ -365,12 +365,10 @@ func para_salvar() -> Dictionary:
 	}
 
 func carregar(dados: Dictionary) -> void:
-	ligado = bool(dados.get("ligado", true))
-	# Configuração gravada antes da build 107 tinha o motor DESLIGADO de
-	# fábrica: liga de novo uma vez. Depois disso vale o que o operador
-	# escolher na Central.
-	if int(dados.get("versao", 1)) < 2:
-		ligado = true
+	# BUILD 112: O MOTOR SEMPRE COMEÇA LIGADO. Desligar na Central vale só
+	# até a máquina ser desligada: um toque esquecido no botão não pode
+	# deixar o saco parado no dia seguinte.
+	ligado = true
 	curso_ms = int(clamp(int(dados.get("curso_ms", 3500)), 200, 15000))
 	curso_sobe_ms = int(clamp(int(dados.get("curso_sobe_ms", curso_ms)), 200, 15000))
 	# Build 111: 1,8 s para descer e 1,8 s para subir (padrão pedido).

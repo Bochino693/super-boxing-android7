@@ -1,4 +1,4 @@
-SUPER BOXING - VERSAO TV BOX S905L (ANDROID 7.1) - BUILD 111
+SUPER BOXING - VERSAO TV BOX S905L (ANDROID 7.1) - BUILD 112
 ===========================================================
 
 PARA QUAL MAQUINA E ESTA VERSAO
@@ -28,7 +28,35 @@ O APK tem outro nome de pacote (com.lazersport.superboxing), entao pode
 ficar instalado junto com o Punch Challenge das outras maquinas. Se a
 build 92 a 109 estiver instalada, veja INSTALAR abaixo (assinatura nova).
 
-O QUE A BUILD 111 MUDA (BASE: A 110d, QUE FUNCIONOU) - FIRMWARE V12
+O QUE A BUILD 112 CORRIGE (O MOTOR PAROU DEPOIS DE RELIGAR A MAQUINA)
+----------------------------------------------------------------------
+- SEM SUBIDA FORCADA AO LIGAR. A build 111 mandava, na primeira tela da
+  ficha depois de ligar, a subida do curso INTEIRO (1,8 s) mesmo com o
+  saco ja em cima: o motor puxava contra o batente toda vez que a maquina
+  era ligada. Isso pode queimar o FUSIVEL da fonte do motor (ou embolar a
+  corda no rolo). Agora a tela da ficha manda so o SUBIR normal: a placa
+  anda apenas o que falta. Faltou luz com o saco no meio? A placa guarda
+  na memoria onde ele estava e, ao ligar, sobe sozinha so o que falta.
+- O MOTOR SEMPRE COMECA LIGADO. Desligar na Central vale so ate desligar
+  a maquina (um toque esquecido nao deixa o saco parado no dia seguinte).
+- O motor anda mesmo se a placa nao se apresentar (a linha SACO que o
+  firmware V10/V12 manda o tempo todo ja basta).
+- Se o motor nao puder andar, a tela da ficha mostra um PAINEL VERMELHO
+  GRANDE com o motivo e o que fazer.
+- O firmware NAO muda: continue com o V12 (ou o V10) que ja esta gravado.
+
+SE O MOTOR CONTINUAR PARADO DEPOIS DE ATUALIZAR (o problema e na ligacao):
+  1. Desligue tudo. Confira o FUSIVEL entre a fonte e o B+ da ponte H
+     (BTS7960). Queimado? Troque (mesmo valor) - foi a subida forcada.
+  2. Confira se a fonte do motor liga (LED/tensao) e os fios B+/B- e
+     M+/M- bem apertados nos bornes; o motor livre (saco nao travado em
+     cima, corda nao embolada no rolo).
+  3. TESTE SEM O JOGO: segure o START e ligue o Arduino (ou aperte o
+     reset do Nano segurando START por 2 s). O saco deve DESCER 1,5 s e
+     SUBIR. Desceu e subiu = a ligacao esta boa; o jogo da build 112 vai
+     mover o motor. Nao mexeu = o defeito e na ligacao/fonte/fusivel/ponte.
+
+O QUE A BUILD 111 MUDOU (BASE: A 110d, QUE FUNCIONOU) - FIRMWARE V12
 --------------------------------------------------------------------
 - A ligacao e a logica do motor sao as MESMAS da 110d / firmware V10
   (a V11 foi descartada). O firmware V12 e o V10 com duas coisas a mais.
@@ -37,12 +65,8 @@ O QUE A BUILD 111 MUDA (BASE: A 110d, QUE FUNCIONOU) - FIRMWARE V12
 - A TELA DA FICHA SEMPRE MANDA SUBIR. Toda vez que o jogo volta para a
   tela inicial (ficha / START), sai o comando de subir (a placa anda so
   o que falta).
-- VOLTA DA ENERGIA: na primeira vez que o jogo chega na tela da ficha
-  depois de ligar a maquina (ou de o Arduino religar), o saco SOBE O
-  CURSO INTEIRO (1,8 s), mesmo que a placa ache que ele ja esta em cima,
-  e a conta zera. Assim o saco desregulado por queda de energia volta
-  para o lugar. Isso precisa do firmware V12 (com o V10 so sai o subir
-  normal).
+- (Build 111 apenas: subida inteira forcada ao ligar. RETIRADA na build
+  112 - forcava o motor contra o batente.)
 - MODO LIVRE DE FABRICA (sem ficha). Para cobrar, toque em 1 FICHA na
   Central. Quem atualiza passa para LIVRE uma vez.
 

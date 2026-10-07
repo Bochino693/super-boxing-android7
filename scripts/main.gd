@@ -1652,7 +1652,10 @@ func _motor_em_uso() -> bool:
 ## cima e entendem a configuração de outro jeito: com eles o jogo NÃO
 ## mexe no motor e a tela pede para gravar o V10.
 func _firmware_do_motor_ok() -> bool:
-	return _numero_do_firmware() >= FIRMWARE_DO_MOTOR
+	return _firmware_por_saco or _numero_do_firmware() >= FIRMWARE_DO_MOTOR
+
+## A placa mandou a linha SACO (só o firmware de motor V10+ manda).
+var _firmware_por_saco = false
 
 ## A espera do START acabou? Chegou em cima, ou não há mais motor com quem
 ## falar, ou passou o curso inteiro com folga — aí a rodada segue e a tela
@@ -3868,19 +3871,13 @@ func _hora_de_procurar() -> bool:
 func _passo_do_motor() -> void:
 	if link == null or not link.is_open() or not _firmware_do_motor_ok():
 		return
-	# VOLTA DA ENERGIA (build 111): na primeira chegada à tela da ficha
-	# depois de ligar (ou de a placa religar), o saco sobe o curso INTEIRO,
-	# mesmo que a conta da placa diga "em cima" — se faltou luz com ele no
-	# meio, ele volta enrolado e a conta zera. Só depois da config do
-	# motor chegar à placa (ela para o motor ao receber CONFIG).
-	if saco.recolher_total_pendente and saco.ligado and state == GameDef.State.IDLE \
-			and ciclo_saco == CicloSaco.OCIOSO and not placa_calibrando \
-			and _numero_do_firmware() >= FIRMWARE_DO_RECOLHE \
-			and animation_time - _config_enviada_em > 0.5:
-		print("SACO: tela da ficha depois de ligar — subida inteira forçada (RECOLHE)")
-		Diario.marca("SACO: RECOLHE (subida inteira forçada)")
-		link.send_line(saco.recolher_total())
-		return
+	# BUILD 112: SEM SUBIDA FORÇADA AO LIGAR. A build 111 mandava, na
+	# primeira tela da ficha, a subida do curso INTEIRO (RECOLHE) mesmo com
+	# o saco já em cima — o motor puxava 1,8 s contra o batente a cada vez
+	# que a máquina era ligada (podia queimar o fusível da ponte H ou
+	# embolar a corda). A volta da energia já é da placa: ela guarda na
+	# EEPROM onde o saco estava e, ao ligar, sobe SÓ o que falta. A tela da
+	# ficha continua mandando SUBIR (a placa anda só o que falta).
 	var linha = saco.passo()
 	if not linha.empty():
 		link.send_line(linha)
@@ -4349,6 +4346,12 @@ func _on_serial_line(line: String) -> void:
 			_motor_ultimo_relato_em = animation_time
 		"SACO":
 			saco.permil = int(msg["permil"])
+			# A LINHA SACO SÓ EXISTE NO FIRMWARE DE MOTOR (V10 em diante): é
+			# a prova de que a placa tem o motor por tempo, mesmo que o READY
+			# com o número da versão tenha se perdido ao ligar. O motor nunca
+			# fica parado por falta de uma linha de apresentação.
+			_firmware_por_saco = true
+			saco.placa_tem_motor = true
 		"AVISO":
 			if str(msg.get("code", "")) == "DESCE_SO_DO_TOPO":
 				print("SACO: a placa sobe ate o topo antes de descer (AVISO,DESCE_SO_DO_TOPO)")
@@ -4777,7 +4780,7 @@ func _diagnostico_do_motor() -> Array:
 	if not firmware_optico_identificado:
 		return ["O ARDUINO NÃO SE IDENTIFICOU", "aguardando o READY da placa", "Grave no Nano o ARDUINO_SENSOR_DE_FEIXE_LM393.ino (V12).", true]
 	var n = _numero_do_firmware()
-	if n >= 0 and n < FIRMWARE_DO_MOTOR:
+	if n >= 0 and n < FIRMWARE_DO_MOTOR and not _firmware_por_saco:
 		return [
 			"FIRMWARE ANTIGO NO ARDUINO (V%d)" % n, "grave o V12",
 			"Grave no Nano o ARDUINO_SENSOR_DE_FEIXE_LM393.ino V12 (sem sensor: descida e subida por tempo).", true
@@ -6261,21 +6264,33 @@ func _titulo_da_abertura_visivel() -> bool:
 		and int(state_time / ABERTURA_DURACAO) % ABERTURA_CAPITULOS == 0 \
 		and not central_aberta and not calib_ativo and transicao < 0.0
 
-## O ARDUINO AINDA COM O FIRMWARE ANTIGO (V9 ou antes, com o sensor de
-## cima): o saco NÃO vai descer, porque o jogo não manda o motor de um
-## firmware que entende os comandos de outro jeito. O aviso é GRANDE, na
-## abertura, para ninguém achar que é defeito do motor.
+## O MOTOR NÃO VAI ANDAR — E A ABERTURA DIZ ISSO GRANDE (build 112).
+##
+## Qualquer motivo grave do diagnóstico (motor desligado na Central,
+## Arduino sem conexão, firmware antigo, placa que não responde ao motor)
+## vira um painel vermelho na tela da ficha, com o motivo e o que fazer —
+## para ninguém achar que "só o sensor funciona" sem saber por quê. Espera
+## a máquina terminar de ligar e o motivo durar alguns segundos.
+var _motor_grave_desde = -1.0
+
 func _aviso_do_firmware_antigo() -> void:
-	if not saco.ligado or not firmware_optico_identificado or _firmware_do_motor_ok():
+	var diag = _diagnostico_do_motor()
+	if not bool(diag[3]) or animation_time < 20.0:
+		_motor_grave_desde = -1.0
 		return
-	var n = _numero_do_firmware()
+	if _motor_grave_desde < 0.0:
+		_motor_grave_desde = animation_time
+	if animation_time - _motor_grave_desde < 6.0:
+		return
 	var caixa = Rect2(60.0, 1236.0, 960.0, 250.0)
 	var pisca = 0.75 + 0.25 * sin(animation_time * 4.0)
 	_cartao(caixa, Color("2a0610"), Compat.cor(Paleta.VERMELHO, pisca), 1.0, 5.0)
-	_texto("ARDUINO COM FIRMWARE ANTIGO%s" % ((" (V%d)" % n) if n >= 0 else ""), caixa.position.y + 64.0, 40, Paleta.VERMELHO, Compat.CENTRO, caixa.position.x, caixa.size.x)
+	var titulo = "MOTOR DO SACO: " + str(diag[0])
+	_texto(titulo, caixa.position.y + 64.0, _tamanho_que_cabe(titulo, 36, caixa.size.x - 40.0), Paleta.VERMELHO, Compat.CENTRO, caixa.position.x, caixa.size.x)
 	_texto("O SACO NÃO VAI DESCER NEM SUBIR", caixa.position.y + 120.0, 34, Paleta.CREME, Compat.CENTRO, caixa.position.x, caixa.size.x)
-	_texto("GRAVE O FIRMWARE V12 NO ARDUINO (pasta ARDUINO_SENSOR_DE_FEIXE_LM393)", caixa.position.y + 172.0, _tamanho_que_cabe("GRAVE O FIRMWARE V12 NO ARDUINO (pasta ARDUINO_SENSOR_DE_FEIXE_LM393)", 24, caixa.size.x - 40.0), Paleta.AMBAR, Compat.CENTRO, caixa.position.x, caixa.size.x)
-	_texto("com o saco ENROLADO EM CIMA", caixa.position.y + 214.0, 24, Paleta.TINTA_LEVE, Compat.CENTRO, caixa.position.x, caixa.size.x)
+	var dica = str(diag[2])
+	_texto(dica, caixa.position.y + 172.0, _tamanho_que_cabe(dica, 24, caixa.size.x - 40.0), Paleta.AMBAR, Compat.CENTRO, caixa.position.x, caixa.size.x)
+	_texto("Central (segure OK), aba SACO: diagnóstico completo e o TESTE do motor", caixa.position.y + 214.0, 22, Paleta.TINTA_LEVE, Compat.CENTRO, caixa.position.x, caixa.size.x)
 
 func _draw_show_idle() -> void:
 	var chegada = ease(abertura_chegada, 0.4)
