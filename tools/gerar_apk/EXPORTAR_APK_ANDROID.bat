@@ -1,6 +1,6 @@
 @echo off
 setlocal
-rem SUPERBOXING_BUILD=110
+rem SUPERBOXING_BUILD=111
 rem Script interno: quem chama e o GERAR_APK_AGORA.bat (na raiz), pelo
 rem GERAR_APK_COMPLETO.ps1, que ja deixa o Godot 3.6.2, o modelo Android, o
 rem plugin USB, o Java e a chave de assinatura prontos.
