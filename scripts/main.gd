@@ -6236,6 +6236,22 @@ func _titulo_da_abertura_visivel() -> bool:
 		and int(state_time / ABERTURA_DURACAO) % ABERTURA_CAPITULOS == 0 \
 		and not central_aberta and not calib_ativo and transicao < 0.0
 
+## O ARDUINO AINDA COM O FIRMWARE ANTIGO (V9 ou antes, com o sensor de
+## cima): o saco NÃO vai descer, porque o jogo não manda o motor de um
+## firmware que entende os comandos de outro jeito. O aviso é GRANDE, na
+## abertura, para ninguém achar que é defeito do motor.
+func _aviso_do_firmware_antigo() -> void:
+	if not saco.ligado or not firmware_optico_identificado or _firmware_do_motor_ok():
+		return
+	var n = _numero_do_firmware()
+	var caixa = Rect2(60.0, 1236.0, 960.0, 250.0)
+	var pisca = 0.75 + 0.25 * sin(animation_time * 4.0)
+	_cartao(caixa, Color("2a0610"), Compat.cor(Paleta.VERMELHO, pisca), 1.0, 5.0)
+	_texto("ARDUINO COM FIRMWARE ANTIGO%s" % ((" (V%d)" % n) if n >= 0 else ""), caixa.position.y + 64.0, 40, Paleta.VERMELHO, Compat.CENTRO, caixa.position.x, caixa.size.x)
+	_texto("O SACO NÃO VAI DESCER NEM SUBIR", caixa.position.y + 120.0, 34, Paleta.CREME, Compat.CENTRO, caixa.position.x, caixa.size.x)
+	_texto("GRAVE O FIRMWARE V10 NO ARDUINO (pasta ARDUINO_SENSOR_DE_FEIXE_LM393)", caixa.position.y + 172.0, _tamanho_que_cabe("GRAVE O FIRMWARE V10 NO ARDUINO (pasta ARDUINO_SENSOR_DE_FEIXE_LM393)", 24, caixa.size.x - 40.0), Paleta.AMBAR, Compat.CENTRO, caixa.position.x, caixa.size.x)
+	_texto("com o saco ENROLADO EM CIMA", caixa.position.y + 214.0, 24, Paleta.TINTA_LEVE, Compat.CENTRO, caixa.position.x, caixa.size.x)
+
 func _draw_show_idle() -> void:
 	var chegada = ease(abertura_chegada, 0.4)
 	_marca_da_casa(146.0, 132.0, chegada)
@@ -6251,6 +6267,7 @@ func _draw_show_idle() -> void:
 		_:
 			_capitulo_da_marca(entrada)
 	_pontos_do_capitulo(capitulo, chegada)
+	_aviso_do_firmware_antigo()
 	var pulse = 0.8 + 0.2 * sin(animation_time * 2.6)
 	# A MÁQUINA NÃO CONVIDA PARA O QUE ELA NÃO PODE FAZER.
 	#

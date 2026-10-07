@@ -216,8 +216,8 @@ uint8_t motorProximo = MOTOR_PARADO; /* o que fazer quando a pausa acabar */
    embaixo e subir de embaixo ate em cima. A subida e o INVERSO da descida:
    sobe exatamente o que desceu. Teto absoluto: um numero errado vindo do
    cabo nao vira motor ligado para sempre. */
-unsigned long motorDesceMs = 3500;
-unsigned long motorSobeMs = 3500;
+unsigned long motorDesceMs = 2000;   /* padrao: 2 s para descer */
+unsigned long motorSobeMs = 2000;    /* padrao: 2 s para subir (o inverso) */
 const unsigned long MOTOR_CURSO_MAX_MS = 15000;
 /* Tempo morto ao inverter o sentido: protege a ponte H e a reducao. */
 unsigned long motorPausaMs = 350;

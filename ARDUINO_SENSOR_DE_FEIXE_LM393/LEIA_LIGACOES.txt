@@ -12,6 +12,9 @@ TESTES SEM O JOGO (subpastas; a IDE nao junta ao firmware):
   TESTE_PONTE_H\TESTE_PONTE_H.ino   - sobe/desce o saco pelo Monitor Serial
                                       (s, d, p, t, v80, w60): acha a velocidade
                                       boa (o sensor de cima nao e mais usado).
+  TESTE_SOBE_DESCE\TESTE_SOBE_DESCE.ino - SEM serial: desce 2 s, sobe 2 s, em
+                                      laco. So um sentido anda = fio de comando
+                                      (RPWM D9 / LPWM D10) ou EN sem 5V.
   Depois do teste, grave de novo o ARDUINO_SENSOR_DE_FEIXE_LM393.ino.
   Passo a passo: docs\TESTE_DO_SENSOR.md
 

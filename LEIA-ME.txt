@@ -35,10 +35,17 @@ usa o sensor de cima: com ele no Arduino o jogo NAO mexe no motor e o
 rodape da tela diz "FIRMWARE ANTIGO NO ARDUINO - GRAVE O V10". Grave o
 ARDUINO_SENSOR_DE_FEIXE_LM393.ino (V10) com o saco ENROLADO EM CIMA.
 
-O SACO, SO ISSO: 3 s para descer e 3 s para subir (padrao; ajusta na
+SE SO UM SENTIDO ANDA (so sobe, ou so desce, e trocando M+/M- o sentido
+que anda inverte): grave o ARDUINO_SENSOR_DE_FEIXE_LM393\TESTE_SOBE_DESCE
+e olhe o saco (desce 2 s, sobe 2 s, em laco, sem jogo). Se so um sentido
+andar nele tambem, um dos fios de comando nao chega na ponte H: RPWM->D9,
+LPWM->D10, R_EN e L_EN->5V, VCC->5V, GND comum (o texto do teste explica).
+Os dois sentidos andando no teste: grave o V10 e jogue.
+
+O SACO, SO ISSO: 2 s para descer e 2 s para subir (padrao; ajusta na
 Central, aba SACO). Fora da partida: em cima. START -> foto -> entra a
-cena do RINGUE e SO ENTAO o saco desce (3 s) -> com ele embaixo o soco
-vale -> soco 1, soco 2 -> sobe (3 s). Nocaute: sobe na hora. Soco dado
+cena do RINGUE e SO ENTAO o saco desce (2 s) -> com ele embaixo o soco
+vale -> soco 1, soco 2 -> sobe (2 s). Nocaute: sobe na hora. Soco dado
 enquanto o saco ainda desce nao conta.
 
 1. O JOGO PARAVA ("o app parou") - ERA O PLUGIN USB DO ARDUINO.
