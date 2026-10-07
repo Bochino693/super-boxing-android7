@@ -1,4 +1,4 @@
-SUPER BOXING - VERSAO TV BOX S905L (ANDROID 7.1) - BUILD 112
+SUPER BOXING - VERSAO TV BOX S905L (ANDROID 7.1) - BUILD 113
 ===========================================================
 
 PARA QUAL MAQUINA E ESTA VERSAO
@@ -27,6 +27,22 @@ O que muda por dentro (voce nao ve na tela):
 O APK tem outro nome de pacote (com.lazersport.superboxing), entao pode
 ficar instalado junto com o Punch Challenge das outras maquinas. Se a
 build 92 a 109 estiver instalada, veja INSTALAR abaixo (assinatura nova).
+
+O QUE A BUILD 113 MUDA (BERMUDA E COMEMORACAO)
+----------------------------------------------
+- BERMUDA DE PERNAS RETAS. O calcao antigo tinha o gancho na altura da
+  barra: as duas pernas ficavam emendadas ate embaixo e, com o lutador em
+  guarda, o pano entre as coxas abria como saia ("boca aberta"). Agora o
+  calcao e uma bermuda de verdade: cada perna e um tubo reto em volta da
+  coxa (2 cm de folga), o gancho fica no lugar, a barra vermelha fica
+  justa em cada perna e a faixa lateral vermelha com vivo branco aparece
+  de frente. A malha foi refeita pelo tools/refazer_calcao.py (o resto do
+  lutador nao muda).
+- QUEM PERDE NAO COMEMORA. Quando o jogador derrubava o lutador na rodada
+  ("nocaute") e ele levantava, o lutador comemorava como se tivesse
+  ganhado. Agora, derrubado ou batido forte (soco alto), ele fica zonzo,
+  de cabeca baixa. So comemora quando ganha a luta.
+- A build 112 (motor sempre funcionando) continua igual.
 
 O QUE A BUILD 112 CORRIGE (O MOTOR PAROU DEPOIS DE RELIGAR A MAQUINA)
 ----------------------------------------------------------------------

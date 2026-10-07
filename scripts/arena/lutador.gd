@@ -237,7 +237,12 @@ func fim_de_rodada(desfecho: String) -> void:
 	match desfecho:
 		"derrota":
 			_festa = "deboche"
-		"vitoria":
+		"vitoria", "nocaute":
+			# PERDEU A LUTA, NÃO COMEMORA. Derrubado nesta rodada (mesmo que
+			# tenha levantado) ou batido forte e de pé: fica zonzo, cabeça
+			# baixa — nunca os braços para cima. Antes o "nocaute" caía no
+			# caso padrão ("celebra"): o lutador levantava do knockdown e
+			# comemorava como se tivesse ganhado.
 			_festa = "tonto"
 		"empate":
 			# AGUENTOU, MAS NÃO COMEMORA AINDA: volta à guarda e espera o

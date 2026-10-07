@@ -383,5 +383,6 @@ tools/gerar_tema.py
 tools/gerar_torcida.py
 tools/pintura.py
 tools/preparar_godot3.py
+tools/refazer_calcao.py
 tools/som_tv_feito.json
 tools/torcida_real.py
