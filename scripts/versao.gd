@@ -12,9 +12,9 @@ extends Reference
 ## NUMERO em um e escreva em NOTA o que mudou. Um carimbo que não sobe
 ## mente, e um carimbo que mente é pior do que carimbo nenhum.
 
-const NUMERO = 113
+const NUMERO = 114
 const DATA = "07/10/2026"
-const NOTA = "bermuda de pernas retas (gancho no lugar, barra justa na coxa, faixa lateral) e o lutador que perde a luta não comemora mais"
+const NOTA = "bermuda colada ao corpo (7 mm da coxa, quadril sem estufar) e o lutador que perde a luta não comemora mais"
 
 ## Rodapé da abertura: cabe em uma linha discreta.
 static func curta() -> String:

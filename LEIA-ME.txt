@@ -1,4 +1,4 @@
-SUPER BOXING - VERSAO TV BOX S905L (ANDROID 7.1) - BUILD 113
+SUPER BOXING - VERSAO TV BOX S905L (ANDROID 7.1) - BUILD 114
 ===========================================================
 
 PARA QUAL MAQUINA E ESTA VERSAO
@@ -27,6 +27,13 @@ O que muda por dentro (voce nao ve na tela):
 O APK tem outro nome de pacote (com.lazersport.superboxing), entao pode
 ficar instalado junto com o Punch Challenge das outras maquinas. Se a
 build 92 a 109 estiver instalada, veja INSTALAR abaixo (assinatura nova).
+
+O QUE A BUILD 114 MUDA (BERMUDA COLADA AO CORPO)
+------------------------------------------------
+- A bermuda da 113 ainda ficava folgada (2 cm da coxa) e estufava no
+  quadril. Agora e colada ao corpo: 7 mm da coxa e, abaixo do cinturao,
+  o quadril aperta e fica rente a pele. A barra vermelha continua justa
+  em cada perna e a faixa lateral aparece de frente.
 
 O QUE A BUILD 113 MUDA (BERMUDA E COMEMORACAO)
 ----------------------------------------------

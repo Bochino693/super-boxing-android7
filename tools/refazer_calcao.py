@@ -34,8 +34,10 @@ Y_CINTURA = 0.957     # topo do calção (fica embaixo do cinturão)
 Y_GANCHO = 0.790      # onde as pernas se separam (lados)
 CAIDA_GANCHO = 0.022  # o gancho desce isto no meio (entre as pernas)
 Y_BARRA = 0.636       # barra das pernas
-FOLGA = 0.020         # pano a 2 cm da coxa
-FOLGA_MIN = 0.011     # nunca mais perto que isto
+FOLGA = 0.007         # pano colado: 7 mm da coxa
+FOLGA_MIN = 0.004     # nunca mais perto que isto
+APERTO_QUADRIL = 0.90 # no gancho o quadril fica a 90% do calção antigo
+FOLGA_QUADRIL = 0.005 # e nunca dentro da pele onde ela existe
 N_QUADRIL = 64        # pontos em volta do quadril
 ANEIS_QUADRIL = 9
 ANEIS_PERNA = 12
@@ -244,6 +246,22 @@ def main(entrada, saida):
         org = np.tile([0.0, yr, z_c], (N_QUADRIL, 1))
         r = raios_contra_malha(org, dirs, C_P, C_F)
         r = suavizar_circular(np.where(np.isnan(r), np.nanmean(r), r), 1)
+        # COLADO AO CORPO: abaixo do cinturão o quadril aperta até o gancho
+        # (o calção antigo estufava ali); onde a pele existe, fica rente a ela.
+        k = 1.0 - (1.0 - APERTO_QUADRIL) * min(1.0, max(0.0, (0.90 - y) / (0.90 - Y_GANCHO)))
+        r = r * k
+        # só o tronco (na altura da cintura passam também os braços)
+        sel = (np.abs(S_P[:, 1] - y) < 0.012) & (np.abs(S_P[:, 0]) < 0.19) \
+            & (np.abs(S_P[:, 2] - z_c) < 0.17) & (y < 0.93)
+        if sel.sum() > 12:
+            q = S_P[sel]
+            ang_p = np.arctan2(q[:, 0], -(q[:, 2] - z_c)) % (2 * math.pi)
+            rad_p = np.hypot(q[:, 0], q[:, 2] - z_c)
+            for j in range(N_QUADRIL):
+                d_ang = np.abs((ang_p - phis[j] + math.pi) % (2 * math.pi) - math.pi)
+                perto = d_ang < (2 * math.pi / N_QUADRIL) * 1.5
+                if perto.any():
+                    r[j] = max(r[j], rad_p[perto].max() + FOLGA_QUADRIL)
         aneis_q.append(np.stack([dirs[:, 0] * r, np.full(N_QUADRIL, y), z_c + dirs[:, 2] * r], 1))
     aneis_q = np.array(aneis_q)            # [ANEIS_QUADRIL, N, 3]
     fundo = aneis_q[-1]

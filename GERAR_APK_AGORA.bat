@@ -1,6 +1,6 @@
 @echo off
 setlocal
-rem SUPERBOXING_BUILD=113
+rem SUPERBOXING_BUILD=114
 title Super Boxing S905L - Gerar APK Android
 cd /d "%~dp0"
 
