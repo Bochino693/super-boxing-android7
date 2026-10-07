@@ -14,7 +14,7 @@ extends Reference
 
 const NUMERO = 110
 const DATA = "06/10/2026"
-const NOTA = "saco só por tempo (2 s desce, 2 s sobe, firmware V10); desce ao entrar no ringue; aviso grande com firmware antigo; TESTE_SOBE_DESCE"
+const NOTA = "firmware V11: D9 desce, D10 sobe (liga-desliga, 2 s cada), sem sensor; desce ao entrar no ringue"
 
 ## Rodapé da abertura: cabe em uma linha discreta.
 static func curta() -> String:

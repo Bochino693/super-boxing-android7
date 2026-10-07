@@ -1,5 +1,5 @@
 /*
-  PUNCH CHALLENGE - FIRMWARE COMPLETO SENSOR DE FEIXE MH/LM393 V10
+  PUNCH CHALLENGE - FIRMWARE COMPLETO SENSOR DE FEIXE MH/LM393 V11
   Arduino Uno/Nano ATmega328P - serial 115200
 
   Sensor: VCC->5V, GND->GND, D0->D4, A0->A0
@@ -10,6 +10,16 @@
          GND -> GND. PWM de 20 kHz (sem chiado), rampa suave na partida.
   Fim de curso: NENHUM (V10). Descida e subida so por tempo, uma o
          inverso da outra. O D11 nao e mais usado.
+
+  V11 - UM PINO PARA SUBIR, OUTRO PARA DESCER (DEFINITIVO):
+    - D10 = SUBIR  -> LPWM da ponte H (pino 2 do IBT-2 / BT_2)
+      D9  = DESCER -> RPWM da ponte H (pino 1 do IBT-2 / BT_2)
+      R_EN, L_EN e VCC da ponte H no 5V do Nano; GND no GND do Nano.
+    - Cada pino e LIGA/DESLIGA (5V ou 0V), velocidade cheia: sem PWM, sem
+      rampa, sem copia no D7/D8 (D7 e D8 nao sao mais usados), sem sensor.
+      Parado = os dois em 0V. Nunca os dois em 5V ao mesmo tempo.
+    - Tempos padrao: 2 s para descer, 2 s para subir (Central, aba SACO).
+    - Diagrama: docs\MONTAGEM_DEFINITIVA_V11.png
 
   O QUE MUDOU NA V10 (SEM SENSOR DE FIM DE CURSO - SO TEMPO):
     - O SENSOR DE CIMA FOI ELIMINADO. O saco anda SO POR TEMPO: um tempo
@@ -182,8 +192,8 @@
    ler o sensor e de responder ao jogo - e ai ninguem consegue nem
    mandar parar.
    ------------------------------------------------------------------ */
-#define PIN_MOTOR_DESCE 9    /* RPWM - OC1A (PB1) */
-#define PIN_MOTOR_SOBE 10    /* LPWM - OC1B (PB2) */
+#define PIN_MOTOR_DESCE 9    /* DESCER -> RPWM da ponte H (PB1) */
+#define PIN_MOTOR_SOBE 10    /* SUBIR  -> LPWM da ponte H (PB2) */
 /* V9: as MESMAS ordens tambem no D7 (DESCE) e no D8 (SOBE), a ligacao da
    V5 e anteriores, em velocidade cheia (liga/desliga, sem pulso). */
 #define PIN_ESPELHO_DESCE 7   /* PD7 */
@@ -458,10 +468,8 @@ void leds(long permil) {
    LOW. Com as duas em LOW (e R_EN/L_EN no 5V) a ponte FREIA o motor: o
    saco fica onde parou. */
 void saidasDesligar() {
-  TCCR1A &= ~(_BV(COM1A1) | _BV(COM1B1));
-  OCR1A = 0; OCR1B = 0;
-  PORTB &= ~(_BV(PB1) | _BV(PB2) | _BV(PB0));
-  PORTD &= ~_BV(PD7);
+  digitalWrite(PIN_MOTOR_DESCE, LOW);
+  digitalWrite(PIN_MOTOR_SOBE, LOW);
 }
 
 uint16_t motorCarga(uint8_t sentido) {
@@ -475,14 +483,15 @@ uint16_t motorCarga(uint8_t sentido) {
 
 /* Liga (ou atualiza) o PWM do sentido. A saida do outro sentido fica em
    LOW antes de qualquer coisa. */
+/* V11: UM PINO POR SENTIDO, LIGA/DESLIGA. O do outro sentido vai a 0V
+   ANTES de o deste ir a 5V: os dois nunca ficam ligados juntos. */
 void saidaLigar(uint8_t sentido) {
-  uint16_t carga = motorCarga(sentido);
   if (sentido == MOTOR_SUBINDO) {
-    TCCR1A &= ~_BV(COM1A1); PORTB &= ~_BV(PB1); OCR1A = 0; PORTD &= ~_BV(PD7);
-    OCR1B = carga; TCCR1A |= _BV(COM1B1); PORTB |= _BV(PB0);
+    digitalWrite(PIN_MOTOR_DESCE, LOW);
+    digitalWrite(PIN_MOTOR_SOBE, HIGH);
   } else {
-    TCCR1A &= ~_BV(COM1B1); PORTB &= ~_BV(PB2); OCR1B = 0; PORTB &= ~_BV(PB0);
-    OCR1A = carga; TCCR1A |= _BV(COM1A1); PORTD |= _BV(PD7);
+    digitalWrite(PIN_MOTOR_SOBE, LOW);
+    digitalWrite(PIN_MOTOR_DESCE, HIGH);
   }
 }
 
@@ -621,8 +630,7 @@ unsigned long testeAte = 0, testePisca = 0;
 
 void testeSaida(uint8_t sentido) {
   saidasDesligar();
-  if (sentido == MOTOR_SUBINDO) { OCR1B = PWM_TOPO; TCCR1A |= _BV(COM1B1); PORTB |= _BV(PB0); }
-  else { OCR1A = PWM_TOPO; TCCR1A |= _BV(COM1A1); PORTD |= _BV(PD7); }
+  saidaLigar(sentido);
 }
 
 void testeComecar() {
@@ -718,7 +726,7 @@ void motorComando(char *cmd) {
 }
 
 void comando(char *cmd) {
-  if (!strcasecmp(cmd,"PING")) { Serial.println(F("READY,PUNCH_OPTICAL,V10-MH-LM393")); Serial.println(F("PONG")); }
+  if (!strcasecmp(cmd,"PING")) { Serial.println(F("READY,PUNCH_OPTICAL,V11-MH-LM393")); Serial.println(F("PONG")); }
   else if (!strcasecmp(cmd,"ARM")) armarCaptura();
   else if (!strcasecmp(cmd,"RESET")) { noInterrupts(); capturaArmada=false; pulsoAberto=false; pulsoPendente=false; interrupts(); ajusteAte=0; motorParar(false); saidasDesligar(); Serial.println(F("OK,RESET")); }
   else if (!strcasecmp(cmd,"CALIBRATE")) { calibrar(); Serial.println(F("OK,CALIBRATE")); }
@@ -757,17 +765,13 @@ void setup() {
      estarem em LOW. Configurar o pino como saida antes de escrever nele
      deixa um pulso de nivel indefinido na ponte H - curto, mas suficiente
      para o saco dar um tranco toda vez que a maquina liga. */
+  /* V11: Timer1 desligado (sem PWM): os dois pinos do motor sao so
+     LIGA/DESLIGA. D7 e D8 nao sao mais usados (ficam como entrada). */
+  TCCR1A = 0; TCCR1B = 0;
   digitalWrite(PIN_MOTOR_DESCE,LOW); digitalWrite(PIN_MOTOR_SOBE,LOW);
-  digitalWrite(PIN_ESPELHO_DESCE,LOW); digitalWrite(PIN_ESPELHO_SOBE,LOW);
   pinMode(PIN_MOTOR_DESCE,OUTPUT); pinMode(PIN_MOTOR_SOBE,OUTPUT);
-  pinMode(PIN_ESPELHO_DESCE,OUTPUT); pinMode(PIN_ESPELHO_SOBE,OUTPUT);
   digitalWrite(PIN_MOTOR_DESCE,LOW); digitalWrite(PIN_MOTOR_SOBE,LOW);
-  /* Timer1 so para a ponte H: Fast PWM (modo 14), TOPO no ICR1, sem
-     divisor -> 20 kHz, acima do que o ouvido escuta. As saidas so ligam
-     em saidaLigar. */
-  TCCR1A = _BV(WGM11); TCCR1B = 0; TCNT1 = 0;
-  ICR1 = PWM_TOPO - 1; OCR1A = 0; OCR1B = 0;
-  TCCR1B = _BV(WGM13) | _BV(WGM12) | _BV(CS10);
+  pinMode(PIN_ESPELHO_DESCE,INPUT); pinMode(PIN_ESPELHO_SOBE,INPUT);
   /* O QUE A PLACA LEMBRA: os dois tempos e onde o saco ficou. */
   if (eeprom_read_byte((uint8_t *)EE_MARCA) == EE_VALOR_MARCA) {
     uint16_t d = eeprom_read_word((uint16_t *)EE_DESCE), u = eeprom_read_word((uint16_t *)EE_SOBE);
@@ -801,7 +805,7 @@ void setup() {
   fitaEsq.begin(); fitaDir.begin(); fitaEsq.setBrightness(140); fitaDir.setBrightness(140);
   fitaEsq.show(); fitaDir.show();
 #endif
-  Serial.println(F("READY,PUNCH_OPTICAL,V10-MH-LM393")); calibrar();
+  Serial.println(F("READY,PUNCH_OPTICAL,V11-MH-LM393")); calibrar();
 #if defined(__AVR_ATmega328P__)
   PCICR |= _BV(PCIE2); PCMSK2 |= _BV(PCINT20);
 #endif

@@ -1,0 +1,123 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+  body { margin:0; background:#ffffff; font-family: "DejaVu Sans", Arial, sans-serif; }
+  svg text { font-family: "DejaVu Sans", Arial, sans-serif; }
+</style></head>
+<body>
+<svg width="1700" height="2150" viewBox="0 0 1700 2150" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1700" height="2150" fill="#ffffff"/>
+  <text x="850" y="62" text-anchor="middle" font-size="40" font-weight="bold" fill="#111">SUPER BOXING — LIGAÇÃO DEFINITIVA DO MOTOR DO SACO</text>
+  <text x="850" y="104" text-anchor="middle" font-size="25" fill="#333">Firmware V11 • UM pino para DESCER (D9) • UM pino para SUBIR (D10) • sem sensor de fim de curso • 2 s cada</text>
+
+  <!-- ===== ARDUINO NANO ===== -->
+  <rect x="60" y="170" width="420" height="900" rx="18" fill="#0d4f8b" stroke="#062b4d" stroke-width="4"/>
+  <text x="270" y="300" text-anchor="middle" font-size="30" font-weight="bold" fill="#fff">ARDUINO NANO</text>
+  <rect x="215" y="185" width="110" height="46" rx="6" fill="#b9c3cc" stroke="#555" stroke-width="2"/>
+  <text x="270" y="216" text-anchor="middle" font-size="20" fill="#111">USB</text>
+  <g font-size="23" fill="#fff">
+    <!-- pinos do lado direito (motor) -->
+    <circle cx="480" cy="380" r="11" fill="#ffd400" stroke="#000" stroke-width="2"/><text x="455" y="388" text-anchor="end" font-weight="bold">D9 = DESCER</text>
+    <circle cx="480" cy="470" r="11" fill="#ffd400" stroke="#000" stroke-width="2"/><text x="455" y="478" text-anchor="end" font-weight="bold">D10 = SUBIR</text>
+    <circle cx="480" cy="580" r="11" fill="#ffd400" stroke="#000" stroke-width="2"/><text x="455" y="588" text-anchor="end" font-weight="bold">5V</text>
+    <circle cx="480" cy="690" r="11" fill="#ffd400" stroke="#000" stroke-width="2"/><text x="455" y="698" text-anchor="end" font-weight="bold">GND</text>
+    <!-- outros pinos (lado esquerdo) -->
+    <circle cx="60" cy="790" r="9" fill="#ddd" stroke="#000" stroke-width="2"/><text x="85" y="797">D2 ← botão START</text>
+    <circle cx="60" cy="835" r="9" fill="#ddd" stroke="#000" stroke-width="2"/><text x="85" y="842">D3 ← botão CRÉDITO</text>
+    <circle cx="60" cy="880" r="9" fill="#ddd" stroke="#000" stroke-width="2"/><text x="85" y="887">D12 ← botão CONFIG</text>
+    <circle cx="60" cy="925" r="9" fill="#ddd" stroke="#000" stroke-width="2"/><text x="85" y="932">D4 ← sensor do SOCO</text>
+    <circle cx="60" cy="970" r="9" fill="#ddd" stroke="#000" stroke-width="2"/><text x="85" y="977">D5 / D6 → fitas LED</text>
+    <text x="85" y="1022" font-size="21" fill="#ffd9d9">D7, D8, D11: NÃO LIGAR</text>
+    <text x="85" y="1052" font-size="19" fill="#d0dcff">(botões: outro lado no GND)</text>
+  </g>
+
+  <!-- ===== PONTE H IBT-2 / BT_2 ===== -->
+  <rect x="760" y="230" width="430" height="560" rx="16" fill="#1d1d1d" stroke="#000" stroke-width="4"/>
+  <text x="975" y="275" text-anchor="middle" font-size="27" font-weight="bold" fill="#fff">PONTE H  BTS7960</text>
+  <text x="975" y="308" text-anchor="middle" font-size="20" fill="#ccc">(IBT-2 / "BT_2") — siga o NOME impresso</text>
+  <g font-size="23" fill="#fff">
+    <circle cx="760" cy="380" r="11" fill="#ffd400" stroke="#000" stroke-width="2"/><text x="785" y="388" font-weight="bold">1  RPWM</text>
+    <circle cx="760" cy="470" r="11" fill="#ffd400" stroke="#000" stroke-width="2"/><text x="785" y="478" font-weight="bold">2  LPWM</text>
+    <circle cx="760" cy="540" r="11" fill="#ffd400" stroke="#000" stroke-width="2"/><text x="785" y="548">3  R_EN</text>
+    <circle cx="760" cy="580" r="11" fill="#ffd400" stroke="#000" stroke-width="2"/><text x="785" y="588">4  L_EN</text>
+    <circle cx="760" cy="620" r="11" fill="#ffd400" stroke="#000" stroke-width="2"/><text x="785" y="628">7  VCC</text>
+    <circle cx="760" cy="690" r="11" fill="#ffd400" stroke="#000" stroke-width="2"/><text x="785" y="698">8  GND</text>
+    <text x="785" y="760" font-size="20" fill="#bbb">5 R_IS e 6 L_IS: sem ligação</text>
+    <!-- borne -->
+    <circle cx="1190" cy="380" r="11" fill="#2fbf4a" stroke="#000" stroke-width="2"/><text x="1165" y="388" text-anchor="end">B+</text>
+    <circle cx="1190" cy="450" r="11" fill="#2fbf4a" stroke="#000" stroke-width="2"/><text x="1165" y="458" text-anchor="end">B−</text>
+    <circle cx="1190" cy="560" r="11" fill="#2fbf4a" stroke="#000" stroke-width="2"/><text x="1165" y="568" text-anchor="end">M+</text>
+    <circle cx="1190" cy="630" r="11" fill="#2fbf4a" stroke="#000" stroke-width="2"/><text x="1165" y="638" text-anchor="end">M−</text>
+    <text x="1165" y="500" text-anchor="end" font-size="19" fill="#9fe0a9">borne verde</text>
+  </g>
+
+  <!-- fios Nano -> ponte -->
+  <line x1="491" y1="380" x2="749" y2="380" stroke="#ff7a00" stroke-width="9"/>
+  <text x="620" y="366" text-anchor="middle" font-size="22" font-weight="bold" fill="#c45a00">DESCER</text>
+  <line x1="491" y1="470" x2="749" y2="470" stroke="#16a34a" stroke-width="9"/>
+  <text x="620" y="456" text-anchor="middle" font-size="22" font-weight="bold" fill="#0f7a37">SUBIR</text>
+  <polyline points="491,580 640,580 640,540 749,540" fill="none" stroke="#e11d1d" stroke-width="7"/>
+  <polyline points="640,580 749,580" fill="none" stroke="#e11d1d" stroke-width="7"/>
+  <polyline points="640,580 640,620 749,620" fill="none" stroke="#e11d1d" stroke-width="7"/>
+  <circle cx="640" cy="580" r="8" fill="#e11d1d"/>
+  <text x="565" y="566" text-anchor="middle" font-size="20" font-weight="bold" fill="#b91c1c">5V</text>
+  <line x1="491" y1="690" x2="749" y2="690" stroke="#111" stroke-width="7"/>
+  <text x="620" y="676" text-anchor="middle" font-size="20" font-weight="bold" fill="#111">GND</text>
+
+  <!-- ===== FONTE DO MOTOR ===== -->
+  <rect x="1380" y="300" width="270" height="210" rx="12" fill="#5b5b5b" stroke="#222" stroke-width="4"/>
+  <text x="1515" y="345" text-anchor="middle" font-size="25" font-weight="bold" fill="#fff">FONTE DO</text>
+  <text x="1515" y="377" text-anchor="middle" font-size="25" font-weight="bold" fill="#fff">MOTOR</text>
+  <text x="1515" y="410" text-anchor="middle" font-size="20" fill="#eee">(12 V ou 24 V,</text>
+  <text x="1515" y="436" text-anchor="middle" font-size="20" fill="#eee">a do motor)</text>
+  <text x="1395" y="480" font-size="22" font-weight="bold" fill="#ffb3b3">V+</text>
+  <text x="1610" y="480" font-size="22" font-weight="bold" fill="#ddd">V−</text>
+  <polyline points="1201,380 1300,380 1300,330 1380,330" fill="none" stroke="#e11d1d" stroke-width="8"/>
+  <rect x="1265" y="358" width="70" height="40" rx="8" fill="#fff4c2" stroke="#b58900" stroke-width="3"/>
+  <text x="1300" y="384" text-anchor="middle" font-size="16" font-weight="bold" fill="#7a5c00">FUSÍVEL</text>
+  <polyline points="1201,450 1330,450 1330,530 1640,530 1640,505" fill="none" stroke="#111" stroke-width="8"/>
+
+  <!-- ===== MOTOR ===== -->
+  <circle cx="1450" cy="700" r="105" fill="#9a9a9a" stroke="#333" stroke-width="5"/>
+  <text x="1450" y="695" text-anchor="middle" font-size="30" font-weight="bold" fill="#111">MOTOR</text>
+  <text x="1450" y="730" text-anchor="middle" font-size="20" fill="#111">do saco</text>
+  <polyline points="1201,560 1300,560 1300,650 1348,650" fill="none" stroke="#7c3aed" stroke-width="8"/>
+  <polyline points="1201,630 1270,630 1270,760 1358,760" fill="none" stroke="#7c3aed" stroke-width="8"/>
+  <text x="1270" y="815" text-anchor="middle" font-size="19" fill="#5b21b6">desce quando devia subir?</text>
+  <text x="1270" y="840" text-anchor="middle" font-size="19" fill="#5b21b6">troque M+ com M−</text>
+
+  <!-- USB -> TV Box -->
+  <polyline points="270,185 270,140 700,140" fill="none" stroke="#555" stroke-width="7" stroke-dasharray="14 8"/>
+  <text x="715" y="148" font-size="22" fill="#333">cabo USB → TV Box (o jogo)</text>
+
+  <!-- ===== TABELA ===== -->
+  <text x="60" y="1140" font-size="30" font-weight="bold" fill="#111">FIO POR FIO</text>
+  <g font-size="24">
+    <rect x="60" y="1160" width="1580" height="50" fill="#e8eef5"/>
+    <text x="80" y="1194" font-weight="bold">ARDUINO NANO</text><text x="420" y="1194" font-weight="bold">PONTE H (IBT-2)</text><text x="820" y="1194" font-weight="bold">PARA QUE SERVE</text>
+    <text x="80" y="1250">D9</text><text x="420" y="1250">1  RPWM</text><text x="820" y="1250">DESCER o saco (5 V = desce)</text>
+    <text x="80" y="1300">D10</text><text x="420" y="1300">2  LPWM</text><text x="820" y="1300">SUBIR o saco (5 V = sobe)</text>
+    <text x="80" y="1350">5V</text><text x="420" y="1350">3 R_EN + 4 L_EN + 7 VCC</text><text x="820" y="1350">liga as duas metades da ponte (OBRIGATÓRIO os três)</text>
+    <text x="80" y="1400">GND</text><text x="420" y="1400">8  GND</text><text x="820" y="1400">terra comum (OBRIGATÓRIO)</text>
+    <text x="80" y="1450">—</text><text x="420" y="1450">B+ / B−</text><text x="820" y="1450">fonte do MOTOR (V+ com fusível / V−)</text>
+    <text x="80" y="1500">—</text><text x="420" y="1500">M+ / M−</text><text x="820" y="1500">os dois fios do motor</text>
+  </g>
+
+  <!-- ===== COMO FUNCIONA ===== -->
+  <text x="60" y="1590" font-size="30" font-weight="bold" fill="#111">COMO O JOGO USA</text>
+  <g font-size="23" fill="#222">
+    <text x="60" y="1632">• Fora da partida o saco fica ENROLADO EM CIMA (D9 e D10 em 0 V = motor parado/freado).</text>
+    <text x="60" y="1670">• START → foto → entra o RINGUE → D9 em 5 V por 2 s: o saco DESCE.</text>
+    <text x="60" y="1708">• Saco embaixo → soco 1 → soco 2 (ou nocaute) → D10 em 5 V por 2 s: o saco SOBE.</text>
+    <text x="60" y="1746">• Os dois pinos NUNCA ficam em 5 V juntos. Tempos ajustáveis: Central → aba SACO.</text>
+  </g>
+  <text x="60" y="1830" font-size="30" font-weight="bold" fill="#111">ANTES DE JOGAR</text>
+  <g font-size="23" fill="#222">
+    <text x="60" y="1872">1. Grave TESTE_SOBE_DESCE.ino: o saco deve DESCER 2 s e SUBIR 2 s, em laço.</text>
+    <text x="80" y="1906">Só um sentido anda → fio D9/D10 ou R_EN/L_EN sem 5 V. Sentido trocado → troque M+ com M−.</text>
+    <text x="60" y="1946">2. Enrole o saco EM CIMA e grave ARDUINO_SENSOR_DE_FEIXE_LM393.ino (V11).</text>
+    <text x="60" y="1986">3. Na TV Box, a abertura NÃO pode mostrar o painel vermelho "FIRMWARE ANTIGO".</text>
+    <text x="60" y="2040" font-size="21" fill="#b91c1c">O sensor de fim de curso (D11) e o resistor de 100k foram RETIRADOS: não ligue nada no D11, D7 ou D8.</text>
+  </g>
+</svg>
+</body></html>
