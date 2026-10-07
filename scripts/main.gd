@@ -5797,6 +5797,8 @@ func _draw_pancada() -> void:
 ## O corte é oblíquo porque o fundo do jogo já é feito de faixas
 ## oblíquas: a cortina passa a parecer uma peça do cenário se movendo, e
 ## não um retângulo estranho aparecendo por cima.
+const COR_DA_CORTINA = Color("1c0b33")
+
 func _draw_transicao() -> void:
 	if transicao < 0.0:
 		return
@@ -5814,12 +5816,13 @@ func _draw_transicao() -> void:
 	var base = TELA.y + 20.0
 	var e = x - largura * 0.5
 	var d = x + largura * 0.5
-	# AS CORES DO JOGO: magenta vivo no miolo escurecendo para o roxo da
-	# abertura, como o letreiro e o botão START.
-	draw_polygon(PoolVector2Array([
+	# UMA COR SÓ, O ROXO ESCURO DA ABERTURA. O degradê magenta → roxo
+	# lia como um "card rosa" passando; liso e escuro, a cortina some atrás
+	# do logo e das bordas zebradas.
+	draw_colored_polygon(PoolVector2Array([
 		Vector2(e + inclinacao, topo), Vector2(d + inclinacao, topo),
 		Vector2(d - inclinacao, base), Vector2(e - inclinacao, base),
-	]), PoolColorArray([Color("d91283"), Color("d91283"), Color("3a0f5e"), Color("3a0f5e")]))
+	]), COR_DA_CORTINA)
 	# As duas bordas com a FAIXA ZEBRADA amarela e preta da moldura da
 	# arena, e um fio de ouro — a cortina é da mesma máquina.
 	for borda in [[e, 1.0], [d, -1.0]]:
