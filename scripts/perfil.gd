@@ -33,6 +33,9 @@ const QUADRO_CRITICO_MS = 48.0
 ## lutador e a torcida saíam borrados; o lutador agora é desenhado numa
 ## passada só (`LUTADOR_LEVE`) e a torcida faz as contas no vértice, e a
 ## folga que isso abriu na placa de vídeo foi para a nitidez.
+## Vale nos dois desenhos (o seguro e o novo): o lutador leve
+## (`boxeador_tvbox.glb`) pagou a conta. Se uma luta inteira sair lenta, a
+## arena volta sozinha para 0,55 até o jogo fechar (`Arena3D._julgar_a_luta`).
 const ARENA_ESCALA = 0.70
 ## Antisserrilhado da arena: desligado (a ampliação já suaviza as bordas).
 const ARENA_MSAA = false

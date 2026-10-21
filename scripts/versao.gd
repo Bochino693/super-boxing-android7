@@ -12,9 +12,9 @@ extends Reference
 ## NUMERO em um e escreva em NOTA o que mudou. Um carimbo que não sobe
 ## mente, e um carimbo que mente é pior do que carimbo nenhum.
 
-const NUMERO = 111
-const DATA = "07/10/2026"
-const NOTA = "base 110d; saco 1,8 s desce e 1,8 s sobe; tela da ficha sempre manda SUBIR (firmware V12: subida inteira ao ligar); modo LIVRE de fábrica"
+const NUMERO = 112
+const DATA = "21/10/2026"
+const NOTA = "base 111; arena 3D leve: lutador com 9,5 mil vértices (eram 43 mil), clarão do soco sem segunda passada, arena mais nítida (0,70, volta a 0,55 sozinha se a luta ficar lenta), foco de luz no ringue"
 
 ## Rodapé da abertura: cabe em uma linha discreta.
 static func curta() -> String:
