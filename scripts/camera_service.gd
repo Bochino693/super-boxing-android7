@@ -333,7 +333,7 @@ var _caca = Caca.NENHUMA
 var _caca_desde_ms = 0
 
 ## Cada passo da câmera vai para o diário da abertura E para o logcat do
-## Android (etiqueta "godot"): o CAMERA_TVBOX.bat junta tudo num relatório.
+## Android (etiqueta "godot"): o `adb logcat` mostra tudo.
 func _registro(texto: String) -> void:
 	Diario.marca("CAMERA: " + texto)
 	print("[CAMERA] ", texto)

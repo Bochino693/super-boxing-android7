@@ -1,11 +1,12 @@
 @echo off
 setlocal
-rem SUPERBOXING_BUILD=115
-title Super Boxing S905L - Gerar APK Android
+rem SUPERBOXING_BUILD=116
+title Super Boxing TX9 - Gerar APK (OpenGL ES 2.0 / Mali-450)
 cd /d "%~dp0"
 
 echo ============================================================
-echo   SUPER BOXING - BUILD 115 - TV BOX S905L (ANDROID 7.1) - GODOT 3.6
+echo   SUPER BOXING - BUILD 116 - TV BOX TX9 / S905L (MALI-450, ANDROID 7.1)
+echo   GODOT 3.6 - OPENGL ES 2.0 - TEXTURAS ETC1
 echo   GERA O APK COMPLETO (PLUGIN USB + JOGO)
 echo ============================================================
 echo.
@@ -23,6 +24,7 @@ echo.
 echo SUCESSO. APK criado em:
 echo %~dp0build\android\SuperBoxing.apk
 echo.
-echo Agora conecte a TV Box e use INSTALAR_NA_TVBOX.bat.
+echo Copie o APK para a TV Box (pendrive) e instale por cima do atual:
+echo ranking, fotos e ajustes ficam (a assinatura e sempre a mesma).
 pause
 exit /b 0

@@ -23,6 +23,9 @@ const DIREITA = 2
 ## multiplica-se.
 const _REFERENCIA = 64
 
+## Linhas, círculos e arcos como polígonos que se juntam (ver `scripts/lote.gd`).
+const Lote = preload("res://scripts/lote.gd")
+
 const _FONTE_PADRAO = "res://assets/fonts/SairaCondensed-ExtraBold.ttf"
 
 ## Fontes prontas, por (dados, tamanho, contorno). Um `const` com
@@ -341,19 +344,16 @@ static func t2d(rotacao: float, escala: Vector2, _inclinacao: float, posicao: Ve
 
 
 ## `draw_circle(centro, raio, cor, cheio, espessura, liso)` do Godot 4.
-## No 3 o círculo cheio não tem borda lisa: um arco fino e liso por cima
-## da borda faz o mesmo papel.
+## Desenhado como POLÍGONO, com a borda lisa na própria geometria (ver
+## `Lote.disco` e `Lote.aro`): o `draw_circle` e o `draw_arc` do Godot 3
+## são uma chamada à placa de vídeo cada um, e o polígono se junta com os
+## vizinhos numa chamada só.
 static func circulo(alvo: CanvasItem, centro: Vector2, raio: float, cor: Color, cheio: bool = true,
-		espessura: float = -1.0, liso: bool = false) -> void:
-	if raio <= 0.0 or cor.a <= 0.0:
-		return
-	var pontos = int(clamp(raio * 0.7, 12.0, 64.0))
+		espessura: float = -1.0, _liso: bool = false) -> void:
 	if cheio:
-		alvo.draw_circle(centro, raio, cor)
-		if liso and raio > 1.5:
-			alvo.draw_arc(centro, raio - 0.5, 0.0, TAU, pontos, cor, 1.0, true)
+		Lote.disco(alvo, centro, raio, cor)
 	else:
-		alvo.draw_arc(centro, raio, 0.0, TAU, pontos, cor, max(espessura, 1.0), liso)
+		Lote.aro(alvo, centro, raio, cor, max(espessura, 1.0))
 
 
 # ------------------------------------------------------------ imagens

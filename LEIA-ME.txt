@@ -1,5 +1,9 @@
-SUPER BOXING - VERSAO TV BOX S905L / TX9 (ANDROID 7.1) - BUILD 115
-===================================================================
+SUPER BOXING - TV BOX TX9 / S905L (MALI-450, OPENGL ES 2.0) - BUILD 116
+========================================================================
+
+UM ARQUIVO SO: GERAR_APK_AGORA.bat gera o APK certo para a TX9 (Godot
+3.6, OpenGL ES 2.0, texturas ETC1 da Mali-450). Veja "GERAR O APK" mais
+abaixo.
 
 PARA QUAL MAQUINA E ESTA VERSAO
 -------------------------------
@@ -27,6 +31,27 @@ O que muda por dentro (voce nao ve na tela):
 O APK tem outro nome de pacote (com.lazersport.superboxing), entao pode
 ficar instalado junto com o Punch Challenge das outras maquinas. Se a
 build 92 a 109 estiver instalada, veja INSTALAR abaixo (assinatura nova).
+
+O QUE A BUILD 116 MUDA (BASE: A 115) - LISO NA MALI-450
+-------------------------------------------------------
+Medido quadro a quadro (com o corpo deformado no processador, como na
+Mali-450), como foi feito no boliche:
+- MENOS CHAMADAS A PLACA DE VIDEO. Cada linha, circulo e arco do 2D era
+  uma chamada sozinha a placa de video (o Godot 3 so junta poligonos e
+  retangulos). Agora sao desenhados como poligonos, que se juntam:
+    abertura (apresentacao): de 264 para cerca de 30 chamadas por quadro;
+    luta (2D + 3D): de 320 (build 113) para 101 chamadas por quadro.
+- O MEDIDOR DE IMPACTO nao e mais refeito a cada quadro: os 40 gomos tem
+  forma fixa e so mudam de cor; os arcos que giram sao desenhados parados
+  e girados pela tela; o placar que ja assentou nao muda mais.
+- O LUTADOR com 10 mil vertices (eram 11,2 mil na 115): bota, luva e
+  calcao com menos triangulos, sem mudar a pintura.
+- A ARENA desenhada com os MESMOS pixels da build 113 (702 x 1001), agora
+  que ela vai de ponta a ponta da tela. Postes e cordas juntados.
+- So ficou o GERAR_APK_AGORA.bat. Os outros .bat (instalar pela rede,
+  camera, tela cheia, relatorio da abertura e o de atualizar pelo GitHub,
+  que dava conflito quando a pasta do PC mudava) sairam - continuam no
+  historico do GitHub se um dia precisar.
 
 O QUE A BUILD 115 MUDA (BASE: A 113) - A BUILD 208 INTEIRA NA TX9
 -----------------------------------------------------------------
@@ -587,7 +612,7 @@ GERAR O APK
    nao sao do jogo sao ignoradas pelo Godot. Se faltar arquivo, ele avisa.
 2. Clique duas vezes em  GERAR_APK_AGORA.bat
 3. Espere. A janela mostra cada passo e NAO fecha sozinha: no fim aparece
-   "APK GERADO E CONFERIDO - build 103, sem erros" (ou FALHA com o motivo).
+   "APK GERADO E CONFERIDO - build 116, sem erros" (ou FALHA com o motivo).
 4. O APK fica em:  build\android\SuperBoxing.apk
 
 Precisa no PC:
@@ -604,19 +629,19 @@ tools\gerar_apk\RECOMPILAR_PLUGIN_USB.bat.
 No fim, o .bat confere que o APK tem o motor para ARM 32 e 64 bits e o
 plugin USB dentro.
 
-ATUALIZAR PELO GITHUB
----------------------
-O ATUALIZAR_E_GERAR.bat baixa a versao do GitHub e gera o APK. O GitHub
-(Bochino693/super-boxing-android7) ja tem esta versao S905L. Se a pasta
-do PC foi clonada quando o GitHub ainda tinha a versao do Godot 4, clone
-de novo uma vez (ou use o GERAR_APK_AGORA.bat da pasta do zip).
+PEGAR A VERSAO DO GITHUB
+------------------------
+A versao certa e sempre a da main de Bochino693/super-boxing-android7.
+No GitHub: Code -> Download ZIP, extraia numa pasta nova e rode o
+GERAR_APK_AGORA.bat de dentro dela. (A branch pro-build208 e a versao
+antiga do Godot 4.6 - nao serve para a TX9 e NAO deve ser juntada na
+main.)
 
 INSTALAR NA TV BOX
 ------------------
 Copie build\android\SuperBoxing.apk para o pendrive, espete na TV Box e
 instale pelo gerenciador de arquivos dela. Por cima da versao anterior:
 ranking, fotos, ajustes e permissoes ficam guardados.
-(Quem tiver o ADB tambem pode usar o INSTALAR_NA_TVBOX.bat.)
 
 PRIMEIRA VEZ NA TV BOX
 ----------------------
@@ -632,26 +657,12 @@ do Android (camera do sistema e Camera2/webcam externa), um de cada vez,
 ate vir imagem. Se nao vier, a linha "SEM CAMERA" embaixo da tela diz o
 motivo (PLUGIN: ... ou CAMERA2: ...) - fotografe e mande.
 
-CAMERA NAO APARECE? UM COMANDO SO
----------------------------------
-Com a TV Box ligada no PC pelo ADB (USB ou rede), clique duas vezes em
-  CAMERA_TVBOX.bat          (ou CAMERA_TVBOX.bat 192.168.0.50 pela rede)
-Ele libera a camera para o jogo, abre o jogo, espera 90 s e grava
-CAMERA_RELATORIO.txt com tudo o que a TV Box enxerga (USB, cameras,
-permissoes e cada tentativa do jogo). Mande esse arquivo.
-
 SE A ABERTURA TRAVAR
 --------------------
 O jogo grava cada etapa da abertura. Se travar, desligue e ligue: JA NA
 TELA DE CARREGAMENTO aparece, embaixo, uma caixa amarela
 "A ULTIMA ABERTURA PAROU EM: ...". Fotografe essa caixa e mande - ela diz
 exatamente onde parou.
-
-Se mesmo assim travar ou fechar, com a TV Box ligada no PC pelo ADB
-clique duas vezes em  ABERTURA_TVBOX.bat  (ou ABERTURA_TVBOX.bat
-192.168.0.50 pela rede). Ele abre o jogo, espera 60 s e grava
-ABERTURA_RELATORIO.txt com cada etapa, a memoria e o erro do Android.
-Mande esse arquivo.
 
 O resto dos arquivos (scripts internos) esta em tools\gerar_apk - nao
 precisa abrir.

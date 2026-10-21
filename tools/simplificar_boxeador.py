@@ -73,15 +73,18 @@ CADARCO_ACIMA_DE = 0.05
 ALVOS = {
     "Pele": (0.45, 0.004),
     "Cabelo": (0.10, 0.02),
-    "LuvaLeft": (0.18, 0.01),
-    "LuvaRight": (0.18, 0.01),
-    # a bota tem os cadarcos pintados na cor dos vertices: guarda mais
-    "BotaLeft": (0.24, 0.008),
-    "BotaRight": (0.24, 0.008),
+    "LuvaLeft": (0.15, 0.01),
+    "LuvaRight": (0.15, 0.01),
+    # a bota tem os cadarcos pintados na cor dos vertices (agora em cinza
+    # grafite, ver COR_DO_CADARCO): guarda um pouco mais
+    "BotaLeft": (0.16, 0.014),
+    "BotaRight": (0.16, 0.014),
     "Cinturao": (0.35, 0.006),
     "Placa": (0.35, 0.006),
-    # a bermuda nova da versao PRO (barra, faixa lateral): fica bem mais inteira
-    "Calcao": (0.60, 0.004),
+    # a bermuda nova da versao PRO (barra, faixa lateral) tem o dobro dos
+    # triangulos da antiga: com 0,42 fica com ~1,3 mil, um pouco mais que a
+    # antiga, e a faixa e a barra continuam inteiras
+    "Calcao": (0.42, 0.004),
 }
 
 TIPOS = {5120: np.int8, 5121: np.uint8, 5122: np.int16, 5123: np.uint16, 5125: np.uint32, 5126: np.float32}

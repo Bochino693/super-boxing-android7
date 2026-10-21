@@ -2881,14 +2881,14 @@ func _draw_moedas() -> void:
 			var uk = max(0.0, u - float(k + 1) * 0.045)
 			var pk = MOEDA_ORIGEM.linear_interpolate(MOEDA_DESTINO, ease(uk, 0.8))
 			pk.y -= sin(uk * PI) * 260.0
-			draw_circle(pk, r * (0.5 - float(k) * 0.08), Compat.cor(Paleta.AMBAR, 0.22 - float(k) * 0.04))
+			Lote.disco(self, pk, r * (0.5 - float(k) * 0.08), Compat.cor(Paleta.AMBAR, 0.22 - float(k) * 0.04))
 		Compat.transformar(self, p, 0.0, Vector2(largura, 1.0))
-		draw_circle(Vector2.ZERO, r + 4.0, Color("6b3d00"))
-		draw_circle(Vector2.ZERO, r, Color("ffc21a"))
-		draw_circle(Vector2.ZERO, r * 0.74, Color("ffdd55"))
+		Lote.disco(self, Vector2.ZERO, r + 4.0, Color("6b3d00"))
+		Lote.disco(self, Vector2.ZERO, r, Color("ffc21a"))
+		Lote.disco(self, Vector2.ZERO, r * 0.74, Color("ffdd55"))
 		if giro > 0.35:
 			Icones.ficha(self, Vector2.ZERO, r * 0.52, Color("8a5200"))
-		draw_arc(Vector2.ZERO, r * 0.86, -2.4, -0.9, 10, Color(1, 1, 1, 0.8), 3.0, true)
+		Lote.aro(self, Vector2.ZERO, r * 0.86, Color(1, 1, 1, 0.8), 3.0, -2.4, -0.9)
 		Compat.transformar(self, Vector2.ZERO, 0.0, Vector2.ONE)
 
 # ======================================================================
@@ -3453,8 +3453,8 @@ func _draw_soco_na_tela() -> void:
 	if _rachadura_t >= 0.0 and not _rachadura.empty():
 		var a = 1.0 - clamp((_rachadura_t - 0.5) / 0.9, 0.0, 1.0)
 		for linha in _rachadura:
-			draw_polyline(linha, Color(0.0, 0.0, 0.0, 0.35 * a), 6.0, true)
-			draw_polyline(linha, Color(1.0, 0.98, 0.95, 0.85 * a), 2.5, true)
+			Lote.borda(self, linha, Color(0.0, 0.0, 0.0, 0.35 * a), 6.0)
+			Lote.borda(self, linha, Color(1.0, 0.98, 0.95, 0.85 * a), 2.5)
 	if _cambaleio_t >= 0.0:
 		# a vista escurece nas bordas do quadro, avermelhada, e volta
 		var v = pow(1.0 - clamp(_cambaleio_t / _cambaleio_dur, 0.0, 1.0), 2.0) * 0.5
@@ -6084,8 +6084,8 @@ func _draw_clarao() -> void:
 	if clarao > 0.18 and state == GameDef.State.MEASURING:
 		var alvo = _alvo()
 		var raio = 100.0 + (1.0 - clarao) * 120.0
-		draw_arc(alvo + Vector2(-9.0, 0.0), raio, 0.0, TAU, Traco.segmentos(raio), Compat.cor(Paleta.CIANO, clarao * 0.65), 7.0, true)
-		draw_arc(alvo + Vector2(9.0, 0.0), raio, 0.0, TAU, Traco.segmentos(raio), Compat.cor(Paleta.VERMELHO, clarao * 0.60), 7.0, true)
+		Lote.aro(self, alvo + Vector2(-9.0, 0.0), raio, Compat.cor(Paleta.CIANO, clarao * 0.65), 7.0)
+		Lote.aro(self, alvo + Vector2(9.0, 0.0), raio, Compat.cor(Paleta.VERMELHO, clarao * 0.60), 7.0)
 
 # ---------------------------------------------------------------- abertura
 ## A ABERTURA NÃO É UMA TELA SÓ.
@@ -6150,7 +6150,7 @@ func _pagina_como_jogar(alpha: float) -> void:
 		var cor: Color = passos[i][2]
 		var centro = Vector2(MARGEM + 110.0, y + 60.0)
 		Compat.circulo(self, centro, 62.0, Paleta.tinta_clara(cor, 0.20), true, -1.0, true)
-		draw_arc(centro, 62.0, 0.0, TAU, Traco.segmentos(62.0), Compat.cor(cor, 0.55 * alpha), 4.0, true)
+		Lote.aro(self, centro, 62.0, Compat.cor(cor, 0.55 * alpha), 4.0)
 		_icone(str(passos[i][0]), centro, 38.0, Compat.cor(Paleta.para_texto(cor), alpha))
 		_texto(
 			"%d." % (i + 1), centro.y - 4.0, 26, Compat.cor(cor, alpha),
@@ -6414,8 +6414,8 @@ func _draw_troca_saindo(s: float) -> void:
 			Vector2(0.0, topo_f + 18.0), Vector2(TELA.x, topo_f - 18.0),
 			Vector2(TELA.x, base_f - 18.0), Vector2(0.0, base_f + 18.0),
 		]), Compat.cor("0c0615", 0.80))
-		draw_line(Vector2(0.0, topo_f + 18.0), Vector2(TELA.x, topo_f - 18.0), Compat.cor(_troca_cor, 0.9), 3.0, true)
-		draw_line(Vector2(0.0, base_f + 18.0), Vector2(TELA.x, base_f - 18.0), Compat.cor(_troca_cor, 0.9), 3.0, true)
+		Lote.traco(self, Vector2(0.0, topo_f + 18.0), Vector2(TELA.x, topo_f - 18.0), Compat.cor(_troca_cor, 0.9), 3.0)
+		Lote.traco(self, Vector2(0.0, base_f + 18.0), Vector2(TELA.x, base_f - 18.0), Compat.cor(_troca_cor, 0.9), 3.0)
 		# Na MESMA altura do veredito (`_draw_score_hero`): em 1490 o nome
 		# saía por trás dos cartões dos socos durante a troca.
 		_texto_arcade(_troca_nome, 1740.0, 78, _troca_cor, LARGURA_UTIL)
@@ -6639,9 +6639,9 @@ func _faiscas_do_escudo(centro: Vector2, alpha: float) -> void:
 		var p = centro + Vector2(cos(ang) * 430.0, sin(ang) * 250.0)
 		var t = 26.0 * v
 		var cor = Color(1.0, 0.97, 0.88, v * alpha)
-		draw_line(p - Vector2(t, 0), p + Vector2(t, 0), cor, 3.0, true)
-		draw_line(p - Vector2(0, t), p + Vector2(0, t), cor, 3.0, true)
-		draw_circle(p, 4.0 * v, cor)
+		Lote.traco(self, p - Vector2(t, 0), p + Vector2(t, 0), cor, 3.0)
+		Lote.traco(self, p - Vector2(0, t), p + Vector2(0, t), cor, 3.0)
+		Lote.disco(self, p, 4.0 * v, cor)
 
 ## O nó do escudo (TextureRect com `escudo_vivo.shader`). Aparece só no
 ## quadro em que a abertura pediu, respira e balança de leve.
@@ -6764,7 +6764,7 @@ func _draw_score_hero() -> void:
 				escala += 0.24 * pop
 		var rotulo = "LENDO SENSOR" if measuring else ("PONTOS" if verdict_time >= 0.0 else "CONTANDO")
 		_medidor_do_impacto(progresso, cor, MEDIDOR_LENDO if measuring else MEDIDOR_PRONTO,
-			"– – –" if measuring else "%d" % int(round(displayed_score)), escala, pop, rotulo)
+			"- - -" if measuring else "%d" % int(round(displayed_score)), escala, pop, rotulo)
 
 	if verdict_time >= 0.0:
 		# A FAIXA ESCURA DO VEREDITO. O nome do nível vem na cor do nível —
@@ -6778,8 +6778,8 @@ func _draw_score_hero() -> void:
 			Vector2(0.0, topo_f + 18.0), Vector2(TELA.x, topo_f - 18.0),
 			Vector2(TELA.x, base_f - 18.0), Vector2(0.0, base_f + 18.0),
 		]), Compat.cor("0c0615", 0.80 * abre_faixa))
-		draw_line(Vector2(0.0, topo_f + 18.0), Vector2(TELA.x, topo_f - 18.0), Compat.cor(cor, 0.9 * abre_faixa), 3.0, true)
-		draw_line(Vector2(0.0, base_f + 18.0), Vector2(TELA.x, base_f - 18.0), Compat.cor(cor, 0.9 * abre_faixa), 3.0, true)
+		Lote.traco(self, Vector2(0.0, topo_f + 18.0), Vector2(TELA.x, topo_f - 18.0), Compat.cor(cor, 0.9 * abre_faixa), 3.0)
+		Lote.traco(self, Vector2(0.0, base_f + 18.0), Vector2(TELA.x, base_f - 18.0), Compat.cor(cor, 0.9 * abre_faixa), 3.0)
 		# O NOME DO NÍVEL VEM ANTES DA COLOCAÇÃO. A pessoa quer saber o
 		# que ela fez — "NOCAUTE" — e só depois onde isso a coloca. A
 		# ordem inversa transformava o veredito numa tabela.
@@ -6823,41 +6823,33 @@ func _medidor_do_impacto(fracao: float, cor: Color, modo: int, numero: String,
 	var c = MEDIDOR_CENTRO
 	var r = MEDIDOR_RAIO
 	var lendo = modo == MEDIDOR_LENDO
-	fracao = clamp(fracao, 0.0, 1.0)
-	# O MOSTRADOR INTEIRO NUMA CHAMADA (ver `Lote`): eram mais de 50 — um
-	# círculo, um arco e QUARENTA linhas de gomo, cada uma uma chamada à
-	# placa de vídeo, justamente no instante do soco. Com nome, o lote se
-	# lembra do quadro anterior: com o placar parado, nada é recalculado.
-	var lote = Lote.new("medidor")
+	# Em degraus de 1/1024: o placar que já assentou não muda mais de um
+	# quadro para o outro (a conta chega perto do fim aos pouquinhos), e os
+	# lotes com nome não refazem nada.
+	fracao = stepify(clamp(fracao, 0.0, 1.0), 1.0 / 1024.0)
+	# O MOSTRADOR EM POUCOS LOTES (ver `Lote`): eram mais de 50 chamadas à
+	# placa de vídeo — um círculo, um arco e QUARENTA linhas de gomo —,
+	# justamente no instante do soco. Cada lote se lembra do quadro
+	# anterior e refaz só o que mudou; por isso o que muda de jeito
+	# diferente fica em lotes diferentes (build 116, para a TV Box): o vidro
+	# só muda no tranco final, os gomos mudam a cada quadro, e os arcos que
+	# giram lendo o sensor são desenhados parados e girados pela tela.
+	var vidro = Lote.new("medidor_vidro")
 	# o halo na cor do nível, maior no tranco
-	lote.circulo(c, r + 30.0 + 14.0 * pop, Compat.cor(cor, 0.10 + 0.14 * pop))
+	vidro.circulo(c, r + 30.0 + 14.0 * pop, Compat.cor(cor, 0.10 + 0.14 * pop))
 	# o vidro escuro, com a luz da cor por dentro e um aro fino
-	lote.circulo(c, r + 12.0, Compat.cor("0b0616", 0.90))
-	lote.circulo(c, r - 34.0, Compat.cor(cor, 0.08 + 0.10 * fracao))
-	lote.anel(c, r + 12.0, Compat.cor(cor, 0.60), 3.0)
-	# os gomos do medidor
-	var varredura = fposmod(animation_time * 1.4, 1.0)
-	for g in MEDIDOR_GOMOS:
-		var f = (float(g) + 0.5) / float(MEDIDOR_GOMOS)
-		var dir = Vector2.RIGHT.rotated(MEDIDOR_INICIO + MEDIDOR_VOLTA * f)
-		var tinta = Color("2a1b43")
-		var comprimento := 15.0
-		if lendo:
-			var atras = fposmod(varredura - f, 1.0)
-			if atras < 0.22:
-				tinta = Compat.cor(Paleta.CIANO, 0.95 - atras * 3.8)
-				comprimento = 19.0
-		elif f <= fracao:
-			# a ponta acesa é mais clara e mais comprida
-			var ponta = clamp(1.0 - (fracao - f) * 9.0, 0.0, 1.0)
-			tinta = cor.linear_interpolate(Color.white, 0.45 * ponta)
-			comprimento = 19.0 + 6.0 * ponta
-		lote.linha(c + dir * (r - 26.0), c + dir * (r - 26.0 + comprimento), tinta, 7.0)
+	vidro.circulo(c, r + 12.0, Compat.cor("0b0616", 0.90))
+	vidro.circulo(c, r - 34.0, Compat.cor(cor, 0.08 + 0.10 * fracao))
+	vidro.anel(c, r + 12.0, Compat.cor(cor, 0.60), 3.0)
+	vidro.descarregar(self)
+	# os gomos do medidor (forma fixa, só as cores mudam: ver `_desenhar_gomos`)
+	_desenhar_gomos(lendo, fracao, cor)
+	var lote = Lote.new("medidor")
 	# o arco contínuo da força por fora dos gomos, com a ponta brilhando
 	if lendo:
 		var giro = animation_time * 3.4
-		lote.arco(c, r + 2.0, giro, giro + 1.4, Paleta.CIANO, 5.0)
-		lote.arco(c, r - 40.0, -giro * 0.7, -giro * 0.7 + 0.9, Compat.cor(Paleta.CIANO, 0.5), 4.0)
+		_arco_girando("medidor_giro_fora", c, giro, r + 2.0, 1.4, Paleta.CIANO, 5.0)
+		_arco_girando("medidor_giro_dentro", c, -giro * 0.7, r - 40.0, 0.9, Compat.cor(Paleta.CIANO, 0.5), 4.0)
 	elif fracao > 0.0:
 		var fim = MEDIDOR_INICIO + MEDIDOR_VOLTA * fracao
 		lote.arco(c, r + 2.0, MEDIDOR_INICIO, fim, Compat.cor(cor, 0.30), 12.0)
@@ -6877,6 +6869,77 @@ func _medidor_do_impacto(fracao: float, cor: Color, modo: int, numero: String,
 	# o rótulo no vão de baixo do arco
 	_texto(rotulo, c.y + r * 0.70, _tamanho_que_cabe(rotulo, 20, r * 1.3, fonte_texto), Compat.cor(cor.lightened(0.25), 0.95),
 		Compat.CENTRO, c.x - r, r * 2.0)
+
+## OS QUARENTA GOMOS DO MEDIDOR NUMA FORMA FIXA (build 116, para a TV Box).
+## Cada gomo tem três pedaços — a base (15 px), o meio (até 19 px, aceso) e
+## a ponta (até 25 px, a do fim da contagem) —, montados uma vez só. A
+## cada quadro muda só a COR de cada pedaço (o apagado some): um vetor de
+## cores e uma chamada à placa de vídeo, sem refazer um ponto nem um
+## triângulo. Refazer os 40 gomos a cada quadro era o maior gasto do
+## processador na luta.
+const GOMO_PEDACOS = [[0.0, 15.0], [15.0, 19.0], [19.0, 25.0]]
+var _gomos_forma = []
+var _gomos_chave = []
+var _gomos_cores = PoolColorArray()
+
+func _desenhar_gomos(lendo: bool, fracao: float, cor: Color) -> void:
+	if _gomos_forma.empty():
+		var molde = Lote.new()
+		for g in MEDIDOR_GOMOS:
+			var dir: Vector2 = _direcoes_dos_gomos()[g]
+			var base = MEDIDOR_CENTRO + dir * (MEDIDOR_RAIO - 26.0)
+			for p in GOMO_PEDACOS:
+				molde.linha(base + dir * float(p[0]), base + dir * float(p[1]), Color.white, 7.0)
+		_gomos_forma = molde.forma_pronta()
+	var varredura = fposmod(animation_time * 1.4, 1.0)
+	var chave = [lendo, varredura if lendo else 0.0, fracao, cor]
+	if chave != _gomos_chave:
+		_gomos_chave = chave
+		_gomos_cores = PoolColorArray()
+		var apagado = Color("2a1b43")
+		for g in MEDIDOR_GOMOS:
+			var f = (float(g) + 0.5) / float(MEDIDOR_GOMOS)
+			var tinta = apagado
+			var meio = 0.0
+			var ponta = 0.0
+			if lendo:
+				var atras = fposmod(varredura - f, 1.0)
+				if atras < 0.22:
+					tinta = Compat.cor(Paleta.CIANO, 0.95 - atras * 3.8)
+					meio = 1.0
+			elif f <= fracao:
+				# a ponta acesa é mais clara e mais comprida
+				var p = clamp(1.0 - (fracao - f) * 9.0, 0.0, 1.0)
+				tinta = cor.linear_interpolate(Color.white, 0.45 * p)
+				meio = 1.0
+				ponta = p
+			# cada pedaço: borda lisa, cor, cor, borda lisa (ver `Lote`)
+			var t0 = Color(tinta.r, tinta.g, tinta.b, 0.0)
+			var t1 = Color(tinta.r, tinta.g, tinta.b, tinta.a * meio)
+			var t2 = Color(tinta.r, tinta.g, tinta.b, tinta.a * ponta)
+			_gomos_cores.append_array(PoolColorArray([t0, t0, tinta, tinta, tinta, tinta, t0, t0,
+				t0, t0, t1, t1, t1, t1, t0, t0, t0, t0, t2, t2, t2, t2, t0, t0]))
+	VisualServer.canvas_item_add_triangle_array(get_canvas_item(), _gomos_forma[1], _gomos_forma[0], _gomos_cores)
+
+## A direção de cada gomo do medidor, calculada uma vez.
+var _direcoes_gomos = PoolVector2Array()
+
+func _direcoes_dos_gomos() -> PoolVector2Array:
+	if _direcoes_gomos.empty():
+		for g in MEDIDOR_GOMOS:
+			var f = (float(g) + 0.5) / float(MEDIDOR_GOMOS)
+			_direcoes_gomos.append(Vector2.RIGHT.rotated(MEDIDOR_INICIO + MEDIDOR_VOLTA * f))
+	return _direcoes_gomos
+
+## Um arco que GIRA: desenhado sempre no mesmo lugar (de 0 a `abertura`,
+## em volta da origem) e girado pela transformação da tela. A forma nunca
+## muda, e o lote com nome não refaz nada de um quadro para o outro.
+func _arco_girando(nome: String, centro: Vector2, giro: float, raio: float, abertura: float, cor: Color, espessura: float) -> void:
+	var lote = Lote.new(nome)
+	lote.arco(Vector2.ZERO, raio, 0.0, abertura, cor, espessura)
+	Compat.transformar(self, centro, giro, Vector2.ONE)
+	lote.descarregar(self)
+	Compat.transformar(self, Vector2.ZERO, 0.0, Vector2.ONE)
 
 ## Barra segmentada de leitura instantânea. Segmentos são mais fáceis de
 ## comparar à distância que um retângulo contínuo e não criam partículas,
@@ -7065,8 +7128,8 @@ func _draw_cartoes_dos_socos(y: float, marcar_melhor: bool) -> void:
 		elif esperando:
 			# o anel gira chamando o soco e a luva pulsa no meio
 			var giro = animation_time * 3.0
-			lote.arco(anel_c, anel_r, giro, giro + 2.2, Compat.cor(Paleta.AMBAR, pulso), 8.0)
 			lote.descarregar(self)
+			_arco_girando("cartao_giro_%d" % i, anel_c, giro, anel_r, 2.2, Compat.cor(Paleta.AMBAR, pulso), 8.0)
 			Icones.luva(self, anel_c, 30.0 + 4.0 * pulso, Compat.cor(Paleta.AMBAR, pulso))
 			_texto("SOCO %d" % (i + 1), caixa.position.y + 52.0, 26, Compat.cor(cor.lightened(0.25), 0.95),
 				Compat.ESQUERDA, esq, dentro)
@@ -7130,11 +7193,7 @@ func _draw_campo_de_forca(centro: Vector2, cor: Color, progresso: float, no_impa
 		var onda = 0.5 + 0.5 * sin(float(i) * 1.7 - animation_time * 4.0)
 		var perto = 500.0
 		var longe = perto + lerp(24.0, 260.0, forca * onda)
-		draw_line(
-			centro + polar2cartesian(1.0, ang) * perto,
-			centro + polar2cartesian(1.0, ang) * longe,
-			Compat.cor(cor, 0.08 + 0.34 * forca * onda), 6.0, true
-		)
+		Lote.traco(self, centro + polar2cartesian(1.0, ang) * perto, centro + polar2cartesian(1.0, ang) * longe, Compat.cor(cor, 0.08 + 0.34 * forca * onda), 6.0)
 
 ## AS DUAS COLUNAS DE PONTUAÇÃO SAÍRAM DAQUI E VIRARAM AS BARRAS DE DANO.
 ##
@@ -7374,11 +7433,7 @@ func _ranking_anuncio(t: float) -> void:
 	for i in range(quantidade_raios):
 		var ang = float(i) * TAU / float(quantidade_raios) + animation_time * 0.35
 		var perto = raio * 1.12
-		draw_line(
-			centro + polar2cartesian(1.0, ang) * perto,
-			centro + polar2cartesian(1.0, ang) * (perto + lerp(30.0, 150.0, abre)),
-			Compat.cor(cor_selo, 0.26 * abre), 6.0 if posicao_no_ranking <= 3 else 4.0, true
-		)
+		Lote.traco(self, centro + polar2cartesian(1.0, ang) * perto, centro + polar2cartesian(1.0, ang) * (perto + lerp(30.0, 150.0, abre)), Compat.cor(cor_selo, 0.26 * abre), 6.0 if posicao_no_ranking <= 3 else 4.0)
 	Compat.circulo(self, centro, raio, Compat.cor(Paleta.VERMELHO, 0.92), true, -1.0, true)
 	Traco.arco(self, centro, raio, cor_selo, 10.0 if posicao_no_ranking == 1 else 7.0)
 	for anel in range(int(celebracao.get("aneis", 1))):
@@ -7786,7 +7841,7 @@ func _curva_desenhada(rect: Rect2) -> void:
 			rect.position.x + rect.size.x * clamp(p.x / max(v_max, 0.01), 0.0, 1.0),
 			rect.end.y - rect.size.y * clamp(p.y / float(GameDef.SCORE_MAX), 0.0, 1.0)
 		))
-	draw_polyline(pontos, Paleta.AMBAR, 3.0, true)
+	Lote.borda(self, pontos, Paleta.AMBAR, 3.0)
 	_texto("0 m/s", rect.end.y + 20.0, 13, Paleta.TINTA_LEVE, Compat.ESQUERDA, rect.position.x, rect.size.x)
 	_texto("%.0f m/s" % v_max, rect.end.y + 20.0, 13, Paleta.TINTA_LEVE, Compat.DIREITA, rect.position.x, rect.size.x)
 
@@ -8523,13 +8578,12 @@ func _seletor_porta_refinado() -> void:
 	var festa = clamp(1.0 - (animation_time - _placa_achada_em) / 1.5, 0.0, 1.0)
 	if festa > 0.0:
 		var onda = ease(1.0 - festa, 0.4)
-		draw_arc(centro, 9.0 + onda * 18.0, 0.0, TAU, 28,
-			Compat.cor(Paleta.VERDE, festa * 0.75), 2.0 + festa * 1.5, true)
+		Lote.aro(self, centro, 9.0 + onda * 18.0, Compat.cor(Paleta.VERDE, festa * 0.75), 2.0 + festa * 1.5)
 	Compat.circulo(self, centro, 5.0 + festa * 3.0, Compat.cor(cor, 0.20 + festa * 0.5), true, -1.0, true)
 	Compat.circulo(self, centro, 2.4, cor, true, -1.0, true)
 	if procurando:
 		var inicio = fmod(animation_time * 3.2, TAU)
-		draw_arc(centro, 9.0, inicio, inicio + 1.75, 16, Compat.cor(cor, 0.82), 1.2, true)
+		Lote.aro(self, centro, 9.0, Compat.cor(cor, 0.82), 1.2, inicio, inicio + 1.75)
 
 	var porta = porta_configurada if not porta_configurada.empty() else "AUTO"
 	# O NOME DA PORTA E A LEGENDA DIVIDIAM UM VISOR DE 64 PX, a 16 px um
@@ -8593,7 +8647,21 @@ func _regua_dos_niveis(rect: Rect2) -> void:
 func _placa(rect: Rect2, raio: float, cor: Color) -> void:
 	Traco.poligono(self, _contorno_arredondado(rect, raio), cor)
 
+## Os contornos já feitos, por retângulo e raio: os cartões pedem os mesmos
+## a cada quadro.
+var _contornos_feitos = {}
+
 func _contorno_arredondado(rect: Rect2, raio: float) -> PoolVector2Array:
+	var chave = [rect, raio]
+	if _contornos_feitos.has(chave):
+		return _contornos_feitos[chave]
+	if _contornos_feitos.size() > 48:
+		_contornos_feitos.clear()
+	var pontos = _fazer_contorno_arredondado(rect, raio)
+	_contornos_feitos[chave] = pontos
+	return pontos
+
+func _fazer_contorno_arredondado(rect: Rect2, raio: float) -> PoolVector2Array:
 	var r = min(raio, min(rect.size.x, rect.size.y) * 0.5)
 	var pontos = PoolVector2Array()
 	var cantos = [
@@ -8760,11 +8828,8 @@ func _draw_avatar(rect: Rect2, alpha: float) -> void:
 	var tom = Compat.cor("50367d", 0.55 * alpha)
 
 	# Só o traço: cabeça e ombros em linha, sem massa.
-	draw_arc(center + Vector2(0.0, -unit * 0.10), unit * 0.13, 0.0, TAU, 28, tom, unit * 0.035, true)
-	draw_arc(
-		center + Vector2(0.0, unit * 0.30), unit * 0.25,
-		PI * 1.08, PI * 1.92, 26, tom, unit * 0.035, true
-	)
+	Lote.aro(self, center + Vector2(0.0, -unit * 0.10), unit * 0.13, tom, unit * 0.035)
+	Lote.aro(self, center + Vector2(0.0, unit * 0.30), unit * 0.25, tom, unit * 0.035, PI * 1.08, PI * 1.92)
 
 	# Cantoneiras de enquadramento, como as de um visor de câmera.
 	var margem = unit * 0.10
@@ -8772,8 +8837,8 @@ func _draw_avatar(rect: Rect2, alpha: float) -> void:
 	for sx in [-1.0, 1.0]:
 		for sy in [-1.0, 1.0]:
 			var canto = center + Vector2(sx * (rect.size.x * 0.5 - margem), sy * (rect.size.y * 0.5 - margem))
-			draw_line(canto, canto - Vector2(sx * braco, 0.0), Compat.cor(Paleta.AMBAR, 0.55 * alpha), 4.0, true)
-			draw_line(canto, canto - Vector2(0.0, sy * braco), Compat.cor(Paleta.AMBAR, 0.55 * alpha), 4.0, true)
+			Lote.traco(self, canto, canto - Vector2(sx * braco, 0.0), Compat.cor(Paleta.AMBAR, 0.55 * alpha), 4.0)
+			Lote.traco(self, canto, canto - Vector2(0.0, sy * braco), Compat.cor(Paleta.AMBAR, 0.55 * alpha), 4.0)
 
 func _draw_player_photo(rect: Rect2, path: String, alpha: float) -> void:
 	var texture = _photo_texture(path)
@@ -8891,7 +8956,7 @@ func _placa_arcade(r: Rect2, cor: Color, alpha := 1.0, acesa := 0.0) -> void:
 		Color(1, 1, 1, 0.0), Color(1, 1, 1, 0.0)]))
 	var contorno: PoolVector2Array = _forma_da_placa(r, inc, 0.0)
 	contorno.append(contorno[0])
-	draw_polyline(contorno, Compat.cor(cor, 0.95 * alpha), 3.0, true)
+	Lote.borda(self, contorno, Compat.cor(cor, 0.95 * alpha), 3.0)
 
 func _cartao(rect: Rect2, fundo_c: Color, borda: Color, alpha := 1.0, largura_borda := 2.0) -> void:
 	draw_rect(Rect2(rect.position + Vector2(0, 4.0), rect.size), Compat.cor(Paleta.SOMBRA, Paleta.SOMBRA.a * alpha))
