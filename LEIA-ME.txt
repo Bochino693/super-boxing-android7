@@ -1,9 +1,33 @@
-SUPER BOXING - TV BOX MALI-450 (TX9) - OPENGL ES 2.0 - BUILD 117
+SUPER BOXING - TV BOX MALI-450 (TX9) - OPENGL ES 2.0 - BUILD 118
 =================================================================
 
 ESTA VERSAO E PARA TV BOX COM PLACA DE VIDEO MALI-450 (TX9): Godot 3.6,
 OpenGL ES 2.0, texturas ETC1. UM ARQUIVO SO: GERAR_APK_AGORA.bat gera o
 APK certo. Veja "GERAR O APK" mais abaixo.
+
+O QUE A BUILD 118 MUDA (BASE: A 117)
+------------------------------------
+- SEM CAMERA, O JOGO NAO PEDE FOTO (como no Strike Kids, o boliche). O
+  START nao espera mais a camera: se ela estiver mandando imagem na hora
+  do START, a rodada tem a tela "FACA SUA POSE" e a foto vai para o
+  ranking; sem camera (ou com ela ainda ligando), a cortina leva direto
+  ao ringue e o ranking usa o boneco. Nenhum aviso de "SEM CAMERA" para o
+  jogador - o estado da camera continua na Central.
+- START TAMBEM NA TECLA 1 do teclado (e no 1 do teclado numerico), como
+  o botao do gabinete. No modo ficha a rodada continua cobrando o credito.
+  O credito pelo teclado (5 / C) continua so com a Central aberta.
+- O LOGO DO JOGO NO ALTO DA LUTA VOLTOU A SER GRANDE: 290 px de largura
+  (era 160), desenhado por cima da faixa zebrada, entre "VOCE" e
+  "ADVERSARIO", sem cobrir as barras de vida.
+- O ROSTO DO LUTADOR COM O DETALHE DO ORIGINAL. A simplificacao para a TV
+  Box tirava 70% do rosto (olhos tortos, canto da boca caido). Agora a
+  cabeca guarda 75% do detalhe e so o corpo e simplificado como antes:
+  11,5 mil vertices no total (eram 10 mil).
+- BORDAS LISAS NA ARENA (MSAA 4x), como no boliche: na Mali-450 o 4x e
+  resolvido dentro da propria placa, quase de graca, e some o pontilhado
+  nas bordas do lutador, das cordas e dos postes. Se alguma placa devolver
+  a imagem 3D preta com ele, o jogo percebe no carregamento e desliga
+  sozinho (a arena segue normal, so sem o antisserrilhado).
 
 O QUE A BUILD 117 MUDA (BASE: A 116)
 ------------------------------------

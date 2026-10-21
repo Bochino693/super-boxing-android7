@@ -26,8 +26,8 @@ extends Lutador3D
 ##   4. MOLAS para o que é reação: a cabeça que vai para trás no soco e
 ##      volta sozinha, o tronco que balança, a guarda que abre.
 
-## O CORPO DA TV BOX: o mesmo boxeador com 10 mil vértices em vez de 44
-## mil (`tools/simplificar_boxeador.py`). Na Mali-450 o Godot 3 deforma o
+## O CORPO DA TV BOX: o mesmo boxeador com 11,5 mil vértices em vez de 44
+## mil (`tools/simplificar_boxeador.py`; o rosto guarda 75% do detalhe). Na Mali-450 o Godot 3 deforma o
 ## corpo NO PROCESSADOR, vértice por vértice, a cada quadro: eram 43 mil
 ## contas de osso por quadro por um detalhe que não cabe na janela da
 ## arena. Os vértices que ficaram são os do original (pintura, relevo,
