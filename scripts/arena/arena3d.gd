@@ -8,7 +8,9 @@ extends Viewport
 ##   • fundo, lona e luzes são TEXTURAS prontas (`tools/gerar_arena.py`)
 ##     em materiais sem iluminação: cada superfície é um desenho só;
 ##   • cordas e postes são malhas redondas com luz de verdade, e a janela
-##     usa MSAA 4x — contorno liso sem supersample;
+##     usa MSAA 4x — contorno liso sem supersample (na Mali-400/450 o 4x é
+##     o modo da própria placa, resolvido dentro dela, como no Strike Kids;
+##     ver `_conferir_msaa`);
 ##   • a janela tem o tamanho real, em pixels, do buraco da moldura na
 ##     tela (nada de esticar textura pequena);
 ##   • partículas com quantidade fixa (mudar `amount` realoca buffers e
@@ -788,7 +790,7 @@ func _montar_sombra() -> void:
 # -------------------------------------------------------- tamanho/MSAA
 ## A NITIDEZ DA ARENA ACOMPANHA A MÁQUINA — E SÓ MUDA ENTRE AS LUTAS.
 ##
-## Com o lutador leve (10 mil vértices em vez de 44 mil) sobra fôlego, e
+## Com o lutador leve (11,5 mil vértices em vez de 44 mil) sobra fôlego, e
 ## ele vai para a nitidez: a arena nasce em `Perfil.ARENA_ESCALA` (0,65 da
 ## tela, os pixels da build 113; 0,55 era uma imagem ampliada quase 2x, borrada). Se a luta ficar
 ## lenta, o jogo desce um degrau (ver `DEGRAUS`). Nunca no meio da luta:
@@ -797,7 +799,41 @@ func _aplicar_tamanho() -> void:
 	var novo = _tamanho_do_degrau()
 	if size != novo:
 		size = novo
-	msaa = Viewport.MSAA_2X if Perfil.ARENA_MSAA else Viewport.MSAA_DISABLED
+	msaa = Viewport.MSAA_4X if Perfil.ARENA_MSAA and not _msaa_quebrado else Viewport.MSAA_DISABLED
+
+
+## O MSAA CONFERIDO NO AQUECIMENTO (o mesmo cuidado do Strike Kids). Algumas
+## placas e drivers devolvem a imagem 3D inteira PRETA com o MSAA da OpenGL
+## ES 2.0 (o Godot 3 no PC é um deles). No fim do aquecimento (atrás da
+## tela de carregamento, com o ringue, a torcida e o lutador já desenhados)
+## a imagem é lida uma vez: nenhum ponto aceso numa grade 8x8 = o MSAA não
+## funciona nesta placa, e a arena segue sem ele (com a imagem certa, só
+## sem o antisserrilhado). Quem liga a arena sem o aquecimento (os testes)
+## confere no 12º quadro dela no ar (ver `avancar`).
+var _msaa_quebrado = false
+var _msaa_conferido = false
+var _quadros_no_ar = 0
+
+func _conferir_msaa() -> void:
+	if msaa == Viewport.MSAA_DISABLED or _msaa_conferido:
+		return
+	_msaa_conferido = true
+	var img = get_texture().get_data()
+	if img == null or img.is_empty():
+		return
+	img.lock()
+	var acesos = 0
+	for i in 8:
+		for j in 8:
+			var c = img.get_pixel(int((i + 0.5) * img.get_width() / 8.0), int((j + 0.5) * img.get_height() / 8.0))
+			if c.r + c.g + c.b > 0.004:
+				acesos += 1
+	img.unlock()
+	if acesos == 0:
+		_msaa_quebrado = true
+		msaa = Viewport.MSAA_DISABLED
+		print("ARENA: MSAA desligado — com ele a placa de vídeo devolveu a imagem 3D preta")
+		Diario.marca("ARENA: MSAA desligado (imagem 3D preta com ele)")
 
 
 func _tamanho_do_degrau() -> Vector2:
@@ -892,6 +928,7 @@ func etapa_de_aquecimento(n: int) -> void:
 				_poeira.restart()
 		_:
 			_etapa = -1
+			_conferir_msaa()
 			_enfeites_visiveis(true)
 			preparar()
 			if lutador != null:
@@ -1010,6 +1047,10 @@ func avancar(delta: float) -> void:
 			return
 	if not _ativa:
 		return
+	if not _msaa_conferido:
+		_quadros_no_ar += 1
+		if _quadros_no_ar >= 12:
+			_conferir_msaa()
 	_relogio += delta
 	_tremor = max(0.0, _tremor - delta * 2.2)
 	_clarao = max(0.0, _clarao - delta * 2.4)

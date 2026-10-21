@@ -3,7 +3,7 @@ extends Node
 ## TESTE DE UMA PARTIDA INTEIRA (só no PC, não vai no APK).
 ##   godot3 --path . res://tools/testes/partida_teste.tscn -- [--partidas=2] [--fotos=pasta] [--perfil=arquivo.csv] [--degrau=0]
 ## Abre a cena do jogo como no editor, finge uma placa Arduino que respondeu
-## (sem motor) e câmera desligada, aperta START e dá os dois socos quando o
+## (sem motor) e câmera desligada, aperta START (a tecla 1) e dá os dois socos quando o
 ## jogo pede (fracos, médios e fortes, alternando). Grava fotos da tela e,
 ## por quadro, o tempo do quadro, o estado do jogo e se a arena estava no ar.
 ## `--natural` deixa o fim da rodada correr sozinho (nocaute, festa, TOP 20
@@ -145,7 +145,9 @@ func _process(delta: float) -> void:
 				_terminar()
 				return
 			if _resultado_em < 0.0 or t - _resultado_em > 1.0:
-				main._pressionou_start()
+				_tecla_start()
+				# sem câmera, a cortina leva direto ao ringue (sem a pose)
+				_foto("p%d_start" % feitas, 0.5)
 		GameDef.State.ARMED:
 			if _armado_em < 0.0:
 				_armado_em = t
@@ -173,6 +175,15 @@ func _process(delta: float) -> void:
 				main._entrar_em_abertura()
 		_:
 			_armado_em = -1.0
+
+
+## O START do teste é a tecla 1, como no gabinete com teclado.
+func _tecla_start() -> void:
+	for apertada in [true, false]:
+		var e = InputEventKey.new()
+		e.scancode = KEY_1
+		e.pressed = apertada
+		Input.parse_input_event(e)
 
 
 func _foto(nome: String, depois: float) -> void:

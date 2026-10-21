@@ -87,6 +87,15 @@ ALVOS = {
     "Calcao": (0.42, 0.004),
 }
 
+## O ROSTO GUARDA O DETALHE (build 118). A cabeca tem mais da metade dos
+## vertices da pele (4,9 mil de 8,2 mil): com a mesma fracao do corpo, o
+## simplificador comia a boca e as palpebras (olhos tortos, canto da boca
+## caido - a "cara ruim"). A cabeca e o pescoco sao simplificados a parte,
+## com esta fracao e este erro, e o resto do corpo com o ALVOS["Pele"]. Os
+## vertices da emenda entre as duas partes ficam travados nas duas contas:
+## nenhuma fresta no pescoco. Custa ~1,4 mil vertices (11,5 mil no total).
+ROSTO = (0.75, 0.001)
+
 TIPOS = {5120: np.int8, 5121: np.uint8, 5122: np.int16, 5123: np.uint16, 5125: np.uint32, 5126: np.float32}
 COMPONENTES = {"SCALAR": 1, "VEC2": 2, "VEC3": 3, "VEC4": 4, "MAT4": 16}
 
@@ -166,7 +175,8 @@ def _simplificar_c():
 
 
 def simplificar(indices: np.ndarray, pos: np.ndarray, normais: np.ndarray, uv: np.ndarray | None,
-                fracao: float, erro: float, cores: np.ndarray | None = None) -> np.ndarray:
+                fracao: float, erro: float, cores: np.ndarray | None = None,
+                travados: np.ndarray | None = None) -> np.ndarray:
     alvo = max(3, int(len(indices) * fracao) // 3 * 3)
     destino = np.zeros(len(indices), dtype=np.uint32)
     # Normal e UV entram na conta do erro: a sombra e a pintura nao "torcem".
@@ -188,12 +198,37 @@ def simplificar(indices: np.ndarray, pos: np.ndarray, normais: np.ndarray, uv: n
     f = _simplificar_c()
     pf = ctypes.POINTER(ctypes.c_float)
     pu = ctypes.POINTER(ctypes.c_uint)
+    trava = None
+    if travados is not None:
+        travados = np.ascontiguousarray(travados, dtype=np.uint8)
+        trava = travados.ctypes.data_as(ctypes.POINTER(ctypes.c_ubyte))
     n = f(destino.ctypes.data_as(pu), indices.ctypes.data_as(pu), len(indices),
           pos.ctypes.data_as(pf), len(pos), 12, attr.ctypes.data_as(pf), attr.shape[1] * 4,
-          w.ctypes.data_as(pf), len(w), None, alvo, erro, 0, None)
+          w.ctypes.data_as(pf), len(w), trava, alvo, erro, 0, None)
     novos = destino[:n].copy()
     mo.optimize_vertex_cache(novos, novos.copy(), vertex_count=len(pos))
     return novos
+
+
+def simplificar_pele(js, binario, attrs, idx, pos, normais, uv, fracao, erro) -> np.ndarray:
+    """A pele em duas contas: cabeca/pescoco (ROSTO) e o resto do corpo."""
+    nomes = [js["nodes"][j].get("name") for j in js["skins"][0]["joints"]]
+    juntas = ler_acessor(js, binario, attrs["JOINTS_0"])
+    pesos = ler_acessor(js, binario, attrs["WEIGHTS_0"]).astype(np.float64)
+    na_cabeca = np.zeros(len(pos))
+    for osso in ("mixamorig:Head", "mixamorig:Neck"):
+        na_cabeca += (pesos * (juntas == nomes.index(osso))).sum(1)
+    tri = idx.reshape(-1, 3)
+    da_cabeca = (na_cabeca[tri] > 0.5).all(1)
+    cabeca = tri[da_cabeca].reshape(-1)
+    corpo = tri[~da_cabeca].reshape(-1)
+    emenda = np.zeros(len(pos), np.uint8)
+    emenda[np.intersect1d(cabeca, corpo)] = 1
+    rosto = simplificar(cabeca, pos, normais, uv, ROSTO[0], ROSTO[1], None, emenda)
+    resto = simplificar(corpo, pos, normais, uv, fracao, erro, None, emenda)
+    print("Pele       cabeca %6d -> %6d tri   corpo %6d -> %6d tri" % (
+        len(cabeca) // 3, len(rosto) // 3, len(corpo) // 3, len(resto) // 3))
+    return np.concatenate([rosto, resto]).astype(np.uint32)
 
 
 def olhar(s: float) -> np.ndarray:
@@ -315,7 +350,11 @@ def main() -> None:
             if fracao < 1.0:
                 uv = ler_acessor(js, binario, attrs["TEXCOORD_0"]) if "TEXCOORD_0" in attrs else None
                 cores = ler_acessor(js, binario, attrs["COLOR_0"]) if "COLOR_0" in attrs else None
-                idx = simplificar(idx, pos, ler_acessor(js, binario, attrs["NORMAL"]), uv, fracao, erro, cores)
+                normais = ler_acessor(js, binario, attrs["NORMAL"])
+                if m["name"] == "Pele":
+                    idx = simplificar_pele(js, binario, attrs, idx, pos, normais, uv, fracao, erro)
+                else:
+                    idx = simplificar(idx, pos, normais, uv, fracao, erro, cores)
             # Os vertices que sobraram, na ordem em que a placa os le.
             remapa = np.zeros(len(pos), dtype=np.uint32)
             usados = mo.optimize_vertex_fetch_remap(remapa, idx, vertex_count=len(pos))

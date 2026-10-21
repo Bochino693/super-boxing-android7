@@ -720,14 +720,8 @@ var placa_respondeu = false
 ## Câmera e dados locais do proprietário. Nenhum deles depende da rede.
 var camera_service: CameraService
 var camera_enabled = true
-## A CÂMERA É CONDIÇÃO PARA JOGAR, e não um enfeite da partida.
-##
-## Ligada (o padrão), a rodada não começa e a ficha não é gasta enquanto
-## não houver imagem ao vivo. Desligada, a máquina volta ao
-## comportamento antigo — espera a webcam por alguns segundos e joga
-## assim mesmo. A chave existe para a bancada e para a manutenção: uma
-## máquina que não deixa nem abrir a tela de teste sem webcam é pior do
-## que uma que joga sem foto.
+## Chave antiga da Central ("FOTO AUTOMÁTICA"): fica sempre desligada —
+## a foto sai quando há câmera ao vivo e a rodada nunca espera por ela.
 var camera_obrigatoria = false
 ## O ÍNDICE E O BACK-END QUE JÁ FUNCIONARAM NESTA MÁQUINA.
 ##
@@ -749,18 +743,6 @@ var medico: CameraDoctor
 var statistics: Dictionary = {}
 var result_photo_path = ""
 var pose_finished = false
-## A CONTAGEM SEGURA ENQUANTO A CÂMERA NÃO ACENDE.
-##
-## E segura com HORA MARCADA. Uma máquina sem webcam, com o cabo solto ou
-## com o Python faltando não pode ficar sem jogar: quem pôs a ficha tem
-## direito à partida, com foto ou sem. Passados estes segundos a rodada
-## começa assim mesmo, e a tela diz por quê.
-const ESPERA_MAXIMA_DA_CAMERA = 12.0
-var aguardando_camera = false
-var espera_da_camera = 0.0
-## Esta rodada já desistiu da câmera e segue sem foto. Só é possível com
-## a exigência desligada na Central — ver `camera_obrigatoria`.
-var pose_sem_camera = false
 ## A FOTO É DA POSE FINAL, NÃO DE QUALQUER MOMENTO DA CONTAGEM.
 ##
 ## Ver o comentário grande em `_processar_contagem`. O obturador só abre
@@ -1655,10 +1637,6 @@ func _processar_contagem(delta: float) -> void:
 			_recolhendo_saco = false
 		else:
 			return
-	aguardando_camera = false
-	pose_sem_camera = not (
-		camera_enabled and camera_service != null and camera_service.pronta()
-	)
 	countdown_left -= delta
 	# O OBTURADOR ABRE NA RETA FINAL, NÃO NA CONTAGEM INTEIRA.
 	#
@@ -2387,15 +2365,26 @@ func _input(event: InputEvent) -> void:
 				central_rolagem = _rolagem_maxima()
 			get_viewport().set_input_as_handled()
 			return
-		# TECLADO É BANCADA. Num salão os comandos entram pelos botões do
-		# gabinete ou pela serial; deixar 5/C e 1/Enter valendo sempre é
-		# deixar um teclado esquecido no armário virar crédito de graça.
+		# A TECLA 1 É O START (pedido do operador; é também a tecla que as
+		# placas de fliperama que imitam teclado mandam no botão START). Vale
+		# como o botão do gabinete: no modo ficha a rodada continua cobrando
+		# o crédito, então um teclado não joga de graça.
+		if event.scancode in [KEY_1, KEY_KP_1]:
+			var agora = OS.get_ticks_msec()
+			if agora - ultimo_start_ms >= REPIQUE_MS:
+				ultimo_start_ms = agora
+				_pressionou_start()
+			get_viewport().set_input_as_handled()
+			return
+		# CRÉDITO PELO TECLADO É BANCADA. Num salão a ficha entra pelo
+		# moedeiro, pelos botões do gabinete ou pela serial; deixar 5/C
+		# valendo sempre é deixar um teclado esquecido virar crédito de graça.
 		if event.scancode in [KEY_5, KEY_C]:
 			if _simulador_liberado():
 				_add_credit()
 			get_viewport().set_input_as_handled()
 			return
-		if event.scancode in [KEY_1, KEY_ENTER, KEY_KP_ENTER]:
+		if event.scancode in [KEY_ENTER, KEY_KP_ENTER]:
 			if _simulador_liberado():
 				_pressionou_start()
 			get_viewport().set_input_as_handled()
@@ -2420,13 +2409,13 @@ func _input(event: InputEvent) -> void:
 		else:
 			_click_central(_ponto_da_tela_para_o_jogo(event.position))
 
-## OS ATALHOS DE TECLADO (5/C PARA CRÉDITO, 1/ENTER PARA START) SÃO
-## FERRAMENTA DE TÉCNICO, NUNCA DE SALÃO.
+## OS ATALHOS DE TECLADO 5/C (CRÉDITO) E ENTER (START) SÃO FERRAMENTA DE
+## TÉCNICO, NUNCA DE SALÃO (a tecla 1 é START sempre: ver `_input`).
 ##
 ## Só respondem com a Central aberta na frente de quem mexe na máquina.
-## Fora dela, START e CRÉDITO só chegam pelos botões do gabinete ou pela
-## serial — um teclado esquecido no armário não pode virar crédito de
-## graça, e o soco em si só existe vindo do MPU-6050.
+## Fora dela, o CRÉDITO só chega pelos botões do gabinete ou pela serial —
+## um teclado esquecido no armário não pode virar crédito de graça, e o
+## soco em si só existe vindo do MPU-6050.
 func _simulador_liberado() -> bool:
 	return central_aberta
 
@@ -2516,40 +2505,17 @@ func _pressionou_start() -> void:
 			if verdict_time >= 0.0:
 				_iniciar_rodada()
 
-## A CÂMERA TEM UMA JANELA DE PREPARO, MAS NUNCA TRAVA A MÁQUINA.
+## SEM CÂMERA, O JOGO NÃO PEDE FOTO (como no Strike Kids).
 ##
-## Esta é a regra nova, e ela substitui a espera com hora marcada. Antes
-## a máquina esperava seis segundos pela webcam e, passados eles, jogava
-## assim mesmo: a pessoa fazia a pose, a contagem zerava e o ranking
-## registrava o nome sem cara nenhuma. Num jogo cuja graça é aparecer com
-## a própria foto no quadro de recordes, uma partida sem foto é uma
-## partida entregue pela metade -- e a ficha já tinha sido cobrada.
-##
-## Agora a ordem se inverte: enquanto não há imagem AO VIVO, a rodada não
-## começa, a ficha não é consumida e a tela diz o que está faltando. Quem
-## precisa mexer na máquina sem webcam nenhuma (bancada, manutenção,
-## feira sem o cabo) desliga a exigência na Central, e aí volta o
-## comportamento antigo -- inclusive a espera com teto.
-##
-## A pergunta é `pronta()`, e ela é sobre a IMAGEM ESTAR MUDANDO, não
-## sobre o processo estar de pé: era essa confusão que deixava a contagem
-## correr em cima de um quadro congelado. Ver `CameraService.ao_vivo()`.
-func camera_liberou_a_rodada() -> bool:
-	# A UVC continua tentando em segundo plano. Após a tolerância inicial o jogo
-	# funciona mesmo num firmware que ainda não publicou pixels, em vez de ficar
-	# preso para sempre na tela de busca.
-	if not camera_enabled:
-		return true
-	if camera_service != null and camera_service.pronta():
-		return true
-	return _camera_ja_teve_tempo()
-
-## A câmera acorda 1 s depois dos periféricos; a tolerância conta dali, e
-## não do início do aplicativo (senão o aviso "SEM CÂMERA" saía em cima da
-## animação de abertura, antes de a câmera sequer começar).
-func _camera_ja_teve_tempo() -> bool:
-	return not entrada_segurada \
-		and animation_time >= _perifericos_em + 1.0 + ESPERA_MAXIMA_DA_CAMERA
+## A câmera nunca segura o START nem a ficha. Com imagem AO VIVO no
+## instante do START, a rodada tem a tela da pose e a foto vai para o
+## ranking; sem ela (máquina sem webcam, cabo solto, câmera ainda subindo,
+## desligada na Central), a rodada vai direto para o ringue e o ranking usa
+## o avatar — sem aviso de erro para o jogador. O estado da câmera fica na
+## Central. A pergunta é `pronta()`: a IMAGEM ESTÁ MUDANDO, não só o
+## processo de pé (ver `CameraService.ao_vivo()`).
+func _rodada_com_foto() -> bool:
+	return camera_enabled and camera_service != null and camera_service.pronta()
 
 ## A placa, e não o estado de descoberta/calibração do sensor, libera START.
 ## Uma linha válida do protocolo identifica que a porta aberta é realmente o
@@ -2586,28 +2552,23 @@ func fase_serial() -> int:
 	return FaseSerial.CALIBRANDO if placa_calibrando else FaseSerial.LIGADA
 
 func rodada_liberada() -> bool:
-	return _arduino_conectado() and camera_liberou_a_rodada()
+	return _arduino_conectado()
 
 ## O que dizer a quem apertou START e a máquina não começou.
 func motivo_da_recusa() -> String:
-	if not _arduino_conectado():
-		# A janela do Android está esperando: diz o que fazer nela, uma vez
-		# só — marcada "Usar por padrão", nunca mais é pedida.
-		if link != null and link.aguardando_permissao():
-			return "ARDUINO: MARQUE A CAIXA NA JANELA E TOQUE OK — SÓ DESTA VEZ"
-		return "AGUARDE — CONECTANDO O ARDUINO"
-	if not camera_enabled:
-		return "CÂMERA DESLIGADA"
-	if camera_service == null:
-		return "CÂMERA INDISPONÍVEL"
-	return camera_service.estado_curto()
+	# A janela do Android está esperando: diz o que fazer nela, uma vez
+	# só — marcada "Usar por padrão", nunca mais é pedida.
+	if link != null and link.aguardando_permissao():
+		return "ARDUINO: MARQUE A CAIXA NA JANELA E TOQUE OK — SÓ DESTA VEZ"
+	return "AGUARDE — CONECTANDO O ARDUINO"
 
 func _iniciar_rodada() -> void:
 	# A cortina já está passando para a pose: um segundo START não desconta
 	# outra ficha.
 	if not _troca_pendente.empty():
 		return
-	# ARDUINO E CÂMERA VÊM ANTES DA FICHA. O sensor não bloqueia mais o
+	# O ARDUINO VEM ANTES DA FICHA (a câmera não: sem ela, a rodada vai
+	# direto para o ringue — ver `_rodada_com_foto`). O sensor não bloqueia mais o
 	# início: a busca e a calibração continuam paralelamente durante a rodada.
 	if not rodada_liberada():
 		_show_notice(motivo_da_recusa())
@@ -2656,7 +2617,10 @@ func _comecar_contagem() -> void:
 	# Build 110: com motor, o pedido de SUBIR sai SEMPRE (a placa responde a
 	# verdade na hora se ele já estiver lá) e a contagem só começa com o
 	# topo CONFIRMADO.
-	_recolhendo_saco = _motor_em_uso()
+	# SEM CÂMERA AO VIVO NÃO HÁ POSE: a rodada vai direto ao ringue, e lá
+	# o saco sobe primeiro se não estiver em cima (`_pedir_descida_do_saco`).
+	var com_foto = _rodada_com_foto()
+	_recolhendo_saco = com_foto and _motor_em_uso()
 	_recolhendo_desde = animation_time
 	_saco_fora_de_baixo_desde = -1.0
 	if _recolhendo_saco:
@@ -2673,17 +2637,8 @@ func _comecar_contagem() -> void:
 	result_score = 0
 	result_photo_path = ""
 	pose_finished = false
-	# A CONTAGEM ESPERA A CÂMERA (mas o OBTURADOR NÃO ABRE AQUI MAIS —
-	# ver o comentário grande em `_processar_contagem`, logo abaixo de
-	# onde a contagem entra na reta final).
-	#
-	# Contar 3-2-1 enquanto a webcam ainda está subindo é gastar a pose
-	# inteira esperando: quando a contagem zera, a ponte às vezes acabou
-	# de entregar o primeiro quadro, e a foto sai do nada ou não sai. A
-	# espera é o conserto óbvio, e é o que o operador pediu.
-	espera_da_camera = 0.0
-	pose_sem_camera = false
-	aguardando_camera = camera_enabled and camera_service != null and not camera_service.pronta()
+	# O OBTURADOR NÃO ABRE AQUI: ver o comentário grande em
+	# `_processar_contagem`, onde a contagem entra na reta final.
 	_obturador_tardio_aberto = false
 	photo_retained = false
 	ranking_announced = false
@@ -2726,6 +2681,12 @@ func _comecar_contagem() -> void:
 		arena.preparar()
 		arena.guardar(true)
 	_salvar()
+	if not com_foto:
+		# A cortina ainda cobre a tela: o ringue entra no lugar da pose.
+		Diario.marca("JOGO: sem câmera ao vivo — rodada sem foto, direto para o ringue")
+		pose_finished = true
+		countdown_left = -1.2
+		_entrar_no_ringue()
 
 ## DEVOLVE A FICHA DA RODADA QUE NÃO ACONTECEU.
 ##
@@ -3350,6 +3311,8 @@ func _draw_ensaio() -> void:
 		state = GameDef.State.IDLE
 		_draw_show_idle()
 	fx.desenhar(self)
+	_draw_logo_do_alto()
+	_logo_do_alto = false
 	for nome in guardado:
 		set(nome, guardado[nome])
 
@@ -5933,6 +5896,7 @@ func _draw() -> void:
 	# imagem que balança continua sendo a do soco.
 	_deslocamento = Vector2.ZERO
 	fx.seguir(Vector2.ZERO, Vector2.ONE)
+	_logo_do_alto = false
 
 	if state == GameDef.State.IDLE:
 		if intro_active:
@@ -5955,6 +5919,7 @@ func _draw() -> void:
 	# limite do quadro e fica sempre nítida.
 	if _arena_no_quadro:
 		ArenaQuadro.tarjas(self, ScoreTier.cor_de(result_score), clarao)
+	_draw_logo_do_alto()
 	_draw_alertas_graves()
 	_draw_transicao()
 	_draw_ok_segurado()
@@ -6170,13 +6135,8 @@ func _pagina_como_jogar(alpha: float) -> void:
 ## Todos os momentos da partida compartilham o mesmo visor. O que muda é
 ## o que está escrito nele, a cor do anel e quanto do anel está aceso.
 func _draw_partida() -> void:
-	# O cabeçalho da rodada é o MESMO letreiro do cabeçalho da abertura,
-	# no mesmo corpo: são a mesma máquina, e a pessoa não deve sentir que
-	# trocou de programa ao apertar START.
-	# Com a arena grande, o letreiro fica no alto, menor, acima do quadro.
-	# Ele cabe INTEIRO acima da tarja zebrada de cima (y 100): a estrela do
-	# logo não cobre mais a faixa.
-	ArcadeStage.imagem(self, ArcadeStage.LOGO, Vector2(540.0, 50.0), 160.0)
+	# O LOGO DO ALTO sai depois das tarjas (ver `_draw_logo_do_alto`).
+	_logo_do_alto = true
 	# A MARCA LAZER & SPORT acompanha a rodada inteira, à direita, GRANDE e
 	# inteira (sem transparência) — menos na contagem, onde ela é desenhada
 	# ao lado do visor da foto.
@@ -6220,14 +6180,6 @@ func _draw_partida() -> void:
 				# O saco ainda está subindo para a foto: a contagem espera.
 				_carregando(Vector2(540.0, 1400.0), 40.0, Paleta.AMBAR)
 				_rotulo("AGUARDE: RECOLHENDO O SACO", 1490.0, Paleta.AMBAR)
-			elif aguardando_camera:
-				# Enquanto a câmera sobe, a tela diz o que está esperando
-				# — e o anel girando prova que a máquina não travou.
-				_carregando(Vector2(540.0, 1400.0), 40.0, Paleta.CIANO)
-				_rotulo(
-					camera_service.estado_curto() if camera_service != null else "LIGANDO A CÂMERA…",
-					1490.0, Paleta.CIANO
-				)
 			elif not pose_finished:
 				_texto_arcade(str(int(clamp(int(ceil(countdown_left)), 1, 3))), 1400.0, 150, Color.white, LARGURA_UTIL)
 				_rotulo("OLHE PARA A CÂMERA", 1490.0, Paleta.AMBAR)
@@ -6248,6 +6200,22 @@ func _draw_partida() -> void:
 			_draw_espera_do_soco()
 		GameDef.State.MEASURING, GameDef.State.RESULT:
 			_draw_score_hero()
+
+## O LOGO DO JOGO NO ALTO DA PARTIDA, GRANDE.
+##
+## O mesmo letreiro da abertura: são a mesma máquina, e a pessoa não deve
+## sentir que trocou de programa ao apertar START. Até a build 117 ele
+## tinha 160 px para caber acima da tarja zebrada de cima (y 100) e ficava
+## miúdo; agora tem 290 px e é desenhado POR CIMA da tarja e do alto do
+## painel de luta, entre "VOCÊ" e "ADVERSÁRIO", sem chegar nas barras de
+## vida (y 178). Um retângulo com textura: não custa nada na Mali-450.
+const LOGO_DO_ALTO_CENTRO = Vector2(540.0, 88.0)
+const LOGO_DO_ALTO_LARGURA = 290.0
+var _logo_do_alto := false
+
+func _draw_logo_do_alto() -> void:
+	if _logo_do_alto:
+		ArcadeStage.imagem(self, ArcadeStage.LOGO, LOGO_DO_ALTO_CENTRO, LOGO_DO_ALTO_LARGURA)
 
 ## O QUADRO NA PAREDE: a arena 3D, a moldura e as barras de dano.
 ##
@@ -6518,7 +6486,7 @@ func _draw_show_idle() -> void:
 	var pulse = 0.8 + 0.2 * sin(animation_time * 2.6)
 	# A MÁQUINA NÃO CONVIDA PARA O QUE ELA NÃO PODE FAZER.
 	#
-	# Enquanto a câmera não está entregando imagem, "PRESSIONE START" é
+	# Enquanto o Arduino não responde, "PRESSIONE START" é
 	# uma promessa que a máquina vai negar no toque seguinte — e quem
 	# está na frente dela conclui que o botão quebrou. O convite só
 	# aparece quando a rodada pode mesmo começar; até lá, o mesmo cartão
@@ -7858,7 +7826,7 @@ func _central_camera() -> void:
 	)
 	_botao(BOTOES_SIMPLES["sondar_camera"], "PROCURAR DE NOVO", false, Paleta.CIANO, 15)
 	# A REGRA QUE DECIDE SE A MÁQUINA JOGA SEM WEBCAM — ver
-	# `camera_liberou_a_rodada` em `_iniciar_rodada`.
+	# `_rodada_com_foto` em `_comecar_contagem`.
 	_botao(
 		BOTOES_SIMPLES["camera_obrigatoria"],
 		"FOTO AUTOMÁTICA",
@@ -8879,11 +8847,6 @@ func _draw_alertas_graves() -> void:
 		recados.append(Versao.recado_do_estrago())
 	if link != null and not link.available():
 		recados.append("SEM CAMINHO ATÉ O ARDUINO — START, CRÉDITO E SENSOR MORTOS")
-	# SEM CÂMERA O JOGO SEGUE — e diz isso. Depois da espera inicial, a
-	# rodada começa sem foto; o aviso explica por que o ranking fica sem rosto.
-	if camera_enabled and camera_service != null and not camera_service.pronta() \
-			and _camera_ja_teve_tempo():
-		recados.append("SEM CÂMERA — O JOGO SEGUE SEM FOTO  •  " + camera_service.motivo_curto())
 	# O MOTOR DO SACO: o motivo aparece também aqui, para quem não abre a
 	# Central. Só depois que a placa se apresentou (a falta de placa já
 	# tem o aviso dela) e só com o motor ligado.
