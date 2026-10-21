@@ -55,10 +55,16 @@ extends Reference
 ## combater. Os dois olham o mesmo quadro por ângulos diferentes, de
 ## propósito.
 
-## Acima disto o quadro é um soluço, não um ritmo. Um quarto de segundo
-## por quadro é 4 fps: nenhuma tela do jogo custa isso nem no pior
-## aparelho, então quando aparece é sempre outra coisa.
-const TETO_DO_SOLUCO = 0.25
+## Acima disto o quadro é um soluço, não um ritmo (meio segundo parado:
+## carregamento, troca de janela do Android).
+##
+## ERA 0,25 s, E ISSO VIRAVA CÂMERA LENTA. Numa TV Box que entregava 3 ou
+## 4 quadros por segundo na luta, cada quadro "lento" era tratado como
+## soluço e o jogo andava só o último passo bom: a contagem de 1 s levava
+## 6, o lutador mexia em câmera lenta e o pedido de descida do saco saía
+## atrasado. O jogo agora anda no relógio de verdade mesmo quando a placa
+## aperta; quem cuida de a placa não apertar é a resolução dinâmica.
+const TETO_DO_SOLUCO = 0.5
 
 ## E ABAIXO DISTO TAMBÉM NÃO É UM QUADRO.
 ##
@@ -76,9 +82,9 @@ const TETO_DO_SOLUCO = 0.25
 ## não parece defeito: parece a máquina ter travado.
 const PISO_DO_QUADRO = 0.001
 
-## O passo entregue nunca passa disto. Mesmo num aparelho que roda a 8
-## quadros por segundo o jogo avança em fatias que ainda dá para desenhar.
-const PASSO_MAXIMO = 0.10
+## O passo entregue nunca passa disto: até 4 quadros por segundo o jogo
+## anda no tempo real (antes, abaixo de 10 quadros já atrasava).
+const PASSO_MAXIMO = 0.25
 
 ## Quantos quadros entram na média. Seis é curto o bastante para
 ## acompanhar uma mudança real de carga em um décimo de segundo, e longo

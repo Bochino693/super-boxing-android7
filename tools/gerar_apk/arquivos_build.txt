@@ -12,7 +12,6 @@ CAMERA_TVBOX.bat
 GERAR_APK_AGORA.bat
 INSTALAR_NA_TVBOX.bat
 LEIA-ME.txt
-SUBIR_MINHA_VERSAO.bat
 TELA_CHEIA_TVBOX.bat
 android/plugins/PunchQuadros-release.aar
 android/plugins/PunchQuadros.gdap
@@ -22,12 +21,16 @@ assets/arena/brilho.png
 assets/arena/brilho.png.import
 assets/arena/facho.png
 assets/arena/facho.png.import
+assets/arena/faixa_lateral.png
+assets/arena/faixa_lateral.png.import
 assets/arena/fundo.png
 assets/arena/fundo.png.import
 assets/arena/lona.png
 assets/arena/lona.png.import
 assets/arena/saia.png
 assets/arena/saia.png.import
+assets/arena/tarja_zebra.png
+assets/arena/tarja_zebra.png.import
 assets/arena/torcida_baixo.png
 assets/arena/torcida_baixo.png.import
 assets/arena/torcida_cima.png
@@ -254,8 +257,6 @@ assets/tema/fundo.jpg
 assets/tema/fundo.jpg.import
 assets/tema/logo.png
 assets/tema/logo.png.import
-assets/tema/moldura_arena.png
-assets/tema/moldura_arena.png.import
 assets/tema/never_give_up.png
 assets/tema/never_give_up.png.import
 docs/.gdignore
@@ -307,6 +308,7 @@ scripts/led_frame.gd
 scripts/lembranca_usb.gd
 scripts/letreiro.gd
 scripts/logos.gd
+scripts/lote.gd
 scripts/main.gd
 scripts/paleta.gd
 scripts/perfil.gd

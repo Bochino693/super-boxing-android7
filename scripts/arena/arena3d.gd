@@ -14,8 +14,9 @@ extends Viewport
 ##   • partículas com quantidade fixa (mudar `amount` realoca buffers e
 ##     engasga) e shaders compilados no arranque (`aquecer`).
 
-## Resolução cheia do quadro (1:1 na tela): o ringue sai nítido.
-const TELA_LOGICA = Vector2(1008.0, 1422.0)
+## Resolução cheia do quadro (1:1 na tela): o ringue sai nítido. 4.6 PRO:
+## a arena vai de ponta a ponta na largura da tela (ver `ArenaQuadro`).
+const TELA_LOGICA = Vector2(1080.0, 1540.0)
 ## Degrau magro para quando o vigia de desempenho apertar.
 const FATOR_MAGRO = 0.75
 const DESCE_PARA_MAGRO = 0.50
@@ -23,8 +24,12 @@ const SOBE_PARA_CHEIO = 0.62
 
 ## Enquadramento: quanto da altura da janela o lutador em pé ocupa, e
 ## quanto a câmera fica acima da mira (a leve inclinação de transmissão).
-const OCUPACAO_DO_LUTADOR = 0.66
-const CAMERA_ACIMA_DA_MIRA = 0.21
+## 4.6 PRO: a câmera abriu — o lutador ocupa pouco mais da metade da
+## altura e sobra lugar para o ringue inteiro, a treliça de luz e a torcida.
+const OCUPACAO_DO_LUTADOR = 0.54
+const CAMERA_ACIMA_DA_MIRA = 0.26
+## O ângulo de abertura (vertical) da câmera.
+const CAMPO_DE_VISAO = 50.0
 
 ## O ringue (metros). A meia largura põe os postes de trás nas bordas do
 ## quadro, que é o que faz a imagem ler como ringue.
@@ -39,6 +44,8 @@ const TEX_FACHO = "res://assets/arena/facho.png"
 const TEX_SAIA = "res://assets/arena/saia.png"
 
 const COR_FUNDO = Color("07051a")
+## (Para `_juntar`: as cores das peças, prontas, ver `Lote._tinta`.)
+const Lote = preload("res://scripts/lote.gd")
 const TEX_TORCIDA_BAIXO = "res://assets/arena/torcida_baixo.png"
 const TEX_TORCIDA_CIMA = "res://assets/arena/torcida_cima.png"
 
@@ -158,8 +165,7 @@ void fragment() {
 }
 """
 
-## O tamanho da build 97, para quando a máquina não aguenta a nitidez
-## (ver `_julgar_a_luta`).
+## O tamanho da build 97: o último degrau do gráfico (ver `DEGRAUS`).
 const ARENA_ESCALA_SEGURA = 0.55
 ## A torcida da S905L (`SHADER_TORCIDA_SEGURA`): folga em cima da fileira e
 ## onde começa o encosto (o mesmo `ASSENTO` de `tools/gerar_torcida.py`).
@@ -251,7 +257,7 @@ func _montar_mundo() -> void:
 
 	camera = Camera.new()
 	camera.name = "Camera"
-	camera.fov = 44.0
+	camera.fov = CAMPO_DE_VISAO
 	# Plano de corte bem perto: no soco na tela a luva chega a um palmo da
 	# lente, e com o corte longe ela aparecia oca, "transparente".
 	camera.near = 0.10
@@ -277,6 +283,7 @@ func _montar_mundo() -> void:
 	_montar_fachos()
 	_montar_flashes()
 	_montar_particulas()
+	_montar_ginasio()
 
 
 func _luz_pontual(cor: Color, onde: Vector3) -> OmniLight:
@@ -415,12 +422,18 @@ func _montar_ringue() -> void:
 	poste.top_radius = 0.055
 	poste.bottom_radius = 0.055
 	poste.height = 1.5
-	poste.radial_segments = 16
+	# REDONDOS DE VERDADE (4.6 PRO): com 16/20 lados os postes e os
+	# protetores mostravam as faces ("quadrados") na TV. Os lados a mais
+	# são poucos triângulos — nada perto do lutador. Sem anéis ao longo da
+	# altura: num tubo reto eles não mudam nada na tela.
+	poste.radial_segments = 24
+	poste.rings = 0
 	var protetor = CylinderMesh.new()
 	protetor.top_radius = 0.10
 	protetor.bottom_radius = 0.10
 	protetor.height = 1.02
-	protetor.radial_segments = 20
+	protetor.radial_segments = 28
+	protetor.rings = 0
 	var metal = _material_solido(Color("9aa3b5"), 0.28)
 	metal.metallic = 0.8
 	for lado in [-1.0, 1.0]:
@@ -752,28 +765,20 @@ func _montar_sombra() -> void:
 # -------------------------------------------------------- tamanho/MSAA
 ## A NITIDEZ DA ARENA ACOMPANHA A MÁQUINA — E SÓ MUDA ENTRE AS LUTAS.
 ##
-## Com o lutador leve (9,5 mil vértices em vez de 43 mil) sobra fôlego, e
+## Com o lutador leve (11 mil vértices em vez de 44 mil) sobra fôlego, e
 ## ele vai para a nitidez: a arena nasce em `Perfil.ARENA_ESCALA` (0,70 da
-## tela; 0,55 era uma imagem ampliada quase 2x, borrada). Durante a luta
-## o próprio quadro é medido; se mais de `LUTA_LENTA` dos quadros passaram
-## de `QUADRO_LENTO_MS`, a próxima luta vem em `ARENA_ESCALA_SEGURA` e
-## fica assim até o jogo fechar. Nunca no meio da luta: trocar o tamanho
-## realoca a imagem, e no quadro da troca o lutador sumia.
-const QUADRO_LENTO_MS = 45.0
-const LUTA_LENTA = 0.20
-const QUADROS_PARA_JULGAR = 90
-var _escala = -1.0
-var _quadros_na_luta = 0
-var _quadros_lentos = 0
-var _ultimo_quadro_us = 0
-
+## tela; 0,55 era uma imagem ampliada quase 2x, borrada). Se a luta ficar
+## lenta, o jogo desce um degrau (ver `DEGRAUS`). Nunca no meio da luta:
+## trocar o tamanho realoca a imagem, e no quadro da troca o lutador sumia.
 func _aplicar_tamanho() -> void:
-	if _escala < 0.0:
-		_escala = max(Perfil.ARENA_ESCALA, ARENA_ESCALA_SEGURA)
-	var novo = Vector2((TELA_LOGICA * _escala).round())
+	var novo = _tamanho_do_degrau()
 	if size != novo:
 		size = novo
 	msaa = Viewport.MSAA_2X if Perfil.ARENA_MSAA else Viewport.MSAA_DISABLED
+
+
+func _tamanho_do_degrau() -> Vector2:
+	return Vector2((TELA_LOGICA * _escala_do_degrau()).round())
 
 
 func _ajustar_tamanho() -> void:
@@ -791,33 +796,8 @@ func ligar(ativa: bool) -> void:
 	_ativa = ativa
 	if ativa:
 		_aplicar_tamanho()
-		_quadros_na_luta = 0
-		_quadros_lentos = 0
-		_ultimo_quadro_us = 0
-	else:
-		_julgar_a_luta()
-		if _aquecendo <= 0 and _etapa < 0:
-			render_target_update_mode = Viewport.UPDATE_DISABLED
-
-
-## A luta que acabou foi lisa? Se não, a próxima vem na resolução menor.
-func _julgar_a_luta() -> void:
-	if _quadros_na_luta < QUADROS_PARA_JULGAR or _escala <= ARENA_ESCALA_SEGURA:
-		return
-	var lentos = float(_quadros_lentos) / float(_quadros_na_luta)
-	if lentos > LUTA_LENTA:
-		_escala = ARENA_ESCALA_SEGURA
-		print("SUPERBOXING arena: %d%% dos quadros lentos na luta -> resolucao %.2f" % [int(lentos * 100.0), _escala])
-		Diario.marca("ARENA: luta lenta (%d%% dos quadros) -> resolucao %.2f" % [int(lentos * 100.0), _escala])
-
-
-func _medir_quadro() -> void:
-	var agora = OS.get_ticks_usec()
-	if _ultimo_quadro_us > 0:
-		_quadros_na_luta += 1
-		if float(agora - _ultimo_quadro_us) / 1000.0 > QUADRO_LENTO_MS:
-			_quadros_lentos += 1
-	_ultimo_quadro_us = agora
+	elif _aquecendo <= 0 and _etapa < 0:
+		render_target_update_mode = Viewport.UPDATE_DISABLED
 
 
 func ativa() -> bool:
@@ -849,10 +829,13 @@ var _etapa = -1
 func _enfeites_visiveis(sim: bool) -> void:
 	if _gente != null:
 		_gente.visible = sim
+	var enfeites = sim and _enfeites_do_degrau()
 	if _flashes != null:
-		_flashes.visible = sim
+		_flashes.visible = enfeites
 	for f in _fachos:
-		f.visible = sim
+		f.visible = enfeites
+	for c in _cones:
+		c.visible = enfeites
 
 func etapa_de_aquecimento(n: int) -> void:
 	_etapa = n
@@ -942,6 +925,12 @@ func agitar(intensidade: float, segundos := 4.0) -> void:
 	_agito_ate = max(_agito_ate, _relogio + segundos)
 
 
+## O soco final acertou o jogador: quem ganhou comemora (ver `Lutador3D.venceu`).
+func venceu(festa := "") -> void:
+	if lutador != null:
+		lutador.venceu(festa)
+
+
 func fim_de_rodada(desfecho: String) -> void:
 	if lutador != null:
 		lutador.fim_de_rodada(desfecho)
@@ -998,7 +987,6 @@ func avancar(delta: float) -> void:
 			return
 	if not _ativa:
 		return
-	_medir_quadro()
 	_relogio += delta
 	_tremor = max(0.0, _tremor - delta * 2.2)
 	_clarao = max(0.0, _clarao - delta * 2.4)
@@ -1157,6 +1145,7 @@ func _luzes() -> void:
 			(mat as ShaderMaterial).set_shader_param("acende", acende)
 			(mat as ShaderMaterial).set_shader_param("agito", _agito)
 	_mat_lona.albedo_color = Color(acende, acende, acende)
+	_animar_ginasio()
 	if _mat_saia != null:
 		_mat_saia.set_shader_param("rolagem", Compat.fracao(_relogio, 0.05))
 		_mat_saia.set_shader_param("acende", acende)
@@ -1218,3 +1207,349 @@ func _sombra_de_contato() -> void:
 	if _foco != null:
 		_foco.translation = Vector3(desloc.x * 0.7, 0.015, desloc.z * 0.5)
 		_mat_foco.albedo_color = COR_DO_FOCO * (0.9 + _clarao * 0.4)
+
+
+# ---------------------------------------------------------- degraus
+## OS DEGRAUS DO GRÁFICO. A arena é a conta mais cara do jogo. Cada degrau
+## tira UMA coisa, a que menos se vê primeiro:
+##
+##   0 COMPLETO      tudo, a arena em `Perfil.ARENA_ESCALA` (70%);
+##   1 SEM FACHOS    os cones de luz e os flashes da plateia
+##                   (transparentes, cobrem boa parte da tela);
+##   2 3D A 62%      a arena desenhada com 62% dos pixels de cada lado
+##                   (ampliada no quadro, a imagem fica um pouco mais macia);
+##   3 3D A 55%      idem, 55% (o tamanho da build 111).
+##
+## O jogo escolhe sozinho (`main.gd`, `_ajustar_degrau`): mede a luta em
+## janelas de 4 s e, se ela ficou abaixo da meta de quadros, desce um
+## degrau — e guarda, para a próxima vez que a máquina ligar.
+##
+## O degrau 1 entra na hora (é só esconder uma peça já compilada). O
+## tamanho (2 e 3) realoca a imagem da arena — no quadro da troca o
+## lutador sumiria —, então ele espera a arena sair da tela (`ligar`).
+const DEGRAUS = ["COMPLETO", "SEM FACHOS", "3D A 62%", "3D A 55%"]
+var degrau = 0
+
+func aplicar_degrau(n: int) -> void:
+	degrau = int(clamp(n, 0, DEGRAUS.size() - 1))
+	var enfeites = _enfeites_do_degrau()
+	for f in _fachos:
+		f.visible = enfeites
+	for c in _cones:
+		c.visible = enfeites
+	if _flashes != null:
+		_flashes.visible = enfeites
+	if not _ativa:
+		_aplicar_tamanho()
+
+func _enfeites_do_degrau() -> bool:
+	return degrau < 1
+
+func _escala_do_degrau() -> float:
+	if degrau >= 3:
+		return ARENA_ESCALA_SEGURA
+	if degrau == 2:
+		return 0.62
+	return Perfil.ARENA_ESCALA
+
+## O degrau pede um tamanho que ainda não entrou (a arena está na tela;
+## entra na próxima vez que ela ligar). Enquanto isso, medir de novo a
+## mesma luta e descer mais um degrau seria descer às cegas —
+## `main._ajustar_degrau` espera.
+func degrau_pendente() -> bool:
+	return size != _tamanho_do_degrau()
+
+func escala_3d() -> float:
+	return float(size.x) / TELA_LOGICA.x
+
+
+# ------------------------------------------------------------ 4.6 PRO
+## O GINÁSIO EM VOLTA DO RINGUE (build 208): a treliça de luz com os
+## refletores e os fachos, as faixas dos lados, os protetores das cordas,
+## as luzes dos postes e a poeira dançando na luz.
+##
+## NA MALI-450 (OpenGL ES 2.0) tudo isso é barato de propósito: nada aqui
+## recebe luz (é tudo "sem sombreamento", a cor já pronta), o facho faz a
+## conta no VÉRTICE (o pixel só pinta a cor que chegou) e a poeira é de
+## processador. Sombra real, brilho pós-processado e a luz do rosto da PRO
+## ficam de fora: cada um é mais uma passada de tela cheia que esta placa
+## não tem.
+const TEX_FAIXA = "res://assets/arena/faixa_lateral.png"
+
+## OS FACHOS DE LUZ DOS REFLETORES: cones transparentes que acendem o ar
+## (mais fortes perto da lâmpada, sumindo na borda e no chão). Só a face
+## da frente de cada cone é desenhada, com o dobro da força.
+##
+## OS SETE CONES SÃO UMA MALHA SÓ (uma chamada de desenho, não sete): a cor
+## de cada um vem na cor do vértice, a força dele no alfa, e em UV2 vêm a
+## altura do vértice no cone (0 no chão, 1 na lâmpada) e o número do cone
+## (para cada um respirar no seu tempo). A conta toda é feita no VÉRTICE,
+## em 32 bits — os cones têm anéis para isso —, e o pixel só soma a cor:
+## os fachos cobrem boa parte da tela e o pixel da Mali-450 é o gargalo.
+const SHADER_FACHO = """
+shader_type spatial;
+render_mode unshaded, blend_add, cull_back, depth_draw_never, shadows_disabled;
+uniform float vivo = 1.0;
+uniform float relogio = 0.0;
+varying vec4 v_cor;
+void vertex() {
+	float t = UV2.x;
+	float i = UV2.y;
+	vec3 n = normalize((MODELVIEW_MATRIX * vec4(NORMAL, 0.0)).xyz);
+	vec3 p = (MODELVIEW_MATRIX * vec4(VERTEX, 1.0)).xyz;
+	float meio = pow(abs(dot(n, normalize(-p))), 1.7);
+	float onda = 0.92 + 0.08 * sin(relogio * (0.7 + 0.13 * i) + i);
+	float a = COLOR.a * vivo * onda * meio * (0.18 + 0.82 * t * t) * smoothstep(0.0, 0.22, t) * 2.0;
+	v_cor = vec4(COLOR.rgb, clamp(a, 0.0, 1.0));
+}
+void fragment() {
+	ALBEDO = v_cor.rgb;
+	ALPHA = v_cor.a;
+}
+"""
+
+## A treliça de alumínio: um quadro vazado (dois tubos e os zigue-zagues)
+## desenhado no próprio material — nada de dezenas de peças. Sem luz: o
+## brilho do metal vem de um degradê de cima para baixo.
+const SHADER_TRELICA = """
+shader_type spatial;
+render_mode unshaded, cull_disabled, shadows_disabled;
+uniform vec4 cor : hint_color = vec4(0.30, 0.31, 0.38, 1.0);
+uniform float gomos = 14.0;
+void fragment() {
+	float u = fract(UV.x * gomos);
+	float v = UV.y;
+	float tubo = step(v, 0.14) + step(0.86, v);
+	float d1 = abs(v - u);
+	float d2 = abs(v - (1.0 - u));
+	float zig = step(min(d1, d2), 0.07);
+	float coluna = step(u, 0.05);
+	if (clamp(tubo + zig + coluna, 0.0, 1.0) < 0.5) {
+		discard;
+	}
+	ALBEDO = cor.rgb * (1.25 - 0.5 * v);
+}
+"""
+
+## As lentes dos refletores e os LEDs dos postes (uma malha, sem luz; a cor
+## de cada lâmpada no vértice): acendem juntas no golpe.
+var _mat_lampadas: SpatialMaterial = null
+## Os sete cones de luz, numa malha só (ver `SHADER_FACHO`): somem no
+## degrau 1.
+var _mat_fachos: ShaderMaterial = null
+var _cones: Array = []
+var _poeira_no_ar: CPUParticles = null
+
+
+## VÁRIAS PEÇAS, UMA MALHA. Cada peça desenhada à parte é uma chamada à
+## placa de vídeo, e na TV Box cada chamada custa tempo do processador e
+## do driver. Peças que dividem o material viram uma malha só, já no lugar
+## (montada uma vez, na abertura), com a cor de cada uma nos vértices.
+## `pecas`: [malha primitiva, Transform, cor (opcional), cone (opcional:
+## [meia altura, número] — vai para UV2, ver `SHADER_FACHO`)].
+static func _juntar(pecas: Array) -> ArrayMesh:
+	var pos = PoolVector3Array()
+	var normais = PoolVector3Array()
+	var uv = PoolVector2Array()
+	var uv2 = PoolVector2Array()
+	var cores = PoolColorArray()
+	var indices = PoolIntArray()
+	var com_cor = false
+	var com_uv2 = false
+	for p in pecas:
+		if p.size() > 2:
+			com_cor = true
+		if p.size() > 3:
+			com_uv2 = true
+	for p in pecas:
+		var a = (p[0] as PrimitiveMesh).get_mesh_arrays()
+		var xf: Transform = p[1]
+		var v: PoolVector3Array = a[Mesh.ARRAY_VERTEX]
+		var base = pos.size()
+		pos.append_array(xf.xform(v))
+		normais.append_array(Transform(xf.basis, Vector3.ZERO).xform(a[Mesh.ARRAY_NORMAL]))
+		uv.append_array(a[Mesh.ARRAY_TEX_UV])
+		if com_cor:
+			cores.append_array(Lote._tinta(p[2] if p.size() > 2 else Color.white, v.size()))
+		if com_uv2:
+			var cone: Array = p[3] if p.size() > 3 else [1.0, 0.0]
+			for k in v.size():
+				uv2.append(Vector2(clamp(v[k].y / float(cone[0]) * 0.5 + 0.5, 0.0, 1.0), float(cone[1])))
+		# (o quadro do Godot 3 vem sem índices: os vértices já em triângulos)
+		if a[Mesh.ARRAY_INDEX] == null:
+			for k in v.size():
+				indices.append(base + k)
+		else:
+			var idx: PoolIntArray = a[Mesh.ARRAY_INDEX]
+			for k in idx.size():
+				indices.append(base + idx[k])
+	var arrays = []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = pos
+	arrays[Mesh.ARRAY_NORMAL] = normais
+	arrays[Mesh.ARRAY_TEX_UV] = uv
+	if com_uv2:
+		arrays[Mesh.ARRAY_TEX_UV2] = uv2
+	if com_cor:
+		arrays[Mesh.ARRAY_COLOR] = cores
+	arrays[Mesh.ARRAY_INDEX] = indices
+	var malha = ArrayMesh.new()
+	malha.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	return malha
+
+
+static func _material_aceso(cor: Color, das_pecas := false) -> SpatialMaterial:
+	var m = SpatialMaterial.new()
+	m.flags_unshaded = true
+	m.albedo_color = cor
+	m.vertex_color_use_as_albedo = das_pecas
+	return m
+
+
+func _montar_ginasio() -> void:
+	var trelica = ShaderMaterial.new()
+	var sh = Shader.new()
+	sh.code = SHADER_TRELICA
+	trelica.shader = sh
+	# duas vigas, uma atrás da outra, sobre o fundo do ringue, e a de baixo
+	var viga = QuadMesh.new()
+	viga.size = Vector2(5.4, 0.30)
+	var baixo = QuadMesh.new()
+	baixo.size = Vector2(5.4, 0.62)
+	_peca(_juntar([
+		[viga, Transform(Basis(), Vector3(0.0, 3.30, -3.0))],
+		[viga, Transform(Basis(), Vector3(0.0, 3.86, -3.62))],
+		[baixo, Transform(Basis(Vector3.RIGHT, -PI * 0.5), Vector3(0.0, 3.15, -3.31))],
+	]), trelica, Vector3.ZERO)
+	# OS REFLETORES pendurados na treliça, e os fachos até o ringue
+	var carcaca = CylinderMesh.new()
+	carcaca.top_radius = 0.055
+	carcaca.bottom_radius = 0.075
+	carcaca.height = 0.20
+	carcaca.radial_segments = 14
+	carcaca.rings = 0
+	var lente = CylinderMesh.new()
+	lente.top_radius = 0.062
+	lente.bottom_radius = 0.062
+	lente.height = 0.02
+	lente.radial_segments = 14
+	lente.rings = 0
+	var cores = [Color("fff1d8"), Color("ff4fb8"), Color("fff1d8"), Color("6fe2ff"), Color("fff1d8"), Color("ff4fb8"), Color("fff1d8")]
+	var carcacas = []
+	var lampadas = []
+	var cones = []
+	for i in range(7):
+		var x = -2.25 + 0.75 * float(i)
+		var onde = Vector3(x, 3.02, -2.92)
+		var alvo = Vector3(x * 0.32, 0.0, -0.35 + 0.15 * abs(x))
+		var giro = _giro_para(onde, alvo)
+		carcacas.append([carcaca, Transform(giro, onde)])
+		lampadas.append([lente, Transform(giro, onde - giro.y * 0.105), cores[i]])
+		# o facho (só os de luz branca e os coloridos de dentro)
+		if i >= 1 and i <= 5:
+			cones.append(_facho(onde - giro.y * 0.11, alvo, cores[i], 0.30 if cores[i] == Color("fff1d8") else 0.22, cones.size()))
+	# DOIS FACHOS DE CIMA, de refletores fora do quadro, cruzando no ringue
+	cones.append(_facho(Vector3(-1.9, 5.2, 1.2), Vector3(0.15, 0.0, -0.2), Color("fff3e0"), 0.07, cones.size()))
+	cones.append(_facho(Vector3(1.9, 5.2, 1.2), Vector3(-0.15, 0.0, -0.2), Color("fff3e0"), 0.07, cones.size()))
+	_peca(_juntar(carcacas), _material_aceso(Color("2a2b36")), Vector3.ZERO)
+	_mat_fachos = ShaderMaterial.new()
+	var sf = Shader.new()
+	sf.code = SHADER_FACHO
+	_mat_fachos.shader = sf
+	_cones.append(_peca(_juntar(cones), _mat_fachos, Vector3.ZERO))
+	# AS FAIXAS DOS LADOS, penduradas da treliça
+	if ResourceLoader.exists(TEX_FAIXA):
+		var faixa = QuadMesh.new()
+		faixa.size = Vector2(0.56, 1.54)
+		var faixas = []
+		for lado in [-1.0, 1.0]:
+			faixas.append([faixa, Transform(Basis(Vector3.UP, -lado * 0.30), Vector3(lado * 2.30, 2.62, -3.95))])
+		_peca(_juntar(faixas), _material_plano(load(TEX_FAIXA)), Vector3.ZERO)
+	# OS PROTETORES DAS CORDAS nos postes de trás (vermelho e azul) e a
+	# luz no alto de cada poste. (A cápsula do Godot 3 deita no eixo Z: o
+	# giro dela vem do mesmo `_giro_para` e mais um quarto de volta.)
+	var almofada = CapsuleMesh.new()
+	almofada.radius = 0.062
+	almofada.mid_height = 0.26 - 2.0 * 0.062
+	almofada.radial_segments = 12
+	almofada.rings = 2
+	var deitar = Basis(Vector3.RIGHT, -PI * 0.5)
+	var tampa = CylinderMesh.new()
+	tampa.top_radius = 0.07
+	tampa.bottom_radius = 0.07
+	tampa.height = 0.05
+	tampa.radial_segments = 20
+	tampa.rings = 0
+	for lado in [-1.0, 1.0]:
+		var cor = Color("d3162f") if lado < 0.0 else Color("1f4fd1")
+		var centro = Vector3(lado * MEIO_RINGUE, 0.0, -MEIO_RINGUE)
+		var para_dentro = (Vector3.ZERO - centro).normalized()
+		var giro = _giro_para(Vector3.ZERO, -para_dentro) * deitar
+		var pads = []
+		for y in ALTURAS_DAS_CORDAS:
+			pads.append([almofada, Transform(giro, centro + Vector3(0.0, float(y), 0.0) + para_dentro * 0.09)])
+		_peca(_juntar(pads), _material_solido(cor, 0.35, 0.18), Vector3.ZERO)
+		lampadas.append([tampa, Transform(Basis(), centro + Vector3(0.0, 1.52, 0.0)), cor.lightened(0.4)])
+	_mat_lampadas = _material_aceso(Color.white, true)
+	_peca(_juntar(lampadas), _mat_lampadas, Vector3.ZERO)
+	# A POEIRA DANÇANDO NA LUZ (bem pouca, devagar; partículas de
+	# processador, uma chamada de desenho)
+	var ponto = _material_plano(_mancha_redonda(), true)
+	ponto.params_billboard_mode = SpatialMaterial.BILLBOARD_PARTICLES
+	ponto.vertex_color_use_as_albedo = true
+	var grao = QuadMesh.new()
+	grao.size = Vector2(0.035, 0.035)
+	grao.material = ponto
+	_poeira_no_ar = CPUParticles.new()
+	_poeira_no_ar.name = "PoeiraNoAr"
+	_poeira_no_ar.amount = int(48 * Perfil.PARTICULAS_3D)
+	_poeira_no_ar.lifetime = 9.0
+	_poeira_no_ar.preprocess = 9.0
+	_poeira_no_ar.emission_shape = CPUParticles.EMISSION_SHAPE_BOX
+	_poeira_no_ar.emission_box_extents = Vector3(2.0, 1.3, 1.6)
+	_poeira_no_ar.direction = Vector3(0.2, 1.0, 0.0)
+	_poeira_no_ar.spread = 180.0
+	_poeira_no_ar.initial_velocity = 0.08
+	_poeira_no_ar.initial_velocity_random = 0.75
+	_poeira_no_ar.gravity = Vector3(0.0, -0.01, 0.0)
+	_poeira_no_ar.scale_amount = 1.4
+	_poeira_no_ar.scale_amount_random = 0.64
+	_poeira_no_ar.color = Color(1.0, 0.92, 0.8, 0.35)
+	_poeira_no_ar.mesh = grao
+	_poeira_no_ar.translation = Vector3(0.0, 2.1, -1.2)
+	_mundo.add_child(_poeira_no_ar)
+
+
+## Um giro cujo eixo Y aponta de `alvo` para `de` (o "para cima" de um
+## cilindro apontado para o alvo).
+static func _giro_para(de: Vector3, alvo: Vector3) -> Basis:
+	var y = (de - alvo).normalized()
+	var ref = Vector3.FORWARD if abs(y.dot(Vector3.FORWARD)) < 0.95 else Vector3.RIGHT
+	var x = ref.cross(y).normalized()
+	var z = x.cross(y).normalized()
+	return Basis(x, y, z)
+
+
+## Um facho de luz de `de` até `alvo`, pronto para `_juntar`.
+static func _facho(de: Vector3, alvo: Vector3, cor: Color, forca: float, numero: int) -> Array:
+	var comprimento = de.distance_to(alvo)
+	var cone = CylinderMesh.new()
+	cone.top_radius = 0.07
+	cone.bottom_radius = 0.42 + comprimento * 0.10
+	cone.height = comprimento
+	cone.radial_segments = 16
+	# anéis ao longo do cone: a força vem calculada nos vértices
+	cone.rings = 5
+	return [cone, Transform(_giro_para(de, alvo), (de + alvo) * 0.5), Color(cor.r, cor.g, cor.b, forca),
+		[comprimento * 0.5, float(numero)]]
+
+
+## Os refletores respiram com a torcida e acendem no golpe.
+func _animar_ginasio() -> void:
+	if _enfeites_do_degrau() and _mat_fachos != null:
+		_mat_fachos.set_shader_param("vivo", 1.0 + _clarao * 1.6 + _agito * 0.35 + _publico * 0.4)
+		_mat_fachos.set_shader_param("relogio", fposmod(_relogio, TAU * 100.0))
+	# as lentes e os LEDs sem luz acendem pelo albedo: brancos no golpe
+	if _mat_lampadas != null:
+		var acesa = clamp(0.80 + _clarao * 0.6 + 0.08 * sin(_relogio * 2.0), 0.0, 1.6)
+		_mat_lampadas.albedo_color = Color(acesa, acesa, acesa)

@@ -29,11 +29,11 @@ const FPS_FOLGADO = 29.5
 const QUADRO_CRITICO_MS = 48.0
 
 ## A janela 3D (a arena) é desenhada nesta fração da resolução lógica e
-## ampliada no quadro: 1008 × 1422 → 706 × 995. Em 0,55 (554 × 782) o
-## lutador e a torcida saíam borrados. O lutador leve
-## (`boxeador_tvbox.glb`, 9,5 mil vértices) pagou a nitidez. Se uma luta
-## inteira sair lenta, a arena volta sozinha para 0,55 até o jogo fechar
-## (`Arena3D._julgar_a_luta`).
+## ampliada no quadro: 1080 × 1540 → 756 × 1078. Em 0,55 o lutador e a
+## torcida saíam borrados. O lutador leve (`boxeador_tvbox.glb`, 11 mil
+## vértices) pagou a nitidez. Se a luta sair lenta, o jogo desce sozinho
+## os degraus do gráfico (`Arena3D.DEGRAUS`: sem fachos, 62%, 55%) e
+## guarda o degrau para a próxima vez.
 const ARENA_ESCALA = 0.70
 ## Antisserrilhado da arena: desligado (a ampliação já suaviza as bordas).
 const ARENA_MSAA = false
@@ -65,3 +65,49 @@ const PRECARREGAR_TUDO = false
 ## últimos erros. Uma foto disso diz por que o launcher ou o jogo caiu.
 ## Com as máquinas aprovadas, `false` esconde (a gravação continua).
 const DIAGNOSTICO_NA_TELA = true
+
+## ------------------------------------------------------------------
+## O QUE A VERSÃO PRO (build 208) PERGUNTA AO PERFIL, COM OS VALORES DESTA
+## PLACA.
+##
+## A PRO descobre a placa de vídeo ao ligar e escolhe entre a "leve" (30
+## quadros, sem brilho, sem sombra real) e a "completa". Aqui a placa é
+## sempre a Mali-450 da S905L: leve, 30 quadros, sem brilho nem sombra
+## real. O que se ajusta sozinho é o gráfico da arena, degrau a degrau,
+## pela velocidade da luta (ver `Arena3D.DEGRAUS`).
+const leve = true
+
+## O que foi descoberto ao ligar (a `static var` do Godot 4): o nome da
+## placa de vídeo e a janela que o Android deu ao jogo — só para o
+## diagnóstico da Central.
+const _E = {"placa": "", "janela": Vector2.ZERO}
+
+static func descobrir_placa() -> void:
+	_E.placa = VisualServer.get_video_adapter_name()
+	_E.janela = OS.window_size
+
+static func placa() -> String:
+	return _E.placa
+
+static func janela() -> Vector2:
+	return _E.janela
+
+static func fps() -> int:
+	return FPS
+
+static func fps_minimo() -> float:
+	return FPS_MINIMO
+
+static func fps_folgado() -> float:
+	return FPS_FOLGADO
+
+static func quadro_critico_ms() -> float:
+	return QUADRO_CRITICO_MS
+
+## O DEGRAU DO GRÁFICO com que uma instalação nova começa: o completo.
+## Dali o jogo desce sozinho se a luta ficar abaixo da meta de quadros.
+static func degrau_inicial() -> int:
+	return 0
+
+static func nome_do_perfil() -> String:
+	return NOME + " • " + placa() + " • janela %dx%d" % [janela().x, janela().y]

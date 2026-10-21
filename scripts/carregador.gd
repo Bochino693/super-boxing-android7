@@ -120,6 +120,8 @@ func _ready() -> void:
 	# esta (memória do Android, tela, câmera) — ver `caixa_preta.gd`.
 	CaixaPreta.ligar(get_tree())
 	_configurar_janela()
+	Perfil.descobrir_placa()
+	Diario.marca("PLACA: " + Perfil.nome_do_perfil())
 	_selo = load("res://assets/branding/selo_lazer.png")
 	_fonte = _carregar_fonte("res://assets/fonts/SairaCondensed-ExtraBold.ttf")
 	_fonte_numero = _carregar_fonte("res://assets/fonts/Bungee-Regular.ttf")
@@ -636,8 +638,15 @@ func _desenhar() -> void:
 				Compat.texto(t, _fonte, Vector2(caixa_p.position.x + 16.0, y_p + float(i) * 26.0), _cabe(l_e, 96), Compat.ESQUERDA, caixa_p.size.x - 32.0, 16, Compat.cor("ff6070", aparece))
 	# ONDE A ABERTURA ANTERIOR PAROU, se parou: logo aqui, na primeira tela,
 	# para dar para fotografar mesmo que o jogo trave de novo adiante.
+	# O "A ÚLTIMA ABERTURA PAROU EM" só aparece se a anterior travou de
+	# verdade no CARREGAMENTO (antes do jogo abrir). Desligar a máquina no
+	# botão com o jogo na abertura não é travamento e não vira aviso.
 	var travou = Diario.travou_em()
-	if not travou.empty():
+	var no_carregamento = false
+	for etapa in ["CARREGADOR", "MONTANDO", "ENSAIO", "PERMISS"]:
+		if travou.find(etapa) >= 0:
+			no_carregamento = true
+	if not travou.empty() and no_carregamento:
 		var aviso = Rect2(40.0, 1790.0, 1000.0, 92.0)
 		t.draw_rect(aviso, Compat.cor("0c0615", 0.92 * aparece))
 		t.draw_rect(aviso, Compat.cor("ffb000", aparece), false, 2.0)

@@ -1,6 +1,9 @@
 class_name ArenaQuadro
 extends Reference
 
+## Formas juntadas numa chamada só (ver `scripts/lote.gd`).
+const Lote = preload("res://scripts/lote.gd")
+
 ## A ARENA PENDURADA NA PAREDE, COMO UM QUADRO.
 ##
 ## Foi assim que o pedido veio, e a palavra é exata: o mundo 3D não
@@ -31,29 +34,40 @@ extends Reference
 ## A ARENA GRANDE: o quadro ocupa quase a tela inteira, e o que é da
 ## luta (as duas vidas no alto, os socos embaixo) mora DENTRO dele, como
 ## o painel de um jogo de luta — e não espalhado em volta.
-const MOLDURA = Rect2(14.0, 150.0, 1052.0, 1466.0)
+##
+## 4.6 PRO: A ARENA VAI DE PONTA A PONTA. Sem as laterais da moldura, a
+## imagem ocupa a largura inteira da tela e fica mais alta; a faixa
+## zebrada do gabinete continua, só em cima e embaixo, como as tarjas de
+## uma transmissão. A câmera abriu junto (ver `Arena3D`): cabe o ringue
+## inteiro, a torcida dos lados, a treliça de luz e o telão.
+const MOLDURA := Rect2(0.0, 100.0, 1080.0, 1572.0)
 ## O buraco da moldura: é aqui que a imagem da arena é desenhada.
-const TELA = Rect2(36.0, 172.0, 1008.0, 1422.0)
+const TELA := Rect2(0.0, 116.0, 1080.0, 1540.0)
+## A espessura das tarjas zebradas (em cima e embaixo da imagem). Elas
+## encostam EXATAMENTE na borda da imagem da arena (o limite do campo de
+## visão do lutador), uma em cima e outra embaixo.
+const TARJA := 16.0
 ## AS DUAS VIDAS, dentro do quadro, no alto: a do JOGADOR à esquerda e a
 ## do ADVERSÁRIO à direita (espelhada), como num jogo de luta.
-const VIDA_JOGADOR = Rect2(62.0, 232.0, 440.0, 40.0)
-const VIDA = Rect2(578.0, 232.0, 440.0, 40.0)
+const VIDA_JOGADOR := Rect2(40.0, 178.0, 462.0, 44.0)
+const VIDA := Rect2(578.0, 178.0, 462.0, 44.0)
 ## A faixa escura atrás das vidas (legibilidade sobre a torcida).
-const FAIXA_DO_ALTO = Rect2(36.0, 172.0, 1008.0, 128.0)
-## Os painéis dos socos, dentro do quadro, embaixo.
-const PAINEIS_Y = 1452.0
-const PAINEIS_X = 62.0
-const PAINEIS_LARGURA = 956.0
+const FAIXA_DO_ALTO := Rect2(0.0, 116.0, 1080.0, 140.0)
+## Os painéis dos socos, dentro do quadro, embaixo (vidro escuro sobre a
+## frente do ringue).
+const PAINEIS_Y := 1468.0
+const PAINEIS_X := 30.0
+const PAINEIS_LARGURA := 1020.0
+const PAINEIS_ALTURA := 168.0
 ## As duas colunas de dano, uma de cada lado da moldura.
-const BARRA_E = Rect2(80.0, 508.0, 48.0, 770.0)
-const BARRA_D = Rect2(952.0, 508.0, 48.0, 770.0)
+const BARRA_E := Rect2(24.0, 520.0, 44.0, 760.0)
+const BARRA_D := Rect2(1012.0, 520.0, 44.0, 760.0)
 ## A plaqueta do placar, montada a cavaleiro na borda de baixo.
 const PLACA = Rect2(268.0, 1244.0, 544.0, 170.0)
 ## Quantos degraus tem cada coluna.
 const DEGRAUS = 20
 
 const ESCURO = Color("110a1e")
-const ZEBRA = preload("res://assets/tema/moldura_arena.png")
 const MADEIRA = Color("2a1a46")
 const OURO = Color("ffdc27")
 const OURO_ESC = Color("8a6a10")
@@ -91,22 +105,43 @@ static func imagem(alvo: CanvasItem, textura: Texture, alpha := 1.0, desloc := V
 ## `pulso` (0 a 1) acende o ouro: é o golpe fazendo a moldura tremer
 ## junto, como um telão que estremece com o baque.
 static func moldura(alvo: CanvasItem, cor: Color, pulso := 0.0) -> void:
-	var m = MOLDURA
+	tarjas(alvo, cor, pulso)
+
+## AS TARJAS ZEBRADAS E O FIO DE LUZ, sozinhos. `main.gd` chama de novo
+## depois dos efeitos de tela cheia (clarão, pancada, rachadura, K.O.):
+## a faixa amarela e preta fica sempre por cima, nítida, e nunca é
+## ofuscada nem coberta por eles.
+static func tarjas(alvo: CanvasItem, cor: Color, pulso := 0.0) -> void:
 	var t = TELA
 	var brilho = clamp(pulso, 0.0, 1.0)
-	# o rebaixo escuro entre a faixa e a imagem
-	var escuro = ESCURO.linear_interpolate(cor, brilho * 0.35)
-	alvo.draw_rect(Rect2(m.position.x, m.position.y, m.size.x, t.position.y - m.position.y), escuro)
-	alvo.draw_rect(Rect2(m.position.x, t.end.y, m.size.x, m.end.y - t.end.y), escuro)
-	alvo.draw_rect(Rect2(m.position.x, t.position.y, t.position.x - m.position.x, t.size.y), escuro)
-	alvo.draw_rect(Rect2(t.end.x, t.position.y, m.end.x - t.end.x, t.size.y), escuro)
-	# o fio de luz em volta da imagem, na cor do nível (acende no golpe)
-	alvo.draw_rect(t.grow(2.0), Compat.cor(cor, 0.45 + brilho * 0.55), false, 3.0 + brilho * 3.0)
-	# A FAIXA ZEBRADA DO GABINETE, com os cantos chanfrados, por cima de
-	# tudo: é o mesmo desenho do vidro da máquina, então a arena parece
-	# continuar a moldura de verdade.
-	var faixa = m.grow(10.0)
-	alvo.draw_texture_rect(ZEBRA, faixa, false, Color(1, 1, 1, 1).linear_interpolate(cor.lightened(0.3), brilho * 0.35))
+	# AS DUAS TARJAS ZEBRADAS (em cima e embaixo), de ponta a ponta. O
+	# amarelo acende um pouco na cor do nível quando o golpe entra.
+	var amarelo = OURO.linear_interpolate(cor.lightened(0.35), brilho * 0.45)
+	for y0 in [t.position.y - TARJA, t.end.y]:
+		_tarja(alvo, Rect2(0.0, y0, t.size.x, TARJA), amarelo)
+	# o fio de luz na borda de dentro das tarjas, na cor do nível
+	var fio = Compat.cor(cor, 0.55 + brilho * 0.45)
+	alvo.draw_rect(Rect2(0.0, t.position.y, t.size.x, 3.0 + brilho * 3.0), fio)
+	alvo.draw_rect(Rect2(0.0, t.end.y - 3.0 - brilho * 3.0, t.size.x, 3.0 + brilho * 3.0), fio)
+
+## Uma tarja zebrada: listras diagonais pretas sobre o amarelo.
+##
+## UMA IMAGEM, NÃO TRINTA POLÍGONOS. Cada listra era um polígono — e no
+## renderizador de compatibilidade cada polígono é uma chamada à placa de
+## vídeo: 30 por tarja, duas tarjas, desenhadas duas vezes por quadro
+## (120 chamadas, metade de todo o 2D da luta). A faixa agora é pintada
+## uma vez, numa imagem com as bordas das listras lisas, e desenhada como
+## um retângulo com textura (que o Godot junta com os outros). O branco
+## da imagem toma a cor do amarelo do momento (o pulso do golpe).
+##
+## No Godot 3 a imagem vem pronta (`assets/arena/tarja_zebra.png`, 1080x16,
+## pintada fora do jogo com a mesma conta: listras a cada 40 px, preto
+## 120a1c, 4x4 amostras por pixel e o fio escuro em cima e embaixo) — o
+## jogo não gasta a abertura pintando 17 mil pixels em GDScript.
+const ZEBRA = preload("res://assets/arena/tarja_zebra.png")
+
+static func _tarja(alvo: CanvasItem, r: Rect2, amarelo: Color) -> void:
+	alvo.draw_texture_rect(ZEBRA, r, false, amarelo)
 
 ## AS DUAS COLUNAS DE DANO.
 ##
@@ -151,24 +186,23 @@ static func barras(alvo: CanvasItem, dano: float, tempo: float) -> void:
 ## arrancar. É esse rastro que faz o golpe "doer" na tela.
 const INCLINA = 26.0
 
-static func _faixa(alvo: CanvasItem, x0: float, x1: float, y0: float, y1: float, c0: Color, c1: Color, inclina := INCLINA) -> void:
+## As faixas da barra entram num lote (ver `Lote`): a barra inteira, com
+## moldura, rastro, vidro e reflexo, sai numa chamada só.
+static func _faixa(lote, x0: float, x1: float, y0: float, y1: float, c0: Color, c1: Color, inclina := INCLINA) -> void:
 	if x1 - x0 < 1.0:
 		return
 	var h = y1 - y0
 	var d = inclina * h / VIDA.size.y
-	alvo.draw_polygon(
-		PoolVector2Array([Vector2(x0 + d, y0), Vector2(x1 + d, y0), Vector2(x1, y1), Vector2(x0, y1)]),
-		PoolColorArray([c0, c1, c1, c0])
-	)
+	lote.quad(Vector2(x0 + d, y0), Vector2(x1 + d, y0), Vector2(x1, y1), Vector2(x0, y1), c0, c1, c1, c0)
 
-## `espelho`: a barra enche da DIREITA para a esquerda e inclina para o
-## outro lado — a do adversário, de frente para a do jogador.
 ## Trecho [a, b] da barra (0 = começo do enchimento) em x de tela.
 static func _trecho(espelho: bool, x0: float, larg: float, a: float, b: float) -> Vector2:
 	if espelho:
 		return Vector2(x0 + larg * (1.0 - b), x0 + larg * (1.0 - a))
 	return Vector2(x0 + larg * a, x0 + larg * b)
 
+## `espelho`: a barra enche da DIREITA para a esquerda e inclina para o
+## outro lado — a do adversário, de frente para a do jogador.
 static func vida(alvo: CanvasItem, fonte: Resource, vida: float, fantasma: float, tempo: float, rotulo: String,
 		r: Rect2 = VIDA, espelho := false, cor_base := Color(0, 0, 0, 0)) -> void:
 	var v = clamp(vida, 0.0, 1.0)
@@ -178,14 +212,15 @@ static func vida(alvo: CanvasItem, fonte: Resource, vida: float, fantasma: float
 	var x0 = r.position.x + (INCLINA if espelho else 0.0)
 	var y0 = r.position.y
 	var y1 = r.end.y
+	var lote = Lote.new()
 	# moldura: sombra, aro de ouro e trilho escuro
-	_faixa(alvo, x0 - 10.0, x0 + larg + 10.0, y0 - 7.0, y1 + 7.0, Color(0, 0, 0, 0.55), Color(0, 0, 0, 0.55), inc)
-	_faixa(alvo, x0 - 6.0, x0 + larg + 6.0, y0 - 4.0, y1 + 4.0, OURO_ESC, OURO, inc)
-	_faixa(alvo, x0, x0 + larg, y0, y1, Color("0c0615"), Color("1c1030"), inc)
+	_faixa(lote, x0 - 10.0, x0 + larg + 10.0, y0 - 7.0, y1 + 7.0, Color(0, 0, 0, 0.55), Color(0, 0, 0, 0.55), inc)
+	_faixa(lote, x0 - 6.0, x0 + larg + 6.0, y0 - 4.0, y1 + 4.0, OURO_ESC, OURO, inc)
+	_faixa(lote, x0, x0 + larg, y0, y1, Color("0c0615"), Color("1c1030"), inc)
 	# o rastro do golpe: vermelho vivo que clareia para o branco
 	if f > v:
 		var t: Vector2 = _trecho(espelho, x0, larg, v, f)
-		_faixa(alvo, t.x, t.y, y0, y1, Color("ff3baa"), Color(1, 1, 1, 0.9), inc)
+		_faixa(lote, t.x, t.y, y0, y1, Color("ff3baa"), Color(1, 1, 1, 0.9), inc)
 	var cor = Paleta.VERDE.linear_interpolate(Paleta.AMBAR, clamp((1.0 - v) / 0.5, 0.0, 1.0))
 	cor = cor.linear_interpolate(Paleta.VERMELHO, clamp((0.5 - v) / 0.35, 0.0, 1.0))
 	if cor_base.a > 0.0:
@@ -195,13 +230,14 @@ static func vida(alvo: CanvasItem, fonte: Resource, vida: float, fantasma: float
 	var cheio: Vector2 = _trecho(espelho, x0, larg, 0.0, v)
 	var c0 = cor.darkened(0.35)
 	var c1 = cor.lightened(0.15)
-	_faixa(alvo, cheio.x, cheio.y, y0, y1, c1 if espelho else c0, c0 if espelho else c1, inc)
+	_faixa(lote, cheio.x, cheio.y, y0, y1, c1 if espelho else c0, c0 if espelho else c1, inc)
 	# vidro: faixa clara na metade de cima e um reflexo correndo
-	_faixa(alvo, cheio.x, cheio.y, y0, y0 + r.size.y * 0.42, Color(1, 1, 1, 0.22), Color(1, 1, 1, 0.10), inc)
+	_faixa(lote, cheio.x, cheio.y, y0, y0 + r.size.y * 0.42, Color(1, 1, 1, 0.22), Color(1, 1, 1, 0.10), inc)
 	var brilho = fmod(tempo * 0.45, 1.6) - 0.3
 	if brilho > 0.0 and brilho < v:
 		var b: Vector2 = _trecho(espelho, x0, larg, brilho, min(brilho + 70.0 / larg, v))
-		_faixa(alvo, b.x, b.y, y0, y1, Color(1, 1, 1, 0.0), Color(1, 1, 1, 0.35), inc)
+		_faixa(lote, b.x, b.y, y0, y1, Color(1, 1, 1, 0.0), Color(1, 1, 1, 0.35), inc)
+	lote.descarregar(alvo)
 	if fonte != null:
 		var base = y0 - 14.0
 		var lado_rot = Compat.DIREITA if espelho else Compat.ESQUERDA

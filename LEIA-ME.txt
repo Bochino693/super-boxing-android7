@@ -1,5 +1,5 @@
-SUPER BOXING - VERSAO TV BOX S905L (ANDROID 7.1) - BUILD 113
-===========================================================
+SUPER BOXING - VERSAO TV BOX S905L / TX9 (ANDROID 7.1) - BUILD 115
+===================================================================
 
 PARA QUAL MAQUINA E ESTA VERSAO
 -------------------------------
@@ -27,6 +27,69 @@ O que muda por dentro (voce nao ve na tela):
 O APK tem outro nome de pacote (com.lazersport.superboxing), entao pode
 ficar instalado junto com o Punch Challenge das outras maquinas. Se a
 build 92 a 109 estiver instalada, veja INSTALAR abaixo (assinatura nova).
+
+O QUE A BUILD 115 MUDA (BASE: A 113) - A BUILD 208 INTEIRA NA TX9
+-----------------------------------------------------------------
+Esta e A versao do jogo daqui para frente: a build 208 (SuperBoxingPRO,
+Godot 4.6) passada para o Godot 3.6 / OpenGL ES 2.0, que e o que a placa
+de video da TX9 (Mali-450) roda. A versao Godot 4.6 nao e mais usada
+(a branch pro-build208 fica no GitHub so como historico).
+
+O que veio da 208:
+- A ARENA DE PONTA A PONTA. Sem as laterais da moldura: a imagem do ringue
+  ocupa a largura inteira da tela, com a faixa zebrada so em cima e
+  embaixo, como as tarjas de uma transmissao. A camera abriu: cabe o
+  ringue inteiro, os postes com os protetores das cordas, a torcida.
+- O GINASIO: trelica de aluminio com 7 refletores, os fachos de luz ate a
+  lona (respiram com a torcida e acendem no golpe), as faixas dos lados,
+  a luz no alto dos postes e a poeira dancando na luz.
+- O MOSTRADOR DE IMPACTO REDONDO, a esquerda: o arco de gomos acende ate a
+  forca do soco e o numero sobe crescendo e da um tranco no fim. Os
+  cartoes dos socos viraram pilulas com um anel que enche na cor do nivel.
+  O TOP 20 tem linhas maiores, com a foto grande (160 px).
+- A CORTINA ANTES DE CADA TROCA DE TELA: a tela nova (o ringue, a pose, a
+  abertura) entra com a cortina fechada, e nao antes dela. A cortina e
+  roxo escuro liso, com as bordas zebradas.
+- NOCAUTE ANTES DA FESTA: quando o lutador ganha (derrota ou empate), ele
+  acerta a camera, "K.O.", a vida do jogador vai a zero - e SO DEPOIS ele
+  comemora. Se ele ainda estiver sentindo o soco (nas cordas), termina a
+  reacao e entao vem. A tabela so entra depois da comemoracao.
+- O SACO DESCE MESMO COM A PLACA RECONECTANDO ("descida as cegas"), e a
+  linha SACO da placa ja prova que o firmware tem motor.
+- O AVISO DO MOTOR NA ABERTURA: se o motor nao vai andar (motor desligado
+  na Central, Arduino sem conexao, firmware antigo), um painel vermelho
+  diz o motivo e o que fazer.
+- A WEBCAM DESCANSA DURANTE A LUTA (a foto ja foi tirada) e volta no
+  placar.
+- Logo menor em cima, a marca Lazer & Sport maior embaixo; o recorde da
+  casa saiu da tela da luta; "a ultima abertura parou em" so aparece se o
+  jogo travou de verdade no carregamento.
+
+O que foi feito para a TX9 aguentar:
+- GRAFICO QUE SE AJUSTA SOZINHO (degraus): o jogo mede a luta em janelas
+  de 4 s; abaixo de ~26 quadros por segundo desce um degrau e guarda:
+  0 completo -> 1 sem fachos -> 2 arena a 62% -> 3 arena a 55%. A Central
+  mostra o degrau e a ultima luta medida (quadros por segundo, pior
+  quadro, chamadas de desenho).
+- O 2D EM LOTE (scripts\lote.gd): as formas da tela (barras de vida,
+  medidor, cartoes, bordas da cortina) saem numa chamada so a placa de
+  video, e nao uma por forma. A faixa zebrada e uma imagem pronta
+  (assets\arena\tarja_zebra.png).
+- O ginasio inteiro sao 7 malhas (eram 35 pecas), sem luz calculada, e o
+  facho faz a conta nos vertices: o pixel da Mali-450 so soma a cor.
+  Sombra real, brilho pos-processado e a luz do rosto da 208 ficam de
+  fora (sao passadas de tela cheia que a Mali-450 nao tem).
+- O corpo do lutador anda em fatias de 1/20 s (eram 1/30): a conta da
+  pose pela metade a 30 quadros por segundo.
+- OS CADARCOS DA BOTA em cinza grafite (eram um "xxxx" branco serrilhado
+  na TV), feito no proprio boxeador_tvbox.glb.
+
+Conferido no PC com o Godot 3.6.3 e numa copia limpa com o Godot 3.6.2
+(importacao do zero, como o GERAR_APK faz): partidas inteiras (vitoria,
+derrota, nocaute, festa, cortina, TOP 20), zero erros de script.
+
+SUBIR_MINHA_VERSAO.bat saiu (era para subir a versao Godot 4.6, que nao
+e mais usada).
 
 O QUE A BUILD 113 MUDA (BASE: A 112)
 ------------------------------------

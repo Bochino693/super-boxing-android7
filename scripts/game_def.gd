@@ -48,10 +48,11 @@ const AVISO_DE_VOLTA = 15.0
 ## suspense mora ANTES do golpe, não depois — depois do golpe o que se
 ## quer é saber quanto valeu, e rápido.
 ##
-## Meio segundo de subida é o tempo de ler quatro dígitos correndo e
-## ainda ver o último assentar. Abaixo disso o número aparece pronto e
-## some a graça; acima, vira espera.
-const CONTAGEM_DURACAO = 0.52
+## A CONTAGEM EM ESCALA: o número sobe de 0 até a nota crescendo no
+## mostrador redondo e o anel enche junto. Pouco mais de um segundo é o
+## tempo de o olho acompanhar a subida e sentir o tranco no fim; com meio
+## segundo o número já aparecia pronto e o espetáculo sumia.
+const CONTAGEM_DURACAO = 1.1
 const IMPACTO_DURACAO = 0.26 ## Estado MEASURING: flash + onda de choque.
 const RESULTADO_TIMEOUT = 12.0
 

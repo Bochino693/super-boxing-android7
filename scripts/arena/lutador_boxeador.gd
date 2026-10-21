@@ -26,7 +26,7 @@ extends Lutador3D
 ##   4. MOLAS para o que é reação: a cabeça que vai para trás no soco e
 ##      volta sozinha, o tronco que balança, a guarda que abre.
 
-## O CORPO DA TV BOX: o mesmo boxeador com 9,5 mil vértices em vez de 43
+## O CORPO DA TV BOX: o mesmo boxeador com 11 mil vértices em vez de 44
 ## mil (`tools/simplificar_boxeador.py`). Na Mali-450 o Godot 3 deforma o
 ## corpo NO PROCESSADOR, vértice por vértice, a cada quadro: eram 43 mil
 ## contas de osso por quadro por um detalhe que não cabe na janela da
@@ -618,6 +618,10 @@ func soco_na_tela() -> bool:
 func soco_final() -> bool:
 	if not _pronto or _caindo:
 		return false
+	# Ainda sentindo o soco do jogador (nas cordas, cambaleando): termina a
+	# reação e só então vem — o jogo pede de novo (`main._passo_do_ko`).
+	if _papel in DURACAO and _tempo_reacao > 0.0:
+		return false
 	if _comemora_depois_do_soco:
 		_comemora_depois_do_soco = false
 		_vai_comemorar = true
@@ -654,7 +658,14 @@ func deslocamento() -> Vector3:
 ## perdia um terço do tempo, e a luta inteira ficava lenta. Agora o quadro
 ## longo é fatiado em passos de até 1/30 s — as molas continuam estáveis e
 ## o relógio da luta anda junto com o relógio do jogo.
-const SUBPASSO = 1.0 / 30.0
+## O teto do quadro é o mesmo do relógio do jogo (`Ritmo.PASSO_MAXIMO`,
+## 0,25 s): até a build 204 era 0,15 s, e abaixo de 7 quadros por segundo
+## o lutador ainda ficava para trás do resto da tela.
+## Fatia de 1/20 s: a 30 quadros por segundo (o passo do corpo é 1/30 ×
+## 1,4 = 47 ms) o corpo anda numa fatia só por quadro, e não em duas — a
+## conta inteira da pose (molas, coreografia, ossos) pela metade. As molas
+## continuam estáveis com 50 ms (a mais dura, 95 N/m, aguenta até ~200).
+const SUBPASSO := 1.0 / 20.0
 ## O RITMO DA LUTA: o corpo inteiro anda 40% mais rápido que o relógio —
 ## guarda, passos, reações e comemoração. No tempo "real" o boxeador
 ## parecia em câmera lenta na tela da máquina.
@@ -665,7 +676,7 @@ var _montar_pose = true
 var _dt_do_quadro = 0.0
 
 func atualizar(delta: float) -> void:
-	var resto = clamp(delta, 0.0, 0.15) * VELOCIDADE
+	var resto = clamp(delta, 0.0, Ritmo.PASSO_MAXIMO) * VELOCIDADE
 	_dt_do_quadro = resto
 	while true:
 		var d = min(resto, SUBPASSO)
