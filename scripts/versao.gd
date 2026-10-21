@@ -14,7 +14,7 @@ extends Reference
 
 const NUMERO = 113
 const DATA = "21/10/2026"
-const NOTA = "base 112; olhos do lutador com íris e pupila nítidas (não parece mais cego); lutador sempre pintado (texturas vestidas na montagem, sem depender da ordem de importação); arquivos sem uso fora do projeto; gerador de APK mostra o motivo do Gradle"
+const NOTA = "base 112; olhos do lutador com íris e pupila nítidas (não parece mais cego); lutador sempre pintado (texturas vestidas na montagem, sem depender da ordem de importação); arquivos sem uso fora do projeto; gerador de APK mostra o motivo do Gradle; ondas de choque do soco sem recálculo por quadro"
 
 ## Rodapé da abertura: cabe em uma linha discreta.
 static func curta() -> String:

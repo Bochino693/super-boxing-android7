@@ -227,22 +227,25 @@ func desenhar(tela: CanvasItem) -> void:
 	if _ondas.empty():
 		return
 	var anel = _malha_do_anel()
-	var base_v: PoolVector2Array = anel["v"]
-	var base_a: PoolRealArray = anel["a"]
+	var item = tela.get_canvas_item()
+	# O anel é SEMPRE o mesmo (raio 1): só a transformação e a cor mudam.
+	# Antes os 288 vértices de cada onda eram recalculados em GDScript a
+	# cada quadro — no soco, com várias ondas ao mesmo tempo, era o maior
+	# gasto do quadro inteiro, justo no impacto. O degradê da borda vem
+	# de uma textura pequena; a cor e o sumir, de uma cor só.
+	# (No Godot 3 / OpenGL ES 2.0 `draw_mesh` não desenha em 2D: os
+	# triângulos vão direto ao servidor de desenho.)
+	var base: Transform2D = Compat._transformacao(tela)
 	for o in _ondas:
 		var t: float = float(o["tempo"]) / float(o["duracao"])
 		var raio: float = lerp(float(o["raio_inicial"]), float(o["raio_final"]), ease(t, 0.35))
 		var cor: Color = o["cor"]
 		cor.a *= (1.0 - t) * (1.0 - t)
-		# No Godot 3 (OpenGL ES 2.0) `draw_mesh` não desenha em 2D: os
-		# mesmos triângulos vão direto ao servidor de desenho, já na escala.
 		var centro: Vector2 = o["centro"]
-		var pontos = PoolVector2Array()
-		var cores = PoolColorArray()
-		for i in range(base_v.size()):
-			pontos.append(centro + base_v[i] * raio)
-			cores.append(Color(cor.r, cor.g, cor.b, cor.a * base_a[i]))
-		VisualServer.canvas_item_add_triangle_array(tela.get_canvas_item(), anel["i"], pontos, cores)
+		tela.draw_set_transform_matrix(base * Transform2D(Vector2(raio, 0.0), Vector2(0.0, raio), centro))
+		VisualServer.canvas_item_add_triangle_array(item, anel["i"], anel["v"], PoolColorArray([cor]),
+			anel["uv"], PoolIntArray(), PoolRealArray(), (anel["tex"] as Texture).get_rid())
+	Compat.transformar_matriz(tela, base)
 
 
 ## Anel de raio 1 feito de triângulos, com borda que some para dentro e
@@ -254,22 +257,36 @@ static func _malha_do_anel() -> Dictionary:
 		return _E._anel
 	var LADOS = 96
 	var RAIOS = [0.86, 0.955, 1.0]
-	var ALFAS = [0.0, 1.0, 0.0]
+	# o degradê da borda: u = 0 por dentro, 0,5 no meio (opaco), 1 por fora
+	var US = [0.0, 0.5, 1.0]
 	var v = PoolVector2Array()
-	var c = PoolRealArray()
+	var uv = PoolVector2Array()
 	var idx = PoolIntArray()
 	for i in range(LADOS):
 		var dir = polar2cartesian(1.0, float(i) / float(LADOS) * TAU)
 		for k in range(3):
 			v.append(dir * float(RAIOS[k]))
-			c.append(float(ALFAS[k]))
+			uv.append(Vector2(float(US[k]), 0.5))
 	for i in range(LADOS):
 		var a = i * 3
 		var b = ((i + 1) % LADOS) * 3
 		for k in range(2):
 			for n in [a + k, b + k, b + k + 1, a + k, b + k + 1, a + k + 1]:
 				idx.append(n)
-	_E._anel = {"v": v, "a": c, "i": idx}
+	# alfa 0 -> 1 -> 0 ao longo de u (o mesmo da cor por vértice de antes)
+	var LARGURA = 64
+	var img = Image.new()
+	img.create(LARGURA, 2, false, Image.FORMAT_RGBA8)
+	img.lock()
+	for x in range(LARGURA):
+		var u = (float(x) + 0.5) / float(LARGURA)
+		var a = clamp(1.0 - abs(u * 2.0 - 1.0), 0.0, 1.0)
+		for y in range(2):
+			img.set_pixel(x, y, Color(1, 1, 1, a))
+	img.unlock()
+	var tex = ImageTexture.new()
+	tex.create_from_image(img, Texture.FLAG_FILTER)
+	_E._anel = {"v": v, "uv": uv, "i": idx, "tex": tex}
 	return _E._anel
 
 

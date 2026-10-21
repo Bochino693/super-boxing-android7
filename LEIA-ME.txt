@@ -36,6 +36,11 @@ O QUE A BUILD 113 MUDA (BASE: A 112)
   ocular usa uma area propria e bem maior da textura, com iris castanha
   escura, anel escuro, pupila preta e um ponto de brilho - o olhar aparece
   de perto (soco na tela) e de longe (na guarda).
+- O SOCO MAIS LEVE NA TELA: as ondas de choque (os aneis que saem do
+  ponto do soco) eram recalculadas ponto a ponto, a cada quadro, no
+  script - com varias ondas no ar, era o maior gasto do quadro do
+  impacto. Agora o anel e uma forma pronta, so movida e esticada: o
+  desenho da tela no impacto ficou ~20% mais leve.
 - O LUTADOR SAIA SEM PINTURA NO APK. Na importacao do zero (o GERAR_APK
   faz uma a cada build nova) o Godot 3.6.2 importa a pasta em ordem de
   nome, e o boxeador_tvbox.glb era importado ANTES das proprias texturas.
