@@ -1,4 +1,4 @@
-SUPER BOXING - VERSAO TV BOX S905L (ANDROID 7.1) - BUILD 111
+SUPER BOXING - VERSAO TV BOX S905L (ANDROID 7.1) - BUILD 112
 ===========================================================
 
 PARA QUAL MAQUINA E ESTA VERSAO
@@ -27,6 +27,34 @@ O que muda por dentro (voce nao ve na tela):
 O APK tem outro nome de pacote (com.lazersport.superboxing), entao pode
 ficar instalado junto com o Punch Challenge das outras maquinas. Se a
 build 92 a 109 estiver instalada, veja INSTALAR abaixo (assinatura nova).
+
+O QUE A BUILD 112 MUDA (BASE: A 111) - A ARENA 3D LEVE E MAIS NITIDA
+--------------------------------------------------------------------
+Nada muda nas regras, no saco, no Arduino, na camera nem no firmware (V12).
+So a arena 3D (o ringue com o lutador):
+- O LUTADOR FICOU 4,5 VEZES MAIS LEVE. Na Mali-450 (S905L, S905W, TX9) a
+  placa de video nao deforma o corpo: o processador da TV Box fazia isso,
+  vertice por vertice, a cada quadro - eram 43 mil vertices (94 mil
+  triangulos; so o cabelo tinha 26 mil). Agora sao 9,5 mil (18 mil
+  triangulos), com a MESMA pintura, relevo, ossos e expressoes: os pontos
+  que ficaram sao os do lutador original, so saiu detalhe que nao cabe na
+  tela. Arquivo novo: assets\lutador3d\boxeador_tvbox.glb (feito pelo
+  tools\simplificar_boxeador.py). O boxeador.glb antigo nao vai mais no APK.
+- O SOCO NAO DA MAIS TRANCO. O clarao do golpe desenhava o corpo inteiro
+  uma SEGUNDA vez por cima (e o processador deformava tudo de novo)
+  justamente no quadro do impacto. Agora o clarao e a luz do proprio
+  material: uma passada so. Vertices por quadro no soco: de 517 mil
+  para 62 mil.
+- ARENA MAIS NITIDA. A arena era desenhada em 0,55 da tela e ampliada
+  quase 2x (imagem borrada). Agora nasce em 0,70. O jogo mede cada luta:
+  se mais de 20% dos quadros sairem lentos, a proxima luta volta sozinha
+  para 0,55 e fica assim ate o jogo fechar (aparece no Diario/caixa-preta
+  como "ARENA: luta lenta").
+- FOCO DE LUZ NO RINGUE: uma luz quente na lona em volta do lutador, que
+  acompanha o corpo e acende no golpe. Da profundidade sem custo.
+- SUBIR_MINHA_VERSAO.bat: sobe a pasta da sua versao do PC
+  (SuperBoxingPRO-build208) para o GitHub, numa branch separada
+  (pro-build208). Nao mexe na main nem na pasta do jogo.
 
 O QUE A BUILD 111 MUDA (BASE: A 110d, QUE FUNCIONOU) - FIRMWARE V12
 --------------------------------------------------------------------

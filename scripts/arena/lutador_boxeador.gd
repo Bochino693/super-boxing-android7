@@ -26,7 +26,14 @@ extends Lutador3D
 ##   4. MOLAS para o que é reação: a cabeça que vai para trás no soco e
 ##      volta sozinha, o tronco que balança, a guarda que abre.
 
-const MODELO = "res://assets/lutador3d/boxeador.glb"
+## O CORPO DA TV BOX: o mesmo boxeador com 9,5 mil vértices em vez de 43
+## mil (`tools/simplificar_boxeador.py`). Na Mali-450 o Godot 3 deforma o
+## corpo NO PROCESSADOR, vértice por vértice, a cada quadro: eram 43 mil
+## contas de osso por quadro por um detalhe que não cabe na janela da
+## arena. Os vértices que ficaram são os do original (pintura, relevo,
+## ossos e expressões exatos). Sem ele, o corpo cheio.
+const MODELO = "res://assets/lutador3d/boxeador_tvbox.glb"
+const MODELO_CHEIO = "res://assets/lutador3d/boxeador.glb"
 const ModoSeguro = preload("res://scripts/modo_seguro.gd")
 const MESCLA_EXPR = 7.0
 
@@ -131,7 +138,8 @@ var _pele: MeshInstance = null
 var _mat_pele: SpatialMaterial = null
 var _expr = {}
 var _expr_valor = {}
-var _mat_clarao: SpatialMaterial = null
+## Os materiais do corpo (pele e roupa): o clarão do golpe acende neles.
+var _mats_padrao: Array = []
 var _malhas: Array = []
 
 ## --- o estado do corpo (suavizado)
@@ -208,9 +216,10 @@ var _rng = RandomNumberGenerator.new()
 func montar() -> void:
 	.montar()
 	_rng.randomize()
-	if not ResourceLoader.exists(MODELO):
+	var caminho = MODELO if ResourceLoader.exists(MODELO) else MODELO_CHEIO
+	if not ResourceLoader.exists(caminho):
 		return
-	var cena = load(MODELO) as PackedScene
+	var cena = load(caminho) as PackedScene
 	if cena == null:
 		return
 	_modelo = cena.instance() as Spatial
@@ -271,6 +280,7 @@ func montar() -> void:
 			# brilho nos músculos que desenha o corpo de longe.
 			_mat_pele.normal_scale = 1.15
 			_pele.set_surface_material(0, _mat_pele)
+			_mats_padrao.append(_mat_pele)
 			# A PELE DE VERDADE: shader próprio (luz que atravessa a borda,
 			# suor quebrado por poros, relevo dos músculos). Sem os mapas,
 			# fica o material padrão acima.
@@ -310,11 +320,8 @@ func montar() -> void:
 					# Peça do avesso (`_do_avesso`): mostra a face de fora.
 					novo.params_cull_mode = SpatialMaterial.CULL_FRONT
 				feitos[chave] = novo
+				_mats_padrao.append(novo)
 			mi.set_surface_material(k, feitos[chave])
-	_mat_clarao = SpatialMaterial.new()
-	_mat_clarao.flags_unshaded = true
-	_mat_clarao.params_blend_mode = SpatialMaterial.BLEND_MODE_ADD
-	_mat_clarao.albedo_color = Color.black
 	if Perfil.LUTADOR_LEVE and not ModoSeguro.seguro():
 		_trocar_por_materiais_leves()
 	_pronto = true
@@ -499,6 +506,14 @@ static func _definir(m: SpatialMaterial, aspereza: float, recorte: float, dois_l
 	m.rim_enabled = true
 	m.rim = recorte
 	m.rim_tint = 0.55
+	# O CLARÃO DO GOLPE É A EMISSÃO DO PRÓPRIO MATERIAL (ver `_pintar`).
+	# Antes era um segundo material por cima de cada peça (`material_overlay`):
+	# no quadro do soco o corpo inteiro era desenhado DUAS vezes — e na
+	# Mali-450, deformado duas vezes pelo processador. Ligada desde a
+	# montagem (preta), a emissão não troca o shader no primeiro soco.
+	m.emission_enabled = true
+	m.emission = Color.black
+	m.emission_energy = 1.0
 
 
 func _mapear() -> void:
@@ -1750,11 +1765,11 @@ func _pintar() -> void:
 			_dano_pintado = dl
 			_mat_leve_pele.set_shader_param("dano", dl)
 		return
-	_mat_clarao.albedo_color = Color(1.0, 0.62, 0.45) * brilho
-	var ligado = brilho > 0.01
-	for mi in _malhas:
-		if (mi.material_overlay != null) != ligado:
-			mi.material_overlay = _mat_clarao if ligado else null
+	if abs(brilho - _clarao_pintado) > 0.004 or (brilho == 0.0 and _clarao_pintado != 0.0):
+		_clarao_pintado = brilho
+		var calor = Color(1.0, 0.62, 0.45) * brilho
+		for m in _mats_padrao:
+			m.emission = calor
 	if _mat_pele != null:
 		# O estrago aparece: a pele fica mais vermelha com o dano.
 		var d = clamp(dano, 0.0, 1.0)

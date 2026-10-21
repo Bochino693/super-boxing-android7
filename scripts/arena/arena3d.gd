@@ -216,6 +216,8 @@ void fragment() {
 """
 
 const ModoSeguro = preload("res://scripts/modo_seguro.gd")
+## O tamanho da build 97, para quando a máquina não aguenta a nitidez
+## (ver `_julgar_a_luta`).
 const ARENA_ESCALA_SEGURA = 0.55
 ## A torcida da S905L (`SHADER_TORCIDA_SEGURA`): folga em cima da fileira e
 ## onde começa o encosto (o mesmo `ASSENTO` de `tools/gerar_torcida.py`).
@@ -789,6 +791,7 @@ func instalar() -> bool:
 	else:
 		_mundo.remove_child(modelo)
 		modelo.queue_free()
+	_montar_foco()
 	_montar_sombra()
 	_luzes_de_recorte_so_no_lutador()
 	return lutador != null and lutador.completo()
@@ -813,6 +816,25 @@ func _luzes_de_recorte_so_no_lutador() -> void:
 			luz.light_cull_mask = CAMADA_DO_LUTADOR
 
 
+## O FOCO DO RINGUE: a poça de luz quente que o refletor de cima faz na
+## lona, em volta do lutador. É o que separa o lutador do chão escuro e
+## dá profundidade ao ringue — um quadro só, aditivo e sem luz calculada
+## (a mesma mancha redonda da sombra), que acompanha o lutador e acende no
+## clarão do golpe.
+const COR_DO_FOCO = Color(0.62, 0.46, 0.34)
+var _foco: MeshInstance = null
+var _mat_foco: SpatialMaterial = null
+
+func _montar_foco() -> void:
+	var malha = PlaneMesh.new()
+	malha.size = Vector2(3.0, 2.0)
+	_mat_foco = _material_plano(_mancha_redonda(), true)
+	_mat_foco.albedo_color = COR_DO_FOCO * 0.9
+	# antes da sombra: a sombra escurece por cima da luz
+	_mat_foco.render_priority = -1
+	_foco = _peca(malha, _mat_foco, Vector3(0.0, 0.015, 0.0))
+
+
 func _montar_sombra() -> void:
 	var malha = PlaneMesh.new()
 	malha.size = Vector2(1.0, 0.52)
@@ -827,14 +849,27 @@ func _montar_sombra() -> void:
 
 
 # -------------------------------------------------------- tamanho/MSAA
+## A NITIDEZ DA ARENA ACOMPANHA A MÁQUINA — E SÓ MUDA ENTRE AS LUTAS.
+##
+## Com o lutador leve (9,5 mil vértices em vez de 43 mil) sobra fôlego, e
+## ele vai para a nitidez: a arena nasce em `Perfil.ARENA_ESCALA` (0,70 da
+## tela; 0,55 era uma imagem ampliada quase 2x, borrada). Durante a luta
+## o próprio quadro é medido; se mais de `LUTA_LENTA` dos quadros passaram
+## de `QUADRO_LENTO_MS`, a próxima luta vem em `ARENA_ESCALA_SEGURA` e
+## fica assim até o jogo fechar. Nunca no meio da luta: trocar o tamanho
+## realoca a imagem, e no quadro da troca o lutador sumia.
+const QUADRO_LENTO_MS = 45.0
+const LUTA_LENTA = 0.20
+const QUADROS_PARA_JULGAR = 90
+var _escala = -1.0
+var _quadros_na_luta = 0
+var _quadros_lentos = 0
+var _ultimo_quadro_us = 0
+
 func _aplicar_tamanho() -> void:
-	# TAMANHO FIXO, O DO PERFIL DA S905L: a arena é desenhada numa fração da
-	# resolução lógica e ampliada no quadro (ver `Perfil.ARENA_ESCALA`).
-	# Nunca muda no meio da luta — trocar o tamanho realoca a imagem, e no
-	# quadro da troca o lutador sumia.
-	# No modo seguro, o tamanho da build 97 (ver `modo_seguro.gd`).
-	var escala = ARENA_ESCALA_SEGURA if ModoSeguro.seguro() else Perfil.ARENA_ESCALA
-	var novo = Vector2((TELA_LOGICA * escala).round())
+	if _escala < 0.0:
+		_escala = max(Perfil.ARENA_ESCALA, ARENA_ESCALA_SEGURA)
+	var novo = Vector2((TELA_LOGICA * _escala).round())
 	if size != novo:
 		size = novo
 	msaa = Viewport.MSAA_2X if Perfil.ARENA_MSAA else Viewport.MSAA_DISABLED
@@ -855,8 +890,33 @@ func ligar(ativa: bool) -> void:
 	_ativa = ativa
 	if ativa:
 		_aplicar_tamanho()
-	elif _aquecendo <= 0 and _etapa < 0:
-		render_target_update_mode = Viewport.UPDATE_DISABLED
+		_quadros_na_luta = 0
+		_quadros_lentos = 0
+		_ultimo_quadro_us = 0
+	else:
+		_julgar_a_luta()
+		if _aquecendo <= 0 and _etapa < 0:
+			render_target_update_mode = Viewport.UPDATE_DISABLED
+
+
+## A luta que acabou foi lisa? Se não, a próxima vem na resolução menor.
+func _julgar_a_luta() -> void:
+	if _quadros_na_luta < QUADROS_PARA_JULGAR or _escala <= ARENA_ESCALA_SEGURA:
+		return
+	var lentos = float(_quadros_lentos) / float(_quadros_na_luta)
+	if lentos > LUTA_LENTA:
+		_escala = ARENA_ESCALA_SEGURA
+		print("SUPERBOXING arena: %d%% dos quadros lentos na luta -> resolucao %.2f" % [int(lentos * 100.0), _escala])
+		Diario.marca("ARENA: luta lenta (%d%% dos quadros) -> resolucao %.2f" % [int(lentos * 100.0), _escala])
+
+
+func _medir_quadro() -> void:
+	var agora = OS.get_ticks_usec()
+	if _ultimo_quadro_us > 0:
+		_quadros_na_luta += 1
+		if float(agora - _ultimo_quadro_us) / 1000.0 > QUADRO_LENTO_MS:
+			_quadros_lentos += 1
+	_ultimo_quadro_us = agora
 
 
 func ativa() -> bool:
@@ -1037,6 +1097,7 @@ func avancar(delta: float) -> void:
 			return
 	if not _ativa:
 		return
+	_medir_quadro()
 	_relogio += delta
 	_tremor = max(0.0, _tremor - delta * 2.2)
 	_clarao = max(0.0, _clarao - delta * 2.4)
@@ -1259,3 +1320,6 @@ func _sombra_de_contato() -> void:
 	_sombra.translation = Vector3(desloc.x, 0.015, desloc.z * 0.6)
 	_sombra.scale = Vector3(lerp(1.0, 1.5, caido), 1.0, lerp(1.0, 1.3, caido))
 	_mat_sombra.albedo_color.a = lerp(0.9, 0.6, caido)
+	if _foco != null:
+		_foco.translation = Vector3(desloc.x * 0.7, 0.015, desloc.z * 0.5)
+		_mat_foco.albedo_color = COR_DO_FOCO * (0.9 + _clarao * 0.4)
