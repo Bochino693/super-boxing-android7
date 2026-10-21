@@ -31,10 +31,19 @@ extends Lutador3D
 ## corpo NO PROCESSADOR, vértice por vértice, a cada quadro: eram 43 mil
 ## contas de osso por quadro por um detalhe que não cabe na janela da
 ## arena. Os vértices que ficaram são os do original (pintura, relevo,
-## ossos e expressões exatos). Sem ele, o corpo cheio.
+## ossos e expressões exatos).
 const MODELO = "res://assets/lutador3d/boxeador_tvbox.glb"
-const MODELO_CHEIO = "res://assets/lutador3d/boxeador.glb"
-const ModoSeguro = preload("res://scripts/modo_seguro.gd")
+## AS TEXTURAS DO CORPO, POR MATERIAL: [pintura, relevo]. O .glb não aponta
+## para elas de propósito. Numa importação do zero (toda build nova, no
+## GERAR_APK) o Godot 3 importa os arquivos da pasta em ordem de nome, e um
+## .glb importado antes das próprias texturas saía SEM pintura — o lutador
+## branco no APK. Vestidas aqui, na montagem, a ordem não importa mais.
+const TEXTURAS = {
+	"Pele": ["res://assets/lutador3d/boxeador_2.jpg", "res://assets/lutador3d/boxeador_3.png"],
+	"Roupa": ["res://assets/lutador3d/boxeador_4.jpg", ""],
+	"Cinturao": ["res://assets/lutador3d/boxeador_0.jpg", ""],
+	"Placa": ["res://assets/lutador3d/boxeador_1.jpg", ""],
+}
 const MESCLA_EXPR = 7.0
 
 ## Base de luta (espaço do esqueleto, metros do modelo): pé esquerdo à
@@ -216,10 +225,9 @@ var _rng = RandomNumberGenerator.new()
 func montar() -> void:
 	.montar()
 	_rng.randomize()
-	var caminho = MODELO if ResourceLoader.exists(MODELO) else MODELO_CHEIO
-	if not ResourceLoader.exists(caminho):
+	if not ResourceLoader.exists(MODELO):
 		return
-	var cena = load(caminho) as PackedScene
+	var cena = load(MODELO) as PackedScene
 	if cena == null:
 		return
 	_modelo = cena.instance() as Spatial
@@ -254,6 +262,7 @@ func montar() -> void:
 	_preparar_ossos()
 	for m in Compat.filhos_do_tipo(_modelo, "MeshInstance"):
 		var mi = m as MeshInstance
+		_vestir(mi)
 		if _do_avesso(mi):
 			_avessos.append(mi)
 		_malhas.append(mi)
@@ -281,14 +290,6 @@ func montar() -> void:
 			_mat_pele.normal_scale = 1.15
 			_pele.set_surface_material(0, _mat_pele)
 			_mats_padrao.append(_mat_pele)
-			# A PELE DE VERDADE: shader próprio (luz que atravessa a borda,
-			# suor quebrado por poros, relevo dos músculos). Sem os mapas,
-			# fica o material padrão acima.
-			# Na S905L a pele fica no material padrão: a mesma pintura, sem a
-			# luz calculada pixel a pixel (ver `Perfil.PELE_DETALHADA`).
-			var pele = _material_da_pele(mat) if Perfil.PELE_DETALHADA else null
-			if pele != null:
-				_pele.set_surface_material(0, pele)
 	# O RESTO DA ROUPA TAMBÉM GANHA CONTORNO. Couro das luvas e das botas,
 	# cetim do calção e o metal do cinturão pegam a luz de recorte: o
 	# personagem se descola do fundo e parece mais nítido sem custar um
@@ -322,8 +323,6 @@ func montar() -> void:
 				feitos[chave] = novo
 				_mats_padrao.append(novo)
 			mi.set_surface_material(k, feitos[chave])
-	if Perfil.LUTADOR_LEVE and not ModoSeguro.seguro():
-		_trocar_por_materiais_leves()
 	_pronto = true
 	_reiniciar_corpo()
 	_tocar("idle")
@@ -372,117 +371,23 @@ func _do_avesso(mi: MeshInstance) -> bool:
 	return avesso > certo * 4
 
 
-## O LUTADOR NUMA PASSADA SÓ (ver `shaders/lutador_leve.shader` e
-## `Perfil.LUTADOR_LEVE`): cada material do corpo vira o mesmo shader,
-## com a pintura, a aspereza e o metal da peça. A luz principal chega
-## pronta a cada quadro (`luz`), e o clarão e o dano são números no
-## próprio material — sem a segunda passada do clarão por cima.
-const SHADER_LEVE = "res://shaders/lutador_leve.shader"
-var _mats_leves = []
-var _mat_leve_pele: ShaderMaterial = null
 var _clarao_pintado = -1.0
 
-func _trocar_por_materiais_leves() -> void:
-	if not ResourceLoader.exists(SHADER_LEVE):
+
+## Põe a pintura e o relevo de `TEXTURAS` nos materiais da peça.
+func _vestir(mi: MeshInstance) -> void:
+	if mi.mesh == null:
 		return
-	var com_relevo: Shader = load(SHADER_LEVE)
-	# SEM TANGENTE PARA QUEM NÃO TEM RELEVO. Na Mali-450 o corpo é
-	# deformado pelo processador, e o Godot 3 só deforma a peça cujo
-	# material lê TANGENT se a malha tiver tangentes — luvas, botas,
-	# cabelo e calção não têm, e sumiam. Só a pele (que tem) usa o relevo.
-	var codigo = com_relevo.code
-	var de = codigo.find("// RELEVO>")
-	var ate = codigo.find("// <RELEVO")
-	if de < 0 or ate < de:
-		return
-	codigo = codigo.substr(0, de) + codigo.substr(ate + len("// <RELEVO"))
-	var frente = Shader.new()
-	frente.code = codigo
-	# As cascas finas (calção, cinturão) são vistas dos dois lados.
-	var dois_lados = Shader.new()
-	dois_lados.code = codigo.replace("cull_back", "cull_disabled")
-	# As peças do avesso (`_do_avesso`) mostram a face de fora assim.
-	var do_avesso = Shader.new()
-	do_avesso.code = codigo.replace("cull_back", "cull_front")
-	var feitos = {}
-	for mi in _malhas:
-		if mi.mesh == null:
+	for k in mi.mesh.get_surface_count():
+		var mat = mi.mesh.surface_get_material(k) as SpatialMaterial
+		if mat == null or not TEXTURAS.has(mat.resource_name):
 			continue
-		for k in mi.mesh.get_surface_count():
-			var base = mi.get_surface_material(k) as SpatialMaterial
-			if base == null:
-				base = mi.mesh.surface_get_material(k) as SpatialMaterial
-			if base == null:
-				continue
-			var avesso = mi in _avessos
-			var chave = [base, avesso]
-			if not feitos.has(chave):
-				var m = ShaderMaterial.new()
-				var eh_pele = mi == _pele
-				if eh_pele and base.normal_enabled and base.normal_texture != null \
-						and mi.mesh.surface_get_format(k) & Mesh.ARRAY_FORMAT_TANGENT:
-					m.shader = com_relevo
-				elif base.params_cull_mode == SpatialMaterial.CULL_DISABLED:
-					m.shader = dois_lados
-				elif avesso:
-					m.shader = do_avesso
-				else:
-					m.shader = frente
-				m.set_shader_param("tom", base.albedo_color)
-				if base.albedo_texture != null:
-					m.set_shader_param("pintura", base.albedo_texture)
-					m.set_shader_param("tem_pintura", 1.0)
-				if m.shader == com_relevo:
-					m.set_shader_param("relevo", base.normal_texture)
-					m.set_shader_param("tem_relevo", 1.0)
-					m.set_shader_param("relevo_forca", 1.15)
-				m.set_shader_param("aspereza", clamp(base.roughness, 0.0, 1.0))
-				m.set_shader_param("metal", clamp(base.metallic, 0.0, 1.0))
-				m.set_shader_param("pele", 1.0 if eh_pele else 0.0)
-				# Couro da luva: menos recorte (estourava num vermelho chapado).
-				if mi.name.begins_with("Luva") or mi.name.begins_with("Bota"):
-					m.set_shader_param("rim_forca", 0.16)
-				if mi.name.begins_with("Luva"):
-					# Couro fosco: o brilho branco sobre o vermelho puxava
-					# para o rosa.
-					m.set_shader_param("aspereza", max(base.roughness, 0.66))
-				elif mi.name == "Cabelo":
-					m.set_shader_param("rim_forca", 0.30)
-				if eh_pele:
-					_mat_leve_pele = m
-				feitos[chave] = m
-				_mats_leves.append(m)
-			mi.set_surface_material(k, feitos[chave])
-
-
-## A luz principal da arena, no espaço da câmera, e a cor do ambiente.
-func luz(direcao: Vector3, cor: Color, forca: float, ambiente: Color) -> void:
-	for m in _mats_leves:
-		m.set_shader_param("luz_dir", direcao)
-		m.set_shader_param("luz_cor", cor)
-		m.set_shader_param("luz_forca", forca)
-		m.set_shader_param("ambiente", ambiente)
-
-
-const SHADER_PELE = "res://shaders/pele.shader"
-const RELEVO_PELE = "res://assets/lutador3d/pele_relevo.png"
-const POROS_PELE = "res://assets/lutador3d/pele_poros.png"
-var _shader_pele: ShaderMaterial = null
-var _dano_pintado = -1.0
-
-func _material_da_pele(base: SpatialMaterial) -> ShaderMaterial:
-	if base.albedo_texture == null:
-		return null
-	for caminho in [SHADER_PELE, RELEVO_PELE, POROS_PELE]:
-		if not ResourceLoader.exists(caminho):
-			return null
-	var m = ShaderMaterial.new()
-	m.shader = load(SHADER_PELE)
-	m.set_shader_param("pintura", base.albedo_texture)
-	m.set_shader_param("relevo", load(RELEVO_PELE))
-	m.set_shader_param("poros", load(POROS_PELE))
-	_shader_pele = m
-	return m
+		var tex: Array = TEXTURAS[mat.resource_name]
+		if mat.albedo_texture == null and ResourceLoader.exists(tex[0]):
+			mat.albedo_texture = load(tex[0])
+		if tex[1] != "" and mat.normal_texture == null and ResourceLoader.exists(tex[1]):
+			mat.normal_enabled = true
+			mat.normal_texture = load(tex[1])
 
 
 func completo() -> bool:
@@ -1755,16 +1660,6 @@ func _pintar() -> void:
 	# O clarão do golpe é um calor na pele, não um lençol branco: com 0,5
 	# o corpo inteiro "estourava" e perdia forma no quadro do impacto.
 	var brilho = clamp(_clarao, 0.0, 1.0) * 0.28
-	if not _mats_leves.empty():
-		if abs(brilho - _clarao_pintado) > 0.004:
-			_clarao_pintado = brilho
-			for m in _mats_leves:
-				m.set_shader_param("clarao", brilho)
-		var dl = clamp(dano, 0.0, 1.0)
-		if _mat_leve_pele != null and abs(dl - _dano_pintado) > 0.01:
-			_dano_pintado = dl
-			_mat_leve_pele.set_shader_param("dano", dl)
-		return
 	if abs(brilho - _clarao_pintado) > 0.004 or (brilho == 0.0 and _clarao_pintado != 0.0):
 		_clarao_pintado = brilho
 		var calor = Color(1.0, 0.62, 0.45) * brilho
@@ -1774,6 +1669,3 @@ func _pintar() -> void:
 		# O estrago aparece: a pele fica mais vermelha com o dano.
 		var d = clamp(dano, 0.0, 1.0)
 		_mat_pele.albedo_color = Color(1.0, 1.0 - 0.10 * d, 1.0 - 0.14 * d)
-		if _shader_pele != null and abs(d - _dano_pintado) > 0.01:
-			_dano_pintado = d
-			_shader_pele.set_shader_param("dano", d)

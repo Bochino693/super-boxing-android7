@@ -1,7 +1,10 @@
 """O lutador leve da TV Box: assets/lutador3d/boxeador.glb -> boxeador_tvbox.glb
 
     pip install numpy meshoptimizer
-    python tools/simplificar_boxeador.py
+    python tools/simplificar_boxeador.py [boxeador.glb cheio]
+
+(O boxeador.glb cheio, de 43 mil vertices, sai do tools/gerar_boxeador.py e
+nao fica no projeto: sem argumento, ele e procurado em assets/lutador3d.)
 
 POR QUE. Na Mali-450 (S905L, S905W, TX9) a placa de video nao le textura
 no vertice, e o Godot 3 deforma o corpo do lutador NO PROCESSADOR, vertice
@@ -16,7 +19,11 @@ meshoptimizer junta as arestas de menor erro). Os vertices que ficam sao
 OS MESMOS do original: posicao, normal, UV, tangente, cor, ossos, pesos e
 as quatro expressoes do rosto continuam exatos - a pintura, o relevo, as
 costuras do UV e a deformacao nao mudam. So sai a geometria que nao se ve.
-As texturas sao as mesmas (o glb novo aponta para os mesmos arquivos).
+As texturas sao as mesmas boxeador_N.jpg/png, mas o glb novo NAO aponta
+para elas: quem as poe no corpo e o jogo, na montagem
+(`LutadorBoxeador3D.TEXTURAS`). Numa importacao do zero o Godot 3 importa a
+pasta em ordem de nome, e um glb importado antes das proprias texturas saia
+sem pintura (o lutador branco no APK).
 """
 from __future__ import annotations
 
@@ -35,6 +42,21 @@ SAIDA = RAIZ / "assets" / "lutador3d" / "boxeador_tvbox.glb"
 ## Fracao dos triangulos que fica em cada peca, e o erro maximo aceito
 ## (fracao do tamanho da peca). O rosto e o corpo guardam mais; cabelo,
 ## luvas e botas (superficies lisas de marching cubes) podem perder muito.
+## OS OLHOS. No atlas da pele cada globo ocular era uma ilha de ~52 px (em
+## 2048) com a iris pintada em ~8 px: importada em 1024 e comprimida, a
+## iris virava um borrao cinza e o lutador parecia cego. Os vertices do
+## globo ganham uma area propria e bem maior do atlas (livre: nenhuma outra
+## ilha passa por ali), projetada em volta da direcao do olhar, e la e
+## pintada uma iris nitida (castanha escura, anel escuro, pupila e um ponto
+## de brilho). O relevo da pele fica liso nessa area.
+TEX_PELE = RAIZ / "assets" / "lutador3d" / "boxeador_2.jpg"
+TEX_RELEVO = RAIZ / "assets" / "lutador3d" / "boxeador_3.png"
+## Onde as ilhas dos dois olhos estavam no atlas (px em 2048) e para onde vao.
+ILHA_DOS_OLHOS = (1545, 80, 1675, 150)
+AREA_DOS_OLHOS = (8, 8, 192)          # x, y, lado (px em 2048)
+IRIS = 0.66                           # raio angular da iris (rad): maior que o real, para ler de longe
+PUPILA = 0.26
+
 ALVOS = {
     "Pele": (0.45, 0.004),
     "Cabelo": (0.10, 0.02),
@@ -140,8 +162,101 @@ def simplificar(indices: np.ndarray, pos: np.ndarray, normais: np.ndarray, uv: n
     return novos
 
 
+def olhar(s: float) -> np.ndarray:
+    o = np.array([-0.06 * s, -0.03, 1.0], np.float32)
+    return o / np.linalg.norm(o)
+
+
+def base_do_olhar(g: np.ndarray):
+    direita = np.cross(np.array([0.0, 1.0, 0.0], np.float32), g)
+    direita /= np.linalg.norm(direita)
+    cima = np.cross(g, direita)
+    return direita, cima
+
+
+def uv_dos_olhos(pos: np.ndarray, uv: np.ndarray) -> np.ndarray:
+    """UV novo para os vertices do globo ocular (os outros ficam como estao)."""
+    x0, y0, x1, y1 = ILHA_DOS_OLHOS
+    px = uv * 2048.0
+    novo = uv.copy()
+    na_ilha = (px[:, 0] >= x0) & (px[:, 0] <= x1) & (px[:, 1] >= y0) & (px[:, 1] <= y1)
+    ax, ay, lado = AREA_DOS_OLHOS
+    for s in (1.0, -1.0):
+        olho = na_ilha & (np.sign(pos[:, 0]) == s)
+        if not olho.any():
+            continue
+        c = pos[olho].mean(0)
+        rel = pos[olho] - c
+        rel /= np.maximum(np.linalg.norm(rel, axis=1, keepdims=True), 1e-9)
+        g = olhar(s)
+        direita, cima = base_do_olhar(g)
+        a = np.arccos(np.clip(rel @ g, -1.0, 1.0))
+        t = np.stack([rel @ direita, rel @ cima], 1)
+        t /= np.maximum(np.linalg.norm(t, axis=1, keepdims=True), 1e-9)
+        # equidistante: o angulo do olhar vira a distancia ao centro
+        r = a / np.pi * 0.5
+        lx = 0.5 + r * t[:, 0]
+        ly = 0.5 - r * t[:, 1]
+        novo[olho, 0] = (ax + lx * lado) / 2048.0
+        novo[olho, 1] = (ay + ly * lado) / 2048.0
+    return novo
+
+
+def pintar_olhos() -> None:
+    from PIL import Image
+    ax, ay, lado = AREA_DOS_OLHOS
+    k = (np.arange(lado) + 0.5) / lado
+    lx, ly = np.meshgrid(k, k)
+    dx, dy = lx - 0.5, 0.5 - ly
+    a = np.hypot(dx, dy) * 2.0 * np.pi          # angulo a partir do olhar
+    teta = np.arctan2(dy, dx)
+
+    def suave(e0, e1, x):
+        t = np.clip((x - e0) / (e1 - e0), 0.0, 1.0)
+        return t * t * (3 - 2 * t)
+
+    def cor(h):
+        return np.array([int(h[i:i + 2], 16) for i in (0, 2, 4)], np.float32)
+
+    def mistura(x, y, t):
+        return x + (y - x) * t[..., None]
+
+    rng = np.random.default_rng(20261021)
+    esclera = mistura(np.broadcast_to(cor("ece6df"), a.shape + (3,)), cor("c08a82"), suave(0.9, 1.9, a))
+    # a palpebra de cima faz sombra na esclera
+    esclera = esclera * (1.0 - 0.28 * suave(0.2, 0.9, dy * 2.0 * np.pi) * suave(0.5, 1.0, a))[..., None]
+    raios = rng.random(64)[((teta + np.pi) / (2 * np.pi) * 64).astype(int) % 64]
+    iris_c = mistura(np.broadcast_to(cor("3a2010"), a.shape + (3,)), cor("6e4424"),
+                     np.clip(0.35 + 0.5 * raios * suave(0.15, IRIS, a), 0, 1))
+    iris = 1.0 - suave(IRIS - 0.03, IRIS + 0.02, a)
+    anel = suave(IRIS - 0.16, IRIS - 0.02, a) * iris
+    pupila = 1.0 - suave(PUPILA - 0.02, PUPILA + 0.02, a)
+    olho = mistura(esclera, iris_c, iris)
+    olho = olho * (1.0 - 0.65 * anel)[..., None]
+    olho = mistura(olho, cor("070505"), pupila)
+    # o ponto de brilho (a luz do refletor no olho), em cima e a esquerda
+    bx, by = -0.55, 0.75
+    bx, by = np.array([bx, by]) / np.hypot(bx, by) * (0.30 / (2 * np.pi))
+    brilho = 1.0 - suave(0.055, 0.085, np.hypot(dx - bx, dy - by) * 2 * np.pi)
+    olho = mistura(olho, cor("ffffff"), brilho * 0.95)
+    olho = np.clip(olho, 0, 255).astype(np.uint8)
+
+    pele = Image.open(TEX_PELE).convert("RGB")
+    escala = pele.width / 2048.0
+    caixa = (int(ax * escala), int(ay * escala), int((ax + lado) * escala), int((ay + lado) * escala))
+    pele.paste(Image.fromarray(olho).resize((caixa[2] - caixa[0], caixa[3] - caixa[1]), Image.LANCZOS), caixa[:2])
+    pele.save(TEX_PELE, quality=95, subsampling=0)
+    relevo = Image.open(TEX_RELEVO)
+    plano = Image.new(relevo.mode, (caixa[2] - caixa[0], caixa[3] - caixa[1]),
+                      (128, 128, 255, 255)[:len(relevo.mode)] if relevo.mode != "L" else 128)
+    relevo.paste(plano, caixa[:2])
+    relevo.save(TEX_RELEVO)
+
+
 def main() -> None:
-    js, binario = ler_glb(ENTRADA)
+    import sys
+    entrada = Path(sys.argv[1]) if len(sys.argv) > 1 else ENTRADA
+    js, binario = ler_glb(entrada)
     esc = Escritor()
     feitos = {}
 
@@ -180,6 +295,8 @@ def main() -> None:
             for nome, i in list(attrs.items()):
                 a = js["accessors"][i]
                 arr = ler_acessor(js, binario, i)[ordem]
+                if m["name"] == "Pele" and nome == "TEXCOORD_0":
+                    arr = uv_dos_olhos(pos[ordem], arr)
                 attrs[nome] = esc.acessor(arr, a, 34962, nome == "POSITION" or "min" in a)
             for alvo in prim.get("targets", []):
                 for nome, i in list(alvo.items()):
@@ -193,6 +310,12 @@ def main() -> None:
     for s in js.get("skins", []):
         if "inverseBindMatrices" in s:
             s["inverseBindMatrices"] = copiar(s["inverseBindMatrices"])
+    # Sem texturas no glb (ver o topo): materiais ficam com nome e fatores.
+    for mat in js.get("materials", []):
+        mat.pop("normalTexture", None)
+        mat.get("pbrMetallicRoughness", {}).pop("baseColorTexture", None)
+    for chave in ("images", "textures", "samplers"):
+        js.pop(chave, None)
     js["accessors"] = esc.acessores
     js["bufferViews"] = esc.views
     while len(esc.dados) % 4:
@@ -204,6 +327,7 @@ def main() -> None:
         texto += b" "
     corpo = struct.pack("<II", len(texto), 0x4E4F534A) + texto + struct.pack("<II", len(esc.dados), 0x004E4942) + bytes(esc.dados)
     SAIDA.write_bytes(struct.pack("<III", 0x46546C67, 2, 12 + len(corpo)) + corpo)
+    pintar_olhos()
     print("TOTAL vertices %d -> %d   triangulos %d -> %d" % (total_antes[0], total_depois[0], total_antes[1], total_depois[1]))
     print("gravado:", SAIDA, "(%.1f MB)" % (SAIDA.stat().st_size / 1e6))
 

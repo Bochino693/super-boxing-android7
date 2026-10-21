@@ -19,7 +19,7 @@ extends Node
 ## últimos erros que o Android registrou do jogo, pelo PunchQuadros) —
 ## basta fotografar. Nada de cabo, nada de ADB.
 ##
-## Sem `class_name` de propósito (usado por `preload`, como o ModoSeguro).
+## Sem `class_name` de propósito (usado por `preload`).
 
 const ARQUIVO = "user://caixa_preta.txt"
 const A_CADA_S = 6.0

@@ -1,4 +1,4 @@
-SUPER BOXING - VERSAO TV BOX S905L (ANDROID 7.1) - BUILD 112
+SUPER BOXING - VERSAO TV BOX S905L (ANDROID 7.1) - BUILD 113
 ===========================================================
 
 PARA QUAL MAQUINA E ESTA VERSAO
@@ -27,6 +27,33 @@ O que muda por dentro (voce nao ve na tela):
 O APK tem outro nome de pacote (com.lazersport.superboxing), entao pode
 ficar instalado junto com o Punch Challenge das outras maquinas. Se a
 build 92 a 109 estiver instalada, veja INSTALAR abaixo (assinatura nova).
+
+O QUE A BUILD 113 MUDA (BASE: A 112)
+------------------------------------
+- OS OLHOS DO LUTADOR. Ele "parecia cego": a iris estava pintada em 8
+  pixels da textura da pele e, na TV Box (textura em 1024, comprimida),
+  virava um borrao cinza no meio de uma fenda branca. Agora cada globo
+  ocular usa uma area propria e bem maior da textura, com iris castanha
+  escura, anel escuro, pupila preta e um ponto de brilho - o olhar aparece
+  de perto (soco na tela) e de longe (na guarda).
+- O LUTADOR SAIA SEM PINTURA NO APK. Na importacao do zero (o GERAR_APK
+  faz uma a cada build nova) o Godot 3.6.2 importa a pasta em ordem de
+  nome, e o boxeador_tvbox.glb era importado ANTES das proprias texturas.
+  Agora o .glb nao depende delas: o jogo veste pele, relevo, calcao,
+  cinturao e placa na montagem do lutador. Conferido com o Godot 3.6.2
+  numa copia limpa do projeto: zero erros de importacao, lutador pintado.
+- GERAR O APK: o Godot nao tenta mais abrir a placa de som do PC (eram os
+  erros de WASAPI na janela) e tudo o que ele escreve vai para
+  build\android\exportacao.log; na janela aparece so o que importa. Se o
+  Gradle (que monta o APK) falhar, a janela mostra "MOTIVO DO GRADLE" com
+  o erro de verdade (antes o Godot escondia) e o que falta no SDK.
+- ARQUIVOS SEM USO FORA DO PROJETO: o boxeador.glb cheio (8,7 MB), os mapas
+  e o shader da "pele detalhada" (desligada), o shader e o modo do "visual
+  novo" (desligado desde a build 100), um emblema SVG sem uso e os .import
+  da pasta docs (que o GERAR_APK movia para "sobras" toda vez - as "7
+  sobras"). A pasta docs agora e ignorada pelo Godot (docs\.gdignore).
+  As fontes das ferramentas (assets\audio\fontes, logo_lazersport.png)
+  nao vao mais dentro do APK.
 
 O QUE A BUILD 112 MUDA (BASE: A 111) - A ARENA 3D LEVE E MAIS NITIDA
 --------------------------------------------------------------------

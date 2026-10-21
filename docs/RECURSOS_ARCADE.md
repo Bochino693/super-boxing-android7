@@ -4,7 +4,6 @@
 
 | Pasta ou arquivo | Responsabilidade |
 | --- | --- |
-| assets/branding/punch_emblem.svg | Símbolo vetorial de boxe; arte fonte editável, 900 × 900 |
 | scripts/presentation/arcade_stage.gd | Cenografia vermelha, luzes, brasão e abertura de 4,2 segundos |
 | scripts/paleta.gd | Cores compartilhadas com as telas e efeitos existentes |
 | scripts/audio/audio_catalog.gd | Nomes, caminhos e classificação dos loops de áudio |
