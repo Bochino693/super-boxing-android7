@@ -1,11 +1,11 @@
 @echo off
 setlocal
-rem SUPERBOXING_BUILD=116
-title Super Boxing TX9 - Gerar APK (OpenGL ES 2.0 / Mali-450)
+rem SUPERBOXING_BUILD=117
+title Super Boxing - Gerar APK para TV Box Mali-450 (OpenGL ES 2.0)
 cd /d "%~dp0"
 
 echo ============================================================
-echo   SUPER BOXING - BUILD 116 - TV BOX TX9 / S905L (MALI-450, ANDROID 7.1)
+echo   SUPER BOXING - BUILD 117 - TV BOX MALI-450 (TX9)
 echo   GODOT 3.6 - OPENGL ES 2.0 - TEXTURAS ETC1
 echo   GERA O APK COMPLETO (PLUGIN USB + JOGO)
 echo ============================================================

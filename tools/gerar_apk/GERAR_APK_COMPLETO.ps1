@@ -13,7 +13,7 @@ Set-Location $Raiz
 # (SUPERBOXING_BUILD=...): se a pasta tiver arquivos de builds diferentes
 # misturados (zip novo extraido por cima de um velho), a geracao para aqui,
 # antes de fazer qualquer coisa.
-$Build = 116
+$Build = 117
 $VersaoGodot = "3.6.2"
 $VersaoModelos = "3.6.2.stable"
 $UrlBase = "https://github.com/godotengine/godot/releases/download/3.6.2-stable"
@@ -48,7 +48,7 @@ trap {
 #      e erro na importacao do Godot 3. Imagens, sons, APKs e relatorios
 #      seus nunca sao apagados.
 if (-not (Test-Path -LiteralPath (Join-Path $Raiz "scripts\compat.gd"))) {
-    Parar "Esta pasta nao e a versao S905L (Godot 3.6). Pasta atual: $Raiz"
+    Parar "Esta pasta nao e a versao da TV Box Mali-450 (Godot 3.6, OpenGL ES 2.0). Pasta atual: $Raiz"
 }
 $ListaDaBuild = Join-Path $Scripts "arquivos_build.txt"
 if (-not (Test-Path -LiteralPath $ListaDaBuild)) {
@@ -210,7 +210,7 @@ if (Test-Path $ApkEsperado) {
     Remove-Item -LiteralPath $ApkEsperado -Force
 }
 
-Write-Host "Projeto confirmado: Super Boxing - build $Build - TV Box S905L (Android 7.1) - Godot $VersaoGodot" -ForegroundColor Green
+Write-Host "Projeto confirmado: Super Boxing - build $Build - TV Box Mali-450 (TX9, OpenGL ES 2.0) - Godot $VersaoGodot" -ForegroundColor Green
 
 # ------------------------------------------------------------------
 # ESPACO EM DISCO. Sem espaco o Gradle falha no meio ("Espaco insuficiente
@@ -637,21 +637,47 @@ function Mostrar-Novo([string]$Arquivo, [long]$Pos, [bool]$Fim) {
     return $Pos + [System.Text.Encoding]::UTF8.GetByteCount($texto)
 }
 
+# Le um arquivo que OUTRO processo pode estar segurando aberto (sem exigir
+# acesso exclusivo). Se nem assim der, devolve vazio.
+function Ler-Compartilhado([string]$Arquivo) {
+    if (-not (Test-Path -LiteralPath $Arquivo)) { return "" }
+    try {
+        $fs = [System.IO.File]::Open($Arquivo, 'Open', 'Read', 'ReadWrite, Delete')
+        try { return (New-Object System.IO.StreamReader($fs)).ReadToEnd() } finally { $fs.Close() }
+    } catch { return "" }
+}
+
 # Roda um programa com a saida num log, mostrando o que importa e um sinal
 # de vida a cada minuto. Devolve o codigo de saida.
+#
+# O GRADLE DEIXA UM PROCESSO DE FUNDO (o "daemon") VIVO depois de montar o
+# APK, e ele herda os arquivos da saida do Godot. Ate a build 116 a saida ia
+# direto para exportacao.log / exportacao.log.erros: no fim, juntar os dois
+# dava "O processo nao pode acessar o arquivo ... porque ele esta sendo usado
+# por outro processo" - o APK estava pronto, mas a geracao parava como
+# falha (e a proxima geracao tambem, com o arquivo ainda preso). Agora a
+# saida vai para arquivos temporarios com nome unico (o daemon pode ficar
+# com eles), lidos sem exigir acesso exclusivo, e o registro final e
+# escrito so por este script.
 function Rodar-Com-Registro([string]$Programa, [string]$Argumentos, [string]$Log, [string]$Pasta, [string]$Rotulo, [int]$LimiteMin, [bool]$Quieto = $false) {
-    $Erros = "$Log.erros"
-    Remove-Item -LiteralPath $Log, $Erros -Force -ErrorAction SilentlyContinue
+    $PastaLog = Split-Path $Log
+    New-Item -ItemType Directory -Path $PastaLog -Force | Out-Null
+    # temporarios de geracoes anteriores que ja foram soltos
+    Get-ChildItem -LiteralPath $PastaLog -Filter "saida_*.tmp" -ErrorAction SilentlyContinue |
+        ForEach-Object { Remove-Item -LiteralPath $_.FullName -Force -ErrorAction SilentlyContinue }
+    $Marca = [guid]::NewGuid().ToString("N").Substring(0, 8)
+    $Saida = Join-Path $PastaLog "saida_$Marca.tmp"
+    $Erros = Join-Path $PastaLog "saida_${Marca}_erros.tmp"
     $p = Start-Process -FilePath $Programa -ArgumentList $Argumentos -WorkingDirectory $Pasta -NoNewWindow -PassThru `
-        -RedirectStandardOutput $Log -RedirectStandardError $Erros
+        -RedirectStandardOutput $Saida -RedirectStandardError $Erros
     try { $null = $p.Handle } catch { }
-    $pos = @{ $Log = 0L; $Erros = 0L }
+    $pos = @{ $Saida = 0L; $Erros = 0L }
     $inicio = Get-Date
     $aviso = $inicio
     while (-not $p.HasExited) {
         Start-Sleep -Milliseconds 800
         if (-not $Quieto) {
-            foreach ($f in @($Log, $Erros)) { $pos[$f] = Mostrar-Novo $f $pos[$f] $false }
+            foreach ($f in @($Saida, $Erros)) { $pos[$f] = Mostrar-Novo $f $pos[$f] $false }
         }
         if (((Get-Date) - $aviso).TotalSeconds -ge 60) {
             $min = [int][math]::Floor(((Get-Date) - $inicio).TotalMinutes)
@@ -666,13 +692,15 @@ function Rodar-Com-Registro([string]$Programa, [string]$Argumentos, [string]$Log
     }
     try { $p.WaitForExit() } catch { }
     if (-not $Quieto) {
-        foreach ($f in @($Log, $Erros)) { $pos[$f] = Mostrar-Novo $f $pos[$f] $true }
+        foreach ($f in @($Saida, $Erros)) { $pos[$f] = Mostrar-Novo $f $pos[$f] $true }
     }
-    # o log de erros vai junto do principal (um arquivo so para mandar)
-    if (Test-Path -LiteralPath $Erros) {
-        Add-Content -LiteralPath $Log -Value ([System.IO.File]::ReadAllText($Erros))
-        Remove-Item -LiteralPath $Erros -Force -ErrorAction SilentlyContinue
+    # o registro final: a saida e os erros num arquivo so (para mandar)
+    try {
+        [System.IO.File]::WriteAllText($Log, (Ler-Compartilhado $Saida) + (Ler-Compartilhado $Erros))
+    } catch {
+        Write-Host "      (nao deu para gravar $Log - nao afeta o APK)" -ForegroundColor DarkGray
     }
+    Remove-Item -LiteralPath $Saida, $Erros -Force -ErrorAction SilentlyContinue
     if ($p.ExitCode -eq $null) { return 1 }
     return [int]$p.ExitCode
 }
@@ -680,8 +708,7 @@ function Rodar-Com-Registro([string]$Programa, [string]$Argumentos, [string]$Log
 # O GODOT DIZ SO "Building of Android project failed". Para saber POR QUE, o
 # Gradle roda de novo aqui, sozinho, e a parte "What went wrong" aparece.
 function Diagnosticar-Falha([string]$Log) {
-    $texto = ""
-    if (Test-Path -LiteralPath $Log) { $texto = [System.IO.File]::ReadAllText($Log) }
+    $texto = Ler-Compartilhado $Log
     if ($texto -notmatch 'Building of Android project failed') { return }
     Write-Host ""
     Write-Host "O GRADLE (que monta o APK) FALHOU. Procurando o motivo..." -ForegroundColor Yellow
@@ -690,7 +717,7 @@ function Diagnosticar-Falha([string]$Log) {
     $Linha = '/d /s /c ""' + (Join-Path $Pasta "gradlew.bat") + '" assembleRelease --console=plain"'
     $null = Rodar-Com-Registro $env:ComSpec $Linha $LogGradle $Pasta "O Gradle" 20 $true
     if (-not (Test-Path -LiteralPath $LogGradle)) { return }
-    $saida = [System.IO.File]::ReadAllLines($LogGradle)
+    $saida = (Ler-Compartilhado $LogGradle) -split "`r?`n"
     $motivo = @()
     $dentro = $false
     foreach ($l in $saida) {
