@@ -13,7 +13,7 @@ Set-Location $Raiz
 # (SUPERBOXING_BUILD=...): se a pasta tiver arquivos de builds diferentes
 # misturados (zip novo extraido por cima de um velho), a geracao para aqui,
 # antes de fazer qualquer coisa.
-$Build = 112
+$Build = 113
 $VersaoGodot = "3.6.2"
 $VersaoModelos = "3.6.2.stable"
 $UrlBase = "https://github.com/godotengine/godot/releases/download/3.6.2-stable"
@@ -602,10 +602,125 @@ if (-not $CacheDestaBuild) {
 
 # ------------------------------------------------------------------
 # [4/4] O APK.
+#
+# TUDO O QUE O GODOT E O GRADLE ESCREVEM VAI PARA build\android\exportacao.log,
+# e na janela aparece so o que importa. O Godot 3 sem janela imprime avisos
+# que nao sao erro (placa de som do PC, "Thread object is being destroyed")
+# e ESCONDE a saida do Gradle: quando o Gradle falhava, a janela nao dizia
+# por que. Agora, se falhar, o motivo do Gradle aparece aqui (ver
+# Diagnosticar-Falha).
+$Ruido = 'WASAPI|audio_driver_wasapi|HRESULT\)0x00000000|init_render_device|All audio drivers failed|falling back to the dummy driver|A Thread object is being destroyed|Please call wait_to_finish|core/os/thread\.cpp|^\s*at: |^\s*$'
+
+# Le o que o arquivo ganhou desde `$Pos` e mostra (sem o ruido). Devolve a
+# nova posicao. O arquivo esta sendo escrito por outro processo.
+function Mostrar-Novo([string]$Arquivo, [long]$Pos, [bool]$Fim) {
+    if (-not (Test-Path -LiteralPath $Arquivo)) { return $Pos }
+    $fs = [System.IO.File]::Open($Arquivo, 'Open', 'Read', 'ReadWrite')
+    try {
+        if ($fs.Length -le $Pos) { return $Pos }
+        $fs.Seek($Pos, 'Begin') | Out-Null
+        $leitor = New-Object System.IO.StreamReader($fs)
+        $texto = $leitor.ReadToEnd()
+    } finally { $fs.Close() }
+    # Sem o fim do processo, a ultima linha pode estar pela metade: espera.
+    $corte = $texto.LastIndexOf("`n")
+    if (-not $Fim) {
+        if ($corte -lt 0) { return $Pos }
+        $texto = $texto.Substring(0, $corte + 1)
+    }
+    foreach ($linha in ($texto -split "`r?`n")) {
+        if ($linha -notmatch $Ruido) {
+            $cor = if ($linha -match 'ERROR|ERRO|FAIL') { 'Red' } else { 'Gray' }
+            Write-Host "      $linha" -ForegroundColor $cor
+        }
+    }
+    return $Pos + [System.Text.Encoding]::UTF8.GetByteCount($texto)
+}
+
+# Roda um programa com a saida num log, mostrando o que importa e um sinal
+# de vida a cada minuto. Devolve o codigo de saida.
+function Rodar-Com-Registro([string]$Programa, [string]$Argumentos, [string]$Log, [string]$Pasta, [string]$Rotulo, [int]$LimiteMin, [bool]$Quieto = $false) {
+    $Erros = "$Log.erros"
+    Remove-Item -LiteralPath $Log, $Erros -Force -ErrorAction SilentlyContinue
+    $p = Start-Process -FilePath $Programa -ArgumentList $Argumentos -WorkingDirectory $Pasta -NoNewWindow -PassThru `
+        -RedirectStandardOutput $Log -RedirectStandardError $Erros
+    try { $null = $p.Handle } catch { }
+    $pos = @{ $Log = 0L; $Erros = 0L }
+    $inicio = Get-Date
+    $aviso = $inicio
+    while (-not $p.HasExited) {
+        Start-Sleep -Milliseconds 800
+        if (-not $Quieto) {
+            foreach ($f in @($Log, $Erros)) { $pos[$f] = Mostrar-Novo $f $pos[$f] $false }
+        }
+        if (((Get-Date) - $aviso).TotalSeconds -ge 60) {
+            $min = [int][math]::Floor(((Get-Date) - $inicio).TotalMinutes)
+            Write-Host "      ... $Rotulo trabalhando ha $min min (normal, nao feche a janela)" -ForegroundColor DarkGray
+            $aviso = Get-Date
+        }
+        if (((Get-Date) - $inicio).TotalMinutes -ge $LimiteMin) {
+            Write-Host "      $Rotulo passou de $LimiteMin min: interrompido." -ForegroundColor Yellow
+            & taskkill.exe /PID $p.Id /T /F | Out-Null
+            break
+        }
+    }
+    try { $p.WaitForExit() } catch { }
+    if (-not $Quieto) {
+        foreach ($f in @($Log, $Erros)) { $pos[$f] = Mostrar-Novo $f $pos[$f] $true }
+    }
+    # o log de erros vai junto do principal (um arquivo so para mandar)
+    if (Test-Path -LiteralPath $Erros) {
+        Add-Content -LiteralPath $Log -Value ([System.IO.File]::ReadAllText($Erros))
+        Remove-Item -LiteralPath $Erros -Force -ErrorAction SilentlyContinue
+    }
+    if ($p.ExitCode -eq $null) { return 1 }
+    return [int]$p.ExitCode
+}
+
+# O GODOT DIZ SO "Building of Android project failed". Para saber POR QUE, o
+# Gradle roda de novo aqui, sozinho, e a parte "What went wrong" aparece.
+function Diagnosticar-Falha([string]$Log) {
+    $texto = ""
+    if (Test-Path -LiteralPath $Log) { $texto = [System.IO.File]::ReadAllText($Log) }
+    if ($texto -notmatch 'Building of Android project failed') { return }
+    Write-Host ""
+    Write-Host "O GRADLE (que monta o APK) FALHOU. Procurando o motivo..." -ForegroundColor Yellow
+    $LogGradle = Join-Path $Raiz "build\android\gradle.log"
+    $Pasta = Join-Path $Raiz "android\build"
+    $Linha = '/d /s /c ""' + (Join-Path $Pasta "gradlew.bat") + '" assembleRelease --console=plain"'
+    $null = Rodar-Com-Registro $env:ComSpec $Linha $LogGradle $Pasta "O Gradle" 20 $true
+    if (-not (Test-Path -LiteralPath $LogGradle)) { return }
+    $saida = [System.IO.File]::ReadAllLines($LogGradle)
+    $motivo = @()
+    $dentro = $false
+    foreach ($l in $saida) {
+        if ($l -match '^\* What went wrong') { $dentro = $true; continue }
+        if ($dentro -and $l -match '^\* (Try|Get more help|Exception)') { break }
+        if ($dentro -and $l.Trim()) { $motivo += $l }
+    }
+    if ($motivo.Count -gt 0) {
+        Write-Host ""
+        Write-Host "MOTIVO DO GRADLE:" -ForegroundColor Red
+        $motivo | Select-Object -First 25 | ForEach-Object { Write-Host "  $_" -ForegroundColor Red }
+    }
+    $sdk = $env:ANDROID_HOME
+    if (-not (Test-Path -LiteralPath (Join-Path $sdk "platforms\android-35"))) {
+        Write-Host "  Falta no SDK: platforms\android-35 (o Godot $VersaoGodot monta com o Android 35)." -ForegroundColor Yellow
+    }
+    if (-not (Test-Path -LiteralPath (Join-Path $sdk "build-tools\35.0.0"))) {
+        Write-Host "  Falta no SDK: build-tools\35.0.0." -ForegroundColor Yellow
+    }
+    Write-Host "  Registro completo do Gradle: build\android\gradle.log" -ForegroundColor Yellow
+}
+
 Write-Host "[4/4] Exportando APK..." -ForegroundColor Cyan
-& (Join-Path $Scripts "EXPORTAR_APK_ANDROID.bat") "$Godot"
-if ($LASTEXITCODE -ne 0) {
-    throw "A exportacao do Godot falhou."
+$LogExport = Join-Path $Raiz "build\android\exportacao.log"
+New-Item -ItemType Directory -Path (Split-Path $LogExport) -Force | Out-Null
+$Exportar = Join-Path $Scripts "EXPORTAR_APK_ANDROID.bat"
+$Codigo = Rodar-Com-Registro $env:ComSpec ('/d /s /c ""' + $Exportar + '" "' + $Godot + '""') $LogExport $Raiz "O Godot" 60
+if ($Codigo -ne 0) {
+    Diagnosticar-Falha $LogExport
+    Parar "A exportacao do Godot falhou. O registro completo esta em build\android\exportacao.log (mande esse arquivo)."
 }
 
 $Apk = Get-Item $ApkEsperado -ErrorAction Stop

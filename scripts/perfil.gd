@@ -30,12 +30,10 @@ const QUADRO_CRITICO_MS = 48.0
 
 ## A janela 3D (a arena) é desenhada nesta fração da resolução lógica e
 ## ampliada no quadro: 1008 × 1422 → 706 × 995. Em 0,55 (554 × 782) o
-## lutador e a torcida saíam borrados; o lutador agora é desenhado numa
-## passada só (`LUTADOR_LEVE`) e a torcida faz as contas no vértice, e a
-## folga que isso abriu na placa de vídeo foi para a nitidez.
-## Vale nos dois desenhos (o seguro e o novo): o lutador leve
-## (`boxeador_tvbox.glb`) pagou a conta. Se uma luta inteira sair lenta, a
-## arena volta sozinha para 0,55 até o jogo fechar (`Arena3D._julgar_a_luta`).
+## lutador e a torcida saíam borrados. O lutador leve
+## (`boxeador_tvbox.glb`, 9,5 mil vértices) pagou a nitidez. Se uma luta
+## inteira sair lenta, a arena volta sozinha para 0,55 até o jogo fechar
+## (`Arena3D._julgar_a_luta`).
 const ARENA_ESCALA = 0.70
 ## Antisserrilhado da arena: desligado (a ampliação já suaviza as bordas).
 const ARENA_MSAA = false
@@ -43,21 +41,6 @@ const ARENA_MSAA = false
 ## uma vez cada. O contorno colorido vem do "rim" do material, com a luz
 ## principal — uma passada só.
 const LUZES_DE_RECORTE = false
-## A pele com shader próprio (luz que atravessa, suor, poros) calcula a luz
-## pixel a pixel. Aqui o lutador usa o material padrão, com a mesma pintura.
-const PELE_DETALHADA = false
-## O VISUAL NOVO (lutador de uma passada com as luzes de palco, torcida
-## animada no vértice, arena em 0,70) DESLIGADO NESTA PLACA. Nas builds 98
-## e 99 a TV Box caía no fim do carregamento (99%), exatamente quando tudo
-## é desenhado pela primeira vez; a 97, com o desenho de sempre, rodava.
-## Desligado, o jogo desenha EXATAMENTE como a build 97 (ver
-## `modo_seguro.gd`). O código fica para testar numa placa com cabo.
-const VISUAL_NOVO = false
-## O lutador inteiro num shader próprio de uma passada só, com as luzes de
-## recorte rosa e azul do jogo original calculadas no próprio material
-## (ver `shaders/lutador_leve.shader`). Mais bonito E mais leve que o
-## material padrão com uma luz.
-const LUTADOR_LEVE = true
 ## Fração das partículas 3D do golpe e da poeira da lona.
 const PARTICULAS_3D = 0.5
 

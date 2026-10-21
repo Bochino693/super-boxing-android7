@@ -40,6 +40,7 @@ var _resultado_em = -1.0
 var _linhas = []
 var _ultimo_us = 0
 var _fotos_feitas = {}
+var _quadros_por_estado = {}
 var _esconder = ""
 
 
@@ -53,6 +54,10 @@ func _ready() -> void:
 			arquivo = a.substr(9)
 		elif a.begins_with("--esconder="):
 			_esconder = a.substr(11)
+	# Cronômetros por chamada (só quando o código foi instrumentado à mão,
+	# para medir; ver o resumo "PERF" no fim).
+	Engine.set_meta("perf", {})
+	Engine.set_meta("estado", "INICIO")
 	main = load("res://scenes/main.tscn").instance()
 	add_child(main)
 	_ultimo_us = OS.get_ticks_usec()
@@ -97,6 +102,10 @@ func _fingir_placa() -> void:
 func _process(delta: float) -> void:
 	var agora = OS.get_ticks_usec()
 	var estado = GameDef.State.keys()[main.state] if main.state < GameDef.State.size() else str(main.state)
+	if main.state == GameDef.State.IDLE and main.intro_active:
+		estado = "INTRO"
+	Engine.set_meta("estado", estado)
+	_quadros_por_estado[estado] = _quadros_por_estado.get(estado, 0) + 1
 	_linhas.append([stepify(t, 0.001), agora - _ultimo_us, estado, main.arena.ativa(),
 		_proc_us / 1000.0, _flush_us / 1000.0, _render_us / 1000.0,
 		int(Performance.get_monitor(Performance.RENDER_DRAW_CALLS_IN_FRAME)),
@@ -163,4 +172,18 @@ func _terminar() -> void:
 			f.store_line("%s;%d;%s;%s;%.3f;%.3f;%.3f;%d;%d;%d" % l)
 		f.close()
 	print("PARTIDA_TESTE: %d partidas, %d quadros" % [feitas, _linhas.size()])
+	var perf: Dictionary = Engine.get_meta("perf")
+	var chaves = perf.keys()
+	chaves.sort_custom(self, "_mais_caro")
+	for k in chaves:
+		var estado = str(k).split("|")[0]
+		var q = max(1, int(_quadros_por_estado.get(estado, 1)))
+		if float(perf[k]) / q >= 20.0:
+			print("PERF %-10s %8.0f us/quadro  %s" % [estado, float(perf[k]) / q, str(k).split("|")[1]])
 	get_tree().quit()
+
+
+func _mais_caro(a, b) -> bool:
+	var perf: Dictionary = Engine.get_meta("perf")
+	return float(perf[a]) / max(1, int(_quadros_por_estado.get(str(a).split("|")[0], 1))) > \
+		float(perf[b]) / max(1, int(_quadros_por_estado.get(str(b).split("|")[0], 1)))

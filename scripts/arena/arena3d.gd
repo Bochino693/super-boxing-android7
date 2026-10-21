@@ -42,66 +42,9 @@ const COR_FUNDO = Color("07051a")
 const TEX_TORCIDA_BAIXO = "res://assets/arena/torcida_baixo.png"
 const TEX_TORCIDA_CIMA = "res://assets/arena/torcida_cima.png"
 
-## A PLATEIA MEXE. Colunas de gente pulam e levantam os braços conforme
-## `agito`; o telão de LED do fundo rola devagar o tempo todo.
-## A TORCIDA NUNCA FICA PARADA. Uma plateia de ginásio mexe o tempo todo:
-## cada coluna de gente balança no seu ritmo, braços sobem e descem em
-## ondas ("ola") e, quando o golpe entra (`agito`), todo mundo pula. Tudo
-## no shader: nenhum custo de processador.
-const SHADER_TORCIDA = """
-shader_type spatial;
-render_mode unshaded, cull_disabled, depth_draw_never;
-uniform sampler2D baixo : hint_albedo;
-uniform sampler2D cima : hint_albedo;
-uniform float agito = 0.0;
-uniform float tempo = 0.0;
-uniform float acende = 1.0;
-// A FILEIRA: quantas pessoas (uma por coluna) e em que faixa da imagem.
-uniform float colunas = 40.0;
-uniform float v0 = 0.0;
-uniform float v1 = 1.0;
-uniform float semente = 0.0;
-// CADA PESSOA É UM QUADRO DA MALHA (`_malha_da_fileira`): a coluna vem
-// em UV2.x e o sorteio dela na cor do vértice. TODA conta com o relógio é
-// feita aqui no VÉRTICE: a placa da S905L faz o vértice em 32 bits e o
-// pixel em 16 — no pixel, `sin(tempo * 9)` andava aos saltos de meio
-// radiano e a torcida tremia em vez de balançar.
-varying float v_col;
-varying float v_balanco;
-varying float v_sobe;
-varying float v_mao;
-varying float v_celular;
-void vertex() {
-	float r = COLOR.r;
-	float r2 = COLOR.g;
-	v_col = UV2.x;
-	float vida = 0.60 + agito * 0.40;
-	float respira = sin(tempo * (1.6 + r2 * 1.4) + r * 6.2831) * 0.012 * vida;
-	float pulo = max(0.0, sin(tempo * (3.0 + r * 3.6 + agito * 3.0) + r * 6.2831));
-	pulo *= step(0.35 - agito * 0.3, r2) * (0.03 + 0.07 * agito);
-	v_sobe = respira + pulo;
-	// balanço de lado, dentro da própria coluna
-	v_balanco = sin(tempo * (1.1 + r) + r * 9.0) * 0.05 * vida;
-	// braços para o alto em ONDA ("ola") e, no golpe, todo mundo
-	float centro = (v_col + 0.5) / colunas;
-	float ola = 0.5 + 0.5 * sin(centro * 7.0 - tempo * 1.7 + semente);
-	float braco = 0.5 + 0.5 * sin(tempo * (2.4 + r * 2.0) + r * 12.0);
-	v_mao = step(0.55, braco * (0.35 + 0.65 * ola) + agito * 0.5) * step(0.25 - agito * 0.2, r);
-	// flash de celular: um pontinho na mão de alguém, de vez em quando
-	v_celular = step(0.985, fract(sin(v_col * 1.2989 + fract(floor(tempo * 2.2 + r * 7.0) * 0.137) * 37.0 + semente) * 53.71));
-}
-void fragment() {
-	float dentro = clamp(UV.x + v_balanco, 0.0, 1.0);
-	float y = UV.y + v_sobe;
-	vec2 uv = vec2((v_col + dentro) / colunas, mix(v0, v1, clamp(y, 0.004, 0.996)));
-	vec4 c = mix(texture(baixo, uv), texture(cima, uv), v_mao);
-	vec2 celula = vec2(dentro - 0.5, (UV.y - 0.30) * 5.0);
-	float celular = v_celular * c.a * (1.0 - smoothstep(0.04, 0.12, length(celula)));
-	ALBEDO = c.rgb * acende * (1.0 + agito * 0.35) + vec3(0.9, 0.95, 1.0) * celular * 1.2;
-	ALPHA = c.a * (0.86 + 0.14 * agito);
-}
-"""
-
+## A PLATEIA MEXE: cada coluna de gente balança no seu ritmo, braços
+## sobem e descem em ondas ("ola") e, quando o golpe entra (`agito`), todo
+## mundo pula. O telão de LED do fundo rola devagar o tempo todo.
 ## A TORCIDA DA S905L: o mesmo tipo de shader da build 97 (tudo no pixel,
 ## sem nada no vértice), com três correções:
 ##   • O ENCOSTO da arquibancada (faixa de baixo de cada fileira, ver
@@ -215,7 +158,6 @@ void fragment() {
 }
 """
 
-const ModoSeguro = preload("res://scripts/modo_seguro.gd")
 ## O tamanho da build 97, para quando a máquina não aguenta a nitidez
 ## (ver `_julgar_a_luta`).
 const ARENA_ESCALA_SEGURA = 0.55
@@ -230,10 +172,8 @@ const RITMO_BALANCO = [0.17, 0.22, 0.27, 0.33]
 const RITMO_BRACO = [0.38, 0.48, 0.58, 0.70]
 var _fase_pulo = [0.0, 0.31, 0.62, 0.87]
 var _relogio_da_torcida = -1.0
-
-## A luz do lutador de uma passada, na mesma escala da luz da arena.
-const LUZ_DO_LUTADOR = 0.52
-const AMBIENTE_DO_LUTADOR = Color(0.15, 0.16, 0.26)
+var _acende_pintado = -1.0
+var _agito_pintado = -1.0
 
 var lutador: Lutador3D = null
 var camera: Camera = null
@@ -373,41 +313,6 @@ static func _material_solido(cor: Color, rugosidade := 0.5, brilho := 0.0) -> Sp
 	return m
 
 
-## Uma fileira da plateia: um quadro por pessoa, lado a lado, do mesmo
-## tamanho do plano antigo. Em cada quadro: UV de 0 a 1 (a pessoa inteira),
-## a coluna em UV2.x e dois sorteios fixos na cor do vértice.
-static func _malha_da_fileira(colunas: int, largura: float, altura: float, semente: float) -> ArrayMesh:
-	var v = PoolVector3Array()
-	var uv = PoolVector2Array()
-	var uv2 = PoolVector2Array()
-	var cor = PoolColorArray()
-	var idx = PoolIntArray()
-	for c in colunas:
-		var x0 = (float(c) / float(colunas) - 0.5) * largura
-		var x1 = (float(c + 1) / float(colunas) - 0.5) * largura
-		var r = fposmod(sin(float(c) * 0.731 + semente * 1.37) * 47.53, 1.0)
-		var r2 = fposmod(sin(float(c) * 1.279 + semente * 0.71) * 31.17, 1.0)
-		var base = v.size()
-		for canto in [[x0, 0.5, 0.0, 0.0], [x1, 0.5, 1.0, 0.0], [x1, -0.5, 1.0, 1.0], [x0, -0.5, 0.0, 1.0]]:
-			v.append(Vector3(canto[0], canto[1] * altura, 0.0))
-			uv.append(Vector2(canto[2], canto[3]))
-			uv2.append(Vector2(float(c), 0.0))
-			cor.append(Color(r, r2, 0.0, 1.0))
-		for t in [0, 1, 2, 0, 2, 3]:
-			idx.append(base + t)
-	var arrays = []
-	arrays.resize(Mesh.ARRAY_MAX)
-	arrays[Mesh.ARRAY_VERTEX] = v
-	arrays[Mesh.ARRAY_TEX_UV] = uv
-	arrays[Mesh.ARRAY_TEX_UV2] = uv2
-	arrays[Mesh.ARRAY_COLOR] = cor
-	arrays[Mesh.ARRAY_INDEX] = idx
-	var malha = ArrayMesh.new()
-	# Sem compressão: a coluna (até 52) e o sorteio chegam exatos.
-	malha.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays, [], 0)
-	return malha
-
-
 func _peca(malha: Mesh, material: Material, onde: Vector3, giro := Vector3.ZERO) -> MeshInstance:
 	var mi = MeshInstance.new()
 	mi.mesh = malha
@@ -432,8 +337,7 @@ func _montar_fundo() -> void:
 	# A GENTE da plateia, em silhueta, na frente do fundo pintado.
 	if ResourceLoader.exists(TEX_TORCIDA_BAIXO) and ResourceLoader.exists(TEX_TORCIDA_CIMA):
 		var sh2 = Shader.new()
-		var segura = ModoSeguro.seguro()
-		sh2.code = SHADER_TORCIDA_SEGURA if segura else SHADER_TORCIDA
+		sh2.code = SHADER_TORCIDA_SEGURA
 		var baixo: Texture = load(TEX_TORCIDA_BAIXO)
 		var cima: Texture = load(TEX_TORCIDA_CIMA)
 		# TRÊS FILEIRAS, cada uma no seu plano (a de trás mais alta e mais
@@ -461,16 +365,13 @@ func _montar_fundo() -> void:
 			var altura = 2.5 * (float(fl[2]) - float(fl[1])) / 512.0
 			var quad: Mesh = null
 			var onde: Vector3 = fl[3]
-			if segura:
-				# A folga de cima para quem pula: o pé da fileira fica onde
-				# estava, o quadro cresce só para cima.
-				quad = QuadMesh.new()
-				(quad as QuadMesh).size = Vector2(10.0, altura * (1.0 + FOLGA_DA_TORCIDA))
-				onde += Vector3(0.0, altura * FOLGA_DA_TORCIDA * 0.5, 0.0)
-				mat.set_shader_param("folga", FOLGA_DA_TORCIDA)
-				mat.set_shader_param("assento", ASSENTO_DA_TORCIDA)
-			else:
-				quad = _malha_da_fileira(int(fl[0]), 10.0, altura, float(k) * 3.3)
+			# A folga de cima para quem pula: o pé da fileira fica onde
+			# estava, o quadro cresce só para cima.
+			quad = QuadMesh.new()
+			(quad as QuadMesh).size = Vector2(10.0, altura * (1.0 + FOLGA_DA_TORCIDA))
+			onde += Vector3(0.0, altura * FOLGA_DA_TORCIDA * 0.5, 0.0)
+			mat.set_shader_param("folga", FOLGA_DA_TORCIDA)
+			mat.set_shader_param("assento", ASSENTO_DA_TORCIDA)
 			var mi = _peca(quad, mat, onde)
 			_mundo.remove_child(mi)
 			_gente.add_child(mi)
@@ -1236,12 +1137,6 @@ func _luzes() -> void:
 		_rim_quente.light_energy = 2.0 + extra
 		_rim_frio.light_energy = 2.0 + extra
 	_luz_chave.light_energy = 1.6 + _clarao * 1.0
-	# O lutador de uma passada (`Perfil.LUTADOR_LEVE`) faz a própria luz:
-	# recebe a direção da luz principal já no espaço da câmera.
-	if lutador != null and lutador.has_method("luz"):
-		var para_a_luz = camera.global_transform.basis.xform_inv(_luz_chave.global_transform.basis.z)
-		lutador.call("luz", para_a_luz.normalized(), _luz_chave.light_color,
-			LUZ_DO_LUTADOR * _luz_chave.light_energy, AMBIENTE_DO_LUTADOR)
 	# Materiais sem luz acendem pelo albedo: o salão inteiro pisca junto.
 	var acende = 1.0 + _clarao * 0.55
 	# MEIA PRECISÃO NA MALI-450: o relógio dos shaders dá a volta a cada
@@ -1252,15 +1147,15 @@ func _luzes() -> void:
 	_mat_fundo.set_shader_param("tempo", tempo_curto)
 	_mat_fundo.set_shader_param("rolagem", Compat.fracao(_relogio, 0.018))
 	_mat_fundo.set_shader_param("agito", _agito)
-	# A torcida faz as contas do relógio no vértice (32 bits): o relógio dela
-	# dá a volta só a cada ~10 min, e a volta é um instante só.
-	var tempo_da_torcida = fposmod(_relogio, TAU * 100.0)
-	if ModoSeguro.seguro():
-		_fases_da_torcida()
-	for mat in _mats_torcida:
-		(mat as ShaderMaterial).set_shader_param("acende", acende)
-		(mat as ShaderMaterial).set_shader_param("tempo", tempo_da_torcida)
-		(mat as ShaderMaterial).set_shader_param("agito", _agito)
+	_fases_da_torcida()
+	# acende e agito só mudam no golpe e na festa: sem mudança, nada vai
+	# para a placa (três materiais a cada quadro, à toa)
+	if abs(acende - _acende_pintado) > 0.002 or abs(_agito - _agito_pintado) > 0.002:
+		_acende_pintado = acende
+		_agito_pintado = _agito
+		for mat in _mats_torcida:
+			(mat as ShaderMaterial).set_shader_param("acende", acende)
+			(mat as ShaderMaterial).set_shader_param("agito", _agito)
 	_mat_lona.albedo_color = Color(acende, acende, acende)
 	if _mat_saia != null:
 		_mat_saia.set_shader_param("rolagem", Compat.fracao(_relogio, 0.05))

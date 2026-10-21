@@ -12,9 +12,9 @@ extends Reference
 ## NUMERO em um e escreva em NOTA o que mudou. Um carimbo que não sobe
 ## mente, e um carimbo que mente é pior do que carimbo nenhum.
 
-const NUMERO = 112
+const NUMERO = 113
 const DATA = "21/10/2026"
-const NOTA = "base 111; arena 3D leve: lutador com 9,5 mil vértices (eram 43 mil), clarão do soco sem segunda passada, arena mais nítida (0,70, volta a 0,55 sozinha se a luta ficar lenta), foco de luz no ringue"
+const NOTA = "base 112; olhos do lutador com íris e pupila nítidas (não parece mais cego); lutador sempre pintado (texturas vestidas na montagem, sem depender da ordem de importação); arquivos sem uso fora do projeto; gerador de APK mostra o motivo do Gradle; ondas de choque do soco sem recálculo por quadro"
 
 ## Rodapé da abertura: cabe em uma linha discreta.
 static func curta() -> String:

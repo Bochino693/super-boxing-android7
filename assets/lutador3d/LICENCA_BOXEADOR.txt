@@ -1,5 +1,5 @@
-BOXEADOR (boxeador.glb e boxeador_*.jpg/png)
-============================================
+BOXEADOR (boxeador_tvbox.glb e boxeador_*.jpg/png)
+==================================================
 
 Gerado por tools/gerar_boxeador.py. Nada foi baixado de loja de modelos:
 
@@ -10,5 +10,7 @@ Gerado por tools/gerar_boxeador.py. Nada foi baixado de loja de modelos:
 - ESQUELETO, CALÇÃO, BOTAS, LUVAS, DENTES E TODAS AS TEXTURAS: feitos pelo
   próprio script deste projeto (pintura procedural em 4096 px).
 
-Para regenerar:  pip install anny scikit-image scipy pillow numpy
-                 python tools/gerar_boxeador.py
+Para regenerar:  pip install anny scikit-image scipy pillow numpy meshoptimizer
+                 python tools/gerar_boxeador.py      (o corpo cheio, boxeador.glb)
+                 python tools/simplificar_boxeador.py (o da TV Box)
+                 O boxeador.glb cheio (43 mil vertices) nao fica no projeto.
