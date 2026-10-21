@@ -48,6 +48,19 @@ Mali-450), como foi feito no boliche:
   calcao com menos triangulos, sem mudar a pintura.
 - A ARENA desenhada com os MESMOS pixels da build 113 (702 x 1001), agora
   que ela vai de ponta a ponta da tela. Postes e cordas juntados.
+- SOM DE FLIPERAMA DE LUTA, SEM MULHERES GRITANDO. As torcidas eram
+  gravacoes de ginasio com gritos agudos (no fundo da luta inteira, a cada
+  soco e nas comemoracoes). Agora tudo e sintetizado
+  (tools\gerar_sons_arcade.py): ronco grave do ginasio, plateia so de
+  vozes graves ("OOOH!" no soco, "HEY!" com pe-pe-palma puxando o ritmo,
+  rugido na vitoria) e FANFARRAS de fliperama no TOP 20, TOP 10, podio e
+  recorde. Sons repetidos e sem uso sairam (cada som era carregado duas
+  vezes na abertura).
+- TORCIDA MAIS DEFINIDA E O FUNDO MAIS VIVO: a plateia foi repintada mais
+  clara, com cor viva, contorno fino em cada pessoa e a luz rosa/azul do
+  palco nas bordas (a imagem ja sai no tamanho do jogo, sem custo a mais).
+  Dois fachos de refletor varrem a plateia e a parede do ginasio e
+  acendem no golpe - poucas contas por pixel, nada que pese na Mali-450.
 - So ficou o GERAR_APK_AGORA.bat. Os outros .bat (instalar pela rede,
   camera, tela cheia, relatorio da abertura e o de atualizar pelo GitHub,
   que dava conflito quando a pasta do PC mudava) sairam - continuam no

@@ -86,6 +86,11 @@ uniform vec4 f_balanco = vec4(0.0);
 uniform vec4 f_braco = vec4(0.0);
 uniform float f_ola = 0.0;
 uniform float tique = 0.0;
+// OS FACHOS DE REFLETOR varrendo a plateia (build 116): onde estão as duas
+// faixas de luz (0..1 na largura da fileira) e quanto acendem — calculado
+// fora, uma vez por quadro.
+uniform vec2 fachos = vec2(-1.0, -1.0);
+uniform float fachos_forca = 0.0;
 
 // Uma das quatro velocidades, pelo sorteio da pessoa.
 vec4 escolhe(float r) {
@@ -128,7 +133,11 @@ void fragment() {
 	float celular = step(0.985, fract(sin(col * 1.2989 + fract((tique + floor(r * 7.0)) * 0.137) * 37.0 + semente) * 53.71)) * c.a;
 	vec2 celula = vec2(x - 0.5, (y - 0.30) * 5.0);
 	celular *= (1.0 - smoothstep(0.04, 0.12, length(celula))) * (1.0 - parado);
-	ALBEDO = c.rgb * acende * (1.0 + agito * 0.35) + vec3(0.9, 0.95, 1.0) * celular * 1.2;
+	// a luz dos fachos (rosa e azul) só acende quem está nela
+	float l1 = 1.0 - smoothstep(0.0, 0.09, abs(UV.x - fachos.x));
+	float l2 = 1.0 - smoothstep(0.0, 0.09, abs(UV.x - fachos.y));
+	vec3 luz = (vec3(1.0, 0.42, 0.85) * l1 + vec3(0.42, 0.85, 1.0) * l2) * fachos_forca;
+	ALBEDO = c.rgb * (acende * (1.0 + agito * 0.35) + luz) + vec3(0.9, 0.95, 1.0) * celular * 1.2;
 	ALPHA = c.a * (0.86 + 0.14 * agito);
 }
 """
@@ -141,13 +150,19 @@ uniform float acende = 1.0;
 uniform float agito = 0.0;
 // quanto o telão já rolou (0..1), calculado fora: meia precisão na Mali-450
 uniform float rolagem = 0.0;
+// os mesmos dois fachos da plateia passando pela parede do ginásio
+uniform vec2 fachos = vec2(-1.0, -1.0);
+uniform float fachos_forca = 0.0;
 void fragment() {
 	vec2 uv = UV;
 	float faixa = step(0.155, uv.y) * step(uv.y, 0.265);
 	uv.x = fract(uv.x + faixa * rolagem);
 	vec3 c = texture(tex, uv).rgb;
 	float pisca = 1.0 + faixa * agito * 0.35 * sin(tempo * 9.0);
-	ALBEDO = c * acende * pisca;
+	float l1 = 1.0 - smoothstep(0.0, 0.07, abs(UV.x - fachos.x));
+	float l2 = 1.0 - smoothstep(0.0, 0.07, abs(UV.x - fachos.y));
+	vec3 luz = (vec3(1.0, 0.42, 0.85) * l1 + vec3(0.42, 0.85, 1.0) * l2) * fachos_forca * 0.7;
+	ALBEDO = c * (acende * pisca + luz);
 }
 """
 
@@ -1180,8 +1195,17 @@ func _fases_da_torcida() -> void:
 	var pulo = Color(_fase_pulo[0], _fase_pulo[1], _fase_pulo[2], _fase_pulo[3])
 	var ola = fposmod(_relogio * 1.7 / TAU, 1.0)
 	var tique = fposmod(floor(_relogio * 2.2), 64.0)
+	# OS DOIS FACHOS vão e vêm pela plateia em ritmos diferentes (nunca
+	# juntos), e no golpe acendem forte.
+	var fachos = Vector2(lerp(-0.12, 1.12, 0.5 + 0.5 * sin(_relogio * 0.37)),
+		lerp(-0.12, 1.12, 0.5 + 0.5 * sin(_relogio * 0.29 + 2.1)))
+	var forca = 0.45 + _agito * 0.5 + _clarao * 0.9
+	_mat_fundo.set_shader_param("fachos", fachos)
+	_mat_fundo.set_shader_param("fachos_forca", forca)
 	for mat in _mats_torcida:
 		var m = mat as ShaderMaterial
+		m.set_shader_param("fachos", fachos)
+		m.set_shader_param("fachos_forca", forca)
 		m.set_shader_param("f_respira", respira)
 		m.set_shader_param("f_pulo", pulo)
 		m.set_shader_param("f_balanco", balanco)

@@ -14,7 +14,7 @@ extends Reference
 
 const NUMERO = 116
 const DATA = "21/10/2026"
-const NOTA = "liso na Mali-450: linhas, círculos e arcos do 2D desenhados como polígonos que se juntam (abertura de 264 para ~30 chamadas à placa de vídeo por quadro, luta de 320 para 101); medidor de impacto sem refazer a forma a cada quadro; lutador com 10 mil vértices; arena com os pixels da build 113; só o GERAR_APK_AGORA.bat"
+const NOTA = "liso na Mali-450: linhas, círculos e arcos do 2D desenhados como polígonos que se juntam (abertura de 264 para ~30 chamadas à placa de vídeo por quadro, luta de 320 para 101); medidor de impacto sem refazer a forma a cada quadro; lutador com 10 mil vértices; arena com os pixels da build 113; som de fliperama de luta sem gritos (torcida grave sintetizada e fanfarras); torcida repintada mais definida e fachos de refletor varrendo a plateia; só o GERAR_APK_AGORA.bat"
 
 ## Rodapé da abertura: cabe em uma linha discreta.
 static func curta() -> String:
