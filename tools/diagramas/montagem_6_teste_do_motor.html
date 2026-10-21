@@ -1,0 +1,71 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+body{margin:0;background:#fff;font-family:"DejaVu Sans",Arial,sans-serif;color:#1f2328;width:1800px}
+.p{padding:46px 60px}
+h1{font-size:36px;margin:0 0 6px}
+.sub{font-size:19px;color:#555;margin-bottom:26px}
+.passo{display:flex;gap:22px;border:3px solid #d0d7de;border-radius:16px;padding:20px 24px;margin-bottom:18px;background:#f6f8fa}
+.n{flex:0 0 64px;height:64px;border-radius:32px;background:#0969da;color:#fff;font-size:32px;font-weight:bold;display:flex;align-items:center;justify-content:center}
+.c h2{font-size:23px;margin:4px 0 8px}
+.c p,.c li{font-size:18px;line-height:1.45;margin:4px 0}
+.ok{color:#1a7f37;font-weight:bold}.ruim{color:#cf222e;font-weight:bold}
+table{border-collapse:collapse;margin-top:8px;font-size:17px}
+td,th{border:2px solid #d0d7de;padding:7px 12px;text-align:left}
+th{background:#eaeef2}
+.dest{background:#fff8c5;border-color:#d4a72c}
+.dest .n{background:#9a6700}
+code{background:#eaeef2;padding:1px 6px;border-radius:5px;font-size:17px}
+</style></head><body><div class="p">
+<h1>MOTOR DO SACO NÃO ANDA? — TESTE PASSO A PASSO (firmware V9)</h1>
+<div class="sub">Faça na ordem. Cada passo separa uma parte: o primeiro que falhar é onde está o defeito.</div>
+
+<div class="passo"><div class="n">1</div><div class="c">
+<h2>Grave o firmware V9 no Nano</h2>
+<p>Arduino IDE → abra <code>ARDUINO_SENSOR_DE_FEIXE_LM393.ino</code> → Placa <b>Arduino Nano</b> → Processador <b>ATmega328P (Old Bootloader)</b> (se der erro, tente <b>ATmega328P</b>) → Carregar.</p>
+<p>Tem de terminar com <b>"Carregado"</b>. No Monitor Serial (115200) aparece <code>READY,PUNCH_OPTICAL,V9-MH-LM393</code>. <span class="ruim">Se aparecer V5, V6, V7 ou V8, o firmware novo não foi gravado.</span></p>
+</div></div>
+
+<div class="passo dest"><div class="n">2</div><div class="c">
+<h2>AUTOTESTE — sem jogo, sem TV Box</h2>
+<p>Com a <b>fonte do motor LIGADA</b>: segure o botão <b>START</b> e ligue o Arduino (ou aperte o botão RESET do Nano). Continue segurando uns <b>3 segundos</b>.</p>
+<p>O LED "L" do Nano pisca rápido e o motor: <b>DESCE 1,5 s → para → SOBE até 1,5 s</b> (para antes se o sensor de cima vir o saco).</p>
+<p><span class="ok">Mexeu?</span> A ligação está certa: o problema era firmware ou comunicação → vá ao passo 5.<br>
+<span class="ruim">Não mexeu (mas o LED piscou)?</span> O Arduino está mandando: o defeito é de fio ou de fonte → passo 3.<br>
+<span class="ruim">LED nem piscou?</span> O START não está no D2/GND, ou o firmware não é o V9 → passo 1.</p>
+</div></div>
+
+<div class="passo"><div class="n">3</div><div class="c">
+<h2>Meça com o multímetro (escala de tensão contínua, ponta preta no GND do Nano)</h2>
+<table>
+<tr><th>Onde medir</th><th>Parado</th><th>Durante o AUTOTESTE</th><th>Se der diferente</th></tr>
+<tr><td>VCC da BT_2</td><td>5 V</td><td>5 V</td><td>fio do 5V solto</td></tr>
+<tr><td><b>R_EN</b> e <b>L_EN</b> da BT_2</td><td>5 V</td><td>5 V</td><td><b>a causa mais comum</b>: sem 5V aqui a ponte não anda</td></tr>
+<tr><td>B+ e B− da BT_2 (ponta preta no B−)</td><td>tensão da fonte (12/24 V)</td><td>quase a mesma</td><td>fonte desligada, fusível queimado, fio solto</td></tr>
+<tr><td>RPWM da BT_2</td><td>0 V</td><td>≈ 5 V enquanto DESCE</td><td>fio do D9 (ou D7) solto / trocado</td></tr>
+<tr><td>LPWM da BT_2</td><td>0 V</td><td>≈ 5 V enquanto SOBE</td><td>fio do D10 (ou D8) solto / trocado</td></tr>
+<tr><td>M+ e M− (saída para o motor)</td><td>0 V</td><td>≈ tensão da fonte (+ num sentido, − no outro)</td><td>se tem tensão aqui e o motor não gira: motor, cabo ou redutor</td></tr>
+</table>
+</div></div>
+
+<div class="passo"><div class="n">4</div><div class="c">
+<h2>Confira o conector 2×4 pela tabelinha impressa na placa</h2>
+<p>Ao lado do conector há uma tabelinha com 8 nomes (VCC, GND, R_IS, L_IS, R_EN, L_EN, RPWM, LPWM). <b>Ligue pelo nome impresso</b>, não pela posição: há placas com a ordem diferente. R_IS e L_IS ficam <b>sem nada</b>.</p>
+<p>O GND da BT_2 tem de ir no GND do Nano (terra comum). Sem ele, os 5 V dos sinais não "chegam".</p>
+</div></div>
+
+<div class="passo"><div class="n">5</div><div class="c">
+<h2>Com o jogo: botão TESTE da Central</h2>
+<p>Segure OK por 6 s na abertura → Central → aba <b>SACO</b> → botão <b>TESTE</b>. O saco desce 1,5 s e sobe.</p>
+<p>Na caixa <b>ONDE O SACO ESTÁ</b> leia a linha <code>firmware: V9-MH-LM393 • respostas do motor: N • última: há X s • teste: ...</code></p>
+<ul>
+<li><span class="ok">respostas do motor &gt; 0</span> e o teste anda → comunicação OK.</li>
+<li><span class="ruim">firmware "?" ou respostas 0</span> → o jogo não está falando com a placa: cabo USB de <b>dados</b>, permissão do Android ("usar por padrão"), ou firmware antigo.</li>
+<li>A caixa <b>DIAGNÓSTICO — POR QUE O MOTOR NÃO ANDA</b> diz o motivo em uma frase.</li>
+</ul>
+</div></div>
+
+<div class="passo"><div class="n">6</div><div class="c">
+<h2>Funcionando: como a máquina se comporta</h2>
+<p>Ao ligar, a placa <b>recolhe o saco</b> sozinha (enrolado em cima). Na abertura o jogo confere de 15 em 15 s que ele continua em cima. No START: confere em cima (sobe se precisar) → contagem → <b>FOTO</b> → o saco <b>DESCE</b> → soco → no fim da rodada o saco <b>SOBE</b> e fica enrolado até o próximo START.</p>
+<p>Saco desce quando manda subir: troque M+ com M−. Subida que passa do ponto: ajuste o sensor de cima (trimpot) e o TEMPO DE CURSO na Central.</p>
+</div></div>
+</div></body></html>

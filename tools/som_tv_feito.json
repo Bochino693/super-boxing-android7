@@ -1,0 +1,20 @@
+{
+ "arena_corpo.wav": "a8e16f4bde56d84b71352d6771ce90f6b3da1b0a",
+ "arena_queda.wav": "3c81131d7b9f775f0df84e31ff69ae74d8332307",
+ "aviso.wav": "c1ec9c621c70c1bfe7d5bb585b748dc3a3462eb1",
+ "charge.wav": "1af0dadcfeb5811f49f5a00627f7ba44338fdd89",
+ "couro.wav": "84345e69302c72c02c9c98a3e5b2c4072b4cd0f5",
+ "go.wav": "1819cdb155e8df1d316d5a21e26f925a24768df4",
+ "hit.wav": "bde7149206d190952531acd599ea46e8d0beeb77",
+ "music.wav": "a8d79065b1ef14d4aa63894b96247e0b6c661a1a",
+ "nivel_bom.wav": "ce367ca5cde0c516ea616c8143882866a8884a5b",
+ "nivel_explosivo.wav": "8087881699d7e8c9360b07f8f19d4e3773ba0815",
+ "nivel_forte.wav": "f0fec622916c55002c2725a9532639cab892dda2",
+ "nivel_nocaute.wav": "50b265906f71f5e0fd5a86177bd8dbaf0506941d",
+ "nivel_perfeito.wav": "28320bc8ec2d67a1b8efaac342c8060cde4d67dc",
+ "nivel_peso.wav": "277c8a1fe0bb992c956dd1e3e958d2d22d3b214b",
+ "ranking_burst.wav": "49c370221c7a01aaf11dfb66ac9a82e7acbed5d8",
+ "ranking_neutral_2.wav": "0d1f8a64ea45f0dbabd36d114cc25638bd45e023",
+ "start.wav": "45743e9f8faa9e19200fda0b68e944ed456b57a8",
+ "start_negado.wav": "f39c3ed652ebb5c946cfb197bcb5c265d39d290a"
+}

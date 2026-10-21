@@ -1,0 +1,869 @@
+SUPER BOXING PRO - GODOT 4.6 (OPENGL ES 3) - BUILD 208
+======================================================
+
+PARA QUAL MAQUINA E ESTA VERSAO
+-------------------------------
+TV Box com placa de video OpenGL ES 3.0 ou mais nova (Mali-T720, G31,
+G52 e acima) e 2 GB de RAM ou mais (ex.: Pro Ultra 4K, Android 10).
+A TV Box S905L (Mali-450, so OpenGL ES 2.0) continua na build 114 do
+Godot 3.6 (repositorio super-boxing-android7): esta aqui NAO roda nela.
+
+O APK tem pacote proprio (com.lazersport.superboxing.pro, nome "Super
+Boxing PRO"): instala JUNTO com a versao S905L, sem substituir nada.
+
+O QUE A BUILD 208 MUDA (DERRUBA PRIMEIRO, COMEMORA DEPOIS; LUTA LISA)
+--------------------------------------------------------------------
+1. A ORDEM CERTA NO FIM DA RODADA. Dois socos sem nocaute (derrota ou
+   empate, nenhum soco chegou a 6500): o lutador sente o ultimo soco,
+   volta, vem para cima e acerta a camera - vidro racha, "K.O.", a
+   camera vai a lona, a barra "VOCE" zera - e SO ENTAO comemora (deboche
+   na derrota, bracos para cima no empate). Antes ele ja comemorava
+   depois do segundo soco fraco e so depois derrubava. No ultimo soco
+   ele nao faz mais a provocacao de bracos abertos (lida como festa). A
+   tabela do ranking espera o nocaute e a comemoracao inteiros.
+2. O PROCESSADOR LIVRE NA LUTA. O desenho dos cartoes dos socos, do
+   medidor redondo e dos aneis (o "lote" da build 206) montava uns 7.000
+   triangulos por quadro em GDScript: 4,5 ms num PC, algo como 25 ms no
+   processador da TV Box - quase o quadro inteiro de 30 por segundo, e
+   era isso que fazia a luta engasgar. Agora: curvas com o numero de
+   lados que o olho ve (erro de 0,3 pixel: um circulo grande tem ~50
+   lados, nao 192), pontos montados pelo motor e nao pelo script, e o
+   que nao mudou desde o quadro anterior (placar parado, cartao de um
+   soco ja feito) nao e recalculado. O script da luta caiu de 5,6 ms
+   para 2,0 ms por quadro no PC de teste, com o mesmo desenho.
+3. A ARENA 3D DESENHADA DIRETO NA IMAGEM FINAL. O ajuste de contraste e
+   cor do ambiente obrigava o Godot (modo compatibilidade) a desenhar a
+   arena numa imagem intermediaria e repassa-la inteira por um
+   pos-processo a cada quadro. Saiu: o antisserrilhado agora se resolve
+   dentro da placa de video (Mali), sem copias.
+4. NENHUMA LUZ MUDA COM O JOGO RODANDO. Na 207 os degraus desligavam a
+   sombra e as luzes no meio da luta - e no Godot 4.6 cada troca de luz
+   recompila os shaders do lutador e do ringue: a tela parava um
+   instante, justamente na luta. Agora a sombra real e escolhida uma vez
+   pela placa (SmartPro: sem, fica a sombra de contato) e as luzes ficam
+   sempre. Degraus novos: 0 completo, 1 sem fachos, 2 3D a 85%,
+   3 3D a 70%, 4 sem antisserrilhado. O ajuste nao desce mais de um
+   degrau enquanto o anterior ainda nao entrou (os de tamanho entram na
+   luta seguinte), e o degrau medido pela 207 e aproveitado: a primeira
+   luta depois de atualizar ja sai no grafico que a placa aguenta.
+5. SE AINDA ENGASGAR: depois de uma luta, abra a Central (segure OK) e
+   fotografe as linhas "ultima luta" e "por quadro" - elas dizem quantos
+   quadros por segundo a luta teve e quanto foi processador.
+
+O QUE A BUILD 207 MUDA (CADA PARTE SO NA SUA HORA)
+--------------------------------------------------
+1. A WEBCAM DESCANSA NA LUTA. Aberta, ela manda 30 quadros por segundo o
+   tempo todo e o Android decodifica cada um no processador (e guarda
+   numa superficie de video) - a luta inteira pagava isso sem mostrar a
+   imagem. Agora, tirada a foto, a webcam e SOLTA quando o ringue entra
+   e volta no placar do fim da rodada (ou na abertura, ou na Central),
+   bem antes do proximo START.
+2. A ARENA 3D NA RESOLUCAO DA SAIDA. Se o Android da TV Box entrega 720
+   linhas, a arena e desenhada em 720 (antes: 1080 para a TV mostrar
+   720, 2,25 vezes o trabalho). O antisserrilhado deixa a borda lisa no
+   tamanho certo. Letras, cartoes e logos continuam desenhados em 1080
+   (reduzidos, saem mais lisos). Em 1080p nada muda. A Central mostra a
+   janela e a escala do 3D.
+3. O GRAFICO SE ACERTA DURANTE A LUTA, a cada 4 segundos (antes so no
+   fim dela). Degraus novos, do que menos aparece para o que mais
+   aparece: 0 completo, 1 sem sombra real, 2 sem fachos, 3 sem luz do
+   rosto, 4 sem luzes de recorte, 5 3D a 85%, 6 3D a 70%, 7 sem
+   antisserrilhado. Os degraus 1 a 4 entram na hora; 5 a 7 (que
+   realocam a imagem) entram na luta seguinte.
+4. NADA ESCONDIDO SENDO CALCULADO NA LUTA: a poeira do palco e o fundo
+   animado (que ficam atras da arena) param durante a luta.
+5. SE A CAMERA NAO ABRIR: na Central (segure OK), a linha "camera:" diz
+   o que o Android respondeu; fotografe-a junto com as linhas da ultima
+   luta.
+
+O QUE A BUILD 206 MUDA (MENOS TRABALHO POR QUADRO)
+--------------------------------------------------
+1. O 2D DA LUTA EM LOTES. No Godot 4.6 (modo compatibilidade) cada
+   poligono, linha lisa, arco e circulo e uma chamada separada a placa
+   de video; na luta eram 229 chamadas por quadro so no 2D. A faixa
+   zebrada (30 listras por tarja, desenhadas duas vezes), as barras de
+   vida, os cartoes dos socos, o medidor redondo, os aneis do farol e as
+   bordas da cortina agora saem em lotes: cerca de 65 chamadas. Na TV Box
+   cada chamada custa tempo do processador e do driver da Mali. A
+   aparencia e a mesma (bordas lisas feitas na propria geometria).
+2. A FAIXA ZEBRADA E UMA IMAGEM pintada uma vez na abertura do jogo, com
+   as bordas das listras lisas, desenhada uma vez por quadro por cima de
+   tudo.
+3. A SOMBRA REAL E O PRIMEIRO DEGRAU A SAIR. No modo compatibilidade a
+   luz principal com sombra desenha de novo, numa segunda passada, tudo
+   o que recebe luz (a lona inteira e o lutador), alem do mapa de sombra.
+   A SmartPro comeca sem ela (fica a sombra de contato embaixo do
+   lutador) e com o antisserrilhado ligado. Ordem nova dos degraus:
+     0 completo, 1 sem sombra real, 2 sem fachos, 3 sem luz do rosto,
+     4 sem luzes de recorte, 5 sem antisserrilhado (por ultimo, porque e
+     o que mais aparece).
+4. O LUTADOR COM METADE DA CONTA: a 30 quadros por segundo o corpo anda
+   numa fatia so por quadro (antes eram duas).
+5. RINGUE REDONDO: postes, protetores, cordas e almofadas com mais lados
+   (nao aparecem mais facetados em 1080p).
+6. A CENTRAL DIZ ONDE O TEMPO VAI. Depois de cada luta, na Central:
+     "ultima luta: X quadros por segundo"
+     "por quadro: logica A ms - placa de video 3D B ms + 2D C ms -
+      desenhos 3D D + 2D E"
+   Fotografe essas duas linhas: com elas da para saber se o que aperta e
+   o processador ou a placa de video da TV Box.
+
+O QUE A BUILD 205 MUDA (TROCA DE TELA E VELOCIDADE)
+---------------------------------------------------
+1. A CORTINA VEM ANTES DA TELA NOVA. Depois da foto o ringue aparecia e
+   so depois a cortina passava por cima. Agora a cortina entra primeiro;
+   no meio dela, com a tela toda coberta, o jogo troca para o ringue (e
+   o saco comeca a descer); a cortina sai e o ringue ja esta pronto. O
+   mesmo no START (abertura -> pose) e na volta do resultado para a
+   abertura. A faixa ficou mais larga: antes sobrava uma fresta de 100 px
+   no meio. O quadro mais pesado da troca (a arena 3D ligando) fica
+   escondido atras dela.
+2. GRAFICO DA ARENA EM DEGRAUS, AJUSTADO SOZINHO. O jogo mede cada luta
+   (quadros por segundo). Se ela ficou abaixo da meta (30 na SmartPro),
+   antes da luta seguinte ele tira UMA coisa, a que menos aparece:
+     0 completo
+     1 sem os fachos de luz e os flashes da plateia (comeco na SmartPro)
+     2 sem o antisserrilhado (MSAA)
+     3 sem a luz do rosto
+     4 sem a sombra real (fica a sombra de contato)
+     5 sem as luzes rosa e azul de recorte
+   Nunca troca no meio de uma luta. A Central mostra o degrau em uso
+   ("grafico da arena: degrau N") e a linha "ultima luta: X quadros por
+   segundo". Cada build nova recomeca do degrau inicial e reavalia.
+3. O FUNDO SO EM VOLTA DA ARENA. Na luta a arte do fundo era desenhada
+   inteira por baixo da arena (1,7 milhao de pixels por quadro que
+   ninguem via); agora so as faixas de cima e de baixo.
+4. O LUTADOR NO RELOGIO REAL ate 4 quadros por segundo (antes ate 7):
+   numa placa apertada ele nao fica mais em camera lenta.
+
+O QUE A BUILD 204 MUDA (IMAGEM NITIDA EM 1080p)
+-----------------------------------------------
+1. TUDO EM 1080p, SEMPRE. O jogo e desenhado em 1080x1920 (de pe) e a
+   arena 3D com 1080 de largura, seja qual for a tela que o Android
+   der. A build 203 baixava tudo para 720x1280 quando o Android rodava
+   em 720 linhas, e cartoes, letras e lutador saiam serrilhados. A
+   Central mostra o tamanho da janela que o Android deu ao jogo.
+2. LUTADOR NITIDO (BOTA, LUVAS, CABELO):
+   - antisserrilhado MSAA 4x de volta na arena: a borda do lutador, os
+     cadarcos da bota e as cordas sem escadinha. Na placa da TV Box ele
+     e resolvido dentro da propria placa de video (quase sem custo);
+   - malha inteira sempre (sem nivel de detalhe): a malha simplificada
+     embaralhava a cor pintada nos vertices e os cadarcos da bota viravam
+     um "xxxx" serrilhado;
+   - pele, relevo e cinturao do lutador em 2048 px (antes cortados para
+     1024) e filtro anisotropico 4x (a lona e o lutador nitidos de lado).
+3. A TORCIDA DE VERDADE. Atras do ringue, no lugar das tres fileiras de
+   torcida, corria uma faixa borrada que se mexia: cada fileira era UMA
+   pessoa esticada pela arquibancada inteira. Agora cada pessoa e um
+   quadro proprio (52, 40 e 30 por fileira), pulando, balancando e
+   levantando os bracos cada uma no seu ritmo.
+4. A FAIXA ZEBRADA NO LIMITE DA ARENA. As duas tarjas amarelas e pretas
+   (16 px, mais grossas) encostam exatamente na borda de cima e de baixo
+   da imagem da arena e sao desenhadas POR CIMA do clarao do golpe, da
+   rachadura e do K.O.: nunca mais ficam apagadas ou cobertas. Os cantos
+   amarelos soltos acima/abaixo delas sairam, e o logo do jogo no alto
+   cabe inteiro acima da faixa.
+5. MARCA LAZER & SPORT MAIOR na tela do jogador: no canto de baixo do
+   ringue, na contagem da foto e na classificacao ela tem 160 px de
+   altura e cor cheia (antes 90 px, meio transparente).
+
+O QUE A BUILD 203 MUDA (FEITA PARA A SMARTPRO PROSB-3000)
+--------------------------------------------------------
+A TV BOX: a Proeletronic SmartPro PROSB-3000 e Allwinner H313 (quatro
+Cortex-A53) com placa de video Mali-G31 MP2 e 2 GB de RAM (os lotes mais
+antigos vinham com RK3229 e Mali-400). A Mali-G31 MP2 e a placa OpenGL
+ES 3 mais fraca que existe, e a memoria dela e estreita. RAM a mais nao
+deixaria o jogo mais liso: quem desenha e a placa de video.
+
+1. PERFIL AUTOMATICO PELA PLACA DE VIDEO. Ao ligar, o jogo le o nome da
+   placa. Numa placa leve (Mali-G31, Mali-T7xx/T8xx, Mali-4xx, PowerVR
+   GE8xxx, Adreno 3xx/4xx):
+   - 30 quadros por segundo FIRMES (antes: 60 de meta, oscilando entre
+     20 e 45, que o olho le como travado);
+   - sem o brilho pos-processado (glow): no Godot 4.6 ele faz o 3D passar
+     por uma imagem intermediaria de alta precisao e varias copias
+     borradas a cada quadro; era o maior consumo de memoria de video.
+     Lutador, materiais, sombra, luzes de recorte, torcida e fachos ficam
+     iguais;
+   - menos particulas 3D e a camera da pose um pouco mais leve.
+   Placas melhores (Mali-G52/G57, Adreno, PowerVR 9) ficam com tudo.
+   A Central (segure OK) mostra o nome da placa e o perfil escolhido.
+2. SEM A ESCALA DINAMICA DA 202. Ela baixava o 3D ate 60% e o lutador
+   saia serrilhado e "quebrado". O 3D volta a ser desenhado inteiro.
+3. O JOGO NO TAMANHO REAL DA TELA. Muita TV Box roda o Android em
+   1280x720 mesmo ligada numa TV Full HD/4K: o jogo desenhava em
+   1080x1920 para o sistema reduzir depois. Agora, com tela de 720
+   linhas, desenha direto em 720x1280 (o desenho continua o mesmo,
+   reduzido na hora) e a arena 3D acompanha: 35% menos trabalho medido
+   no mesmo teste, imagem igual. Em 1080p e 4K nada muda.
+4. O SACO DESCE MESMO COM A PLACA RECONECTANDO. A descida so era pedida
+   se a placa do Arduino ja tivesse confirmado o motor NESTA conexao; se
+   o USB reconectava (o que acontece quando a TV Box engasga), a luta
+   comecava com o saco la em cima. Agora o pedido de descer sai do mesmo
+   jeito e o soco espera o tempo do curso. (Teste: confirmacao do motor
+   bloqueada, a descida saiu na entrada do ringue.)
+5. MENOS COISA EM CIMA DE COISA:
+   - os avisos tecnicos (sem camera, motor do saco, Arduino) aparecem so
+     na abertura; na pose, no ringue e no resultado a caixa cobria o
+     veredito e os cartoes dos socos. Tudo continua na Central;
+   - "A ULTIMA ABERTURA PAROU EM" saiu da tela do jogador (fica na
+     caixa-preta e na Central); no carregamento so aparece se a abertura
+     anterior travou no proprio carregamento;
+   - no ringue, embaixo de "SOQUE AGORA!" fica uma linha so (saiu
+     "acerte o alvo antes que ele te acerte" e o recorde da casa);
+   - na troca do 1o para o 2o soco o nome do nivel nao passa mais por
+     tras dos cartoes.
+
+O QUE A BUILD 202 MUDA (SEM CAMERA LENTA, MESMO GRAFICO)
+-------------------------------------------------------
+1. A "LENTIDAO EXTREMA" DO VIDEO ERA CAMERA LENTA. Quando a TV Box
+   demorava num quadro (mais de 0,1 s), o jogo so andava 0,1 s: com 2 a
+   4 quadros por segundo na luta, a contagem de 1 s levava 6, o lutador
+   mexia devagar e o pedido de descida do saco saia atrasado. Agora o
+   jogo anda no relogio de verdade ate 4 quadros por segundo; so um
+   quadro parado por mais de meio segundo (troca de janela do Android)
+   e ignorado.
+2. RESOLUCAO DINAMICA DO 3D, SEM TROCAR O GRAFICO. O jogo mede o proprio
+   ritmo e, se a TV Box apertar, desenha o 3D da arena com menos pixels
+   (100% -> 85% -> 72% -> 60%) e amplia: luzes, sombras, materiais,
+   brilho e efeitos continuam os mesmos. Um degrau por vez, no maximo a
+   cada 1,5 s, e volta a subir quando sobra folga. O degrau certo fica
+   gravado: na proxima vez que ligar a maquina ja comeca nele.
+3. NA TV 4K a tela final e desenhada em 1920x1080 e so ampliada no fim
+   (antes era desenhada em 3840x2160 a cada quadro, quatro vezes mais
+   pixels, para mostrar a mesma imagem).
+4. A LONA NAO E MAIS PALIDA: menos luz propria (0,62 -> 0,38) e mais luz
+   do refletor; o brilho (glow) fica so no que e luz de verdade (luvas,
+   LEDs, refletores) em vez de lavar a cena inteira.
+5. A CENTRAL (segure OK) mostra, em amarelo, como foi a ULTIMA LUTA:
+   quadros por segundo, pior quadro e a escala do 3D usada. Se ainda
+   sentir travar, abra a Central depois de uma luta e fotografe essa
+   linha.
+6. Conferido: partida inteira com o firmware V12 na ponte, rodada no
+   tempo real (55 s, antes 150 s no mesmo teste), sem erro de script.
+
+O QUE A BUILD 201 MUDA (LISA, SEM TRAVAR, E O PLACAR REDONDO)
+------------------------------------------------------------
+1. O JOGO TRAVAVA PORQUE A ARENA 3D PESAVA DEMAIS. Medido peca por peca,
+   desligando uma de cada vez:
+   - o antisserrilhado MSAA da arena era 40% do tempo de desenho dela
+     (desenha cada pixel duas vezes e copia a imagem inteira a cada
+     quadro): saiu. Na resolucao cheia a borda do lutador ja sai limpa;
+   - as tres luzes coloridas (rosa, azul e a do rosto) redesenhavam a
+     lona, o fundo, a torcida e o ringue inteiro a cada quadro: agora so
+     o lutador as recebe (o efeito no corpo e o mesmo);
+   - a sombra cobria 9 m num mapa de 4096; agora 6 m num mapa de 2048:
+     custa um quarto e sai MAIS nitida no corpo do lutador (cabeca no
+     pescoco, bracos no peito);
+   - os fachos de luz desenham so a face da frente, com o dobro da
+     forca: o mesmo brilho pela metade dos pixels.
+   Resultado medido: o quadro da arena ficou cerca de 11 vezes mais leve
+   (de ~3,7 s para ~0,34 s no medidor de software; na TV Box isso e o
+   que separa o tranco do quadro liso). Os comandos do motor (descida e
+   subida do saco) saem no comeco de cada quadro: com o quadro leve, saem
+   na hora.
+2. CICLO DE VIDA CONFERIDO: partida inteira medida a cada 2 s. Numero de
+   nos e de objetos fica constante do comeco ao fim (302 nos, nenhum no
+   orfao), sem nada antigo vivo por baixo. A tela de carregamento e
+   apagada da memoria ao sumir.
+3. O PLACAR DO SOCO E UM MOSTRADOR REDONDO, a esquerda, sobre a torcida
+   (o meio da tela e do lutador): arco de 270 graus com gomos que acendem
+   ate a forca do soco e a ponta brilhando. O NUMERO CONTA DE 0 ATE A
+   NOTA CRESCENDO (1,1 s) e, quando assenta, da um tranco para fora com
+   uma onda saindo do anel. Durante a leitura do sensor o anel gira em
+   ciano.
+4. OS CARTOES DOS DOIS SOCOS VIRARAM PILULAS: a pontuacao mora num anel
+   a esquerda que enche na cor do nivel e conta subindo quando o soco
+   chega; a direita, SOCO 1/2, o nome do nivel e os pontos. O que espera
+   o soco tem o anel girando e a luva pulsando; o melhor ganha o selo
+   MELHOR.
+5. A cortina da troca de tela ficou numa cor so (roxo escuro), sem o
+   "card rosa".
+
+O QUE A VERSAO PRO TEM
+----------------------
+- Tudo da S905L build 114: motor sempre funcionando depois de religar,
+  saco 1,8 s, modo livre de fabrica, foto no START, saco desce so na
+  entrada do ringue, sobe depois dos dois socos ou no nocaute, quem perde
+  a luta nao comemora, mesma Central (segure OK) e o mesmo Arduino
+  (firmware V12 na pasta ARDUINO_SENSOR_DE_FEIXE_LM393).
+- Lutador: bermuda colada ao corpo (7 mm da coxa, quadril sem estufar,
+  barra vermelha justa e faixa lateral), luvas e botas de couro com
+  verniz, placa do cinturao em metal dourado, pele com relevo, suor e
+  luz atravessando, sombra de verdade do lutador na lona e no proprio
+  corpo, luz no rosto.
+- Arena de ponta a ponta na largura da tela: trelica com refletores,
+  fachos de luz, faixas laterais, cordas acolchoadas, poeira no ar,
+  neblina, brilho (glow) e tom de cinema, 60 quadros por segundo.
+- Placares dos socos em cartoes de vidro (numero grande, nivel na cor,
+  barra de forca, "SOQUE!" piscando na vez).
+- Classificacao maior: TOP 20 da abertura com linhas altas e foto de
+  160 px; tabela do fim com foto de 140 px e nota grande.
+
+GERAR O APK (SEMPRE ASSIM: PC -> PENDRIVE -> TV BOX)
+---------------------------------------------------
+1. Extraia as duas partes do zip na MESMA pasta nova.
+2. Rode GERAR_APK_AGORA.bat. Precisa do Godot 4.6.1 (o .exe em
+   Downloads ou Desktop), do Java 17 e do SDK Android em C:\AndroidSdk.
+   Os Export Templates 4.6.1 sao baixados sozinhos na primeira vez.
+3. O APK sai em build\android\SuperBoxingPRO.apk. Copie para o pendrive
+   e instale na TV Box pelo gerenciador de arquivos.
+Na tela de abertura, no rodape, aparece "BUILD 200 - 4.6 PRO".
+Se a TV Box so tiver OpenGL ES 2.0, o jogo avisa e fecha: use a S905L.
+
+====================================================================
+REFERENCIA: O RESTO E IGUAL A VERSAO S905L (MESMO ARDUINO, MESMA
+MONTAGEM, MESMO MOTOR, MESMA CENTRAL). Historico das builds:
+====================================================================
+
+O QUE A BUILD 114 MUDA (BERMUDA COLADA AO CORPO)
+------------------------------------------------
+- A bermuda da 113 ainda ficava folgada (2 cm da coxa) e estufava no
+  quadril. Agora e colada ao corpo: 7 mm da coxa e, abaixo do cinturao,
+  o quadril aperta e fica rente a pele. A barra vermelha continua justa
+  em cada perna e a faixa lateral aparece de frente.
+
+O QUE A BUILD 113 MUDA (BERMUDA E COMEMORACAO)
+----------------------------------------------
+- BERMUDA DE PERNAS RETAS. O calcao antigo tinha o gancho na altura da
+  barra: as duas pernas ficavam emendadas ate embaixo e, com o lutador em
+  guarda, o pano entre as coxas abria como saia ("boca aberta"). Agora o
+  calcao e uma bermuda de verdade: cada perna e um tubo reto em volta da
+  coxa (2 cm de folga), o gancho fica no lugar, a barra vermelha fica
+  justa em cada perna e a faixa lateral vermelha com vivo branco aparece
+  de frente. A malha foi refeita pelo tools/refazer_calcao.py (o resto do
+  lutador nao muda).
+- QUEM PERDE NAO COMEMORA. Quando o jogador derrubava o lutador na rodada
+  ("nocaute") e ele levantava, o lutador comemorava como se tivesse
+  ganhado. Agora, derrubado ou batido forte (soco alto), ele fica zonzo,
+  de cabeca baixa. So comemora quando ganha a luta.
+- A build 112 (motor sempre funcionando) continua igual.
+
+O QUE A BUILD 112 CORRIGE (O MOTOR PAROU DEPOIS DE RELIGAR A MAQUINA)
+----------------------------------------------------------------------
+- SEM SUBIDA FORCADA AO LIGAR. A build 111 mandava, na primeira tela da
+  ficha depois de ligar, a subida do curso INTEIRO (1,8 s) mesmo com o
+  saco ja em cima: o motor puxava contra o batente toda vez que a maquina
+  era ligada. Isso pode queimar o FUSIVEL da fonte do motor (ou embolar a
+  corda no rolo). Agora a tela da ficha manda so o SUBIR normal: a placa
+  anda apenas o que falta. Faltou luz com o saco no meio? A placa guarda
+  na memoria onde ele estava e, ao ligar, sobe sozinha so o que falta.
+- O MOTOR SEMPRE COMECA LIGADO. Desligar na Central vale so ate desligar
+  a maquina (um toque esquecido nao deixa o saco parado no dia seguinte).
+- O motor anda mesmo se a placa nao se apresentar (a linha SACO que o
+  firmware V10/V12 manda o tempo todo ja basta).
+- Se o motor nao puder andar, a tela da ficha mostra um PAINEL VERMELHO
+  GRANDE com o motivo e o que fazer.
+- O firmware NAO muda: continue com o V12 (ou o V10) que ja esta gravado.
+
+SE O MOTOR CONTINUAR PARADO DEPOIS DE ATUALIZAR (o problema e na ligacao):
+  1. Desligue tudo. Confira o FUSIVEL entre a fonte e o B+ da ponte H
+     (BTS7960). Queimado? Troque (mesmo valor) - foi a subida forcada.
+  2. Confira se a fonte do motor liga (LED/tensao) e os fios B+/B- e
+     M+/M- bem apertados nos bornes; o motor livre (saco nao travado em
+     cima, corda nao embolada no rolo).
+  3. TESTE SEM O JOGO: segure o START e ligue o Arduino (ou aperte o
+     reset do Nano segurando START por 2 s). O saco deve DESCER 1,5 s e
+     SUBIR. Desceu e subiu = a ligacao esta boa; o jogo da build 112 vai
+     mover o motor. Nao mexeu = o defeito e na ligacao/fonte/fusivel/ponte.
+
+O QUE A BUILD 111 MUDOU (BASE: A 110d, QUE FUNCIONOU) - FIRMWARE V12
+--------------------------------------------------------------------
+- A ligacao e a logica do motor sao as MESMAS da 110d / firmware V10
+  (a V11 foi descartada). O firmware V12 e o V10 com duas coisas a mais.
+- TEMPO PADRAO 1,8 s para descer e 1,8 s para subir (ajusta na Central,
+  aba SACO). Quem atualiza vem com 1,8 s uma vez; depois vale o ajuste.
+- A TELA DA FICHA SEMPRE MANDA SUBIR. Toda vez que o jogo volta para a
+  tela inicial (ficha / START), sai o comando de subir (a placa anda so
+  o que falta).
+- (Build 111 apenas: subida inteira forcada ao ligar. RETIRADA na build
+  112 - forcava o motor contra o batente.)
+- MODO LIVRE DE FABRICA (sem ficha). Para cobrar, toque em 1 FICHA na
+  Central. Quem atualiza passa para LIVRE uma vez.
+
+GRAVAR O V12: ARDUINO_SENSOR_DE_FEIXE_LM393.ino, mesmos fios do V10
+(D9 RPWM, D10 LPWM, R_EN/L_EN/VCC no 5V, GND). A placa responde
+READY,PUNCH_OPTICAL,V12-MH-LM393.
+
+O QUE A BUILD 110 CORRIGIU (FIRMWARE V10, AGORA V12)
+-----------------------------------------------------------
+ATENCAO - SEM O FIRMWARE V10 O MOTOR NAO ANDA. O V9 (e anteriores) ainda
+usa o sensor de cima: com ele no Arduino o jogo NAO mexe no motor e o
+rodape da tela diz "FIRMWARE ANTIGO NO ARDUINO - GRAVE O V10". Grave o
+ARDUINO_SENSOR_DE_FEIXE_LM393.ino (V10) com o saco ENROLADO EM CIMA.
+
+SE SO UM SENTIDO ANDA (so sobe, ou so desce, e trocando M+/M- o sentido
+que anda inverte): grave o ARDUINO_SENSOR_DE_FEIXE_LM393\TESTE_SOBE_DESCE
+e olhe o saco (desce 2 s, sobe 2 s, em laco, sem jogo). Se so um sentido
+andar nele tambem, um dos fios de comando nao chega na ponte H: RPWM->D9,
+LPWM->D10, R_EN e L_EN->5V, VCC->5V, GND comum (o texto do teste explica).
+Os dois sentidos andando no teste: grave o V10 e jogue.
+
+O SACO, SO ISSO: 2 s para descer e 2 s para subir (padrao; ajusta na
+Central, aba SACO). Fora da partida: em cima. START -> foto -> entra a
+cena do RINGUE e SO ENTAO o saco desce (2 s) -> com ele embaixo o soco
+vale -> soco 1, soco 2 -> sobe (2 s). Nocaute: sobe na hora. Soco dado
+enquanto o saco ainda desce nao conta.
+
+1. O JOGO PARAVA ("o app parou") - ERA O PLUGIN USB DO ARDUINO.
+   Ele lia a USB sem tempo limite e fechava a porta com a leitura ainda
+   presa: crash nativo (usb_request_wait) toda vez que o Arduino sumia e
+   voltava - e o tranco do motor reinicia a USB do Nano. Acontecia ate na
+   abertura (o jogo abria e fechava a porta para testar a permissao).
+   Agora o Arduino fala por um plugin novo (PunchSerialSeguro, em Java):
+   le com tempo limite e so fecha a porta depois que a leitura sai. E o
+   mesmo conserto do Dragon Bowling (build 5). A camera continua no
+   plugin de antes.
+
+2. "NAO CONSIGO NEM INSTALAR" - ERA A ASSINATURA DO APK.
+   Cada PC criava a sua propria chave para assinar o APK: um APK gerado
+   em outro PC (ou depois de a chave sumir) tinha OUTRA assinatura, e o
+   Android recusa instalar por cima ("App nao instalado"). Agora a chave
+   fica DENTRO do projeto (tools\gerar_apk\superboxing.keystore): o APK
+   sai com a mesma assinatura em qualquer PC, para sempre.
+   INSTALAR: o INSTALAR_NA_TVBOX.bat percebe a assinatura antiga,
+   desinstala o jogo velho UMA vez e instala o novo (o ranking e as
+   fotos do jogo velho sao apagados nessa troca). Pelo pendrive:
+   desinstale o Super Boxing antigo UMA vez antes de instalar a 110.
+   Da 110 em diante, sempre por cima.
+
+3. O SACO SEM SENSOR - SO POR TEMPO (firmware V10).
+   O sensor de fim de curso de cima saiu (o D11 fica livre). A placa sabe
+   onde o saco esta a todo momento pelo tempo: DESCIDA = tempo do curso
+   inteiro para baixo, SUBIDA = o inverso (tempo do curso inteiro para
+   cima). Descer anda so o que falta, subir anda so o que desceu - parar
+   ou inverter no meio nao estraga a conta. A posicao fica guardada na
+   EEPROM; faltou luz, ao religar ela recolhe o saco sem forcar o topo.
+   Central, aba SACO: DESCIDA, SUBIDA, PAUSA; ESTA EM CIMA (zera a conta);
+   AJUSTE SOBE / AJUSTE DESCE (toque de 0,2 s que nao mexe na conta).
+   PRIMEIRA VEZ: enrole o saco em cima ANTES de gravar o V10 e siga o
+   ARDUINO_SENSOR_DE_FEIXE_LM393\LEIA_LIGACOES.txt (PRIMEIRA VEZ COM O V10).
+
+4. A PARTIDA COM VALIDACAO EM CADA PASSO (o "ciclo do saco"):
+   fora da partida o saco fica EM CIMA (o jogo confere a cada 6 s) ->
+   START: o jogo manda subir e so conta 3-2-1 com a placa CONFIRMANDO em
+   cima -> FOTO -> confere EM CIMA de novo -> DESCE -> o soco so e liberado
+   com a placa CONFIRMANDO embaixo e o saco assentado -> SOCO 1 -> SOCO 2
+   -> SOBE. NOCAUTE do jogador: sobe na hora. Tempo esgotado ou rodada
+   cancelada: sobe. Se o saco sair de baixo no meio da partida (a placa
+   religou), o relogio do soco PARA ate ele voltar. Sem a confirmacao da
+   placa no tempo, a rodada NAO segue as cegas: o credito volta e a tela
+   diz o motivo. A Central (aba SACO) mostra o ciclo e a posicao em %.
+   Conferido com o firmware V10 de verdade rodando no simulador do
+   Arduino ligado ao jogo: 2 rodadas completas e 1 com nocaute.
+
+5. CLASSIFICACAO MAIOR: as linhas do TOP 20 (fim da partida e abertura)
+   ficaram mais altas, com numero, foto, nivel e pontos maiores.
+
+O QUE A BUILD 109 CORRIGIU (FIRMWARE V9)
+-----------------------------------------------------------
+DIAGRAMAS NOVOS (na pasta docs):
+- MONTAGEM_0_LIGACAO_COMPLETA_DO_MOTOR.png: tudo o que liga no Nano para
+  o motor, fio por fio (ponte H BT_2, fonte, motor, sensor de cima, 100k,
+  botoes, USB da TV Box).
+- MONTAGEM_6_TESTE_DO_MOTOR_PASSO_A_PASSO.png: o que fazer, em ordem,
+  quando o motor nao anda (autoteste, multimetro, botao TESTE).
+
+O MOTOR SERVE PARA AS DUAS LIGACOES (firmware V9):
+- Ate o V5 a ponte H era no D7 (RPWM) e no D8 (LPWM). Do V6 em diante e
+  no D9/D10. Quem ligou pela tabela antiga e gravou o firmware novo
+  ficava com o motor MORTO e "nada acontecia" nem na Central. Agora a
+  placa manda nos dois pares ao mesmo tempo (D9/D10 com velocidade,
+  D7/D8 em velocidade cheia): funciona com qualquer uma das ligacoes.
+
+AUTOTESTE SEM JOGO:
+- Fonte do motor ligada, SEGURE O BOTAO START e ligue o Arduino (ou
+  aperte o RESET do Nano), segurando uns 3 s. O LED "L" pisca e o motor
+  DESCE 1,5 s, para e SOBE ate 1,5 s. Nao depende do jogo, da TV Box nem
+  da comunicacao. Nao mexeu = defeito de fio ou de fonte (veja a folha
+  MONTAGEM_6, passo 3, com o multimetro).
+
+BOTAO TESTE NA CENTRAL (aba SACO):
+- O mesmo teste, pelo jogo. A caixa ONDE O SACO ESTA mostra agora a
+  versao do firmware, quantas respostas do motor chegaram e ha quanto
+  tempo: "respostas 0" = o jogo nao esta falando com a placa.
+
+O QUE A BUILD 108 CORRIGIU (FIRMWARE V8)
+-----------------------------------------------------------
+GRAVE O V8 NO NANO: ARDUINO_SENSOR_DE_FEIXE_LM393\ARDUINO_SENSOR_DE_FEIXE_LM393.ino
+(Placa "Arduino Nano", processador "ATmega328P" ou "ATmega328P (Old
+Bootloader)"). Com firmware antigo a Central e a abertura avisam:
+"FIRMWARE ANTIGO NO ARDUINO (Vx)".
+
+O MOTOR ANDA SEMPRE (firmware V8):
+- A placa vigia o sensor de cima. Se ele fica preso em "chegou" (era o
+  que deixava o motor MORTO: a placa achava que o saco ja estava em cima
+  e recusava subir) ou se ele nunca ve o saco, a placa percebe sozinha e
+  passa a SUBIR PELO TEMPO DE CURSO. Arrumou o sensor: volta ao normal.
+- A placa lembra (EEPROM) onde o saco ficou: ao ligar, se ele nao estava
+  em cima, ela o recolhe sozinha - antes mesmo do jogo abrir.
+- Na abertura o jogo confere a cada 15 s se o saco segue recolhido e,
+  se nao, manda subir (saco baixado na mao, fonte do motor ligada depois).
+
+POR QUE O MOTOR NAO ANDA - AGORA A MAQUINA DIZ:
+- Central (botao MENU) -> aba SACO -> caixa "DIAGNOSTICO - POR QUE O
+  MOTOR NAO ANDA": mostra o motivo e o que conferir. O mesmo motivo
+  aparece no rodape da abertura ("MOTOR DO SACO: ...").
+- "MOTOR OK - A PLACA ESTA MANDANDO" e o saco parado = a placa esta
+  ligando as saidas: o defeito e de ligacao/fonte (R_EN e L_EN no 5V,
+  GND comum, fonte do motor em B+/B-, D9->RPWM, D10->LPWM).
+
+O MOTOR "MORTO" - as duas causas achadas:
+- Os botoes SUBIR/DESCER da Central (aba SACO) nao mandavam nada quando
+  o jogo ACHAVA que o saco ja estava la (ex.: SUBIR com o saco baixado
+  na mao). Agora o botao SEMPRE manda o comando, e a placa responde onde
+  o saco esta de verdade.
+- Firmware V6: se a subida durasse o tempo de curso inteiro sem o sensor
+  de cima ver o saco (curso curto, fonte do motor desligada, sensor
+  desalinhado), a placa TRAVAVA a subida para sempre - so o PARAR da
+  Central soltava. O V7/V8 nao trava: para, avisa, e tenta de novo no
+  proximo pedido. A subida ganhou folga de tempo (curso + 50%, no
+  minimo + 1,5 s), porque quem para a subida e o sensor.
+- V7/V8: quem diz se o saco esta em cima e o SENSOR, nao a memoria da
+  placa. Saco baixado na mao + SOBE = o motor sobe.
+
+O FLUXO DA PARTIDA (fora da partida = ENROLADO; na partida = DESCE):
+1. Aperta START.
+2. O jogo confere o sensor de cima. Viu o saco: segue. NAO viu: manda
+   SUBIR e a tela mostra "AGUARDE: RECOLHENDO O SACO" ate ele chegar.
+3. Contagem 3-2-1 e FOTO (com o saco em cima, fora do quadro).
+4. Depois da foto o saco DESCE. O sino ("pode bater") espera ele chegar.
+5. Acabou a rodada: o saco SOBE e fica enrolado ate o proximo START.
+
+SE AINDA ASSIM O MOTOR NAO ANDAR, a tela agora diz o motivo:
+- "SENSOR DE CIMA ACUSA O SACO COM ELE EMBAIXO": o D11 esta lendo
+  "chegou" sempre (fio OUT solto do D11, sensor sem 5V, ou ele esta vendo
+  outra coisa perto). Com isso a placa recusa toda subida (protecao).
+  Na Central, aba SACO, "sensor de CIMA" deve mudar quando voce poe a mao
+  na frente do sensor.
+- "SUBIU O TEMPO TODO E O SENSOR DE CIMA NAO VIU O SACO": aumente o
+  TEMPO DE CURSO na Central ou aproxime/regule o sensor (trimpot).
+- "MOTOR NAO RESPONDEU": a placa nao respondeu ao comando - firmware
+  antigo (grave o V8) ou Arduino desconectado.
+- Nada na tela e o motor parado: confira R_EN e L_EN no 5V, o GND comum,
+  a fonte do motor ligada em B+/B-, e D9->RPWM, D10->LPWM. Teste sem o
+  jogo com TESTE_PONTE_H.ino (comandos s, d, p).
+
+O QUE A BUILD 107 CORRIGIU
+---------------------------------------------------------------
+O SACO SO DESCE NA PARTIDA, E SO DEPOIS DA FOTO:
+- Fora da partida o saco fica ENROLADO em cima. Ao ligar a maquina a
+  placa recolhe o saco sozinha (1,5 s depois de ligar, mesmo antes do
+  jogo abrir), e o jogo pede "em cima" de novo assim que acha a placa,
+  quando a placa religa, ao voltar para a abertura e ao fechar a Central.
+- START -> contagem 3-2-1 -> FOTO -> so ENTAO o saco desce. O "pode
+  bater" (sino) espera o saco chegar embaixo e parar (com teto: curso
+  + 2,5 s). Acabou a rodada -> o saco sobe.
+- O MOTOR VINHA DESLIGADO DE FABRICA na Central (aba SACO). Com tudo
+  ligado, o jogo nunca mandava o motor andar ate alguem achar essa
+  chave. Agora vem LIGADO (e uma configuracao antiga e corrigida uma vez).
+- Ao ligar, se a placa demorava a conectar, o jogo "desistia" do pedido
+  de subir antes de mandar o primeiro comando. Agora o relogio da
+  desistencia so comeca quando o pedido sai de verdade.
+ARDUINO AUTORIZADO UMA VEZ SO:
+- Na primeira vez a janela do Android pergunta: MARQUE "USAR POR PADRAO
+  PARA ESTE DISPOSITIVO USB" e toque OK. Com a caixa marcada, o Android
+  da a permissao sozinho para sempre (no boot e quando a placa reconecta).
+- Se a placa reconecta no meio do jogo (o tranco do motor pode reiniciar
+  a USB do Nano), o jogo agora ESPERA o Android devolver a permissao (ate
+  12 s) em vez de abrir a janela na hora.
+- Se a janela continuar aparecendo a cada boot: a caixa nao foi marcada.
+  Abra Configuracoes > Apps > Super Boxing > "Limpar padroes", reabra o
+  jogo e marque a caixa. Outro aplicativo que tambem use Arduino na mesma
+  TV Box pode "roubar" o padrao: limpe os padroes dele tambem.
+- Motor e Arduino: use fonte SEPARADA para o motor (B+/B-), una so os
+  GND, e se possivel um capacitor de 100 nF nos terminais do motor e
+  ferrite no cabo USB. Isso evita que o tranco do motor derrube a USB.
+
+O QUE A BUILD 106 MUDOU (FIRMWARE V6)
+-------------------------------------------------------
+MOTOR DO SACO COM VELOCIDADE. A ponte H e a BTS7960 "BT_2" (IBT-2). O
+motor so faz tres coisas: sobe, desce e velocidade.
+- RPWM -> D9 (DESCE) e LPWM -> D10 (SOBE). O pulso nesses dois fios e a
+  velocidade (PWM de 20 kHz, sem chiado), com partida em rampa.
+- R_EN, L_EN e VCC da ponte no 5V do Nano; GND no GND. R_IS/L_IS livres.
+- O botao CONFIG mudou para o D12 (o D9 agora e da ponte H).
+- Central, aba SACO, secao nova VELOCIDADE DO MOTOR: SUBIDA (80%) e
+  DESCIDA (60%), de 10 em 10%. Fica gravado e vai para a placa.
+- SO O FIM DE CURSO DE CIMA (o sensor infravermelho no D11). Embaixo nao
+  ha sensor: a descida termina pelo tempo de curso.
+- Corrigido: com o saco subindo, um DESCER era ignorado ate ele chegar em
+  cima. Agora o saco para e desce na hora (com a pausa de inversao).
+Desenhos: docs\MONTAGEM_4_PONTE_H_COMPLETA.png (a placa BT_2 e o conector
+2x4) e docs\MONTAGEM_1/2/3/5.
+
+O QUE A BUILD 105 CORRIGIU
+---------------------------------------------------------
+Arquivo: ARDUINO_SENSOR_DE_FEIXE_LM393\ARDUINO_SENSOR_DE_FEIXE_LM393.ino
+Montagem: docs\MONTAGEM_1_MAPA_DO_ARDUINO_NANO.png (o que vai em cada pino),
+          docs\MONTAGEM_2_LIGACOES_POR_PARTE.png (sensor, botoes, ponte H,
+          fins de curso, fitas, USB), docs\MONTAGEM_3_MECANICA.png e
+          docs\MONTAGEM_4_PONTE_H_COMPLETA.png (ponte H pino por pino) e
+          docs\MONTAGEM_5_SENSOR_FIM_DE_CURSO_IR.png (sensor de cima)
+
+O SENSOR DE FEIXE "NAO FUNCIONAVA" por tres motivos:
+- O MOTOR GASTAVA O SOCO. O saco desce na contagem e o jogo arma o
+  sensor logo depois. A palheta passando pela fenda empurrada pelo motor
+  virava o soco (ou "soco fraco") antes de o jogador bater. Agora o
+  feixe fica surdo enquanto o motor anda e mais 0,9 s depois.
+- O "LIVRE" DO FEIXE ERA MEDIDO UMA VEZ SO, ao ligar. Se a palheta
+  estivesse na fenda nessa hora, a placa media ao contrario e nenhum soco
+  valia. Agora o nivel que fica parado 1,5 s e o livre, sempre.
+- O DIAGRAMA ANTIGO tinha os fios do DO/AO e dos botoes START/CREDITO na
+  mesma linha: dava para ligar o DO no D2. O diagrama novo tem cada fio
+  no seu caminho. CONFIRA: DO do sensor no D4.
+  Use sensor de FENDA ou infravermelho. LDR (fotoresistor) com laser e
+  lento demais para medir um soco.
+
+TODO O CODIGO ARDUINO FICA EM ARDUINO_SENSOR_DE_FEIXE_LM393: um firmware so
+(feixe, botoes, LEDs, PONTE H do motor do saco e fins de curso) e dois
+testes sem o jogo, nas subpastas TESTE_FEIXE e TESTE_PONTE_H (veja
+docs\TESTE_DO_SENSOR.md). A pasta "arduino" antiga (sensor MPU-6050, que
+esta maquina nao usa mais) saiu: apague-a da pasta do PC se ela estiver la.
+
+FIM DE CURSO DE CIMA (obrigatorio com "FINS DE CURSO: SIM"):
+- SENSOR INFRAVERMELHO de 3 pinos (firmware V5): VCC no 5V, GND no GND,
+  OUT no D11 e um RESISTOR DE 100k do D11 ao GND (no borne do Nano).
+  Um ALVO BRANCO colado no braco do saco; o sensor ve o alvo 5 a 10 mm
+  antes do batente e o motor e cortado NA HORA pela interrupcao do pino.
+  Desenho: docs\MONTAGEM_5_SENSOR_FIM_DE_CURSO_IR.png.
+- Fio OUT solto ou sensor sem 5V = o resistor puxa para "chegou" = o saco
+  NAO sobe (falha segura: nunca fica forcando o topo).
+- Se subir o tempo de curso inteiro sem o sensor ver o alvo (sensor sem
+  GND, desregulado), a placa corta e TRAVA a subida ("SUBIDA TRAVADA" na
+  aba SACO). Regule o sensor e aperte PARAR para destravar.
+- Na aba SACO aparece "chave de CIMA: ACIONADA/LIVRE": ponha a mao na
+  frente do sensor para testar a fiacao sem ligar o motor.
+- O sensor de cima funciona igual com o firmware V6 (build 106).
+
+O QUE A BUILD 104 CORRIGE
+-------------------------
+O LAUNCHER CAINDO ("LongLauncher parou"). A camera nao "quebra" o
+launcher: na build 102 ela ja abria e transmitia e o launcher ficava de
+pe. A causa mais provavel e FALTA DE MEMORIA: numa placa de 1 GB,
+quando a memoria livre cai, o Android fecha primeiro o que esta em
+segundo plano - e o launcher e o primeiro da fila. A 103 somou a imagem
+da camera entrando no jogo, sons e torcida novos. A caixa-preta abaixo
+confirma (ou desmente) isso na propria placa.
+- ~50 MB A MENOS de memoria: as letras grandes ocupavam 12 imagens de
+  2 MB (agora 7); o logo da casa de 1280 px era carregado so para saber
+  que existia (4 MB); logo, FIGHT! e NEVER GIVE UP! do tamanho em que
+  aparecem. Nada muda na tela.
+- CAMERA LEVE: a imagem vem em 320x240 no resto do tempo e em 640x480 so
+  na janela da foto (4x menos memoria e trabalho). A foto do ranking
+  continua sendo tirada na resolucao cheia.
+- CAIXA-PRETA NA TELA: o jogo grava, a cada 6 segundos, quanto de memoria
+  o Android tem livre, o menor valor da sessao, o limite em que ele
+  comeca a fechar o launcher, quantos avisos de memoria deu, a tela e a
+  camera. Na abertura seguinte isso aparece no quadro "SESSAO ANTERIOR
+  (CAIXA-PRETA)" da tela de carregamento, com os ultimos erros que o
+  Android registrou do jogo; e fica tambem na Central > CAMERA E SOM.
+  Se o launcher cair de novo: desligue e ligue o jogo e FOTOGRAFE esse
+  quadro. Ele diz se foi memoria (livre perto do limite, avisos) ou outra
+  coisa (os erros em vermelho). Sem cabo, sem ADB.
+  (Com as maquinas aprovadas, scripts\perfil.gd DIAGNOSTICO_NA_TELA =
+  false esconde o quadro; a gravacao continua.)
+
+O QUE A BUILD 103 CORRIGE
+-------------------------
+- CAMERA: a webcam transmitia (a Central mostrava "QUADROS: aceitos 964")
+  mas o jogo ficava em "SEM IMAGEM". O Godot 3 nao recebe o quadro no
+  formato em que o plugin USB o entrega; um plugin novo e pequeno
+  (android\plugins\PunchQuadros) faz a ponte. O GERAR_APK confere que ele
+  entrou no APK.
+- MUSICA E START SEM SOM: nao estavam mudos - eram quase so GRAVE, e
+  alto-falante de TV nao toca grave. A musica da abertura, o START, o
+  soco, o GO, a queda e as vozes de nivel foram tratados para TV (o grave
+  vira harmonicos que a TV toca; tools\ajustar_som_tv.py), e a musica
+  subiu 6 dB.
+- TORCIDA DA VITORIA: agora e a gravacao enviada (sem os gritinhos). A
+  mesma gravacao faz as torcidas do ranking e o incentivo durante a luta.
+- GINASIO DURANTE A LUTA: um som ambiente de torcida em laco toca do
+  START ate o fim da rodada.
+- FAIXAS VERTICAIS NA TORCIDA: as imagens da torcida (com transparencia)
+  eram rebaixadas para 16 tons por canal na placa de video; agora vao sem
+  compressao, e o degrade dos refletores nao vira mais faixas.
+- CONTORNO PONTILHADO DO LUTADOR: o recorte de luz na borda do cabelo,
+  ombros e luvas virava um pontilhado branco na TV Box; ficou discreto.
+
+O QUE A BUILD 102 TROUXE
+------------------------
+- A 98 A 101 CAIAM (o jogo e o LongLauncher, o launcher da TV Box) logo
+  depois do carregamento. As causas encontradas, todas desde a 98, quando
+  a camera passou a funcionar:
+  * a CAMERA era fechada e reaberta a cada poucos segundos quando falhava
+    (mexendo no driver USB da webcam o tempo todo). Agora so reabre na
+    tela de espera, no maximo a cada 30 s e no maximo 3 vezes, e so
+    quando e a camera do sistema que recusou. Ela tambem acorda 15 s
+    depois da abertura, longe do pico de memoria do carregamento;
+  * as FOTOS DO RANKING eram abertas todas ao mesmo tempo na abertura do
+    jogo (uma linha de processamento por foto, em 640 px). Agora sao
+    abertas uma por vez, em 128 px (o tamanho da tabela), e as novas sao
+    gravadas em 320 px. A leitura delas tambem tinha o mesmo erro de
+    comando do Godot 4 que a camera tinha - corrigido.
+- Menos memoria: a tela vertical do jogo nao reserva mais um buffer 3D
+  de 1080x1920 (o 3D da arena tem a janela propria).
+- Se ainda cair: ao abrir de novo, a faixa amarela "A ULTIMA ABERTURA
+  PAROU EM: ..." (embaixo, na tela de carregamento e na tela de espera)
+  diz a etapa exata. Tire uma foto dela e mande.
+- docs\CONVERTER_PARA_TVBOX_S905L.md: o passo a passo para converter os
+  proximos jogos para esta placa.
+
+O QUE A BUILD 100 TROUXE
+------------------------
+- A 98 E A 99 CAIAM EM 99% DO CARREGAMENTO (tela cinza, "o launcher
+  falhou" - o launcher e o proprio jogo, que e a tela inicial da TV Box).
+  Era o visual novo, desenhado pela primeira vez nesse instante. Esta
+  build desenha EXATAMENTE como a 97, que rodava na placa: o visual novo
+  ficou desligado (scripts\perfil.gd, VISUAL_NOVO = false).
+- Mantido tudo o que a 98 trouxe e nao mexe no desenho: camera sempre
+  abrindo, permissoes UMA VEZ SO (camera, Arduino/USB serial e webcam),
+  tela cheia sem borda.
+- LUTADOR: a luva e a bota esquerdas eram desenhadas do avesso (defeito
+  do modelo 3D); agora aparece a face de fora, com a luz certa.
+- TORCIDA SEM CORTES: cada fileira tem o encosto da arquibancada na
+  frente e o publico fica sentado atras dele (antes cada pessoa era uma
+  barra que terminava num corte reto). Quem pula nao perde mais a cabeca
+  na borda, nao ha mais listras nem linhas entre as pessoas, e o balanco
+  e liso na placa de video da S905L.
+
+O QUE A BUILD 99 TROUXE
+-----------------------
+- A 98 NAO RODAVA NA TV BOX. A placa de video da S905L (Mali-450) nao
+  deforma o corpo do lutador sozinha: o Godot 3 faz isso no processador,
+  e nesse modo as pecas sem "tangente" (luvas, botas, cabelo, calcao)
+  sumiam com o sombreamento novo. Corrigido: so a pele usa esse dado.
+  Nesse modo tambem nao ha expressao no rosto, e o jogo tentava mexer
+  nelas a cada quadro, enchendo o sistema de erro (vinha desde a 93).
+- MODO SEGURO AUTOMATICO: o visual novo (lutador com luz de palco,
+  torcida lisa, arena mais nitida) e tentado na abertura. Se a TV Box
+  cair na abertura ou no primeiro minuto e meio de jogo, na abertura
+  seguinte o jogo volta SOZINHO para o desenho da build 97 (que rodava)
+  e nao tenta mais. No rodape da tela de carregamento aparece
+  "VISUAL SEGURO" quando isso acontecer - avise se aparecer.
+  Camera, permissoes e tela cheia sao as mesmas nos dois modos.
+  (Desligar a maquina no primeiro minuto e meio depois de ligar tambem
+  conta como queda: nesse caso ela fica no visual seguro ate a proxima
+  build.)
+
+O QUE A BUILD 98 CORRIGIU
+------------------------
+- CAMERA: cada quadro da webcam dava erro no jogo (um comando do Godot 4
+  que nao existe no Godot 3) e a imagem nunca chegava; a foto do ranking
+  tinha o mesmo erro. Corrigido. E o jogo nao troca mais para um caminho
+  de camera que o Godot 3 nao tem no Android (a troca desligava a
+  webcam). Se a camera recusar abrir (logo depois de ligar a TV Box, por
+  exemplo), o jogo solta e abre de novo sozinho ate vir imagem.
+- PERMISSOES UMA VEZ SO: o jogo guarda o que ja foi autorizado. Numa
+  abertura nova ele espera o proprio Android devolver a permissao do
+  Arduino/webcam e so mostra janela se ela tiver sido NEGADA (ou se o
+  aparelho for outro). A janela USB da webcam nao aparece mais quando a
+  webcam e a camera do sistema.
+- TELA CHEIA SEM BORDA PRETA: o jogo passa a ocupar tambem a margem
+  ("overscan") que o Android da TV deixa em volta. Se ainda sobrar borda,
+  rode TELA_CHEIA_TVBOX.bat (zera essa margem na TV Box) e confira na TV
+  Box: Configuracoes > Tela > Posicao da tela = 100%.
+- LUTADOR: a luva e a bota esquerdas eram desenhadas do avesso (defeito
+  do modelo 3D) - por isso a faixa escura e a cor estranha. Corrigido.
+  O lutador ganhou sombreamento proprio: musculos definidos, brilho de
+  suor e as luzes de palco rosa e azul na silhueta, sem o chuvisco
+  branco na borda. E e mais leve para a placa de video.
+- TORCIDA: balanca lisa (antes tremia aos saltos na placa de video da
+  S905L) e sem manchas de cor.
+- ARENA MAIS NITIDA: desenhada em 706x995 (antes 554x782).
+
+O QUE A BUILD 97 CORRIGIU
+-------------------------
+- Travava na tela de carregamento e o Android fechava o jogo/o launcher:
+  a TV Box de 1 GB ficava sem memoria. Agora o carregamento nao le mais o
+  jogo inteiro de uma vez (le so o que a tela usa), cada arquivo e lido
+  uma vez so, as fontes usam poucos tamanhos padrao e as imagens grandes
+  sao comprimidas na placa. Memoria de imagens na abertura: de 131 MB
+  para 52 MB. O visual continua o mesmo.
+- Nao preenchia a tela inteira: o jogo agora ocupa a tela toda (sem a
+  margem das barras do Android e sem faixa preta).
+
+ANTES DE INSTALAR NAS 80: TESTE EM UMA
+--------------------------------------
+Na tela de carregamento aparece, no canto de baixo,
+"BUILD 110 - S905L - Android 7.1". Jogue uma partida inteira, abra a
+Central Tecnica e confira camera e Arduino antes de passar para as outras.
+
+GERAR O APK
+-----------
+1. Extraia o zip (as duas partes). Pode ser numa pasta nova ou por cima da
+   pasta antiga: o .bat compara a pasta com a lista de arquivos da build
+   (tools\gerar_apk\arquivos_build.txt), tira sozinho do projeto o que
+   sobrou de versoes antigas (scripts, cenas, sons, plugin do Godot 4) e
+   guarda tudo em sobras_de_versoes_antigas - nada e apagado. Pastas que
+   nao sao do jogo sao ignoradas pelo Godot. Se faltar arquivo, ele avisa.
+2. Clique duas vezes em  GERAR_APK_AGORA.bat
+3. Espere. A janela mostra cada passo e NAO fecha sozinha: no fim aparece
+   "APK GERADO E CONFERIDO - build 103, sem erros" (ou FALHA com o motivo).
+4. O APK fica em:  build\android\SuperBoxing.apk
+
+Precisa no PC:
+  - Android SDK em C:\AndroidSdk (o mesmo de sempre)
+  - Java 17 (o mesmo de sempre)
+  - internet na primeira vez: o .bat baixa SOZINHO o Godot 3.6.2 (~40 MB)
+    e os modelos de exportacao dele (~600 MB). Nao precisa instalar nada.
+    O Godot 4.6.1 que voce ja tem continua servindo para as outras maquinas.
+
+O plugin USB (Arduino + camera) ja vem pronto em android\plugins: o .bat
+nao o compila de novo (por isso nao aparece mais nada do Gradle/Kotlin).
+Quem mexer no codigo do plugin roda uma vez
+tools\gerar_apk\RECOMPILAR_PLUGIN_USB.bat.
+No fim, o .bat confere que o APK tem o motor para ARM 32 e 64 bits e o
+plugin USB dentro.
+
+ATUALIZAR PELO GITHUB
+---------------------
+O ATUALIZAR_E_GERAR.bat baixa a versao do GitHub e gera o APK. O GitHub
+(Bochino693/super-boxing-android7) ja tem esta versao S905L. Se a pasta
+do PC foi clonada quando o GitHub ainda tinha a versao do Godot 4, clone
+de novo uma vez (ou use o GERAR_APK_AGORA.bat da pasta do zip).
+
+INSTALAR NA TV BOX
+------------------
+Copie build\android\SuperBoxing.apk para o pendrive, espete na TV Box e
+instale pelo gerenciador de arquivos dela. Por cima da versao anterior:
+ranking, fotos, ajustes e permissoes ficam guardados.
+(Quem tiver o ADB tambem pode usar o INSTALAR_NA_TVBOX.bat.)
+
+PRIMEIRA VEZ NA TV BOX
+----------------------
+As permissoes vem LOGO NO INICIO, antes da barra andar, uma de cada vez:
+  1. CAMERA   -> Permitir
+  2. ARDUINO  -> MARQUE "USAR POR PADRAO" e toque OK. Marcado, o Android
+                grava e nao pergunta mais. Sem permitir, o jogo pergunta
+                de novo (o Arduino e obrigatorio).
+  3. WEBCAM USB -> so aparece se o Android pedir; marque a caixa e OK
+Depois disso a barra carrega e o jogo NAO abre mais nenhuma janela.
+A camera abre sozinha e se religa se parar. O jogo tenta os dois caminhos
+do Android (camera do sistema e Camera2/webcam externa), um de cada vez,
+ate vir imagem. Se nao vier, a linha "SEM CAMERA" embaixo da tela diz o
+motivo (PLUGIN: ... ou CAMERA2: ...) - fotografe e mande.
+
+CAMERA NAO APARECE? UM COMANDO SO
+---------------------------------
+Com a TV Box ligada no PC pelo ADB (USB ou rede), clique duas vezes em
+  CAMERA_TVBOX.bat          (ou CAMERA_TVBOX.bat 192.168.0.50 pela rede)
+Ele libera a camera para o jogo, abre o jogo, espera 90 s e grava
+CAMERA_RELATORIO.txt com tudo o que a TV Box enxerga (USB, cameras,
+permissoes e cada tentativa do jogo). Mande esse arquivo.
+
+SE A ABERTURA TRAVAR
+--------------------
+O jogo grava cada etapa da abertura. Se travar, desligue e ligue: JA NA
+TELA DE CARREGAMENTO aparece, embaixo, uma caixa amarela
+"A ULTIMA ABERTURA PAROU EM: ...". Fotografe essa caixa e mande - ela diz
+exatamente onde parou.
+
+Se mesmo assim travar ou fechar, com a TV Box ligada no PC pelo ADB
+clique duas vezes em  ABERTURA_TVBOX.bat  (ou ABERTURA_TVBOX.bat
+192.168.0.50 pela rede). Ele abre o jogo, espera 60 s e grava
+ABERTURA_RELATORIO.txt com cada etapa, a memoria e o erro do Android.
+Mande esse arquivo.
+
+O resto dos arquivos (scripts internos) esta em tools\gerar_apk - nao
+precisa abrir.

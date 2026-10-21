@@ -1,0 +1,122 @@
+FIRMWARE DEFINITIVO - SENSOR DE FEIXE LM393 - V12
+=================================================
+
+V12 = o V10 (que funcionou), MESMOS FIOS, mais:
+  - tempo padrao 1,8 s para descer e 1,8 s para subir;
+  - MOTOR,RECOLHE: subida do curso inteiro forcada (o jogo manda na
+    primeira chegada a tela da ficha depois de ligar: se faltou energia
+    com o saco no meio, ele volta enrolado e a conta zera).
+A V11 foi descartada: nao use.
+
+Grave o arquivo ARDUINO_SENSOR_DE_FEIXE_LM393.ino no Arduino Uno/Nano
+(biblioteca Adafruit NeoPixel instalada pelo Gerenciador de Bibliotecas).
+E UM FIRMWARE SO para tudo: sensor de feixe, botoes, fitas de LED, PONTE H
+do motor do saco (V10: sem fim de curso, so por tempo). Todo o codigo Arduino da maquina fica
+nesta pasta (a pasta "arduino" antiga, do sensor MPU-6050, saiu).
+
+TESTES SEM O JOGO (subpastas; a IDE nao junta ao firmware):
+  TESTE_FEIXE\TESTE_FEIXE.ino       - o feixe ve a palheta? a que velocidade?
+  TESTE_PONTE_H\TESTE_PONTE_H.ino   - sobe/desce o saco pelo Monitor Serial
+                                      (s, d, p, t, v80, w60): acha a velocidade
+                                      boa (o sensor de cima nao e mais usado).
+  TESTE_SOBE_DESCE\TESTE_SOBE_DESCE.ino - SEM serial: desce 2 s, sobe 2 s, em
+                                      laco. So um sentido anda = fio de comando
+                                      (RPWM D9 / LPWM D10) ou EN sem 5V.
+  Depois do teste, grave de novo o ARDUINO_SENSOR_DE_FEIXE_LM393.ino.
+  Passo a passo: docs\TESTE_DO_SENSOR.md
+
+DIAGRAMAS (abra e siga o NOME de cada pino):
+  docs\MONTAGEM_1_MAPA_DO_ARDUINO_NANO.png   (o que vai em cada pino)
+  docs\MONTAGEM_2_LIGACOES_POR_PARTE.png      (cada peca, terminal por terminal)
+  docs\MONTAGEM_3_MECANICA.png                (palheta, feixe, motor, chaves)
+  docs\MONTAGEM_4_PONTE_H_COMPLETA.png        (ponte H: pino por pino ate o Nano)
+  docs\MONTAGEM_5_SENSOR_FIM_DE_CURSO_IR.png  (V10: NAO USADO MAIS - o sensor de cima saiu)
+  ATENCAO V10: nos diagramas, ignore o sensor de cima e o resistor de 100k
+  no D11. Pode retira-los: o D11 fica livre.
+
+SENSOR DE FEIXE:
+  VCC -> 5V
+  GND -> GND
+  DO  -> D4   (medicao rapida por interrupcao)   <- CONFIRA: nao e o D2!
+  AO  -> A0   (diagnostico na Central Tecnica)
+  Use modulo de FENDA (fotointerruptor) ou emissor+receptor INFRAVERMELHO.
+  LDR (fotoresistor) com laser e lento demais: o soco tapa o feixe por
+  3 a 10 ms e o LDR leva 10 a 50 ms para reagir.
+
+BOTOES (contato NA, o outro terminal no GND):
+  START  -> D2
+  CREDIT -> D3
+  CONFIG -> D12   (mudou na V6: o D9 agora e da ponte H)
+
+FITAS WS2812B:
+  dados esquerda -> 330 ohm -> D5
+  dados direita  -> 330 ohm -> D6
+  alimentacao por fonte 5V externa, com GND comum ao Arduino
+
+MOTOR DO SACO (ponte H BTS7960, placa "BT_2" / IBT-2)
+  desenho: docs\MONTAGEM_4_PONTE_H_COMPLETA.png
+  O motor so faz 3 coisas: SOBE, DESCE e VELOCIDADE. Dois fios mandam nele:
+    RPWM -> D9   DESCE  (o pulso neste fio e a velocidade da descida)
+    LPWM -> D10  SOBE   (o pulso neste fio e a velocidade da subida)
+  O resto e so alimentacao da placa:
+    R_EN -> 5V do Nano   \  "chave geral" da ponte: com eles no 5V a
+    L_EN -> 5V do Nano   /   ponte pode andar
+    VCC  -> 5V do Nano       alimenta a logica da placa
+    GND  -> GND do Nano
+    R_IS e L_IS -> nao ligar (medicao de corrente, nao usada)
+  O conector da placa e 2x4 (duas fileiras de 4 pinos). Os nomes estao na
+  TABELINHA impressa ao lado dele: siga os nomes.
+  Borne verde (parafusos):
+    B+ -> fusivel -> V+ da fonte do motor     B- -> V- da fonte do motor
+    M+ e M- -> os dois fios do motor (saco desce no SOBE? inverta M+ e M-)
+  VELOCIDADE: Central (botao MENU) -> aba SACO -> VELOCIDADE DO MOTOR:
+    SUBIDA (padrao 80%) e DESCIDA (padrao 60%). Partida em rampa, sem tranco.
+
+SEM FIM DE CURSO (V10) - O SACO ANDA SO POR TEMPO:
+  - Nao ha sensor em cima nem embaixo. O D11 nao e usado (o sensor IR e
+    o resistor de 100k podem ser retirados).
+  - DOIS TEMPOS, um o inverso do outro (Central, botao MENU -> aba SACO):
+      DESCIDA (CURSO TODO) = quanto o motor leva para descer de enrolado
+                             em cima ate embaixo;
+      SUBIDA (O INVERSO)   = quanto leva para subir de embaixo ate em cima.
+  - A PLACA SABE ONDE O SACO ESTA A TODO MOMENTO, em milesimos do curso
+    (0 = em cima, 1000 = embaixo). Descer anda so o que falta; subir anda
+    so o que desceu. Parar ou inverter no meio nao estraga a conta.
+  - A posicao fica na EEPROM (gravada a cada 0,1 s andando e ao parar):
+    faltou luz no meio, ao religar a placa sobe sozinha o que falta - e
+    nunca forca o saco contra o topo.
+  - ESTA EM CIMA (botao na Central, ou MOTOR,ZERA) = "o saco esta em cima
+    agora". AJUSTE SOBE / AJUSTE DESCE = um toque de 0,2 s que NAO mexe na
+    conta: use para alinhar o saco no topo e depois toque ESTA EM CIMA.
+
+COMO O V10 TRABALHA (mesmos pinos do V9):
+  - A ponte H pode estar no D9/D10 (RPWM/LPWM, com velocidade) OU no
+    D7/D8 (ligacao antiga, velocidade cheia): a placa manda nos dois.
+  - AUTOTESTE: segure START e ligue o Arduino (3 s): desce 1,5 s e sobe o
+    INVERSO (o saco volta onde estava). MOTOR,TESTE (botao TESTE) idem.
+  - AO LIGAR: se o saco nao estava em cima, a placa o recolhe sozinha
+    (1,5 s depois), mesmo sem o jogo.
+  - O JOGO (build 110): fora da partida o saco fica em cima. START: o jogo
+    manda subir e so conta 3-2-1 com a placa confirmando EM CIMA; tira a
+    FOTO; confere EM CIMA de novo; desce; o soco so e liberado com a placa
+    confirmando EMBAIXO; soco 1, soco 2 (ou nocaute) e o saco sobe.
+    Sem a confirmacao no tempo, a rodada nao segue as cegas: o credito
+    volta e a tela diz o motivo.
+  - O jogo envia ARM antes de cada soco. Cada ARM permite exatamente um
+    HIT. Enquanto o motor anda (e 0,9 s depois) o feixe e ignorado.
+  - Velocidade: PWM de 20 kHz no D9/D10 (sem chiado), rampa de 0,3 s na
+    partida. Parado = as duas saidas em LOW = a ponte freia o motor.
+  - Linhas: MOTOR,<estado>,<0 meio|1 em cima|2 embaixo>,<resta ms> e
+    SACO,<milesimos> (a cada 250 ms e a cada mudanca).
+
+PRIMEIRA VEZ COM O V10:
+  1. ENROLE O SACO EM CIMA (a mao ou com o V9) ANTES de gravar o V10: na
+     primeira vez a placa comeca contando que ele esta no topo.
+  2. Central -> aba SACO: motor LIGADO. Toque DESCER e cronometre ate o
+     saco chegar embaixo: esse e o tempo de DESCIDA.
+  3. Toque SUBIR: ajuste a SUBIDA (de 0,1 em 0,1 s) ate o saco parar
+     EXATAMENTE no mesmo ponto em cima, rodada apos rodada.
+  4. Saiu do ponto? AJUSTE SOBE/DESCE ate o topo e ESTA EM CIMA.
+  5. VELOCIDADE DO MOTOR: ajuste ate ficar firme sem tranco (mudou a
+     velocidade, refaca os tempos).
+  6. Passe um cartao no feixe: a Central mostra "feixe INTERROMPIDO".
