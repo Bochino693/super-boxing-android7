@@ -86,6 +86,11 @@ uniform vec4 f_balanco = vec4(0.0);
 uniform vec4 f_braco = vec4(0.0);
 uniform float f_ola = 0.0;
 uniform float tique = 0.0;
+// OS FACHOS DE REFLETOR varrendo a plateia (build 116): onde estão as duas
+// faixas de luz (0..1 na largura da fileira) e quanto acendem — calculado
+// fora, uma vez por quadro.
+uniform vec2 fachos = vec2(-1.0, -1.0);
+uniform float fachos_forca = 0.0;
 
 // Uma das quatro velocidades, pelo sorteio da pessoa.
 vec4 escolhe(float r) {
@@ -128,7 +133,11 @@ void fragment() {
 	float celular = step(0.985, fract(sin(col * 1.2989 + fract((tique + floor(r * 7.0)) * 0.137) * 37.0 + semente) * 53.71)) * c.a;
 	vec2 celula = vec2(x - 0.5, (y - 0.30) * 5.0);
 	celular *= (1.0 - smoothstep(0.04, 0.12, length(celula))) * (1.0 - parado);
-	ALBEDO = c.rgb * acende * (1.0 + agito * 0.35) + vec3(0.9, 0.95, 1.0) * celular * 1.2;
+	// a luz dos fachos (rosa e azul) só acende quem está nela
+	float l1 = 1.0 - smoothstep(0.0, 0.09, abs(UV.x - fachos.x));
+	float l2 = 1.0 - smoothstep(0.0, 0.09, abs(UV.x - fachos.y));
+	vec3 luz = (vec3(1.0, 0.42, 0.85) * l1 + vec3(0.42, 0.85, 1.0) * l2) * fachos_forca;
+	ALBEDO = c.rgb * (acende * (1.0 + agito * 0.35) + luz) + vec3(0.9, 0.95, 1.0) * celular * 1.2;
 	ALPHA = c.a * (0.86 + 0.14 * agito);
 }
 """
@@ -141,13 +150,19 @@ uniform float acende = 1.0;
 uniform float agito = 0.0;
 // quanto o telão já rolou (0..1), calculado fora: meia precisão na Mali-450
 uniform float rolagem = 0.0;
+// os mesmos dois fachos da plateia passando pela parede do ginásio
+uniform vec2 fachos = vec2(-1.0, -1.0);
+uniform float fachos_forca = 0.0;
 void fragment() {
 	vec2 uv = UV;
 	float faixa = step(0.155, uv.y) * step(uv.y, 0.265);
 	uv.x = fract(uv.x + faixa * rolagem);
 	vec3 c = texture(tex, uv).rgb;
 	float pisca = 1.0 + faixa * agito * 0.35 * sin(tempo * 9.0);
-	ALBEDO = c * acende * pisca;
+	float l1 = 1.0 - smoothstep(0.0, 0.07, abs(UV.x - fachos.x));
+	float l2 = 1.0 - smoothstep(0.0, 0.07, abs(UV.x - fachos.y));
+	vec3 luz = (vec3(1.0, 0.42, 0.85) * l1 + vec3(0.42, 0.85, 1.0) * l2) * fachos_forca * 0.7;
+	ALBEDO = c * (acende * pisca + luz);
 }
 """
 
@@ -436,9 +451,13 @@ func _montar_ringue() -> void:
 	protetor.rings = 0
 	var metal = _material_solido(Color("9aa3b5"), 0.28)
 	metal.metallic = 0.8
+	# os dois postes numa malha só (uma chamada de desenho, ver `_juntar`)
+	_peca(_juntar([
+		[poste, Transform(Basis(), Vector3(-m, 0.75, -m))],
+		[poste, Transform(Basis(), Vector3(m, 0.75, -m))],
+	]), metal, Vector3.ZERO)
 	for lado in [-1.0, 1.0]:
 		var cor = Color("d3162f") if lado < 0.0 else Color("1f4fd1")
-		_peca(poste, metal, Vector3(lado * m, 0.75, -m))
 		_peca(protetor, _material_solido(cor, 0.45, 0.12), Vector3(lado * m, 0.86, -m))
 
 	# Cordas: tubos redondos. Só as de trás e as laterais — nada cruza a
@@ -472,8 +491,12 @@ func _montar_ringue() -> void:
 		mat.set_shader_param("meia", m)
 		_mat_cordas.append(mat)
 		_cordas_fundo.append(_peca(corda_fundo, mat, Vector3(0.0, y, -m), Vector3(0.0, 0.0, PI * 0.5)))
-		for lado in [-1.0, 1.0]:
-			_peca(corda, tintas[i], Vector3(lado * m, y, 0.0), Vector3(PI * 0.5, 0.0, 0.0))
+		# as duas laterais da mesma cor numa malha só
+		var deitada = Basis(Vector3.RIGHT, PI * 0.5)
+		_peca(_juntar([
+			[corda, Transform(deitada, Vector3(-m, y, 0.0))],
+			[corda, Transform(deitada, Vector3(m, y, 0.0))],
+		]), tintas[i], Vector3.ZERO)
 
 
 ## AS CORDAS DE TRÁS CEDEM quando o lutador cai nelas — E A CADA SOCO DO
@@ -765,9 +788,9 @@ func _montar_sombra() -> void:
 # -------------------------------------------------------- tamanho/MSAA
 ## A NITIDEZ DA ARENA ACOMPANHA A MÁQUINA — E SÓ MUDA ENTRE AS LUTAS.
 ##
-## Com o lutador leve (11 mil vértices em vez de 44 mil) sobra fôlego, e
-## ele vai para a nitidez: a arena nasce em `Perfil.ARENA_ESCALA` (0,70 da
-## tela; 0,55 era uma imagem ampliada quase 2x, borrada). Se a luta ficar
+## Com o lutador leve (10 mil vértices em vez de 44 mil) sobra fôlego, e
+## ele vai para a nitidez: a arena nasce em `Perfil.ARENA_ESCALA` (0,65 da
+## tela, os pixels da build 113; 0,55 era uma imagem ampliada quase 2x, borrada). Se a luta ficar
 ## lenta, o jogo desce um degrau (ver `DEGRAUS`). Nunca no meio da luta:
 ## trocar o tamanho realoca a imagem, e no quadro da troca o lutador sumia.
 func _aplicar_tamanho() -> void:
@@ -1172,8 +1195,17 @@ func _fases_da_torcida() -> void:
 	var pulo = Color(_fase_pulo[0], _fase_pulo[1], _fase_pulo[2], _fase_pulo[3])
 	var ola = fposmod(_relogio * 1.7 / TAU, 1.0)
 	var tique = fposmod(floor(_relogio * 2.2), 64.0)
+	# OS DOIS FACHOS vão e vêm pela plateia em ritmos diferentes (nunca
+	# juntos), e no golpe acendem forte.
+	var fachos = Vector2(lerp(-0.12, 1.12, 0.5 + 0.5 * sin(_relogio * 0.37)),
+		lerp(-0.12, 1.12, 0.5 + 0.5 * sin(_relogio * 0.29 + 2.1)))
+	var forca = 0.45 + _agito * 0.5 + _clarao * 0.9
+	_mat_fundo.set_shader_param("fachos", fachos)
+	_mat_fundo.set_shader_param("fachos_forca", forca)
 	for mat in _mats_torcida:
 		var m = mat as ShaderMaterial
+		m.set_shader_param("fachos", fachos)
+		m.set_shader_param("fachos_forca", forca)
 		m.set_shader_param("f_respira", respira)
 		m.set_shader_param("f_pulo", pulo)
 		m.set_shader_param("f_balanco", balanco)
@@ -1213,10 +1245,10 @@ func _sombra_de_contato() -> void:
 ## OS DEGRAUS DO GRÁFICO. A arena é a conta mais cara do jogo. Cada degrau
 ## tira UMA coisa, a que menos se vê primeiro:
 ##
-##   0 COMPLETO      tudo, a arena em `Perfil.ARENA_ESCALA` (70%);
+##   0 COMPLETO      tudo, a arena em `Perfil.ARENA_ESCALA` (65%);
 ##   1 SEM FACHOS    os cones de luz e os flashes da plateia
 ##                   (transparentes, cobrem boa parte da tela);
-##   2 3D A 62%      a arena desenhada com 62% dos pixels de cada lado
+##   2 3D A 60%      a arena desenhada com 60% dos pixels de cada lado
 ##                   (ampliada no quadro, a imagem fica um pouco mais macia);
 ##   3 3D A 55%      idem, 55% (o tamanho da build 111).
 ##
@@ -1227,7 +1259,7 @@ func _sombra_de_contato() -> void:
 ## O degrau 1 entra na hora (é só esconder uma peça já compilada). O
 ## tamanho (2 e 3) realoca a imagem da arena — no quadro da troca o
 ## lutador sumiria —, então ele espera a arena sair da tela (`ligar`).
-const DEGRAUS = ["COMPLETO", "SEM FACHOS", "3D A 62%", "3D A 55%"]
+const DEGRAUS = ["COMPLETO", "SEM FACHOS", "3D A 60%", "3D A 55%"]
 var degrau = 0
 
 func aplicar_degrau(n: int) -> void:
@@ -1249,7 +1281,7 @@ func _escala_do_degrau() -> float:
 	if degrau >= 3:
 		return ARENA_ESCALA_SEGURA
 	if degrau == 2:
-		return 0.62
+		return 0.60
 	return Perfil.ARENA_ESCALA
 
 ## O degrau pede um tamanho que ainda não entrou (a arena está na tela;

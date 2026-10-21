@@ -1,6 +1,9 @@
 class_name ImpactDirector
 extends Reference
 
+## Linhas, círculos e arcos como polígonos que se juntam (ver `scripts/lote.gd`).
+const Lote = preload("res://scripts/lote.gd")
+
 ## QUEM MONTA O ESPETÁCULO DO SOCO.
 ##
 ## Recebe o nível (`ScoreTier`) e produz o que aquele nível pede:
@@ -142,10 +145,7 @@ static func _riscos_convergindo(canvas: CanvasItem, centro: Vector2, t: float, s
 		var ang = float(i) * TAU / 20.0 + 0.17
 		var de = 420.0 + (1.0 - t) * 420.0
 		var ate = de - lerp(220.0, 40.0, t)
-		canvas.draw_line(
-			centro + polar2cartesian(1.0, ang) * de, centro + polar2cartesian(1.0, ang) * ate,
-			Compat.cor(Paleta.AMBAR, some * 0.55), lerp(8.0, 2.0, t), true
-		)
+		Lote.traco(canvas, centro + polar2cartesian(1.0, ang) * de, centro + polar2cartesian(1.0, ang) * ate, Compat.cor(Paleta.AMBAR, some * 0.55), lerp(8.0, 2.0, t))
 
 ## O ESTRELÃO DE HISTÓRIA EM QUADRINHOS. As pontas vêm de um molde fixo:
 ## um estrelão que se sorteia a cada quadro é ruído, não impacto.
@@ -164,7 +164,7 @@ static func _estrelao(
 		dentro.append(centro + polar2cartesian(1.0, ang) * raio * 0.72)
 	Traco.poligono(canvas, fora, Compat.cor(Paleta.VERMELHO, some * 0.85))
 	Traco.poligono(canvas, dentro, Compat.cor(cor, some * 0.95))
-	canvas.draw_polyline(fora + PoolVector2Array([fora[0]]), Compat.cor(Paleta.CREME, some), 5.0, true)
+	Lote.borda(canvas, fora + PoolVector2Array([fora[0]]), Compat.cor(Paleta.CREME, some), 5.0)
 
 static func _rachaduras(canvas: CanvasItem, centro: Vector2, t: float, some: float) -> void:
 	for i in range(3):
@@ -174,7 +174,7 @@ static func _rachaduras(canvas: CanvasItem, centro: Vector2, t: float, some: flo
 		for k in range(3):
 			ponta += polar2cartesian(1.0, ang + sin(float(k) * 2.1 + float(i)) * 0.45) * 130.0
 			caminho.append(ponta)
-		canvas.draw_polyline(caminho, Compat.cor(Paleta.CREME, some * 0.8), lerp(9.0, 2.0, t), true)
+		Lote.borda(canvas, caminho, Compat.cor(Paleta.CREME, some * 0.8), lerp(9.0, 2.0, t))
 
 ## O PALCO INTEIRO REAGE: raios dourados saindo das quatro bordas para
 ## dentro. Reservado ao lendário e ao perfeito, que são o motivo de a
@@ -190,7 +190,4 @@ static func _palco_reage(canvas: CanvasItem, centro: Vector2, t: float, some: fl
 			2: origem = Vector2(fposmod(passo, 1.0) * 1080.0, 1960.0)
 			_: origem = Vector2(-40.0, fposmod(passo, 1.0) * 1920.0)
 		var direcao = (centro - origem).normalized()
-		canvas.draw_line(
-			origem, origem + direcao * lerp(240.0, 900.0, t),
-			Compat.cor(Paleta.AMBAR, some * 0.45), lerp(10.0, 3.0, t), true
-		)
+		Lote.traco(canvas, origem, origem + direcao * lerp(240.0, 900.0, t), Compat.cor(Paleta.AMBAR, some * 0.45), lerp(10.0, 3.0, t))

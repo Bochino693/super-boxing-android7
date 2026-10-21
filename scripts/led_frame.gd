@@ -1,6 +1,9 @@
 class_name LedFrame
 extends Control
 
+## Linhas, círculos e arcos como polígonos que se juntam (ver `scripts/lote.gd`).
+const Lote = preload("res://scripts/lote.gd")
+
 ## A fieira de lâmpadas que corre pela borda da tela, como no letreiro de
 ## um parque.
 ##
@@ -190,7 +193,7 @@ func _draw() -> void:
 		# Halo curto: brilho de LED, sem a textura grossa de bulbo.
 		Compat.circulo(self, p, raio + 4.0, Compat.cor(base, acesa * 0.14), true, -1.0, _liso())
 		Compat.circulo(self, p, raio, cor, true, -1.0, _liso())
-		draw_arc(p, raio, 0.0, TAU, 16, Compat.cor(Paleta.MARINHO, 0.24 + 0.28 * acesa), 0.9, _liso())
+		Lote.aro(self, p, raio, Compat.cor(Paleta.MARINHO, 0.24 + 0.28 * acesa), 0.9)
 		# Reflexo no vidro do bulbo, sempre no mesmo canto.
 		Compat.circulo(self, p + Vector2(-raio * 0.28, -raio * 0.28), raio * 0.18, Color(1, 1, 1, 0.44), true, -1.0, false)
 
@@ -243,5 +246,5 @@ func desenhar_apagadas(alvo: CanvasItem) -> void:
 		var p = _ponto_do_percurso(i, total, w, h)
 		Compat.circulo(alvo, p, 3.2, apagada, true, -1.0, false)
 		if detalhe:
-			alvo.draw_arc(p, 3.2, 0.0, TAU, 14, Compat.cor(Paleta.MARINHO, 0.26), 0.8, false)
+			Lote.aro(alvo, p, 3.2, Compat.cor(Paleta.MARINHO, 0.26), 0.8)
 			Compat.circulo(alvo, p + Vector2(-0.9, -0.9), 0.55, Color(1, 1, 1, 0.40), true, -1.0, false)

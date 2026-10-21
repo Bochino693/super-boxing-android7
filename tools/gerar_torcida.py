@@ -4,11 +4,6 @@
 
 Saídas:
   assets/audio/arcade/torcida_vaia.wav   vaia longa ("uuuuh") + apitos, sintetizada
-  assets/audio/arcade/torcida_festa.wav  festa longa, emendando as gravações CC0
-                                          que já estão no projeto
-  assets/audio/arcade/torcida_incentivo.wav  a torcida EMPURRANDO no meio da luta:
-                                          palmas ritmadas, "VAI! VAI!" em coro e
-                                          a plateia gravada por baixo
   assets/arena/torcida_baixo.png         plateia de braços baixos
   assets/arena/torcida_cima.png          a MESMA plateia, braços para o alto
 
@@ -99,88 +94,6 @@ def vaia(duracao=8.0):
     return reverb(mix)
 
 
-def festa():
-    partes = [ler("torcida_recorde.wav"), ler("torcida_podio.wav"), ler("arena_publico.wav")]
-    cruza = int(SR * 0.9)
-    out = partes[0]
-    for p in partes[1:]:
-        rampa = np.linspace(0, 1, cruza)[:, None]
-        meio = out[-cruza:] * (1 - rampa) + p[:cruza] * rampa
-        out = np.concatenate([out[:-cruza], meio, p[cruza:]])
-    n = len(out)
-    t = np.arange(n) / SR
-    # palmas ritmadas por baixo (a torcida "pegando fogo")
-    palmas = np.zeros(n)
-    batida = 60 / 128
-    k = 0.6
-    while k < t[-1] - 0.5:
-        i = int(k * SR)
-        m = min(n - i, int(0.06 * SR))
-        palmas[i:i + m] += rng.standard_normal(m) * np.exp(-np.arange(m) / (0.012 * SR))
-        k += batida
-    palmas = signal.lfilter(*signal.butter(2, [900, 5000], "bandpass", fs=SR), palmas)
-    out = out + np.stack([palmas, palmas], 1) * 0.18
-    fim = np.clip((t[-1] - t) / 1.2, 0, 1)[:, None]
-    return out * fim
-
-
-def incentivo(duracao=4.2):
-    """O coro que empurra quem está batendo: "VAI! VAI! VAI!" com palmas.
-
-    Nada de vaia aqui — vaia é só do fim, de quem perdeu. No meio da luta
-    a torcida está do lado do jogador."""
-    n = int(SR * duracao)
-    t = np.arange(n) / SR
-    mix = np.zeros((n, 2))
-    batida = 60 / 150
-    inicios = np.arange(0.18, duracao - 0.6, batida * 2)
-    for _ in range(46):
-        f0 = rng.uniform(130, 230) if rng.random() < 0.7 else rng.uniform(210, 330)
-        atraso = rng.normal(0, 0.025)
-        voz = np.zeros(n)
-        for k, ini in enumerate(inicios):
-            ini += atraso
-            dur = batida * rng.uniform(0.62, 0.8)
-            m = (t >= ini) & (t < ini + dur)
-            tt = np.clip(t - ini, 0, None)
-            # "vai": do /a/ para o /i/, com o tom subindo no fim do grito
-            fase = np.cumsum(f0 * (1 + 0.10 * np.clip(tt / dur, 0, 1))) / SR
-            glote = 2 * (fase % 1) - 1
-            env = np.clip(tt / 0.035, 0, 1) * np.clip((ini + dur - t) / 0.08, 0, 1) * m
-            voz += glote * env
-        # formantes: /a/ (730, 1090) indo para /i/ (300, 2300) — mistura fixa
-        # das duas bocas; o ouvido lê o ditongo na média de 46 vozes
-        voz = formante(voz, rng.uniform(640, 760), 5) + formante(voz, rng.uniform(1050, 1250), 7) * 0.5 \
-            + formante(voz, rng.uniform(2100, 2500), 10) * 0.18
-        pan = rng.uniform(0.1, 0.9)
-        g = rng.uniform(0.4, 1.0)
-        mix[:, 0] += voz * g * (1 - pan)
-        mix[:, 1] += voz * g * pan
-    # palmas no contratempo do coro
-    palmas = np.zeros((n, 2))
-    k = 0.18 + batida
-    while k < duracao - 0.4:
-        for _ in range(18):
-            i = int((k + rng.normal(0, 0.012)) * SR)
-            m = min(n - i, int(0.05 * SR))
-            if m <= 0:
-                continue
-            pan = rng.uniform(0, 1)
-            c = rng.standard_normal(m) * np.exp(-np.arange(m) / (0.009 * SR)) * rng.uniform(0.5, 1)
-            palmas[i:i + m, 0] += c * (1 - pan)
-            palmas[i:i + m, 1] += c * pan
-        k += batida
-    palmas = signal.lfilter(*signal.butter(2, [800, 6000], "bandpass", fs=SR), palmas, axis=0)
-    mix = mix / (np.abs(mix).max() + 1e-9) + palmas / (np.abs(palmas).max() + 1e-9) * 0.55
-    publico = ler("arena_publico.wav")
-    cama = np.zeros((n, 2))
-    m = min(n, len(publico))
-    cama[:m] = publico[:m]
-    mix = mix + cama * 0.5
-    fim = np.clip((duracao - t) / 0.7, 0, 1)[:, None] * np.clip(t / 0.08, 0, 1)[:, None]
-    return reverb(mix * fim, 1.1, 0.24)
-
-
 # ------------------------------------------------------------ plateia
 ## AS FILEIRAS DA PLATEIA: (colunas, faixa em pixels, quanto a névoa come).
 ## CADA PESSOA MORA INTEIRA DENTRO DA SUA COLUNA, e cada fileira numa
@@ -188,9 +101,9 @@ def incentivo(duracao=4.2):
 ## ritmo — com gente espalhada ao acaso, a coluna cortava a pessoa ao
 ## meio e metade do corpo pulava separada da outra. A coluna É a pessoa.
 FILEIRAS = [
-    (52, (0, 150), 0.52),     # fundo: pequena, mais apagada pela névoa
-    (40, (150, 320), 0.74),   # meio
-    (30, (320, 512), 0.92),   # frente: grande e nítida
+    (52, (0, 150), 0.72),     # fundo: pequena, um pouco apagada pela névoa
+    (40, (150, 320), 0.88),   # meio
+    (30, (320, 512), 1.00),   # frente: grande e nítida
 ]
 ## GENTE DE VERDADE, e não silhueta: pele, cabelo, camisa e o que cada um
 ## traz na mão variam pessoa a pessoa (sorteio fixo: a imagem sai igual
@@ -372,40 +285,52 @@ def plateia():
         volume = np.clip(d / (8.0 * ESCALA), 0.0, 1.0) ** 0.6
         # A LUZ DO RINGUE: poças de refletor que varrem a plateia e um
         # brilho que vem de baixo (o ringue aceso na frente dela).
-        pocas = 0.55 + 0.45 * np.clip(np.sin(xx * 9.0 + 0.6) * 0.5 + 0.5, 0, 1) ** 2
+        pocas = 0.72 + 0.28 * np.clip(np.sin(xx * 9.0 + 0.6) * 0.5 + 0.5, 0, 1) ** 2
         luz = np.zeros_like(alfa)
         for colunas, (y0, y1), nevoa in FILEIRAS:
             faixa = (np.arange(A) >= y0 * ESCALA) & (np.arange(A) < y1 * ESCALA)
             dentro = (yy[faixa] - y0 / 512) / ((y1 - y0) / 512)
             # o corpo mergulha na sombra da fileira da frente
-            luz[faixa] = nevoa * np.where(dentro >= ASSENTO, 0.62,
-                                          0.22 + 0.78 * np.clip(1.15 - dentro * 1.15, 0.0, 1.0) ** 1.3)
+            luz[faixa] = nevoa * np.where(dentro >= ASSENTO, 0.66,
+                                          0.40 + 0.60 * np.clip(1.15 - dentro * 1.15, 0.0, 1.0) ** 1.3)
         brilho = luz * pocas * (0.62 + 0.38 * volume)
         cor = cor * brilho[..., None]
         # névoa do ginásio: as fileiras do fundo puxam para o roxo
         roxo = np.array([0.16, 0.10, 0.30], np.float32)
         for colunas, (y0, y1), nevoa in FILEIRAS:
             s = slice(y0 * ESCALA, y1 * ESCALA)
-            cor[s] = cor[s] * (0.55 + 0.45 * nevoa) + roxo * (1.0 - nevoa) * 0.5
+            cor[s] = cor[s] * (0.70 + 0.30 * nevoa) + roxo * (1.0 - nevoa) * 0.4
+        # MAIS DEFINIDA (build 116): cor um pouco mais viva e um contorno
+        # escuro fino em volta de cada pessoa — a silhueta se separa do
+        # vizinho e do fundo mesmo pequena na tela da TV Box.
+        media = cor.mean(axis=-1, keepdims=True)
+        cor = np.clip(media + (cor - media) * 1.18, 0.0, 1.0)
+        contorno = (d > 0) & (d <= 1.6 * ESCALA)
+        cor[contorno] *= 0.45
         # contorno de luz: magenta da esquerda, ciano da direita, e o alto
         # das cabeças pegando o branco dos refletores
         passo = 2 * ESCALA
         borda_e = np.clip(alfa - np.roll(alfa, passo, axis=1), 0, 1)
         borda_d = np.clip(alfa - np.roll(alfa, -passo, axis=1), 0, 1)
         borda_c = np.clip(alfa - np.roll(alfa, passo, axis=0), 0, 1)
-        cor += borda_e[..., None] * np.array([0.75, 0.10, 0.55]) * 0.30
-        cor += borda_d[..., None] * np.array([0.10, 0.65, 0.85]) * 0.30
-        cor += borda_c[..., None] * np.array([0.9, 0.85, 1.0]) * 0.22
+        cor += borda_e[..., None] * np.array([0.75, 0.10, 0.55]) * 0.45
+        cor += borda_d[..., None] * np.array([0.10, 0.65, 0.85]) * 0.45
+        cor += borda_c[..., None] * np.array([0.9, 0.85, 1.0]) * 0.35
         # telas de celular e placas continuam acesas (não pegam a névoa)
         tela = (a[..., 2] > 0.85) & (a[..., 1] > 0.80) & (a[..., 0] > 0.70) & (alfa > 0.5)
         cor[tela] = np.maximum(cor[tela], a[..., :3][tela] * 0.85)
         out = np.dstack([np.clip(cor, 0, 1), alfa])
         im = Image.fromarray((out * 255 + 0.5).astype(np.uint8), "RGBA")
-        im = im.resize((L // ESCALA, A // ESCALA), Image.LANCZOS)
+        # A IMAGEM JÁ NO TAMANHO DO JOGO (1024 x 256): o importador limita a
+        # 1024 de qualquer jeito, e reduzir aqui (Lanczos, de 4x) com um
+        # realce leve sai mais nítido que deixar a importação reduzir.
+        im = im.resize((L // ESCALA // 2, A // ESCALA // 2), Image.LANCZOS)
+        rgb = im.convert("RGB").filter(ImageFilter.UnsharpMask(radius=1.0, percent=70, threshold=1))
+        im = Image.merge("RGBA", (*rgb.split(), im.split()[3]))
         saidas.append(im)
     saidas[0].save(ARENA / "torcida_baixo.png", optimize=True)
     saidas[1].save(ARENA / "torcida_cima.png", optimize=True)
-    print("ok plateia", L // ESCALA, "x", A // ESCALA)
+    print("ok plateia", L // ESCALA // 2, "x", A // ESCALA // 2)
 
 
 def so_plateia():
@@ -418,6 +343,5 @@ if __name__ == "__main__":
         plateia()
         raise SystemExit
     gravar("torcida_vaia.wav", vaia())
-    gravar("torcida_festa.wav", festa())
-    gravar("torcida_incentivo.wav", incentivo())
+    # (a festa e o incentivo saem de `tools/gerar_sons_arcade.py`, build 116)
     plateia()

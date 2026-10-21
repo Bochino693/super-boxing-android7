@@ -1,36 +1,29 @@
 extends Reference
 ## Catálogo único dos arquivos sonoros. AudioBank cuida da reprodução.
-const FALLBACK = {
-	"credit": "res://assets/audio/credit.wav",
-	"start": "res://assets/audio/start.wav",
-	"count": "res://assets/audio/count.wav",
-	"go": "res://assets/audio/go.wav",
-	"hit": "res://assets/audio/hit.wav",
-	"tick": "res://assets/audio/tick.wav",
-	"charge": "res://assets/audio/charge.wav",
-	"win": "res://assets/audio/win.wav",
-	"medium": "res://assets/audio/medium.wav",
-	"lose": "res://assets/audio/lose.wav",
-	"error": "res://assets/audio/aviso.wav",
-	"menu": "res://assets/audio/menu.wav",
-	"record": "res://assets/audio/record.wav",
-	"legendary": "res://assets/audio/legendary.wav",
-}
-## Sons que existem só como arquivo em `assets/audio/arcade/` e não têm
-## um par no FALLBACK. Os oito níveis entram aqui: eles nasceram já na
-## mesa nova e nunca tiveram versão antiga.
+## Os sons básicos (crédito, START, contagem, golpe, veredito). Todos os
+## arquivos moram em `assets/audio/arcade/` (até a build 115 havia uma
+## segunda cópia de cada um em `assets/audio/`, carregada no arranque e
+## trocada em seguida: memória e tempo de abertura gastos à toa na TV Box).
+const CUES = [
+	"credit", "start", "count", "go", "hit", "tick", "charge", "win",
+	"medium", "lose", "error", "menu", "record", "legendary",
+]
+## Os outros sons. Os oito níveis entram aqui: eles nasceram já na mesa
+## nova e nunca tiveram versão antiga.
 const EXTRA = [
 	"music", "shutter", "ranking", "score_loop",
 	"ranking_neutral_1", "ranking_neutral_2", "ranking_neutral_3",
 	"ranking_burst", "disconnect_alert",
 	"nivel_leve", "nivel_bom", "nivel_forte", "nivel_explosivo",
 	"nivel_nocaute", "nivel_peso", "nivel_lendario", "nivel_perfeito",
-	"start_negado", "armado", "couro", "subgrave",
+	"start_negado", "couro", "subgrave",
 	# A ARENA TROUXE SONS PRÓPRIOS. O soco já tinha o couro e o
 	# subgrave — o que faltava era o CORPO: o baque de quem leva, a
 	# queda na lona e a plateia reagindo. Sem eles o lutador aparecia
 	# na tela mas o ouvido continuava batendo num saco de areia.
-	"arena_corpo", "arena_queda", "arena_publico", "torcida_desdenho",
+	"arena_corpo", "arena_queda", "arena_publico",
+	# As vinhetas de entrada no ranking: fanfarras de fliperama (build 116,
+	# `tools/gerar_sons_arcade.py`), sem gravação de torcida.
 	"torcida_recorde", "torcida_podio", "torcida_top10", "torcida_top20",
 	# A torcida longa do fim de rodada: vaia (o jogador perdeu e o
 	# lutador tira onda) e festa (o jogador ganhou, o ginásio pega fogo).
@@ -39,8 +32,10 @@ const EXTRA = [
 	"torcida_incentivo",
 	# Vozes especiais da rodada de dois golpes.
 	"not_supress", "good_player",
-	# O GINÁSIO CHEIO, em laço, por baixo da luta inteira (a gravação real
-	# de torcida — ver `tools/torcida_real.py`).
+	# O GINÁSIO, em laço, por baixo da luta inteira: ronco grave e
+	# murmúrio. Até a build 115 era uma gravação de torcida com gritos
+	# agudos; agora é sintetizado, só vozes graves (ver
+	# `tools/gerar_sons_arcade.py`).
 	"arena_ambiente",
 ]
 const LOOPS = ["music", "charge", "score_loop", "arena_ambiente"]
@@ -78,7 +73,7 @@ const BARRAMENTOS = {
 	"credit": "UI", "start": "UI", "start_negado": "UI", "menu": "UI",
 	"error": "UI", "disconnect_alert": "UI",
 	"count": "UI", "go": "UI", "tick": "UI",
-	"shutter": "UI", "armado": "UI", "round_bell": "UI",
+	"shutter": "UI", "round_bell": "UI",
 }
 const BARRAMENTO_PADRAO = "SFX"
 

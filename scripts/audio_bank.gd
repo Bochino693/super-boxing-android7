@@ -6,7 +6,6 @@ extends Node
 ## o player fica mudo em vez de derrubar o jogo.
 
 const Catalog = preload("res://scripts/audio/audio_catalog.gd")
-const SONS = Catalog.FALLBACK
 
 var _players: Dictionary = {}
 var music_target = -80.0
@@ -143,17 +142,8 @@ func score_progress(progress: float) -> void:
 
 func _ready() -> void:
 	_montar_mesa()
-	for nome in SONS:
-		var player = AudioStreamPlayer.new()
-		player.name = "Som_%s" % nome
-		var caminho: String = SONS[nome]
-		if ResourceLoader.exists(caminho):
-			player.stream = load(caminho)
-		player.bus = Catalog.bus_for(nome)
-		add_child(player)
-		_players[nome] = player
-	# WAVs originais; leitura direta também funciona na primeira importação.
-	for nome in SONS.keys() + Catalog.EXTRA:
+	# Cada som é lido UMA vez, de `assets/audio/arcade/`.
+	for nome in Catalog.CUES + Catalog.EXTRA:
 		var path = Catalog.path_for(nome)
 		if not ResourceLoader.exists(path) and not Compat.existe(path):
 			continue
@@ -179,13 +169,12 @@ func _ready() -> void:
 			# formato, então esta conta continua certa se um dia o
 			# projeto trocar de compressão.
 			stream.loop_end = int(round(stream.get_length() * stream.mix_rate))
-		var player: AudioStreamPlayer = _players.get(nome)
-		if player == null:
-			player = AudioStreamPlayer.new()
-			player.bus = Catalog.bus_for(nome)
-			add_child(player)
-			_players[nome] = player
+		var player = AudioStreamPlayer.new()
+		player.name = "Som_%s" % nome
+		player.bus = Catalog.bus_for(nome)
 		player.stream = stream
+		add_child(player)
+		_players[nome] = player
 	_criar_sino_de_round()
 
 ## Sino próprio, preparado no arranque e nunca no quadro em que o soco é

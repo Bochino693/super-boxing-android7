@@ -29,12 +29,13 @@ const FPS_FOLGADO = 29.5
 const QUADRO_CRITICO_MS = 48.0
 
 ## A janela 3D (a arena) é desenhada nesta fração da resolução lógica e
-## ampliada no quadro: 1080 × 1540 → 756 × 1078. Em 0,55 o lutador e a
-## torcida saíam borrados. O lutador leve (`boxeador_tvbox.glb`, 11 mil
-## vértices) pagou a nitidez. Se a luta sair lenta, o jogo desce sozinho
-## os degraus do gráfico (`Arena3D.DEGRAUS`: sem fachos, 62%, 55%) e
-## guarda o degrau para a próxima vez.
-const ARENA_ESCALA = 0.70
+## ampliada no quadro: 1080 × 1540 → 702 × 1001 — os MESMOS pixels da
+## build 113 (706 × 995), agora que a arena vai de ponta a ponta da tela.
+## Em 0,55 o lutador e a torcida saíam borrados. O lutador leve
+## (`boxeador_tvbox.glb`, 10 mil vértices) pagou a nitidez. Se a luta sair
+## lenta, o jogo desce sozinho os degraus do gráfico (`Arena3D.DEGRAUS`:
+## sem fachos, 60%, 55%) e guarda o degrau para a próxima vez.
+const ARENA_ESCALA = 0.65
 ## Antisserrilhado da arena: desligado (a ampliação já suaviza as bordas).
 const ARENA_MSAA = false
 ## As duas luzes coloridas de recorte (rosa e azul) redesenham o lutador

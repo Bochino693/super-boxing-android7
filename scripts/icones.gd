@@ -1,6 +1,9 @@
 class_name Icones
 extends Reference
 
+## Linhas, círculos e arcos como polígonos que se juntam (ver `scripts/lote.gd`).
+const Lote = preload("res://scripts/lote.gd")
+
 ## Ícones desenhados em código.
 ##
 ## SEM ARQUIVO DE IMAGEM. São cinco formas simples, e um PNG de cada uma
@@ -25,12 +28,7 @@ static func trofeu(ci: CanvasItem, centro: Vector2, raio: float, cor: Color) -> 
 	Traco.poligono(ci, taca, cor)
 	# Alças dos dois lados, abertas para fora.
 	for lado in [-1.0, 1.0]:
-		ci.draw_arc(
-			centro + Vector2(lado * r * 0.62, -r * 0.50), r * 0.30,
-			-PI * 0.5 if lado > 0.0 else PI * 0.5,
-			PI * 0.5 if lado > 0.0 else PI * 1.5,
-			18, cor, r * 0.15, true
-		)
+		Lote.aro(ci, centro + Vector2(lado * r * 0.62, -r * 0.50), r * 0.30, cor, r * 0.15, -PI * 0.5 if lado > 0.0 else PI * 0.5, PI * 0.5 if lado > 0.0 else PI * 1.5)
 	# Haste e base.
 	ci.draw_rect(Rect2(centro.x - r * 0.12, centro.y + r * 0.22, r * 0.24, r * 0.34), cor)
 	ci.draw_rect(Rect2(centro.x - r * 0.46, centro.y + r * 0.54, r * 0.92, r * 0.22), cor)
@@ -49,7 +47,7 @@ static func cinturao(ci: CanvasItem, centro: Vector2, raio: float, cor: Color) -
 	])
 	Traco.poligono(ci, faixa, couro)
 	Compat.circulo(ci, centro, r * 0.50, cor.darkened(0.20), true, -1.0, true)
-	ci.draw_arc(centro, r * 0.50, 0.0, TAU, 36, cor, r * 0.10, true)
+	Lote.aro(ci, centro, r * 0.50, cor, r * 0.10)
 	Compat.circulo(ci, centro, r * 0.30, cor, true, -1.0, true)
 	# Luva em relevo no centro deixa inequívoco que é prêmio de luta.
 	luva_vulto(ci, centro, r * 0.22, couro)
@@ -68,14 +66,8 @@ static func luva(ci: CanvasItem, centro: Vector2, raio: float, cor: Color) -> vo
 	var r = raio
 	_massa_da_luva(ci, centro, r, r * 0.10, cor.darkened(0.45))
 	_massa_da_luva(ci, centro, r, 0.0, cor)
-	ci.draw_line(
-		centro + Vector2(-r * 0.24, -r * 0.22), centro + Vector2(r * 0.58, -r * 0.26),
-		Color(1, 1, 1, 0.92), r * 0.11, true
-	)
-	ci.draw_line(
-		centro + Vector2(-r * 0.20, r * 0.42), centro + Vector2(r * 0.38, r * 0.42),
-		Color(1, 1, 1, 0.92), r * 0.12, true
-	)
+	Lote.traco(ci, centro + Vector2(-r * 0.24, -r * 0.22), centro + Vector2(r * 0.58, -r * 0.26), Color(1, 1, 1, 0.92), r * 0.11)
+	Lote.traco(ci, centro + Vector2(-r * 0.20, r * 0.42), centro + Vector2(r * 0.38, r * 0.42), Color(1, 1, 1, 0.92), r * 0.12)
 
 ## A LUVA SEM OS BRILHOS: só o vulto, na cor pedida.
 ##
@@ -125,12 +117,8 @@ static func ficha(ci: CanvasItem, centro: Vector2, raio: float, cor: Color) -> v
 	Compat.circulo(ci, centro, r * 0.88, cor, true, -1.0, true)
 	for i in range(8):
 		var a = float(i) / 8.0 * TAU + PI / 8.0
-		ci.draw_line(
-			centro + Vector2(cos(a), sin(a)) * r * 0.66,
-			centro + Vector2(cos(a), sin(a)) * r * 0.95,
-			Color(1, 1, 1, 0.9), r * 0.18, true
-		)
-	ci.draw_arc(centro, r * 0.58, 0.0, TAU, 40, Color(1, 1, 1, 0.85), r * 0.10, true)
+		Lote.traco(ci, centro + Vector2(cos(a), sin(a)) * r * 0.66, centro + Vector2(cos(a), sin(a)) * r * 0.95, Color(1, 1, 1, 0.9), r * 0.18)
+	Lote.aro(ci, centro, r * 0.58, Color(1, 1, 1, 0.85), r * 0.10)
 	estrela(ci, centro, r * 0.34, Color(1, 1, 1, 0.95))
 
 ## Raio — potência e o passo do soco.
@@ -174,8 +162,8 @@ static func avatar(ci: CanvasItem, centro: Vector2, raio: float, cor: Color) -> 
 
 ## Alvo — onde o soco tem de chegar.
 static func alvo(ci: CanvasItem, centro: Vector2, raio: float, cor: Color) -> void:
-	ci.draw_arc(centro, raio * 0.82, 0.0, TAU, 44, cor, raio * 0.18, true)
-	ci.draw_arc(centro, raio * 0.44, 0.0, TAU, 32, cor, raio * 0.16, true)
+	Lote.aro(ci, centro, raio * 0.82, cor, raio * 0.18)
+	Lote.aro(ci, centro, raio * 0.44, cor, raio * 0.16)
 	Compat.circulo(ci, centro, raio * 0.14, cor, true, -1.0, true)
 
 ## Botão de arcade visto de cima — o passo do START.
@@ -186,9 +174,6 @@ static func alvo(ci: CanvasItem, centro: Vector2, raio: float, cor: Color) -> vo
 static func botao(ci: CanvasItem, centro: Vector2, raio: float, cor: Color) -> void:
 	var r = raio
 	Compat.circulo(ci, centro, r * 0.95, cor.darkened(0.45), true, -1.0, true)
-	ci.draw_arc(centro, r * 0.95, 0.0, TAU, 44, cor.darkened(0.65), r * 0.10, true)
+	Lote.aro(ci, centro, r * 0.95, cor.darkened(0.65), r * 0.10)
 	Compat.circulo(ci, centro - Vector2(0.0, r * 0.05), r * 0.64, cor, true, -1.0, true)
-	ci.draw_arc(
-		centro - Vector2(0.0, r * 0.05), r * 0.40,
-		PI * 1.08, PI * 1.78, 20, Color(1, 1, 1, 0.75), r * 0.16, true
-	)
+	Lote.aro(ci, centro - Vector2(0.0, r * 0.05), r * 0.40, Color(1, 1, 1, 0.75), r * 0.16, PI * 1.08, PI * 1.78)

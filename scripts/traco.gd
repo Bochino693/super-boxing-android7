@@ -1,6 +1,9 @@
 class_name Traco
 extends Reference
 
+## Linhas, círculos e arcos como polígonos que se juntam (ver `scripts/lote.gd`).
+const Lote = preload("res://scripts/lote.gd")
+
 ## BORDA LISA NUM DESENHO QUE NÃO TEM ANTISSERRILHADO.
 ##
 ## O projeto roda no renderizador "GL Compatibility", que é o que garante
@@ -53,9 +56,23 @@ static func poligono(ci: CanvasItem, pontos: PoolVector2Array, cor: Color) -> vo
 	if _E.suavizar and _vale_suavizar(pontos):
 		contorno(ci, pontos, cor)
 
+## Quais formas valem a borda lisa, já respondido (a conta é um laço em
+## GDScript, e as mesmas formas voltam a cada quadro).
+const _VALE = {}
+
 static func _vale_suavizar(pontos: PoolVector2Array) -> bool:
 	if pontos.size() < 3:
 		return false
+	var guardado = _VALE.get(pontos)
+	if guardado != null:
+		return guardado
+	if _VALE.size() > 500:
+		_VALE.clear()
+	var vale = _medir_para_suavizar(pontos)
+	_VALE[pontos] = vale
+	return vale
+
+static func _medir_para_suavizar(pontos: PoolVector2Array) -> bool:
 	var menor = pontos[0]
 	var maior = pontos[0]
 	for ponto in pontos:
@@ -68,9 +85,8 @@ static func _vale_suavizar(pontos: PoolVector2Array) -> bool:
 static func contorno(ci: CanvasItem, pontos: PoolVector2Array, cor: Color, espessura := BORDA) -> void:
 	if pontos.size() < 3:
 		return
-	var fecho = PoolVector2Array(pontos)
-	fecho.append(pontos[0])
-	ci.draw_polyline(fecho, cor, espessura, true)
+	# como polígono, que se junta com os vizinhos (ver `Lote.borda`)
+	Lote.borda(ci, pontos, cor, espessura, true)
 
 
 ## ======================================================================
@@ -120,7 +136,7 @@ static func segmentos(raio: float) -> int:
 static func arco(
 	ci: CanvasItem, centro: Vector2, raio: float, cor: Color, espessura: float
 ) -> void:
-	ci.draw_arc(centro, raio, 0.0, TAU, segmentos(raio), cor, espessura, true)
+	Lote.aro(ci, centro, raio, cor, espessura)
 
 ## Um pedaço de anel. O número de segmentos acompanha o ÂNGULO, e não só
 ## o raio: meia volta com os segmentos de uma volta inteira é o dobro do
@@ -130,6 +146,4 @@ static func setor(
 	ci: CanvasItem, centro: Vector2, raio: float, de: float, ate: float,
 	cor: Color, espessura: float
 ) -> void:
-	var fatia = abs(ate - de) / TAU
-	var passos = int(max(12, int(ceil(segmentos(raio) * fatia))))
-	ci.draw_arc(centro, raio, de, ate, passos, cor, espessura, true)
+	Lote.aro(ci, centro, raio, cor, espessura, de, ate)

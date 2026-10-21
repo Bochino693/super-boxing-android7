@@ -1,4 +1,7 @@
 extends Reference
+## Linhas, círculos e arcos como polígonos que se juntam (ver `scripts/lote.gd`).
+const Lote = preload("res://scripts/lote.gd")
+
 ## Cenografia e abertura. Não controla créditos, câmera ou pontuação.
 ## A IDENTIDADE SUPER BOXING, a mesma do gabinete. Tudo em IMAGEM pronta
 ## (tools/gerar_tema.py): letreiro desenhado pela fonte, numa TV Box, é
@@ -164,12 +167,12 @@ static func background_animado(canvas: CanvasItem, time: float) -> void:
 		for i in range(_quantos(12)):
 			var y = 455.0 + i * 86.0
 			var light = 0.25 + 0.75 * pow(0.5 + 0.5 * sin(time * 3.2 - i * 0.65), 3.0)
-			canvas.draw_line(Vector2(x - 9, y), Vector2(x + 9, y - 7), Compat.cor(RED if i % 2 else AZUL, light * 0.8), 5.0, true)
+			Lote.traco(canvas, Vector2(x - 9, y), Vector2(x + 9, y - 7), Compat.cor(RED if i % 2 else AZUL, light * 0.8), 5.0)
 	for i in range(_quantos(22)):
 		var speed = 26.0 + float(i % 4) * 16.0
 		var y = fposmod(float(i) * 97.0 - time * speed, 1860.0)
 		var x = 65.0 + fposmod(float(i) * 157.0, 950.0)
-		canvas.draw_line(Vector2(x, y), Vector2(x + 3, y - 10), Compat.cor(AZUL if i % 3 else RED, 0.16), 2.0, true)
+		Lote.traco(canvas, Vector2(x, y), Vector2(x + 3, y - 10), Compat.cor(AZUL if i % 3 else RED, 0.16), 2.0)
 
 ## O LOGO SUPER BOXING. `size` é o "tamanho de emblema" de sempre (o
 ## escudo antigo era quadrado); o logo é mais largo que alto, então a
@@ -244,15 +247,12 @@ static func _intro_varredura(canvas: Control, time: float) -> void:
 			Vector2(x + 420.0, 1920.0), Vector2(x + 40.0, 1920.0),
 		])
 		Traco.poligono(canvas, faixa, Compat.cor(GOLD, 0.34 * forca))
-		canvas.draw_line(Vector2(x, 0.0), Vector2(x + 230.0, 1920.0), Compat.cor(WHITE, 0.95 * forca), 7.0, true)
+		Lote.traco(canvas, Vector2(x, 0.0), Vector2(x + 230.0, 1920.0), Compat.cor(WHITE, 0.95 * forca), 7.0)
 	# A linha do horizonte que abre junto: sem ela os dois facões passam
 	# por um retângulo preto e a máquina parece que ainda não ligou.
 	var abertura = ease(t, 0.3)
 	var meia = 1080.0 * abertura
-	canvas.draw_line(
-		Vector2(540.0 - meia, 960.0), Vector2(540.0 + meia, 960.0),
-		Compat.cor(WHITE, forca * 0.8), lerp(2.0, 26.0, 1.0 - t), true
-	)
+	Lote.traco(canvas, Vector2(540.0 - meia, 960.0), Vector2(540.0 + meia, 960.0), Compat.cor(WHITE, forca * 0.8), lerp(2.0, 26.0, 1.0 - t))
 
 ## O SOCO VEM DE LADO, E VEM PARA CIMA DE QUEM OLHA.
 ##
@@ -351,10 +351,7 @@ static func _voo_riscos(canvas: Control, centro: Vector2, raio: float, direcao: 
 		var origem = centro - direcao * rand_range(raio * 1.2, raio * 3.4 + 900.0) + lado
 		var comprimento = rand_range(120.0, 320.0) * (0.5 + t)
 		var cor = GOLD if i % 3 else WHITE
-		canvas.draw_line(
-			origem, origem + direcao * comprimento,
-			Compat.cor(cor, 0.16 + 0.22 * t), lerp(2.0, 6.0, t), true
-		)
+		Lote.traco(canvas, origem, origem + direcao * comprimento, Compat.cor(cor, 0.16 + 0.22 * t), lerp(2.0, 6.0, t))
 
 ## O PUNHO, montado na direção do voo.
 ##
@@ -439,7 +436,7 @@ static func _punho(canvas: Control, centro: Vector2, raio: float, direcao: Vecto
 	for lugar in lugares:
 		Compat.circulo(canvas, lugar + perp * r * 0.06 - direcao * r * 0.02, r * 0.15, Compat.cor(luz, a * 0.9), true, -1.0, true)
 	var ang = direcao.angle()
-	canvas.draw_arc(centro, r * 0.99, ang - 0.55, ang + 0.55, 22, Compat.cor(WHITE, a * 0.45), r * 0.05, true)
+	Lote.aro(canvas, centro, r * 0.99, Compat.cor(WHITE, a * 0.45), r * 0.05, ang - 0.55, ang + 0.55)
 
 ## O SOCO. Clarão, três ondas e um leque de riscas saindo do ponto.
 static func _intro_impacto(canvas: Control, time: float) -> void:
@@ -463,10 +460,7 @@ static func _intro_impacto(canvas: Control, time: float) -> void:
 		for i in range(26):
 			var direcao = polar2cartesian(1.0, float(i) * TAU / 26.0 + 0.12)
 			var perto = 180.0 + leque * 620.0
-			canvas.draw_line(
-				SOCO + direcao * perto, SOCO + direcao * (perto + lerp(230.0, 40.0, leque)),
-				Compat.cor(GOLD, (1.0 - leque) * 0.9), lerp(9.0, 2.0, leque), true
-			)
+			Lote.traco(canvas, SOCO + direcao * perto, SOCO + direcao * (perto + lerp(230.0, 40.0, leque)), Compat.cor(GOLD, (1.0 - leque) * 0.9), lerp(9.0, 2.0, leque))
 
 ## O EMBLEMA NASCE DO PONTO DO SOCO e, no fim, caminha até o lugar exato
 ## em que a tela de abertura o desenha.
@@ -485,11 +479,7 @@ static func _intro_emblema(canvas: Control, time: float, morph: float) -> void:
 		for i in range(24):
 			var ang = float(i) * TAU / 24.0 + time * 1.6
 			var brilho = 0.35 + 0.65 * pow(0.5 + 0.5 * sin(ang * 3.0 - time * 5.0), 2.0)
-			canvas.draw_line(
-				centro + polar2cartesian(1.0, ang) * raio,
-				centro + polar2cartesian(1.0, ang) * (raio + 26.0),
-				Compat.cor(GOLD, anel * brilho * 0.8), 5.0, true
-			)
+			Lote.traco(canvas, centro + polar2cartesian(1.0, ang) * raio, centro + polar2cartesian(1.0, ang) * (raio + 26.0), Compat.cor(GOLD, anel * brilho * 0.8), 5.0)
 	# Opacidade cheia quase de imediato: o emblema NASCE do clarão, não
 	# aparece esmaecendo. Quem cresce é o tamanho, não a tinta — um
 	# emblema meio transparente sobre o escuro sai cinza, e cinza é a
@@ -522,10 +512,7 @@ static func _intro_letreiro(canvas: Control, time: float, morph: float) -> void:
 	imagem(canvas, NEVER, Vector2(540.0 + entra, sub_y), NEVER_LARGURA, Color(1, 1, 1, desliza))
 	if desliza < 1.0 and morph <= 0.0:
 		var meia = 470.0 * ease(desliza, 0.3)
-		canvas.draw_line(
-			Vector2(540.0 - meia, sub_y + 70.0), Vector2(540.0 + meia, sub_y + 70.0),
-			Compat.cor(GOLD, 1.0 - desliza * 0.75), 6.0, true
-		)
+		Lote.traco(canvas, Vector2(540.0 - meia, sub_y + 70.0), Vector2(540.0 + meia, sub_y + 70.0), Compat.cor(GOLD, 1.0 - desliza * 0.75), 6.0)
 
 ## A ASSINATURA DA CASA e o recorde. Entram por último porque são a
 ## informação, e informação depois do espetáculo é informação que fica.
@@ -574,10 +561,7 @@ static func _intro_brilho(canvas: Control, time: float, morph: float) -> void:
 	var batida = _janela(time, T_BRILHO + 0.15, 0.75)
 	if batida > 0.0 and batida < 1.0:
 		var raio_batida = lerp(300.0, 640.0, ease(batida, 0.35))
-		canvas.draw_arc(
-			Vector2(540.0, 760.0), raio_batida,
-			0.0, TAU, Traco.segmentos(raio_batida), Compat.cor(GOLD, (1.0 - batida) * 0.5), 5.0, true
-		)
+		Lote.aro(canvas, Vector2(540.0, 760.0), raio_batida, Compat.cor(GOLD, (1.0 - batida) * 0.5), 5.0)
 	# Brasas subindo do rodapé: movimento lento e contínuo, que é o que
 	# uma cena parada precisa para continuar viva sem roubar a atenção
 	# do letreiro.
@@ -628,10 +612,7 @@ static func _intro_selo(canvas: Control, time: float) -> void:
 	_contorno_redondo(canvas, placa, raio, Compat.cor(GOLD, alpha), 4.0)
 	# Bisel: um fio claro em cima e um escuro embaixo, que é o que faz
 	# uma placa lisa parecer uma peça e não um retângulo pintado.
-	canvas.draw_line(
-		placa.position + Vector2(raio, 5.0), placa.position + Vector2(placa.size.x - raio, 5.0),
-		Compat.cor(WHITE, alpha * 0.22), 3.0, true
-	)
+	Lote.traco(canvas, placa.position + Vector2(raio, 5.0), placa.position + Vector2(placa.size.x - raio, 5.0), Compat.cor(WHITE, alpha * 0.22), 3.0)
 
 	var dentro = lado * 0.86
 	canvas.draw_texture_rect(
@@ -671,14 +652,14 @@ static func _placa_redonda(canvas: CanvasItem, rect: Rect2, raio: float, cor: Co
 		Compat.circulo(canvas, canto, raio, cor, true, -1.0, true)
 
 static func _contorno_redondo(canvas: CanvasItem, rect: Rect2, raio: float, cor: Color, largura: float) -> void:
-	canvas.draw_line(rect.position + Vector2(raio, 0.0), Vector2(rect.end.x - raio, rect.position.y), cor, largura, true)
-	canvas.draw_line(Vector2(rect.position.x, rect.position.y + raio), Vector2(rect.position.x, rect.end.y - raio), cor, largura, true)
-	canvas.draw_line(Vector2(rect.end.x, rect.position.y + raio), Vector2(rect.end.x, rect.end.y - raio), cor, largura, true)
-	canvas.draw_line(Vector2(rect.position.x + raio, rect.end.y), Vector2(rect.end.x - raio, rect.end.y), cor, largura, true)
+	Lote.traco(canvas, rect.position + Vector2(raio, 0.0), Vector2(rect.end.x - raio, rect.position.y), cor, largura)
+	Lote.traco(canvas, Vector2(rect.position.x, rect.position.y + raio), Vector2(rect.position.x, rect.end.y - raio), cor, largura)
+	Lote.traco(canvas, Vector2(rect.end.x, rect.position.y + raio), Vector2(rect.end.x, rect.end.y - raio), cor, largura)
+	Lote.traco(canvas, Vector2(rect.position.x + raio, rect.end.y), Vector2(rect.end.x - raio, rect.end.y), cor, largura)
 	var quartos = [PI, -PI * 0.5, 0.0, PI * 0.5]
 	var i = 0
 	for canto in _cantos(rect, raio):
-		canvas.draw_arc(canto, raio, quartos[i], quartos[i] + PI * 0.5, 16, cor, largura, true)
+		Lote.aro(canvas, canto, raio, cor, largura, quartos[i], quartos[i] + PI * 0.5)
 		i += 1
 
 static func _cantos(rect: Rect2, raio: float) -> Array:

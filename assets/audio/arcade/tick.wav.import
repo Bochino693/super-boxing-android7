@@ -2,12 +2,12 @@
 
 importer="wav"
 type="AudioStreamSample"
-path="res://.import/record.wav-c1cb2e69e61d141a5824c6565e13810d.sample"
+path="res://.import/tick.wav-afa32525e61989f8ce2f6fa2d579315c.sample"
 
 [deps]
 
-source_file="res://assets/audio/record.wav"
-dest_files=[ "res://.import/record.wav-c1cb2e69e61d141a5824c6565e13810d.sample" ]
+source_file="res://assets/audio/arcade/tick.wav"
+dest_files=[ "res://.import/tick.wav-afa32525e61989f8ce2f6fa2d579315c.sample" ]
 
 [params]
 
