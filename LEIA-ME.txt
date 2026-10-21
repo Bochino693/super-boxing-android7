@@ -1,9 +1,23 @@
-SUPER BOXING - TV BOX TX9 / S905L (MALI-450, OPENGL ES 2.0) - BUILD 116
-========================================================================
+SUPER BOXING - TV BOX MALI-450 (TX9) - OPENGL ES 2.0 - BUILD 117
+=================================================================
 
-UM ARQUIVO SO: GERAR_APK_AGORA.bat gera o APK certo para a TX9 (Godot
-3.6, OpenGL ES 2.0, texturas ETC1 da Mali-450). Veja "GERAR O APK" mais
-abaixo.
+ESTA VERSAO E PARA TV BOX COM PLACA DE VIDEO MALI-450 (TX9): Godot 3.6,
+OpenGL ES 2.0, texturas ETC1. UM ARQUIVO SO: GERAR_APK_AGORA.bat gera o
+APK certo. Veja "GERAR O APK" mais abaixo.
+
+O QUE A BUILD 117 MUDA (BASE: A 116)
+------------------------------------
+- O GERAR_APK_AGORA.bat NAO PARA MAIS NO FIM. O APK saia pronto, mas a
+  janela dizia FALHA com "O processo nao pode acessar o arquivo
+  exportacao.log.erros porque ele esta sendo usado por outro processo": o
+  Gradle (que monta o APK) deixa um processo de fundo aberto segurando
+  esse arquivo. Agora a saida vai para arquivos temporarios proprios, lidos
+  sem brigar com ele, e o registro final (build\android\exportacao.log) e
+  escrito so pelo gerador.
+- Tudo diz MALI-450: a janela do gerador, o rodape do jogo e a Central
+  ("Mali-450 - TX9 - OpenGL ES 2.0"), a versao do APK (1.0.117-mali450). O
+  nome do pacote e a assinatura NAO mudaram: o APK instala por cima do
+  atual e o ranking, as fotos e os ajustes ficam.
 
 PARA QUAL MAQUINA E ESTA VERSAO
 -------------------------------
@@ -625,7 +639,7 @@ GERAR O APK
    nao sao do jogo sao ignoradas pelo Godot. Se faltar arquivo, ele avisa.
 2. Clique duas vezes em  GERAR_APK_AGORA.bat
 3. Espere. A janela mostra cada passo e NAO fecha sozinha: no fim aparece
-   "APK GERADO E CONFERIDO - build 116, sem erros" (ou FALHA com o motivo).
+   "APK GERADO E CONFERIDO - build 117, sem erros" (ou FALHA com o motivo).
 4. O APK fica em:  build\android\SuperBoxing.apk
 
 Precisa no PC:

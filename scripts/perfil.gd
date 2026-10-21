@@ -1,7 +1,7 @@
 class_name Perfil
 extends Reference
 
-## O PERFIL DESTA VERSÃO: TV Box Amlogic S905L.
+## O PERFIL DESTA VERSÃO: TV BOX COM MALI-450 (TX9) — OPENGL ES 2.0.
 ##
 ## Quatro núcleos Cortex-A53, 1 GB de RAM, 8 GB de armazenamento, Android
 ## 7.1 e uma placa de vídeo de celular de entrada. Tudo o que esta versão
@@ -13,7 +13,7 @@ extends Reference
 ## só recortavam o contorno, antisserrilhado de uma imagem que vai ser
 ## ampliada, partículas demais, resolução interna da janela 3D).
 
-const NOME = "S905L · Android 7.1"
+const NOME = "Mali-450 · TX9 · OpenGL ES 2.0"
 
 ## 30 quadros por segundo, FIXOS. Num processador desses, mirar 60 dá um
 ## jogo que oscila entre 35 e 55 — e oscilar é o que o olho chama de

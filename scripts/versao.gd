@@ -12,9 +12,9 @@ extends Reference
 ## NUMERO em um e escreva em NOTA o que mudou. Um carimbo que não sobe
 ## mente, e um carimbo que mente é pior do que carimbo nenhum.
 
-const NUMERO = 116
+const NUMERO = 117
 const DATA = "21/10/2026"
-const NOTA = "liso na Mali-450: linhas, círculos e arcos do 2D desenhados como polígonos que se juntam (abertura de 264 para ~30 chamadas à placa de vídeo por quadro, luta de 320 para 101); medidor de impacto sem refazer a forma a cada quadro; lutador com 10 mil vértices; arena com os pixels da build 113; som de fliperama de luta sem gritos (torcida grave sintetizada e fanfarras); torcida repintada mais definida e fachos de refletor varrendo a plateia; só o GERAR_APK_AGORA.bat"
+const NOTA = "a versão da TV Box Mali-450 (TX9, OpenGL ES 2.0): o gerador de APK não para mais com \"arquivo sendo usado por outro processo\" (o Gradle segurava o registro); nomes S905L trocados por Mali-450; base 116 (liso na Mali-450, som de fliperama sem gritos, torcida mais definida)"
 
 ## Rodapé da abertura: cabe em uma linha discreta.
 static func curta() -> String:
