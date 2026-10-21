@@ -422,6 +422,15 @@ func fogos(centro: Vector2, cores: Array) -> void:
 
 ## Poeira ambiente contínua (a respiração do cenário). Um emissor por
 ## nome, criado na primeira chamada; `ligada` liga e desliga.
+## Desliga (e esconde) uma brisa já criada, sem mexer no resto dela: na
+## luta a poeira do palco fica atrás da arena e não precisa ser calculada.
+func pausar_brisa(nome: String, pausada: bool) -> void:
+	var p: CPUParticles2D = _brisas.get(nome)
+	if p == null:
+		return
+	p.emitting = not pausada
+	p.visible = not pausada
+
 func brisa(nome: String, area: Rect2, cor: Color, por_segundo := 3.0, ligada := true) -> void:
 	if _fundo == null:
 		return

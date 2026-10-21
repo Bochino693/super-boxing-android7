@@ -98,6 +98,22 @@ func vida(valor: float) -> void:
 	if _parado != null:
 		_parado.material = _vivo if valor >= 0.5 else null
 
+## A JANELA DA ARENA. Na luta a arena 3D cobre a tela de y 100 a 1672, de
+## ponta a ponta: a arte do fundo, as lâmpadas e as fagulhas desenhadas
+## ali embaixo eram 1,7 milhão de pixels por quadro que ninguém via. Com
+## o buraco marcado, o fundo só é desenhado nas duas faixas em volta.
+var buraco = Rect2()
+
+func recortar(r: Rect2) -> void:
+	if r == buraco:
+		return
+	buraco = r
+	if _parado != null:
+		_parado.visible = r.size == Vector2.ZERO
+	# a poeira do palco cai atrás da arena: na luta ela nem é calculada
+	fx.pausar_brisa("palco", r.size != Vector2.ZERO)
+	update()
+
 ## O PASSO VEM DE FORA. Ver o cabeçalho.
 func avancar(passo: float) -> void:
 	if _vivo != null:
@@ -133,7 +149,18 @@ func _draw() -> void:
 	# A parte parada dele saiu para o filho `Parado`, que já desenhou
 	# antes deste `_draw` por estar em z menor. O que fica aqui é só o
 	# que se mexe.
-	ArcadeStage.background_animado(self, tempo)
+	var arte: Texture = (_parado as TextureRect).texture if _parado is TextureRect else null
+	if buraco.size != Vector2.ZERO and arte != null:
+		# Só as faixas de cima e de baixo da arte, no mesmo lugar em que a
+		# imagem inteira as desenharia.
+		var k = Vector2(arte.get_size()) / rect_size
+		var y0 = clamp(buraco.position.y, 0.0, rect_size.y)
+		var y1 = clamp(buraco.end.y, 0.0, rect_size.y)
+		draw_texture_rect_region(arte, Rect2(0.0, 0.0, rect_size.x, y0), Rect2(0.0, 0.0, arte.get_width(), y0 * k.y))
+		draw_texture_rect_region(arte, Rect2(0.0, y1, rect_size.x, rect_size.y - y1),
+			Rect2(0.0, y1 * k.y, arte.get_width(), (rect_size.y - y1) * k.y))
+	else:
+		ArcadeStage.background_animado(self, tempo)
 	fx.desenhar(self)
 	if matiz.a > 0.001:
 		draw_rect(Rect2(Vector2.ZERO, rect_size), matiz)

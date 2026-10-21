@@ -1,7 +1,7 @@
 extends Node2D
 
 ## TESTE DA ARENA 3D (só no PC, não vai no APK: tools/* fica fora).
-##   godot3 --path . res://tools/testes/arena_teste.tscn -- [--seg=44] [--fotos=pasta] [--perfil=arquivo.csv]
+##   godot3 --path . res://tools/testes/arena_teste.tscn -- [--seg=44] [--fotos=pasta] [--perfil=arquivo.csv] [--degrau=0]
 ## Monta só a arena (ringue, torcida, lutador) e roda uma luta roteirizada
 ## em laço: guarda, soco fraco, soco forte (cordas), soco na tela, nocaute
 ## e levantar, comemoração, deboche e o soco final. Grava fotos da janela
@@ -26,6 +26,8 @@ var tela: TextureRect
 var segundos = 44.0
 var pasta_fotos = ""
 var arquivo = ""
+## O degrau do gráfico (`Arena3D.DEGRAUS`) em que a arena roda.
+var degrau = 0
 var t = 0.0
 var t_total = 0.0
 var _passo = 0
@@ -43,12 +45,15 @@ func _ready() -> void:
 			pasta_fotos = a.substr(8)
 		elif a.begins_with("--perfil="):
 			arquivo = a.substr(9)
+		elif a.begins_with("--degrau="):
+			degrau = int(a.substr(9))
 	Engine.target_fps = Perfil.FPS
 	arena = Arena3D.new()
 	arena.name = "Arena"
 	add_child(arena)
 	var ini = OS.get_ticks_msec()
 	var ok = arena.instalar()
+	arena.aplicar_degrau(degrau)
 	print("ARENA instalada=%s em %d ms (corpo pela placa=%s)" % [ok, OS.get_ticks_msec() - ini,
 		not VisualServer.has_os_feature("skinning_fallback") and not ProjectSettings.get_setting("rendering/quality/skinning/force_software_skinning")])
 	arena.preparar()

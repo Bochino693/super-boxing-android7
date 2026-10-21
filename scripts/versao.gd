@@ -12,9 +12,9 @@ extends Reference
 ## NUMERO em um e escreva em NOTA o que mudou. Um carimbo que não sobe
 ## mente, e um carimbo que mente é pior do que carimbo nenhum.
 
-const NUMERO = 113
+const NUMERO = 115
 const DATA = "21/10/2026"
-const NOTA = "base 112; olhos do lutador com íris e pupila nítidas (não parece mais cego); lutador sempre pintado (texturas vestidas na montagem, sem depender da ordem de importação); arquivos sem uso fora do projeto; gerador de APK mostra o motivo do Gradle; ondas de choque do soco sem recálculo por quadro"
+const NOTA = "a build 208 (versão PRO, Godot 4.6) inteira na TX9, no Godot 3.6 / OpenGL ES 2.0: arena de ponta a ponta com treliça de luz, refletores, fachos e faixas; mostrador de impacto redondo e cartões em pílula; cortina antes de cada troca de tela; nocaute antes da festa; descida do saco mesmo com a placa reconectando; gráfico da arena que se ajusta sozinho (degraus); 2D em lote (menos chamadas de desenho); cadarços sem serrilhado"
 
 ## Rodapé da abertura: cabe em uma linha discreta.
 static func curta() -> String:

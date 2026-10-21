@@ -12,6 +12,10 @@ extends Spatial
 ## Altura do lutador em pé, em metros: é por ela que a câmera enquadra.
 const ALTURA_DA_FIGURA = 1.80
 
+## A camada de desenho (bit 2) que só o corpo do lutador tem, além da
+## camada comum: as luzes de recorte e a do rosto acendem só nela.
+const CAMADA_DAS_LUZES := 2
+
 const DANO_POR_GOLPE = 0.62
 const DANO_MINIMO = 0.02
 const TEMPO_NA_LONA = 1.10
@@ -145,9 +149,19 @@ func bater(forca: float, derruba := false, pontos := -1, ultimo := false) -> Dic
 		_tocar("knockout")
 	elif not _caindo:
 		papel = reacao_para_pontos(pontos, f)
+		# NO ÚLTIMO SOCO ELE NÃO DESDENHA: a provocação de braços abertos,
+		# no fim da rodada, era lida como comemoração antes do nocaute. Ele
+		# sente o golpe fraco e o que vem em seguida é o soco final.
+		if ultimo and papel == "taunt_weak":
+			papel = "hit_light"
 		desdenhou = papel == "taunt_weak" and pontos >= 0 and pontos < LIMITE_DO_DESDEM
 		_tempo_reacao = float(DURACAO.get(papel, 0.8))
-		_vai_comemorar = ultimo
+		# O ÚLTIMO SOCO NÃO DECIDE A FESTA (build 208). Antes ele já deixava
+		# a comemoração marcada para o fim da reação — e com dois socos
+		# fracos o lutador levantava os braços ANTES de derrubar o jogador.
+		# Quem decide agora é `fim_de_rodada`: ganhou, ele derruba primeiro
+		# e só comemora depois que a luva acertou (`soco_final`).
+		_vai_comemorar = false
 		_tocar(papel)
 	return {"nocaute": nocaute, "dano": dano, "reacao": papel, "desdenhou": desdenhou}
 
@@ -235,22 +249,37 @@ func atualizar(delta: float) -> void:
 func fim_de_rodada(desfecho: String) -> void:
 	_comemora_depois_do_soco = false
 	match desfecho:
-		"derrota":
-			_festa = "deboche"
-		"vitoria":
+		"vitoria", "nocaute":
+			# PERDEU A LUTA, NÃO COMEMORA. Derrubado nesta rodada (mesmo que
+			# tenha levantado) ou batido forte e de pé: fica zonzo, cabeça
+			# baixa — nunca os braços para cima. Antes o "nocaute" caía no
+			# caso padrão ("celebra"): o lutador levantava do knockdown e
+			# comemorava como se tivesse ganhado.
 			_festa = "tonto"
-		"empate":
-			# AGUENTOU, MAS NÃO COMEMORA AINDA: volta à guarda e espera o
-			# revide (o jogo pede o soco na tela). Os braços só sobem
-			# depois que a luva dele acertou — ver `soco_final`.
-			_festa = "celebra"
+			_vai_comemorar = true
+			if _papel in PAPEIS_DE_FESTA:
+				_tocar(_festa)
+		_:
+			# GANHOU ("derrota" ou "empate" do jogador): PRIMEIRO O NOCAUTE.
+			# Nenhum dos socos foi bom o bastante — ele volta à guarda e
+			# espera o jogo pedir o soco final na câmera. Os braços só sobem
+			# depois que a luva dele acertou (ver `soco_final` e `venceu`):
+			# derruba, depois comemora, nunca o inverso.
+			_festa = "deboche" if desfecho == "derrota" else "celebra"
 			_vai_comemorar = false
 			_comemora_depois_do_soco = true
 			if _papel in PAPEIS_DE_FESTA:
 				_tocar("guard")
-			return
-		_:
-			_festa = "celebra"
+
+
+## O SOCO FINAL ACERTOU O JOGADOR: agora sim quem ganhou comemora, assim
+## que a reação do soco termina. Serve também ao nocaute por tempo (a vida
+## do jogador acabou antes do último soco), quando ninguém chamou
+## `fim_de_rodada` antes da luva sair.
+func venceu(festa := "") -> void:
+	_comemora_depois_do_soco = false
+	if festa != "":
+		_festa = festa
 	_vai_comemorar = true
 	if _papel in PAPEIS_DE_FESTA:
 		_tocar(_festa)

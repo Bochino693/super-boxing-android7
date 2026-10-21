@@ -123,6 +123,47 @@ var _obturador_foi_aberto = false
 var adormecida = false
 ## O jogo está parado na tela de espera: pode aparecer janela do Android.
 var janelas_liberadas = false
+
+## A CÂMERA DESCANSA NA LUTA (build 207).
+##
+## Aberta, a webcam fica mandando 30 quadros por segundo o tempo todo: o
+## Android decodifica cada um (o MJPEG da webcam USB) no processador e
+## guarda numa superfície de vídeo — trabalho de processador, de memória
+## e de placa de vídeo que a luta inteira pagava sem mostrar a imagem.
+## Depois da foto a webcam é SOLTA (`descansar`) e volta no fim da rodada
+## (`retomar`): na tela do resultado, da abertura ou na Central — muito
+## antes do próximo START. Só no Android: no PC a câmera fica como está.
+var em_descanso := false
+
+func descansar() -> void:
+	if em_descanso or not enabled or OS.get_name() != "Android" or adormecida:
+		return
+	em_descanso = true
+	_registro("descanso: webcam solta durante a luta")
+	_parar_feed()
+	_parar_uvc_android()
+	status = "CÂMERA EM DESCANSO DURANTE A LUTA"
+
+func retomar() -> void:
+	if not em_descanso:
+		return
+	em_descanso = false
+	var agora = Time.get_ticks_msec()
+	_registro("retomada depois da luta")
+	# O vigia (`_vigiar_webcam_android`) dá à webcam o tempo inteiro de
+	# paciência para voltar antes de mexer nela de novo.
+	_uvc_quadro_ms = agora
+	_uvc_parada = false
+	_uvc_proximo_religar_ms = agora + 3000
+	_sem_video_desde_ms = 0
+	_proxima_busca_ms = 0
+	_proxima_leitura_uvc_ms = 0
+	_caca_desde_ms = agora
+	status = "CÂMERA VOLTANDO…"
+	if _caca == Caca.PONTE and _android_bridge != null and _ponte_tem("startUvcCamera"):
+		_android_bridge.call("startUvcCamera")
+	elif enabled:
+		_descobrir_cameras(false)
 var _ja_montada = false
 
 ## O jogo voltou para a frente: confere já a permissão e a câmera.
@@ -433,7 +474,7 @@ func _requisitar_webcam_usb_android(forcar := false) -> void:
 			status = resposta
 
 func _process(_delta: float) -> void:
-	if adormecida:
+	if adormecida or em_descanso:
 		return
 	var agora = Time.get_ticks_msec()
 	if _despertar_passo(agora):

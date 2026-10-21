@@ -57,16 +57,31 @@ AREA_DOS_OLHOS = (8, 8, 192)          # x, y, lado (px em 2048)
 IRIS = 0.66                           # raio angular da iris (rad): maior que o real, para ler de longe
 PUPILA = 0.26
 
+## OS CADARCOS DA BOTA SEM SERRILHADO (da versao PRO, build 208). O
+## cadarco e pintado nos VERTICES da bota (branco puro sobre o couro
+## preto), e nao numa textura: a cor so muda de um vertice para o outro, e
+## o branco escorria em degraus pelos triangulos vizinhos - na TV, um
+## "xxxx" serrilhado na frente da bota. A PRO troca a cor ao montar o
+## lutador; aqui a troca e feita no arquivo (refazer a malha no jogo
+## corrompe a memoria quando o corpo e deformado pelo processador, o caso
+## da Mali-450). Em cinza grafite o cadarco continua la, discreto, e a bota
+## le como couro preto limpo. A sola branca (abaixo de CADARCO_ACIMA_DE ou
+## atras do peito do pe) nao muda.
+COR_DO_CADARCO = (0.30, 0.30, 0.34)
+CADARCO_ACIMA_DE = 0.05
+
 ALVOS = {
     "Pele": (0.45, 0.004),
     "Cabelo": (0.10, 0.02),
-    "LuvaLeft": (0.15, 0.01),
-    "LuvaRight": (0.15, 0.01),
-    "BotaLeft": (0.15, 0.01),
-    "BotaRight": (0.15, 0.01),
+    "LuvaLeft": (0.18, 0.01),
+    "LuvaRight": (0.18, 0.01),
+    # a bota tem os cadarcos pintados na cor dos vertices: guarda mais
+    "BotaLeft": (0.24, 0.008),
+    "BotaRight": (0.24, 0.008),
     "Cinturao": (0.35, 0.006),
     "Placa": (0.35, 0.006),
-    "Calcao": (0.80, 0.004),
+    # a bermuda nova da versao PRO (barra, faixa lateral): fica bem mais inteira
+    "Calcao": (0.60, 0.004),
 }
 
 TIPOS = {5120: np.int8, 5121: np.uint8, 5122: np.int16, 5123: np.uint16, 5125: np.uint32, 5126: np.float32}
@@ -123,6 +138,16 @@ class Escritor:
         return len(self.acessores) - 1
 
 
+def cadarco_cinza(pos: np.ndarray, cores: np.ndarray, acessor: dict) -> tuple[np.ndarray, int]:
+    escala = {5126: 1.0, 5121: 255.0, 5123: 65535.0}[acessor["componentType"]]
+    c = cores[:, :3].astype(np.float64) / escala
+    brancos = (c > 0.8).all(axis=1) & (pos[:, 1] > CADARCO_ACIMA_DE) & (pos[:, 2] > 0.0)
+    novo = cores.copy()
+    cinza = np.array(COR_DO_CADARCO) * escala
+    novo[brancos, :3] = cinza if escala == 1.0 else np.round(cinza)
+    return novo, int(brancos.sum())
+
+
 def _simplificar_c():
     # O invólucro Python não declara os tipos desta função (size_t e float
     # viravam lixo na pilha): a chamada vai direto na biblioteca.
@@ -138,7 +163,7 @@ def _simplificar_c():
 
 
 def simplificar(indices: np.ndarray, pos: np.ndarray, normais: np.ndarray, uv: np.ndarray | None,
-                fracao: float, erro: float) -> np.ndarray:
+                fracao: float, erro: float, cores: np.ndarray | None = None) -> np.ndarray:
     alvo = max(3, int(len(indices) * fracao) // 3 * 3)
     destino = np.zeros(len(indices), dtype=np.uint32)
     # Normal e UV entram na conta do erro: a sombra e a pintura nao "torcem".
@@ -147,6 +172,12 @@ def simplificar(indices: np.ndarray, pos: np.ndarray, normais: np.ndarray, uv: n
     if uv is not None:
         attrs.append(uv.astype(np.float32))
         pesos += [1.0, 1.0]
+    # Cor pintada nos vertices (cadarcos da bota, costura da luva, mechas
+    # do cabelo): a fronteira entre duas cores nao pode ser "comida" - sem
+    # isso os cadarcos viravam um serrilhado.
+    if cores is not None:
+        attrs.append(cores[:, :3].astype(np.float32))
+        pesos += [2.0, 2.0, 2.0]
     attr = np.ascontiguousarray(np.hstack(attrs), dtype=np.float32)
     pos = np.ascontiguousarray(pos, dtype=np.float32)
     indices = np.ascontiguousarray(indices, dtype=np.uint32)
@@ -280,7 +311,8 @@ def main() -> None:
             fracao, erro = ALVOS.get(m["name"], (1.0, 0.0))
             if fracao < 1.0:
                 uv = ler_acessor(js, binario, attrs["TEXCOORD_0"]) if "TEXCOORD_0" in attrs else None
-                idx = simplificar(idx, pos, ler_acessor(js, binario, attrs["NORMAL"]), uv, fracao, erro)
+                cores = ler_acessor(js, binario, attrs["COLOR_0"]) if "COLOR_0" in attrs else None
+                idx = simplificar(idx, pos, ler_acessor(js, binario, attrs["NORMAL"]), uv, fracao, erro, cores)
             # Os vertices que sobraram, na ordem em que a placa os le.
             remapa = np.zeros(len(pos), dtype=np.uint32)
             usados = mo.optimize_vertex_fetch_remap(remapa, idx, vertex_count=len(pos))
@@ -297,6 +329,9 @@ def main() -> None:
                 arr = ler_acessor(js, binario, i)[ordem]
                 if m["name"] == "Pele" and nome == "TEXCOORD_0":
                     arr = uv_dos_olhos(pos[ordem], arr)
+                if m["name"].startswith("Bota") and nome == "COLOR_0" and not prim.get("targets"):
+                    arr, n = cadarco_cinza(pos[ordem], arr, a)
+                    print("%-10s cadarco: %d vertices em cinza" % (m["name"], n))
                 attrs[nome] = esc.acessor(arr, a, 34962, nome == "POSITION" or "min" in a)
             for alvo in prim.get("targets", []):
                 for nome, i in list(alvo.items()):

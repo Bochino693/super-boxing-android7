@@ -1,11 +1,15 @@
 extends Node
 
 ## TESTE DE UMA PARTIDA INTEIRA (só no PC, não vai no APK).
-##   godot3 --path . res://tools/testes/partida_teste.tscn -- [--partidas=2] [--fotos=pasta] [--perfil=arquivo.csv]
+##   godot3 --path . res://tools/testes/partida_teste.tscn -- [--partidas=2] [--fotos=pasta] [--perfil=arquivo.csv] [--degrau=0]
 ## Abre a cena do jogo como no editor, finge uma placa Arduino que respondeu
 ## (sem motor) e câmera desligada, aperta START e dá os dois socos quando o
 ## jogo pede (fracos, médios e fortes, alternando). Grava fotos da tela e,
 ## por quadro, o tempo do quadro, o estado do jogo e se a arena estava no ar.
+## `--natural` deixa o fim da rodada correr sozinho (nocaute, festa, TOP 20
+## e a cortina de volta à abertura), fotografando o caminho.
+## `--degrau=N` prende o gráfico da arena no degrau N (`Arena3D.DEGRAUS`):
+## num PC sem placa de vídeo o jogo desceria sozinho para o último.
 
 class PlacaDeMentira:
 	extends SerialLink
@@ -37,11 +41,14 @@ var feitas = 0
 var _socos = 0
 var _armado_em = -1.0
 var _resultado_em = -1.0
+var _fim_em = 0.0
 var _linhas = []
 var _ultimo_us = 0
 var _fotos_feitas = {}
 var _quadros_por_estado = {}
 var _esconder = ""
+var _degrau = -1
+var _natural = false
 
 
 func _ready() -> void:
@@ -54,6 +61,10 @@ func _ready() -> void:
 			arquivo = a.substr(9)
 		elif a.begins_with("--esconder="):
 			_esconder = a.substr(11)
+		elif a.begins_with("--degrau="):
+			_degrau = int(a.substr(9))
+		elif a == "--natural":
+			_natural = true
 	# Cronômetros por chamada (só quando o código foi instrumentado à mão,
 	# para medir; ver o resumo "PERF" no fim).
 	Engine.set_meta("perf", {})
@@ -113,6 +124,9 @@ func _process(delta: float) -> void:
 		int(Performance.get_monitor(Performance.RENDER_2D_ITEMS_IN_FRAME))])
 	_ultimo_us = agora
 	t += delta
+	if _degrau >= 0 and main.degrau_grafico != _degrau:
+		main.degrau_grafico = _degrau
+		main.arena.aplicar_degrau(_degrau)
 	if t < 4.0:
 		return
 	if main.link == null or not (main.link is PlacaDeMentira):
@@ -121,6 +135,12 @@ func _process(delta: float) -> void:
 		main.get_node(_esconder).visible = false
 	match main.state:
 		GameDef.State.IDLE:
+			if _natural and _resultado_em >= 0.0:
+				feitas += 1
+				_socos = 0
+				_resultado_em = -1.0
+				print("PARTIDA_TESTE: rodada %d voltou sozinha à abertura em %.1f s" % [feitas, t - _fim_em])
+				_foto("p%d_abertura" % (feitas - 1), 1.5)
 			if feitas >= partidas:
 				_terminar()
 				return
@@ -139,7 +159,13 @@ func _process(delta: float) -> void:
 		GameDef.State.RESULT:
 			if _resultado_em < 0.0:
 				_resultado_em = t
+				_fim_em = t
 				_foto("p%d_resultado" % feitas, 1.5)
+				if _natural:
+					for k in [4, 8, 12, 16, 20]:
+						_foto("p%d_fim_%02d" % [feitas, k], float(k))
+			elif _natural:
+				pass
 			elif t - _resultado_em > 7.0 and main.verdict_time >= 0.0:
 				feitas += 1
 				_socos = 0
