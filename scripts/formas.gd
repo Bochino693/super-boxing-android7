@@ -50,10 +50,12 @@ const AVATAR_CANTOS = preload("res://assets/ui/avatar_cantos.png")
 const MEDIDOR_GIRO_FORA = preload("res://assets/ui/medidor_giro_fora.png")
 const MEDIDOR_GIRO_DENTRO = preload("res://assets/ui/medidor_giro_dentro.png")
 const MEDIDOR_ARO = preload("res://assets/ui/medidor_aro.png")
-## Um disco liso de raio 200 (com mipmaps), para círculos de qualquer raio
-## até uns 250 px: acima disso a borda começa a ficar macia.
-const DISCO = preload("res://assets/ui/disco_r200.png")
-const DISCO_RAIO = 200.0
+## Um disco liso de raio 254 numa imagem de 512 (potência de 2, com
+## mipmaps), para círculos de qualquer raio até uns 300 px: das faíscas às
+## bolhas de luz. Acima disso a borda começa a ficar macia.
+const DISCO = preload("res://assets/ui/disco.png")
+const DISCO_RAIO = 254.0
+const DISCO_RAIO_MAXIMO = 300.0
 
 
 ## Retângulo de cantos redondos cheio. Devolve `false` quando não há

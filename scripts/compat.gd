@@ -25,6 +25,8 @@ const _REFERENCIA = 64
 
 ## Linhas, círculos e arcos como polígonos que se juntam (ver `scripts/lote.gd`).
 const Lote = preload("res://scripts/lote.gd")
+## Peças redondas por textura (ver `scripts/formas.gd`).
+const Formas = preload("res://scripts/formas.gd")
 
 const _FONTE_PADRAO = "res://assets/fonts/SairaCondensed-ExtraBold.ttf"
 
@@ -373,7 +375,14 @@ static func t2d(rotacao: float, escala: Vector2, _inclinacao: float, posicao: Ve
 static func circulo(alvo: CanvasItem, centro: Vector2, raio: float, cor: Color, cheio: bool = true,
 		espessura: float = -1.0, _liso: bool = false) -> void:
 	if cheio:
-		Lote.disco(alvo, centro, raio, cor)
+		# O DISCO CHEIO É UMA TEXTURA (build 120, ver `scripts/formas.gd`):
+		# um retângulo que a placa de vídeo junta com os vizinhos, e não um
+		# polígono de dezenas de lados por círculo — a luva do punho voando
+		# na abertura tem duas dúzias deles, e as faíscas mais quatorze.
+		if raio <= Formas.DISCO_RAIO_MAXIMO:
+			Formas.disco(alvo, centro, raio, cor)
+		else:
+			Lote.disco(alvo, centro, raio, cor)
 	else:
 		Lote.aro(alvo, centro, raio, cor, max(espessura, 1.0))
 

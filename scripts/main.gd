@@ -6053,24 +6053,16 @@ func _draw_transicao() -> void:
 ## `lado` 1 = a faixa fica à direita da linha; -1 = à esquerda.
 func _zebra_diagonal(x_borda: float, lado: float, inclinacao: float, topo: float, base: float) -> void:
 	var LARG = 34.0
-	var PASSO = 64.0
-	var altura = base - topo
-	var n = int(ceil(altura / PASSO))
-	# A borda inteira num lote só (eram 31 chamadas por borda, 62 por
-	# quadro durante a cortina).
-	var lote := Lote.new()
-	for k in n:
-		var y0 = topo + float(k) * PASSO
-		var y1 = min(y0 + PASSO, base)
-		var f0 = (y0 - topo) / altura
-		var f1 = (y1 - topo) / altura
-		var x0 = x_borda + inclinacao * (1.0 - 2.0 * f0)
-		var x1 = x_borda + inclinacao * (1.0 - 2.0 * f1)
-		var cor = Paleta.AMBAR if k % 2 == 0 else Color("120a1c")
-		lote.quad(Vector2(x0, y0), Vector2(x0 + LARG * lado, y0 + 14.0),
-			Vector2(x1 + LARG * lado, y1 + 14.0), Vector2(x1, y1), cor)
-	lote.linha(Vector2(x_borda + inclinacao, topo), Vector2(x_borda - inclinacao, base), Paleta.AMBAR, 5.0)
-	lote.descarregar(self)
+	# A FAIXA É A MESMA IMAGEM DAS TARJAS DA ARENA (build 120), esticada
+	# na diagonal da cortina: um quadrilátero com textura, e não 31
+	# listras montadas no script a cada quadro, em cada borda.
+	var a = Vector2(x_borda + inclinacao, topo)
+	var b = Vector2(x_borda - inclinacao, base)
+	var largura = Vector2(LARG * lado, 0.0)
+	draw_primitive(PoolVector2Array([a, a + largura, b + largura, b]),
+		PoolColorArray([Paleta.AMBAR, Paleta.AMBAR, Paleta.AMBAR, Paleta.AMBAR]),
+		PoolVector2Array([Vector2(0, 0), Vector2(1, 0), Vector2(1, 1), Vector2(0, 1)]), ArenaQuadro.ZEBRA_V)
+	Lote.traco(self, a, b, Paleta.AMBAR, 5.0)
 
 ## O CLARÃO DO SOCO NUM FUNDO CLARO. Lavar a tela de branco não funciona
 ## aqui — branco sobre quase-branco não é clarão, é nada. O golpe acende
@@ -6641,23 +6633,38 @@ func _capitulo_da_marca(alpha: float) -> void:
 ## placar. Então o nome mora num nó próprio, e esta função é a ponte:
 ## a tela continua mandando quando, onde e com que opacidade.
 ## Raios girando atrás do escudo, magenta e ciano, achatados como a estrela.
+var _RAIOS_INDICES = PoolIntArray([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+	20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47])
+
 func _raios_do_escudo(centro: Vector2, alpha: float) -> void:
 	var giro = animation_time * 0.22
 	var n = 16
+	# Os dezesseis raios num desenho só (build 120): eram dezesseis
+	# polígonos, cada um com a sua chamada.
+	var pontos = PoolVector2Array()
+	var cores = PoolColorArray()
 	for i in n:
 		var a0 = giro + float(i) * TAU / float(n)
 		var a1 = a0 + TAU / float(n) * 0.5
 		var r = 700.0
 		var cor = Paleta.ROSA if i % 2 == 0 else Paleta.CIANO
 		var pulso = 0.08 + 0.05 * sin(animation_time * 1.7 + float(i) * 0.8)
-		draw_colored_polygon(PoolVector2Array([
+		var c = Compat.cor(cor, pulso * alpha)
+		pontos.append_array(PoolVector2Array([
 			centro,
 			centro + Vector2(cos(a0), sin(a0) * 0.72) * r,
 			centro + Vector2(cos(a1), sin(a1) * 0.72) * r,
-		]), Compat.cor(cor, pulso * alpha))
+		]))
+		cores.append_array(PoolColorArray([c, c, c]))
+	VisualServer.canvas_item_add_triangle_array(get_canvas_item(), _RAIOS_INDICES, pontos, cores)
 
 ## Brilhos nas pontas da estrela: acendem e apagam, cada um no seu tempo.
 func _faiscas_do_escudo(centro: Vector2, alpha: float) -> void:
+	# As cruzes num lote só e os miolos por textura (build 120).
+	var inicios = PoolVector2Array()
+	var fins = PoolVector2Array()
+	var cores = PoolColorArray()
+	var miolos = []
 	for i in 7:
 		var fase = fmod(animation_time * 0.9 + float(i) * 0.37, 1.0)
 		var v = sin(fase * PI)
@@ -6667,9 +6674,17 @@ func _faiscas_do_escudo(centro: Vector2, alpha: float) -> void:
 		var p = centro + Vector2(cos(ang) * 430.0, sin(ang) * 250.0)
 		var t = 26.0 * v
 		var cor = Color(1.0, 0.97, 0.88, v * alpha)
-		Lote.traco(self, p - Vector2(t, 0), p + Vector2(t, 0), cor, 3.0)
-		Lote.traco(self, p - Vector2(0, t), p + Vector2(0, t), cor, 3.0)
-		Lote.disco(self, p, 4.0 * v, cor)
+		inicios.append_array(PoolVector2Array([p - Vector2(t, 0), p - Vector2(0, t)]))
+		fins.append_array(PoolVector2Array([p + Vector2(t, 0), p + Vector2(0, t)]))
+		cores.append_array(PoolColorArray([cor, cor]))
+		miolos.append([p, 4.0 * v, cor])
+	if miolos.empty():
+		return
+	var lote = Lote.new()
+	lote.segmentos(inicios, fins, Color.white, 3.0, cores)
+	lote.descarregar(self)
+	for m in miolos:
+		Formas.disco(self, m[0], m[1], m[2])
 
 ## O nó do escudo (TextureRect com `escudo_vivo.shader`). Aparece só no
 ## quadro em que a abertura pediu, respira e balança de leve.

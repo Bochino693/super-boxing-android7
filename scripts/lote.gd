@@ -234,17 +234,26 @@ func linha(a: Vector2, b: Vector2, cor: Color, largura: float) -> void:
 ## os raios do impacto): o traço `i` vai de `inicios[i]` a `fins[i]`. Um
 ## laço curto por traço e os triângulos já prontos — eram vinte chamadas
 ## de `traco`, cada uma com o seu desenho na placa. Só em lote SEM nome
-## (é coisa que muda a cada quadro).
-func segmentos(inicios: PoolVector2Array, fins: PoolVector2Array, cor: Color, largura: float) -> void:
+## (é coisa que muda a cada quadro). Com `cores` (uma por traço), cada um
+## tem a sua; senão todos têm `cor`.
+func segmentos(inicios: PoolVector2Array, fins: PoolVector2Array, cor: Color, largura: float,
+		cores_dos_tracos := PoolColorArray()) -> void:
 	var n = int(min(inicios.size(), fins.size()))
-	if n == 0 or cor.a <= 0.0:
+	var cada = cores_dos_tracos.size() >= n
+	if n == 0 or (cor.a <= 0.0 and not cada):
 		return
-	var t = _transparente(cor)
-	var cores = PoolColorArray([t, t, cor, cor, cor, cor, t, t])
-	while cores.size() < n * 8:
-		cores.append_array(cores)
-	cores.resize(n * 8)
-	_cores.append_array(cores)
+	if cada:
+		for i in n:
+			var c: Color = cores_dos_tracos[i]
+			var tc = _transparente(c)
+			_cores.append_array(PoolColorArray([tc, tc, c, c, c, c, tc, tc]))
+	else:
+		var t = _transparente(cor)
+		var cores = PoolColorArray([t, t, cor, cor, cor, cor, t, t])
+		while cores.size() < n * 8:
+			cores.append_array(cores)
+		cores.resize(n * 8)
+		_cores.append_array(cores)
 	var meia = max(largura, 1.0) * 0.5
 	var pts = PoolVector2Array()
 	pts.resize(n * 8)

@@ -2,15 +2,15 @@
 
 importer="texture"
 type="StreamTexture"
-path="res://.import/disco_r200.png-b81a1b703aec305da6a829f05715cdb2.stex"
+path="res://.import/disco.png-8842e5d25a7f36fd00ab03e2c11b02ee.stex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/ui/disco_r200.png"
-dest_files=[ "res://.import/disco_r200.png-b81a1b703aec305da6a829f05715cdb2.stex" ]
+source_file="res://assets/ui/disco.png"
+dest_files=[ "res://.import/disco.png-8842e5d25a7f36fd00ab03e2c11b02ee.stex" ]
 
 [params]
 

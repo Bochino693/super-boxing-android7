@@ -147,8 +147,9 @@ FORMAS = {
     "medidor_giro_fora": (disco, (160.0, 5.0, 1.4)),
     "medidor_giro_dentro": (disco, (118.0, 4.0, 0.9)),
     "medidor_aro": (disco, (171.5, 3.0)),
-    # um disco liso para qualquer raio até ~200 px (com mipmaps)
-    "disco_r200": (disco, (200.0,)),
+    # um disco liso para qualquer raio (512 px, potência de 2, com mipmaps:
+    # serve das faíscas de 2 px aos círculos de 300)
+    "disco": (disco, (254.0,)),
 }
 
 
