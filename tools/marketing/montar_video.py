@@ -321,12 +321,24 @@ class Captura:
 
 
 # ================================================================== saida
+def limitar(a, joelho=0.8, teto=0.89):
+    """Limitador suave: ate `joelho` o som passa igual; acima, o pico e
+    arredondado ate 1 (o soco nao estoura nem chia nas caixas). No fim tudo
+    desce para `teto` (-1 dB): folga para o AAC, que passa um pouco do pico."""
+    m = np.abs(a)
+    acima = m > joelho
+    resto = 1.0 - joelho
+    out = a.copy()
+    out[acima] = np.sign(a[acima]) * (joelho + resto * np.tanh((m[acima] - joelho) / resto))
+    return np.clip(out, -1.0, 1.0) * teto
+
+
 def gravar(segs, tam, saida: Path):
     saida.parent.mkdir(parents=True, exist_ok=True)
     audio = np.concatenate([s.audio for s in segs]).astype(np.float32)
     wav = saida.with_suffix(".wav")
     from scipy.io import wavfile
-    wavfile.write(wav, TAXA, (np.clip(audio, -1, 1) * 32767).astype(np.int16))
+    wavfile.write(wav, TAXA, (limitar(audio) * 32767).astype(np.int16))
     cmd = ["ffmpeg", "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{tam[0]}x{tam[1]}",
            "-r", str(FPS), "-i", "-", "-i", str(wav), "-c:v", "libx264", "-preset", "slow", "-crf", "21",
            "-pix_fmt", "yuv420p", "-profile:v", "high", "-movflags", "+faststart", "-c:a", "aac", "-b:a", "192k",
