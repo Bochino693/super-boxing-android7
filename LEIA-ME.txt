@@ -1,9 +1,53 @@
-SUPER BOXING - TV BOX MALI-450 (TX9) - OPENGL ES 2.0 - BUILD 118
+SUPER BOXING - TV BOX MALI-450 (TX9) - OPENGL ES 2.0 - BUILD 119
 =================================================================
 
 ESTA VERSAO E PARA TV BOX COM PLACA DE VIDEO MALI-450 (TX9): Godot 3.6,
-OpenGL ES 2.0, texturas ETC1. UM ARQUIVO SO: GERAR_APK_AGORA.bat gera o
+OpenGL ES 2.0. UM ARQUIVO SO: GERAR_APK_AGORA.bat gera o
 APK certo. Veja "GERAR O APK" mais abaixo.
+
+O QUE A BUILD 119 MUDA (BASE: A 118)
+------------------------------------
+- A ARENA 3D OCUPA A TELA INTEIRA. Nao sobra mais faixa do fundo 2D em
+  cima e embaixo: em cima aparece a trelica de luz, embaixo a borda do
+  ringue com a saia. As vidas, o logo, os cartoes dos socos e os textos
+  ficam por cima do 3D. O lutador continua do mesmo tamanho e no mesmo
+  lugar.
+- A FAIXA ZEBRADA AMARELA E PRETA nas QUATRO bordas da tela (antes so em
+  cima e embaixo).
+- LUTADOR E RINGUE NITIDOS NA TV BOX:
+  * as texturas do lutador (pele, rosto, luvas, calcao), da lona, das
+    faixas, da saia e do fundo nao sao mais comprimidas em ETC1. No PC
+    elas pareciam limpas, mas na Mali-450 o ETC1 quebrava a imagem em
+    blocos de 4x4 com manchas de cor - era o "pixelado" de perto;
+  * o 3D e desenhado a 72% da tela (era 65% de um quadro menor) com o
+    antisserrilhado MSAA 4x: ampliado menos, a borda do lutador fica lisa.
+    A Central mostra o tamanho do 3D e se o MSAA esta ligado. Se a luta
+    ficar lenta, o jogo desce sozinho para 66% e 60% (o ultimo degrau
+    custa o mesmo que a build 118);
+  * a plateia do fundo foi redesenhada: em vez de centenas de bonequinhos
+    de 8 px (que na TV viravam chuvisco em volta do lutador), poucas
+    fileiras de gente grande e desfocada, como numa foto com o lutador
+    em foco.
+- A COLUNA DO LUTADOR MEXE EM ONDA: cada vertebra tem a sua mola. No
+  golpe o quadril puxa e o ombro chega em seguida; na ginga e na
+  respiracao o corpo ondula em vez de virar como uma tabua.
+- A CAMERA NAO SOME MAIS. Ate a build 118 a webcam era fechada a cada
+  luta e aberta de novo no fim; numa TV Box isso as vezes falhava e a
+  camera, conectada, nao voltava. Agora ela fica aberta e o jogo so para
+  de ler a imagem durante a luta.
+- SEM IMAGEM AO VIVO, SEM POSE. A tela "FACA SUA POSE" so aparece com um
+  quadro da camera de agora (antes valia um quadro de ate 10 s atras); e
+  se a imagem cair no meio da pose, a rodada desiste da foto e vai para o
+  ringue, em vez de pedir pose com o boneco no lugar da pessoa.
+- A CORTINA FOTO -> RINGUE SEM ENGASGO. Depois do clique a camera passa a
+  ler devagar (era a 8 quadros por segundo bem na hora da cortina), a
+  arena 3D liga logo apos a foto (tem mais de 1 s escondida para
+  assentar) e a webcam nao e mais fechada no meio da cortina.
+- O SINO TOCA QUANDO O RINGUE APARECE (antes so depois de o saco
+  terminar de descer, uns 3 s depois). O "VAI!" continua marcando a hora
+  do soco.
+- A FOTO DO JOGADOR VOLTA A APARECER NO TOP 20 (um erro de script
+  impedia a miniatura de carregar).
 
 O QUE A BUILD 118 MUDA (BASE: A 117)
 ------------------------------------

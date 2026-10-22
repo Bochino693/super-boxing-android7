@@ -1128,10 +1128,12 @@ func _arena_no_ar() -> bool:
 	if _tabela_no_ar():
 		return false
 	# NA HORA DA FOTO A ARENA NÃO APARECE — e era desenhada assim mesmo,
-	# disputando a placa de vídeo com a prévia da câmera. Ela liga só no
-	# fim da contagem, a tempo de estar viva quando o soco é pedido.
+	# disputando a placa de vídeo com a prévia da câmera. Ela liga logo
+	# depois do clique (até a build 118, a 0,7 s da cortina): tem mais de um
+	# segundo de quadros escondidos para assentar (lutador posado,
+	# partículas, primeira imagem) antes de a cortina a revelar.
 	if state == GameDef.State.COUNTDOWN:
-		return countdown_left < -0.5
+		return pose_finished
 	return state in [GameDef.State.ARMED, GameDef.State.MEASURING, GameDef.State.RESULT]
 
 ## O FOCO DO JOGO E O BOTÃO DE VOLTAR DO CONTROLE.
@@ -1452,7 +1454,12 @@ func _ritmo_da_camera() -> int:
 	# Rápido (e em resolução cheia) só na contagem da foto e na Central.
 	# No resto do tempo a imagem nem aparece: um quadro de vez em quando
 	# só para saber que a câmera continua viva, em meia resolução.
-	if central_aberta or state == GameDef.State.COUNTDOWN:
+	# FOTO TIRADA, CÂMERA DEVAGAR. Depois do clique a contagem ainda dura
+	# 1,2 s e a cortina mais 0,6 s — e é aí que a arena 3D liga. A prévia
+	# a 8 quadros por segundo (cópia de 640x480 subindo para a placa de
+	# vídeo a cada quadro) disputava a Mali-450 com o 3D bem na cortina, e
+	# a cortina engasgava.
+	if central_aberta or (state == GameDef.State.COUNTDOWN and not pose_finished):
 		return Perfil.CAMERA_CONTAGEM_MS
 	if state == GameDef.State.IDLE:
 		return 1500
@@ -1632,6 +1639,14 @@ func _processar_contagem(delta: float) -> void:
 	# A câmera nunca segura o relógio da partida. Se o quadro estiver vivo,
 	# a foto entra; se não estiver, o ranking usa o avatar e todo o restante
 	# do jogo segue no mesmo tempo, sem aviso de erro para o jogador.
+	if not pose_finished and _pose_perdeu_a_imagem(delta):
+		Diario.marca("JOGO: a imagem da câmera caiu na pose — rodada sem foto, direto para o ringue")
+		pose_finished = true
+		result_photo_path = ""
+		_recolhendo_saco = false
+		if camera_service != null:
+			camera_service.fechar_obturador()
+		countdown_left = min(countdown_left, -1.2)
 	if _recolhendo_saco:
 		if _saco_recolhido():
 			_recolhendo_saco = false
@@ -1690,13 +1705,20 @@ func _processar_contagem(delta: float) -> void:
 func _entrar_no_ringue() -> void:
 	if state != GameDef.State.COUNTDOWN or central_aberta:
 		return
-	# A FOTO JÁ FOI TIRADA: a webcam descansa durante a luta (ver
-	# `CameraService.descansar`) e volta no fim da rodada.
+	# A FOTO JÁ FOI TIRADA: o jogo para de ler a webcam durante a luta
+	# (ela continua aberta — ver `CameraService.descansar`) e volta a ler
+	# no fim da rodada.
 	if camera_service != null:
 		camera_service.descansar()
 	state = GameDef.State.ARMED
 	state_time = 0.0
 	espera_left = GameDef.ESPERA_DO_SOCO
+	# O SINO TOCA QUANDO O RINGUE APARECE. Até a build 118 ele esperava o
+	# saco terminar de descer (3 s com motor): o ringue entrava mudo e o
+	# sino vinha depois, "atrasado". Agora a cortina abre com o sino e a
+	# torcida; o "VAI!" (`_comecar_a_luta`) continua marcando a hora do soco.
+	sons.play("round_bell", -2.0)
+	sons.play("torcida_incentivo", -9.0)
 	# A rodada nova começa sem golpe e sem saturação pendente.
 	golpe_registrado = false
 	socos.clear()
@@ -1727,7 +1749,7 @@ func _comecar_a_luta() -> void:
 	_armar_sensor_optico()
 	espera_left = GameDef.ESPERA_DO_SOCO
 	_soco_na_tela_em = _tempo_do_ataque()
-	sons.play("round_bell", -2.0)
+	# O sino já tocou na entrada do ringue (`_entrar_no_ringue`).
 	sons.play("go")
 
 ## NO RINGUE, ESPERANDO O SACO DESCER. Devolve true enquanto o soco ainda
@@ -2512,10 +2534,27 @@ func _pressionou_start() -> void:
 ## ranking; sem ela (máquina sem webcam, cabo solto, câmera ainda subindo,
 ## desligada na Central), a rodada vai direto para o ringue e o ranking usa
 ## o avatar — sem aviso de erro para o jogador. O estado da câmera fica na
-## Central. A pergunta é `pronta()`: a IMAGEM ESTÁ MUDANDO, não só o
-## processo de pé (ver `CameraService.ao_vivo()`).
+## Central. A pergunta é `pronta_para_foto()`: há imagem na tela e um
+## quadro DE AGORA. Até a build 118 bastava um quadro dos últimos 10 s
+## (`ao_vivo`), e a webcam que tinha acabado de travar ainda ganhava a
+## tela da pose — com o boneco no lugar da pessoa.
 func _rodada_com_foto() -> bool:
-	return camera_enabled and camera_service != null and camera_service.pronta()
+	return camera_enabled and camera_service != null and camera_service.pronta_para_foto()
+
+## A IMAGEM CAIU NO MEIO DA POSE: a rodada desiste da foto e segue para o
+## ringue. Pedir "OLHE PARA A CÂMERA" com o boneco desenhado no lugar da
+## pessoa é exatamente o "pede a foto sem a câmera". A câmera tem o prazo
+## de `quadro_recente` mais `POSE_SEM_IMAGEM` de tolerância (um engasgo da
+## webcam não derruba a foto); depois disso, nada de pose.
+const POSE_SEM_IMAGEM = 0.5
+var _pose_sem_imagem := 0.0
+
+func _pose_perdeu_a_imagem(delta: float) -> bool:
+	if camera_service != null and camera_service.tem_imagem() and camera_service.quadro_recente():
+		_pose_sem_imagem = 0.0
+		return false
+	_pose_sem_imagem += delta
+	return _pose_sem_imagem >= POSE_SEM_IMAGEM
 
 ## A placa, e não o estado de descoberta/calibração do sensor, libera START.
 ## Uma linha válida do protocolo identifica que a porta aberta é realmente o
@@ -2622,6 +2661,7 @@ func _comecar_contagem() -> void:
 	var com_foto = _rodada_com_foto()
 	_recolhendo_saco = com_foto and _motor_em_uso()
 	_recolhendo_desde = animation_time
+	_pose_sem_imagem = 0.0
 	_saco_fora_de_baixo_desde = -1.0
 	if _recolhendo_saco:
 		saco.exigir(SacoMotor.Onde.EM_CIMA)
@@ -6227,12 +6267,28 @@ var _vida_fantasma = 1.0
 ## A arena foi desenhada neste quadro (ver `_draw`: as tarjas voltam por
 ## cima dos efeitos).
 var _arena_no_quadro := false
+## A altura do degradê escuro do rodapé, sobre o 3D (ver `_draw_arena`).
+const RODAPE_ESCURO = 420.0
 
 func _draw_arena() -> void:
 	_arena_no_quadro = true
-	ArenaQuadro.fundo(self)
+	# A imagem da arena é opaca e cobre a tela inteira: o fundo escuro por
+	# baixo dela só é pintado quando ela não está no ar (era uma tela
+	# inteira de pixels pintados à toa em todo quadro da luta).
 	if arena != null and arena.ativa():
 		ArenaQuadro.imagem(self, arena.get_texture(), 1.0, _tremor_da_arena(), zoom_impacto)
+	else:
+		ArenaQuadro.fundo(self)
+	# O RODAPÉ ESCURECE para os textos grandes ("SOQUE AGORA!", o nível do
+	# golpe) e a marca da casa, que agora ficam por cima do 3D: um
+	# degradê de quatro pontos, uma chamada só.
+	var topo_r = ArenaQuadro.TELA.end.y - RODAPE_ESCURO
+	draw_polygon(PoolVector2Array([
+		Vector2(0.0, topo_r), Vector2(TELA.x, topo_r), Vector2(TELA.x, TELA.y), Vector2(0.0, TELA.y)
+	]), PoolColorArray([
+		Color(0.03, 0.01, 0.08, 0.0), Color(0.03, 0.01, 0.08, 0.0),
+		Color(0.03, 0.01, 0.08, 0.86), Color(0.03, 0.01, 0.08, 0.86)
+	]))
 	# A MOLDURA (as tarjas zebradas) é desenhada uma vez só, no fim do
 	# quadro, por cima de tudo (ver `_draw`). Ela acende com o golpe:
 	# `clarao` já é o clarão do impacto caindo de 1 a 0.
@@ -6288,7 +6344,9 @@ func _draw_espera_do_soco() -> void:
 		saida = clamp(_troca / TROCA_SAIDA, 0.0, 1.0)
 		entrada = clamp((_troca - TROCA_ENTRADA_ATRASO) / (TROCA_DURACAO - TROCA_ENTRADA_ATRASO), 0.0, 1.0)
 	var chega = ease(entrada, 0.4)
-	_draw_farol(Paleta.AMBAR, chega)
+	# (O FAROL — os anéis saindo de trás do quadro — não é mais desenhado:
+	# com a arena na tela inteira ele ficaria todo escondido atrás dela,
+	# pintando pixels que ninguém vê.)
 	_draw_arena()
 	if saida < 1.0:
 		_draw_troca_saindo(saida)
@@ -8148,8 +8206,12 @@ func _central_dados() -> void:
 		"câmera: %s" % (camera_service.status if camera_service != null else "—"),
 		17, Paleta.CIANO
 	)
-	_linha("gráfico da arena: degrau %d de %d — %s (ajuste automático pela velocidade da luta)" % [
-		degrau_grafico, Arena3D.DEGRAUS.size() - 1, Arena3D.DEGRAUS[degrau_grafico]], 17, Paleta.CIANO)
+	# O degrau é automático (pela velocidade da luta); junto, o tamanho em
+	# que o 3D é desenhado e se o antisserrilhado está mesmo ligado.
+	_linha("arena 3D: degrau %d de %d — %s  •  %dx%d  •  %s" % [
+		degrau_grafico, Arena3D.DEGRAUS.size() - 1, Arena3D.DEGRAUS[degrau_grafico],
+		int(arena.size.x) if arena != null else 0, int(arena.size.y) if arena != null else 0,
+		arena.antisserrilhado() if arena != null else "—"], 17, Paleta.CIANO)
 	# O TETO À MÃO, para quando o automático errar. Ele acerta na maioria
 	# das máquinas e erra em duas: num PC que oscila, ficando subindo e
 	# descendo a qualidade o tempo todo, e num PC bom em que o operador
@@ -8677,7 +8739,7 @@ func _decodificar_foto(path: String) -> void:
 	var imagem = false
 	if Compat.existe(path):
 		var candidata = Image.new()
-		if candidata.load(ProjectSettings.globalize_path(path)) == OK and not candidata.empty():
+		if candidata.load(ProjectSettings.globalize_path(path)) == OK and not candidata.is_empty():
 			# As fotos são miniaturas na tabela (76 a 82 px na tela). Limita o
 			# upload e a memória sem alterar o arquivo original; o resize
 			# ocorre no worker. (`is_empty`, não `empty`: no Godot 3 a Image

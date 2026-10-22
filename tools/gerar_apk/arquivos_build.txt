@@ -26,6 +26,8 @@ assets/arena/saia.png
 assets/arena/saia.png.import
 assets/arena/tarja_zebra.png
 assets/arena/tarja_zebra.png.import
+assets/arena/tarja_zebra_v.png
+assets/arena/tarja_zebra_v.png.import
 assets/arena/torcida_baixo.png
 assets/arena/torcida_baixo.png.import
 assets/arena/torcida_cima.png

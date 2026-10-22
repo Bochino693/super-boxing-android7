@@ -124,25 +124,30 @@ var adormecida = false
 ## O jogo está parado na tela de espera: pode aparecer janela do Android.
 var janelas_liberadas = false
 
-## A CÂMERA DESCANSA NA LUTA (build 207).
+## A CÂMERA DESCANSA NA LUTA — ABERTA (build 119).
 ##
-## Aberta, a webcam fica mandando 30 quadros por segundo o tempo todo: o
-## Android decodifica cada um (o MJPEG da webcam USB) no processador e
-## guarda numa superfície de vídeo — trabalho de processador, de memória
-## e de placa de vídeo que a luta inteira pagava sem mostrar a imagem.
-## Depois da foto a webcam é SOLTA (`descansar`) e volta no fim da rodada
-## (`retomar`): na tela do resultado, da abertura ou na Central — muito
-## antes do próximo START. Só no Android: no PC a câmera fica como está.
+## Na luta a imagem da webcam não aparece. Até a build 118 ela era SOLTA
+## aqui (`stopUvcCamera`) e aberta de novo no fim da rodada. Era o que
+## fazia a câmera, de vez em quando, não voltar mais: numa TV Box barata
+## fechar e abrir a webcam USB a cada rodada às vezes falha ("não abriu"),
+## e o vigia só a religava muitos segundos depois — o jogador seguinte
+## chegava e a câmera, conectada, não aparecia. E soltar a webcam caía bem
+## no meio da cortina do ringue, junto com o 3D ligando.
+##
+## Agora a webcam fica ABERTA e o jogo só para de LER os quadros: o plugin
+## converte um quadro apenas quando o jogo pede (`pollUvcFrame`), então,
+## sem pedido, nada é convertido nem sobe para a placa de vídeo. No fim
+## da rodada (`retomar`) a leitura volta e o primeiro quadro chega na
+## hora, sem reabrir nada.
 var em_descanso := false
 
 func descansar() -> void:
 	if em_descanso or not enabled or OS.get_name() != "Android" or adormecida:
 		return
 	em_descanso = true
-	_registro("descanso: webcam solta durante a luta")
-	_parar_feed()
-	_parar_uvc_android()
-	status = "CÂMERA EM DESCANSO DURANTE A LUTA"
+	_registro("descanso: leitura parada durante a luta (webcam continua aberta)")
+	_quadro_cheio(false)
+	_obturador_ate_ms = 0
 
 func retomar() -> void:
 	if not em_descanso:
@@ -150,20 +155,13 @@ func retomar() -> void:
 	em_descanso = false
 	var agora = Time.get_ticks_msec()
 	_registro("retomada depois da luta")
-	# O vigia (`_vigiar_webcam_android`) dá à webcam o tempo inteiro de
-	# paciência para voltar antes de mexer nela de novo.
+	# O vigia (`_vigiar_webcam_android`) conta o tempo sem quadro a partir
+	# de agora: a luta inteira sem leitura não é uma webcam parada.
 	_uvc_quadro_ms = agora
-	_uvc_parada = false
 	_uvc_proximo_religar_ms = agora + 3000
-	_sem_video_desde_ms = 0
-	_proxima_busca_ms = 0
 	_proxima_leitura_uvc_ms = 0
-	_caca_desde_ms = agora
-	status = "CÂMERA VOLTANDO…"
-	if _caca == Caca.PONTE and _android_bridge != null and _ponte_tem("startUvcCamera"):
-		_android_bridge.call("startUvcCamera")
-	elif enabled:
-		_descobrir_cameras(false)
+	_proxima_amostra_ms = 0
+
 var _ja_montada = false
 
 ## O jogo voltou para a frente: confere já a permissão e a câmera.
@@ -1112,6 +1110,24 @@ func tem_imagem() -> bool:
 func ao_vivo() -> bool:
 	return enabled and _last_frame_ms > 0 and Time.get_ticks_msec() - _last_frame_ms <= VIDA_MAXIMA_MS
 
+## UM QUADRO DE AGORA, E NÃO DE DEZ SEGUNDOS ATRÁS.
+##
+## `ao_vivo` aceita até `VIDA_MAXIMA_MS` (10 s) sem quadro — folga certa
+## para a Central e para o vigia, errada para decidir a FOTO: a webcam que
+## acabou de travar continuava "ao vivo" por dez segundos, o jogo pedia a
+## pose e a pessoa via o boneco no lugar da própria imagem. Aqui o prazo
+## é o ritmo de leitura em vigor (dois quadros e mais um pouco).
+func quadro_recente() -> bool:
+	if not enabled or em_descanso or _last_frame_ms <= 0:
+		return false
+	var prazo = int(max(1200, intervalo_uvc_ms * 2 + 700))
+	return Time.get_ticks_msec() - _last_frame_ms <= prazo
+
+## A câmera pode fazer a foto desta rodada: autorizada, acesa, com imagem
+## na tela e um quadro de agora.
+func pronta_para_foto() -> bool:
+	return pronta() and tem_imagem() and quadro_recente()
+
 func motivo_curto() -> String:
 	if not enabled:
 		return "CÂMERA DESLIGADA NA CENTRAL"
@@ -1160,6 +1176,15 @@ func abrir_obturador(janela_ms := 3200) -> void:
 	_obturador_foi_aberto = true
 	_obturador_ate_ms = Time.get_ticks_msec() + janela_ms
 	_proxima_amostra_ms = 0
+
+## A pose foi abandonada (a imagem caiu): sem foto, volta ao quadro leve.
+func fechar_obturador() -> void:
+	_quadro_cheio(false)
+	_melhor_imagem = null
+	_melhor_nota = -1.0
+	_obturador_teve_vida = false
+	_obturador_foi_aberto = false
+	_obturador_ate_ms = 0
 
 func _imagem_util(imagem: Image) -> bool:
 	return _nota_da_imagem(imagem) >= CONTRASTE_MINIMO

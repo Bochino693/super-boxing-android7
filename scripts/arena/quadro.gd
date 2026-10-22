@@ -35,24 +35,29 @@ const Lote = preload("res://scripts/lote.gd")
 ## luta (as duas vidas no alto, os socos embaixo) mora DENTRO dele, como
 ## o painel de um jogo de luta — e não espalhado em volta.
 ##
-## 4.6 PRO: A ARENA VAI DE PONTA A PONTA. Sem as laterais da moldura, a
-## imagem ocupa a largura inteira da tela e fica mais alta; a faixa
-## zebrada do gabinete continua, só em cima e embaixo, como as tarjas de
-## uma transmissão. A câmera abriu junto (ver `Arena3D`): cabe o ringue
+## 4.6 PRO: A ARENA VAI DE PONTA A PONTA na largura.
+## BUILD 119: E DE CIMA A BAIXO. O 3D ocupa a tela inteira (1080 x 1920):
+## não sobra faixa do fundo 2D em cima nem embaixo — em cima aparece a
+## treliça de luz, embaixo a borda do ringue com a saia. O placar, as
+## vidas e os textos ficam por cima do 3D, como o painel de um jogo de
+## luta. A faixa zebrada do gabinete fecha a TELA nos quatro lados, por
+## cima dos 16 px da borda da imagem. A câmera abriu junto (ver `Arena3D`): cabe o ringue
 ## inteiro, a torcida dos lados, a treliça de luz e o telão.
-const MOLDURA := Rect2(0.0, 100.0, 1080.0, 1572.0)
+const MOLDURA := Rect2(0.0, 0.0, 1080.0, 1920.0)
 ## O buraco da moldura: é aqui que a imagem da arena é desenhada.
-const TELA := Rect2(0.0, 116.0, 1080.0, 1540.0)
-## A espessura das tarjas zebradas (em cima e embaixo da imagem). Elas
-## encostam EXATAMENTE na borda da imagem da arena (o limite do campo de
-## visão do lutador), uma em cima e outra embaixo.
+const TELA := Rect2(0.0, 0.0, 1080.0, 1920.0)
+## O quadro da build 118 (1080 x 1540, a 116 px do alto): o enquadramento
+## da câmera foi acertado nele, e o lutador continua no mesmo lugar e do
+## mesmo tamanho na tela (ver `Arena3D._calcular_enquadramento`).
+const QUADRO_DO_LUTADOR := Rect2(0.0, 116.0, 1080.0, 1540.0)
+## A espessura das tarjas zebradas, nas quatro bordas da tela.
 const TARJA := 16.0
 ## AS DUAS VIDAS, dentro do quadro, no alto: a do JOGADOR à esquerda e a
 ## do ADVERSÁRIO à direita (espelhada), como num jogo de luta.
 const VIDA_JOGADOR := Rect2(40.0, 178.0, 462.0, 44.0)
 const VIDA := Rect2(578.0, 178.0, 462.0, 44.0)
 ## A faixa escura atrás das vidas (legibilidade sobre a torcida).
-const FAIXA_DO_ALTO := Rect2(0.0, 116.0, 1080.0, 140.0)
+const FAIXA_DO_ALTO := Rect2(0.0, 0.0, 1080.0, 256.0)
 ## Os painéis dos socos, dentro do quadro, embaixo (vidro escuro sobre a
 ## frente do ringue).
 const PAINEIS_Y := 1468.0
@@ -114,15 +119,24 @@ static func moldura(alvo: CanvasItem, cor: Color, pulso := 0.0) -> void:
 static func tarjas(alvo: CanvasItem, cor: Color, pulso := 0.0) -> void:
 	var t = TELA
 	var brilho = clamp(pulso, 0.0, 1.0)
-	# AS DUAS TARJAS ZEBRADAS (em cima e embaixo), de ponta a ponta. O
-	# amarelo acende um pouco na cor do nível quando o golpe entra.
+	# AS QUATRO TARJAS ZEBRADAS, nas bordas da tela. O amarelo acende um
+	# pouco na cor do nível quando o golpe entra.
 	var amarelo = OURO.linear_interpolate(cor.lightened(0.35), brilho * 0.45)
-	for y0 in [t.position.y - TARJA, t.end.y]:
-		_tarja(alvo, Rect2(0.0, y0, t.size.x, TARJA), amarelo)
+	for y0 in [t.position.y, t.end.y - TARJA]:
+		_tarja(alvo, Rect2(t.position.x, y0, t.size.x, TARJA), amarelo)
+	# Os lados, de cima a baixo: a mesma faixa em pé, a da direita
+	# espelhada — as listras descem simétricas.
+	var lado = Rect2(t.position.x, t.position.y, TARJA, t.size.y)
+	alvo.draw_texture_rect(ZEBRA_V, lado, false, amarelo)
+	alvo.draw_texture_rect(ZEBRA_V, Rect2(t.end.x - TARJA, t.position.y, -TARJA, t.size.y), false, amarelo)
 	# o fio de luz na borda de dentro das tarjas, na cor do nível
 	var fio = Compat.cor(cor, 0.55 + brilho * 0.45)
-	alvo.draw_rect(Rect2(0.0, t.position.y, t.size.x, 3.0 + brilho * 3.0), fio)
-	alvo.draw_rect(Rect2(0.0, t.end.y - 3.0 - brilho * 3.0, t.size.x, 3.0 + brilho * 3.0), fio)
+	var g = 3.0 + brilho * 3.0
+	var dentro = t.grow(-TARJA)
+	alvo.draw_rect(Rect2(dentro.position.x, dentro.position.y, dentro.size.x, g), fio)
+	alvo.draw_rect(Rect2(dentro.position.x, dentro.end.y - g, dentro.size.x, g), fio)
+	alvo.draw_rect(Rect2(dentro.position.x, dentro.position.y + g, g, dentro.size.y - g * 2.0), fio)
+	alvo.draw_rect(Rect2(dentro.end.x - g, dentro.position.y + g, g, dentro.size.y - g * 2.0), fio)
 
 ## Uma tarja zebrada: listras diagonais pretas sobre o amarelo.
 ##
@@ -139,6 +153,8 @@ static func tarjas(alvo: CanvasItem, cor: Color, pulso := 0.0) -> void:
 ## 120a1c, 4x4 amostras por pixel e o fio escuro em cima e embaixo) — o
 ## jogo não gasta a abertura pintando 17 mil pixels em GDScript.
 const ZEBRA = preload("res://assets/arena/tarja_zebra.png")
+## A mesma faixa em pé (16 x 1920, a altura da tela), para os lados.
+const ZEBRA_V = preload("res://assets/arena/tarja_zebra_v.png")
 
 static func _tarja(alvo: CanvasItem, r: Rect2, amarelo: Color) -> void:
 	alvo.draw_texture_rect(ZEBRA, r, false, amarelo)
