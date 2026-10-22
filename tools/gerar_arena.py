@@ -57,71 +57,63 @@ def fundo() -> None:
     img += disco_macio(H, W, H * 0.62, W * 0.12, W * 0.55, 1.6)[..., None] * hexcor("5a0b5a") * 0.55
     img += disco_macio(H, W, H * 0.58, W * 0.90, W * 0.50, 1.6)[..., None] * hexcor("0b3a52") * 0.55
 
-    # A ARQUIBANCADA ALTA: gente de verdade, pequena e fora de foco —
-    # camisas coloridas, rostos e braços, e não manchas escuras. As
-    # fileiras de trás são menores, mais desfocadas e mais apagadas pela
-    # névoa do ginásio; cada fileira tem o degrau de concreto embaixo.
-    camisas = [hexcor(c) for c in ("d61e30", "1e4cc8", "fac81e", "c4c4cc", "1a1a1e", "14965a",
+    # A ARQUIBANCADA ALTA, FORA DE FOCO (build 119). Até a build 118 eram
+    # dezenas de fileiras de gente de 8 px, cada uma com rosto, braço e
+    # contorno: na TV aquilo virava um chuvisco colorido em volta do
+    # lutador ("pixelado"). Agora são poucas fileiras de gente GRANDE e bem
+    # desfocada, escura e puxada para o roxo da névoa — como numa foto com
+    # o lutador em foco. A torcida da frente (animada, nítida) faz o resto.
+    camisas = [hexcor(c) for c in ("d61e30", "1e4cc8", "fac81e", "c4c4cc", "14965a",
                                    "f06e14", "8232be", "00aac8", "c8288c", "5a606e")]
-    peles = [hexcor(c) for c in ("ffd6aa", "eebe8c", "dea870", "c48858", "a0663e", "784c2e", "58382a")]
-    # (pequenas de propósito: estão atrás da torcida pintada da arena, e
-    # gente maior no fundo do que na frente quebrava a perspectiva)
-    # Os degraus ficam colados (a cabeça de uma fileira encosta no peito
-    # da de cima), como numa arquibancada cheia.
+    peles = [hexcor(c) for c in ("eebe8c", "c48858", "a0663e", "784c2e")]
+    nevoa = hexcor("2a1450")
     fileiras = []
-    y0, tam = 0.31, 4.2
-    while y0 < 0.68:
-        k = (y0 - 0.31) / 0.37
-        fileiras.append((y0, tam, 1.2 - 0.4 * k, 0.09 + 0.10 * k))
-        y0 += tam * 2.05 / H
-        tam *= 1.07
+    y0, tam = 0.34, 9.0
+    while y0 < 0.66:
+        k = (y0 - 0.34) / 0.32
+        fileiras.append((y0, tam, 3.2 - 1.0 * k, 0.10 + 0.12 * k))
+        y0 += tam * 2.15 / H
+        tam *= 1.10
     for fila, (y0, tam, sig, luz) in enumerate(fileiras):
         cam = Image.new("RGB", (W, H), (0, 0, 0))
         msk = Image.new("L", (W, H), 0)
         dc, dm = ImageDraw.Draw(cam), ImageDraw.Draw(msk)
-        x = -tam
+        x = -tam + rng.uniform(0, tam)
         while x < W + tam:
-            cx = x + rng.uniform(-tam * 0.2, tam * 0.2)
-            cy = H * y0 + rng.uniform(-tam * 0.25, tam * 0.25)
-            camisa = tuple(int(v * 255) for v in camisas[rng.integers(len(camisas))])
-            pele = tuple(int(v * 255) for v in peles[rng.integers(len(peles))])
-            if rng.random() < 0.35:  # braço para o alto
-                lado = rng.choice([-1, 1])
-                dc.line([cx + lado * tam * 0.7, cy, cx + lado * tam * 0.9, cy - tam * 1.9], fill=pele, width=max(2, int(tam * 0.45)))
-                dm.line([cx + lado * tam * 0.7, cy, cx + lado * tam * 0.9, cy - tam * 1.9], fill=255, width=max(2, int(tam * 0.45)))
+            cx = x + rng.uniform(-tam * 0.15, tam * 0.15)
+            cy = H * y0 + rng.uniform(-tam * 0.2, tam * 0.2)
+            camisa = camisas[rng.integers(len(camisas))] * 0.55 + nevoa * 0.45
+            camisa = tuple(int(v * 255) for v in camisa)
+            pele = tuple(int(v * 255) for v in peles[rng.integers(len(peles))] * 0.8)
             for d, cor in ((dc, camisa), (dm, 255)):
-                d.rounded_rectangle([cx - tam * 0.95, cy - tam * 0.35, cx + tam * 0.95, cy + tam * 2.6], radius=tam * 0.6, fill=cor)
+                d.rounded_rectangle([cx - tam * 0.95, cy - tam * 0.30, cx + tam * 0.95, cy + tam * 2.6],
+                                    radius=tam * 0.7, fill=cor)
             for d, cor in ((dc, pele), (dm, 255)):
-                d.ellipse([cx - tam * 0.42, cy - tam * 1.05, cx + tam * 0.42, cy - tam * 0.2], fill=cor)
-            x += tam * rng.uniform(1.75, 2.05)
+                d.ellipse([cx - tam * 0.45, cy - tam * 1.1, cx + tam * 0.45, cy - tam * 0.15], fill=cor)
+            x += tam * rng.uniform(1.95, 2.25)
         m = blur(np.asarray(msk, np.float32) / 255.0, sig)
         c = blur(np.asarray(cam, np.float32) / 255.0, sig)
-        # degrau de concreto da fileira
-        degrau = np.zeros((H, W), np.float32)
-        ya = int(H * y0 + tam * 2.2)
-        degrau[ya:ya + 2] = 1.0
-        contorno = np.clip(m - np.roll(m, 3, axis=0), 0, 1)
-        tom = hexcor("100a20")
+        contorno = np.clip(m - np.roll(m, 4, axis=0), 0, 1)
+        tom = hexcor("0c0820")
         cor = c * luz + tom * (1.0 - luz)
-        img = img * (1 - m[..., None] * 0.95) + cor * m[..., None] * 0.95
-        img += degrau[..., None] * hexcor("2a2040") * 0.4
-        img += contorno[..., None] * (hexcor("ff3ab4") * 0.5 + hexcor("45d8ff") * 0.5) * luz * 0.5
+        img = img * (1 - m[..., None] * 0.92) + cor * m[..., None] * 0.92
+        img += contorno[..., None] * (hexcor("ff3ab4") * 0.5 + hexcor("45d8ff") * 0.5) * luz * 0.35
 
-    # Luzes de palco desfocadas (bokeh): celulares, placas, refletores.
+    # Luzes da plateia desfocadas (bokeh): poucas, grandes e suaves.
     paleta = [hexcor(c) for c in ("ffd35a", "ff3bb0", "46dcff", "ffffff", "9a5cff")]
     camada = np.zeros_like(img)
-    for _ in range(170):
-        cx, cy = rng.uniform(0, W), rng.uniform(H * 0.12, H * 0.80)
-        r = rng.uniform(2.0, 9.0) * (0.6 + cy / H)
+    for _ in range(70):
+        cx, cy = rng.uniform(0, W), rng.uniform(H * 0.14, H * 0.78)
+        r = rng.uniform(5.0, 15.0) * (0.7 + cy / H)
         cor = paleta[rng.integers(len(paleta))]
-        forca = rng.uniform(0.15, 0.55)
+        forca = rng.uniform(0.08, 0.30)
         x0, x1 = int(max(cx - r - 2, 0)), int(min(cx + r + 3, W))
         y0, y1 = int(max(cy - r - 2, 0)), int(min(cy + r + 3, H))
         if x1 <= x0 or y1 <= y0:
             continue
-        sub = disco_macio(y1 - y0, x1 - x0, cy - y0, cx - x0, r, 0.6)
+        sub = disco_macio(y1 - y0, x1 - x0, cy - y0, cx - x0, r, 0.8)
         camada[y0:y1, x0:x1] += sub[..., None] * cor * forca
-    img += blur(camada, 1.2)
+    img += blur(camada, 2.0)
 
     # Fachos de luz vindos do teto, bem sutis (os fachos animados sao outra malha).
     fachos = np.zeros((H, W), np.float32)
@@ -156,6 +148,10 @@ def fundo() -> None:
     img *= (0.45 + 0.55 * v)[..., None]
     # Grao leve: sem ele o degrade vira faixas no video da TV.
     img += rng.normal(0, 0.006, img.shape).astype(np.float32)
+    # 1024 x 1024: a textura com mipmaps em potência de 2 (o plano é 4:3 e
+    # estica de volta).
+    img = np.asarray(Image.fromarray((np.clip(img, 0, 1) * 255 + 0.5).astype(np.uint8)).resize(
+        (1024, 1024), Image.LANCZOS), np.float32) / 255.0
     salvar(img, "fundo.png")
 
 
@@ -232,17 +228,23 @@ def saia() -> None:
     embaixo do quadro a lateral lisa do tablado — uma faixa cinza sem
     desenho. Agora é um letreiro de LED que rola (o shader anda o `u`).
     """
-    W, H = 2048, 192
+    W, H = 2048, 256
     img = np.zeros((H, W, 3), np.float32)
     img[:] = hexcor("0a0616")
-    texto = Image.new("L", (W, H), 0)
-    dt = ImageDraw.Draw(texto)
-    fonte = ImageFont.truetype(FONTE, int(H * 0.46))
-    frase = "SUPER BOXING  •  PUNCH CHALLENGE  •  LAZER SPORT  •  "
-    x = 0
-    while x < W:
-        dt.text((x, H * 0.24), frase, font=fonte, fill=255)
-        x += int(dt.textlength(frase, font=fonte))
+    # O LETREIRO ROLA EM LACO: a frase cabe um numero INTEIRO de vezes na
+    # largura, senao a emenda aparece (ate a build 118 a ultima frase era
+    # cortada no meio e o "LAZE" emendava no "SUPER BOXING", e ainda havia
+    # o nome antigo, PUNCH CHALLENGE). A frase e escrita numa faixa do
+    # tamanho natural e ajustada na largura (no maximo uns 15%).
+    fonte = ImageFont.truetype(FONTE, int(H * 0.42))
+    frase = "SUPER BOXING  •  LAZER & SPORT  •  "
+    medida = ImageDraw.Draw(Image.new("L", (1, 1))).textlength(frase, font=fonte)
+    vezes = max(1, round(W / medida))
+    larga = Image.new("L", (int(round(medida * vezes)), H), 0)
+    dl = ImageDraw.Draw(larga)
+    for i in range(vezes):
+        dl.text((i * medida, H * 0.25), frase, font=fonte, fill=255)
+    texto = larga.resize((W, H), Image.LANCZOS)
     t = np.asarray(texto, np.float32) / 255.0
     grade = ((np.arange(H)[:, None] % 4) < 3) & ((np.arange(W)[None, :] % 4) < 3)
     led = t * grade

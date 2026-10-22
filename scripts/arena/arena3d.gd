@@ -16,9 +16,9 @@ extends Viewport
 ##   • partículas com quantidade fixa (mudar `amount` realoca buffers e
 ##     engasga) e shaders compilados no arranque (`aquecer`).
 
-## Resolução cheia do quadro (1:1 na tela): o ringue sai nítido. 4.6 PRO:
-## a arena vai de ponta a ponta na largura da tela (ver `ArenaQuadro`).
-const TELA_LOGICA = Vector2(1080.0, 1540.0)
+## Resolução cheia do quadro (1:1 na tela): o ringue sai nítido. Build 119:
+## a arena ocupa a TELA INTEIRA (ver `ArenaQuadro`).
+const TELA_LOGICA = Vector2(1080.0, 1920.0)
 ## Degrau magro para quando o vigia de desempenho apertar.
 const FATOR_MAGRO = 0.75
 const DESCE_PARA_MAGRO = 0.50
@@ -30,8 +30,25 @@ const SOBE_PARA_CHEIO = 0.62
 ## altura e sobra lugar para o ringue inteiro, a treliça de luz e a torcida.
 const OCUPACAO_DO_LUTADOR = 0.54
 const CAMERA_ACIMA_DA_MIRA = 0.26
-## O ângulo de abertura (vertical) da câmera.
+## O ângulo de abertura (vertical) da câmera no quadro em que o
+## enquadramento foi acertado (`ArenaQuadro.QUADRO_DO_LUTADOR`, 1540 px).
 const CAMPO_DE_VISAO = 50.0
+## A TELA INTEIRA COM O MESMO LUTADOR (build 119). A imagem cresceu de
+## 1540 para 1920 px de altura sem mudar a largura: a lente abre na
+## vertical na mesma proporção (o lutador fica do mesmo tamanho na tela) e
+## a câmera inclina um pouco para baixo, porque o quadro antigo não estava
+## no meio da tela (116 px de folga em cima, 264 embaixo). Assim o lutador
+## continua exatamente onde as vidas, os cartões e os efeitos o esperam.
+static func _campo_da_tela() -> float:
+	var q = ArenaQuadro.QUADRO_DO_LUTADOR
+	var meia = tan(deg2rad(CAMPO_DE_VISAO) * 0.5)
+	return rad2deg(2.0 * atan(meia * TELA_LOGICA.y / q.size.y))
+
+static func _inclinacao_da_tela() -> float:
+	var q = ArenaQuadro.QUADRO_DO_LUTADOR
+	var focal = q.size.y * 0.5 / tan(deg2rad(CAMPO_DE_VISAO) * 0.5)
+	var abaixo = TELA_LOGICA.y * 0.5 - q.get_center().y
+	return atan(abaixo / focal)
 
 ## O ringue (metros). A meia largura põe os postes de trás nas bordas do
 ## quadro, que é o que faz a imagem ler como ringue.
@@ -182,8 +199,8 @@ void fragment() {
 }
 """
 
-## O tamanho da build 97: o último degrau do gráfico (ver `DEGRAUS`).
-const ARENA_ESCALA_SEGURA = 0.55
+## O último degrau do gráfico (ver `DEGRAUS`).
+const ARENA_ESCALA_SEGURA = 0.60
 ## A torcida da S905L (`SHADER_TORCIDA_SEGURA`): folga em cima da fileira e
 ## onde começa o encosto (o mesmo `ASSENTO` de `tools/gerar_torcida.py`).
 const FOLGA_DA_TORCIDA = 0.12
@@ -226,6 +243,7 @@ var _sombra: MeshInstance = null
 var _mat_sombra: SpatialMaterial = null
 
 var _distancia = 0.0
+var _inclinacao = _inclinacao_da_tela()
 var _altura_da_camera = 0.0
 var _altura_da_mira = 0.0
 
@@ -274,7 +292,7 @@ func _montar_mundo() -> void:
 
 	camera = Camera.new()
 	camera.name = "Camera"
-	camera.fov = CAMPO_DE_VISAO
+	camera.fov = _campo_da_tela()
 	# Plano de corte bem perto: no soco na tela a luva chega a um palmo da
 	# lente, e com o corte longe ela aparecia oca, "transparente".
 	camera.near = 0.10
@@ -283,6 +301,7 @@ func _montar_mundo() -> void:
 	_calcular_enquadramento()
 	camera.translation = Vector3(0.0, _altura_da_camera, _distancia)
 	camera.look_at_from_position(camera.translation, Vector3(0.0, _altura_da_mira, 0.0), Vector3.UP)
+	camera.rotate_object_local(Vector3.RIGHT, -_inclinacao_da_tela())
 
 	_luz_chave = DirectionalLight.new()
 	_luz_chave.light_energy = 1.6
@@ -814,6 +833,17 @@ var _msaa_quebrado = false
 var _msaa_conferido = false
 var _quadros_no_ar = 0
 
+## Para a Central: o antisserrilhado que a arena está usando de verdade.
+func antisserrilhado() -> String:
+	if not Perfil.ARENA_MSAA:
+		return "sem MSAA (perfil)"
+	if _msaa_quebrado:
+		return "MSAA DESLIGADO (a placa devolveu a imagem preta)"
+	if not _msaa_conferido:
+		return "MSAA 4x (ainda não conferido)"
+	return "MSAA 4x ligado"
+
+
 func _conferir_msaa() -> void:
 	if msaa == Viewport.MSAA_DISABLED or _msaa_conferido:
 		return
@@ -1091,7 +1121,7 @@ func _passo_do_aquecimento() -> void:
 func _calcular_enquadramento() -> void:
 	var figura = Lutador3D.ALTURA_DA_FIGURA
 	var janela = figura / OCUPACAO_DO_LUTADOR
-	var meia = deg2rad(camera.fov) * 0.5
+	var meia = deg2rad(CAMPO_DE_VISAO) * 0.5
 	_distancia = janela / (2.0 * tan(meia))
 	var base = PISO_DO_LUTADOR - (janela - figura) * 0.5
 	var inclinacao = atan(CAMERA_ACIMA_DA_MIRA / _distancia)
@@ -1170,6 +1200,7 @@ func _camera(delta := 0.0) -> void:
 		_cam_mira = _cam_mira.linear_interpolate(mira, k)
 	camera.translation = _cam_pos + sacode
 	camera.look_at(_cam_mira + balanco, Vector3.UP)
+	camera.rotate_object_local(Vector3.RIGHT, -_inclinacao)
 	if abs(rolo) > 0.0001:
 		camera.rotate_object_local(Vector3.FORWARD, rolo)
 
@@ -1286,12 +1317,16 @@ func _sombra_de_contato() -> void:
 ## OS DEGRAUS DO GRÁFICO. A arena é a conta mais cara do jogo. Cada degrau
 ## tira UMA coisa, a que menos se vê primeiro:
 ##
-##   0 COMPLETO      tudo, a arena em `Perfil.ARENA_ESCALA` (65%);
+##   0 COMPLETO      tudo, a arena em `Perfil.ARENA_ESCALA` (72%);
 ##   1 SEM FACHOS    os cones de luz e os flashes da plateia
 ##                   (transparentes, cobrem boa parte da tela);
-##   2 3D A 60%      a arena desenhada com 60% dos pixels de cada lado
-##                   (ampliada no quadro, a imagem fica um pouco mais macia);
-##   3 3D A 55%      idem, 55% (o tamanho da build 111).
+##   2 3D A 66%      a arena desenhada com 66% dos pixels de cada lado
+##                   (ampliada na tela, a imagem fica um pouco mais macia);
+##   3 3D A 60%      idem, 60% (na tela inteira, os mesmos pixels que a
+##                   build 118 desenhava no quadro dela).
+## Até a build 118 o último degrau era 55% (o tamanho da build 111): o
+## lutador ampliado quase duas vezes ficava "pixelado em volta". Abaixo de
+## 60% a arena não desce mais — a nitidez do lutador é o jogo.
 ##
 ## O jogo escolhe sozinho (`main.gd`, `_ajustar_degrau`): mede a luta em
 ## janelas de 4 s e, se ela ficou abaixo da meta de quadros, desce um
@@ -1300,7 +1335,7 @@ func _sombra_de_contato() -> void:
 ## O degrau 1 entra na hora (é só esconder uma peça já compilada). O
 ## tamanho (2 e 3) realoca a imagem da arena — no quadro da troca o
 ## lutador sumiria —, então ele espera a arena sair da tela (`ligar`).
-const DEGRAUS = ["COMPLETO", "SEM FACHOS", "3D A 60%", "3D A 55%"]
+const DEGRAUS = ["COMPLETO", "SEM FACHOS", "3D A 66%", "3D A 60%"]
 var degrau = 0
 
 func aplicar_degrau(n: int) -> void:
@@ -1320,9 +1355,9 @@ func _enfeites_do_degrau() -> bool:
 
 func _escala_do_degrau() -> float:
 	if degrau >= 3:
-		return ARENA_ESCALA_SEGURA
+		return min(ARENA_ESCALA_SEGURA, Perfil.ARENA_ESCALA)
 	if degrau == 2:
-		return 0.60
+		return min(0.66, Perfil.ARENA_ESCALA)
 	return Perfil.ARENA_ESCALA
 
 ## O degrau pede um tamanho que ainda não entrou (a arena está na tela;

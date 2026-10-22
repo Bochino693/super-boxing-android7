@@ -78,6 +78,17 @@ const L_TOE = ["LeftToeBase", "RightToeBase"]
 const L_TOE_END = ["LeftToe_End", "RightToe_End"]
 const COLUNA = ["Spine", "Spine1", "Spine2"]
 const COLUNA_PESO = [0.3, 0.35, 0.35]
+## A COLUNA EM ONDA (build 119). Até a build 118 as três vértebras giravam
+## juntas, um bloco só: o tronco virava como uma tábua. Agora cada uma tem
+## a sua mola — a lombar acompanha quase na hora, o meio das costas um
+## instante depois e o peito por último, passando um tiquinho e voltando.
+## No golpe o quadril puxa e o ombro chega em seguida (o "chicote"); na
+## ginga e na respiração o corpo ondula em vez de balançar duro.
+## (frequência em rad/s, amortecimento: abaixo de 1 passa e volta)
+const VERTEBRA_FREQ = [24.0, 17.0, 13.0]
+const VERTEBRA_AMORTECE = [0.95, 0.72, 0.62]
+## A respiração mora no peito: ele sobe e a lombar quase não mexe.
+const VERTEBRA_RESPIRA = [-0.3, 0.4, 1.0]
 
 ## Os golpes: duração total e a fração em que o braço chega esticado.
 const GOLPES = {
@@ -194,6 +205,9 @@ var _pe_ultimo = 1
 var _pes_livres = 0.0               ## 1 = pernas soltas (deitado)
 
 ## --- molas das reações
+var _vertebra = [Vector3.ZERO, Vector3.ZERO, Vector3.ZERO]
+var _vertebra_v = [Vector3.ZERO, Vector3.ZERO, Vector3.ZERO]
+var _respiro = 0.0
 var _mola_cab = Vector3.ZERO
 var _mola_cab_v = Vector3.ZERO
 var _mola_tronco = Vector3.ZERO
@@ -481,6 +495,9 @@ func _reiniciar_corpo() -> void:
 	_mola_cab_v = Vector3.ZERO
 	_mola_tronco = Vector3.ZERO
 	_mola_tronco_v = Vector3.ZERO
+	for i in 3:
+		_vertebra[i] = Vector3.ZERO
+		_vertebra_v[i] = Vector3.ZERO
 	_guarda_aberta = 0.0
 	_guarda_aberta_v = 0.0
 	_joelho = 0.0
@@ -755,8 +772,9 @@ func _coreografia(dt: float) -> void:
 	a_tronco.x += quique * 0.02
 	for k in 2:
 		a_calcanhar[k] = quique * 0.35 * ginga
-	# respiração
-	a_tronco.x += sin(t * 2.4) * 0.012
+	# respiração: no peito (ver `VERTEBRA_RESPIRA`), um pouco mais funda
+	# depois de apanhar
+	_respiro = sin(t * 2.4) * (0.014 + 0.012 * clamp(_tonto, 0.0, 1.0))
 	a_ombro[0].x = sin(t * 2.4) * 0.02
 	a_ombro[1].x = sin(t * 2.4) * 0.02
 
@@ -1183,6 +1201,16 @@ func _suavizar(dt: float) -> void:
 	_bacia_rot = _bacia_rot.linear_interpolate(a_bacia_rot, lento)
 	_tronco = _tronco.linear_interpolate(a_tronco, a)
 	_cabeca = _cabeca.linear_interpolate(a_cabeca, lento)
+	# A coluna em onda (ver `VERTEBRA_FREQ`). Mola resolvida de forma
+	# implícita: estável com qualquer passo, mesmo num quadro atrasado.
+	var alvo_col = _tronco + _mola_tronco
+	for i in 3:
+		var w = float(VERTEBRA_FREQ[i])
+		var kk = w * w
+		var cc = 2.0 * float(VERTEBRA_AMORTECE[i]) * w
+		var v: Vector3 = (_vertebra_v[i] + (alvo_col - _vertebra[i]) * kk * dt) / (1.0 + cc * dt + kk * dt * dt)
+		_vertebra_v[i] = v
+		_vertebra[i] = (_vertebra[i] as Vector3) + v * dt
 	for k in 2:
 		# As luvas da guarda são guardadas relativas ao centro do corpo.
 		var alvo: Vector3 = _no_tronco(a_mao[k])
@@ -1319,7 +1347,8 @@ func _resolver() -> void:
 	var pai = "Hips"
 	for i in 3:
 		var n: String = COLUNA[i]
-		var q = Basis((_tronco + _mola_tronco) * float(COLUNA_PESO[i]))
+		var q = Basis((_vertebra[i] as Vector3) * float(COLUNA_PESO[i]) \
+			+ Vector3(_respiro * float(VERTEBRA_RESPIRA[i]), 0.0, 0.0))
 		G[n] = (G[pai] as Basis) * q
 		O[n] = (O[pai] as Vector3) + (G[pai] as Basis) * (_R[n] - _R[pai])
 		pai = n

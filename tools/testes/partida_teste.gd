@@ -10,6 +10,10 @@ extends Node
 ## e a cortina de volta à abertura), fotografando o caminho.
 ## `--degrau=N` prende o gráfico da arena no degrau N (`Arena3D.DEGRAUS`):
 ## num PC sem placa de vídeo o jogo desceria sozinho para o último.
+## `--camera` finge uma webcam ao vivo (um quadro novo a cada 125 ms): a
+## rodada passa pela pose e pela foto, e as fotos da tela pegam a cortina
+## do ringue quadro a quadro. `--camera-cai=S` corta a webcam S segundos
+## depois do START (a pose tem de desistir e ir para o ringue).
 
 class PlacaDeMentira:
 	extends SerialLink
@@ -49,6 +53,12 @@ var _quadros_por_estado = {}
 var _esconder = ""
 var _degrau = -1
 var _natural = false
+var _camera = false
+var _camera_cai = -1.0
+var _start_em = -1.0
+var _quadro_cam = 0
+var _proximo_quadro_cam = 0.0
+var _cortina_vista = false
 
 
 func _ready() -> void:
@@ -65,6 +75,11 @@ func _ready() -> void:
 			_degrau = int(a.substr(9))
 		elif a == "--natural":
 			_natural = true
+		elif a == "--camera":
+			_camera = true
+		elif a.begins_with("--camera-cai="):
+			_camera = true
+			_camera_cai = float(a.substr(13))
 	# Cronômetros por chamada (só quando o código foi instrumentado à mão,
 	# para medir; ver o resumo "PERF" no fim).
 	Engine.set_meta("perf", {})
@@ -107,7 +122,34 @@ func _pos_desenho() -> void:
 func _fingir_placa() -> void:
 	main.link = PlacaDeMentira.new()
 	main.placa_respondeu = true
-	main.camera_enabled = false
+	main.camera_enabled = _camera
+	if _camera:
+		main.camera_service.set_process(false)
+		main.camera_service.enabled = true
+
+
+## A WEBCAM DE MENTIRA: um quadro novo (que muda) a cada 125 ms, entregue
+## pelo mesmo caminho da ponte Android (`_registrar_quadro`).
+func _passo_da_camera() -> void:
+	var cs = main.camera_service
+	if _camera_cai >= 0.0 and _start_em >= 0.0 and t - _start_em >= _camera_cai:
+		return
+	if t < _proximo_quadro_cam:
+		return
+	_proximo_quadro_cam = t + 0.125
+	_quadro_cam += 1
+	var img = Image.new()
+	img.create(320, 240, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0.25, 0.3, 0.45))
+	var lado = 60 + (_quadro_cam * 7) % 80
+	img.fill_rect(Rect2(130 - lado / 2, 120 - lado / 2, lado, lado), Color(0.95, 0.8, 0.6))
+	if cs._uvc_texture == null:
+		cs._uvc_texture = ImageTexture.new()
+		cs._uvc_texture.create_from_image(img, Texture.FLAG_FILTER)
+	else:
+		cs._uvc_texture.set_data(img)
+	cs.estado = cs.Estado.ACESA
+	cs._registrar_quadro(img, Time.get_ticks_msec())
 
 
 func _process(delta: float) -> void:
@@ -121,7 +163,8 @@ func _process(delta: float) -> void:
 		_proc_us / 1000.0, _flush_us / 1000.0, _render_us / 1000.0,
 		int(Performance.get_monitor(Performance.RENDER_DRAW_CALLS_IN_FRAME)),
 		int(Performance.get_monitor(Performance.RENDER_2D_DRAW_CALLS_IN_FRAME)),
-		int(Performance.get_monitor(Performance.RENDER_2D_ITEMS_IN_FRAME))])
+		int(Performance.get_monitor(Performance.RENDER_2D_ITEMS_IN_FRAME)),
+		stepify(main.transicao, 0.001), main.sons.playing("round_bell"), main.pose_finished])
 	_ultimo_us = agora
 	t += delta
 	if _degrau >= 0 and main.degrau_grafico != _degrau:
@@ -131,6 +174,8 @@ func _process(delta: float) -> void:
 		return
 	if main.link == null or not (main.link is PlacaDeMentira):
 		_fingir_placa()
+	if _camera:
+		_passo_da_camera()
 	if _esconder != "":
 		main.get_node(_esconder).visible = false
 	match main.state:
@@ -146,8 +191,17 @@ func _process(delta: float) -> void:
 				return
 			if _resultado_em < 0.0 or t - _resultado_em > 1.0:
 				_tecla_start()
+				_start_em = t
+				_cortina_vista = false
 				# sem câmera, a cortina leva direto ao ringue (sem a pose)
 				_foto("p%d_start" % feitas, 0.5)
+		GameDef.State.COUNTDOWN:
+			if main.transicao < 0.0 and not main.pose_finished:
+				_foto("p%d_pose" % feitas, 0.0)
+			if main.pose_finished and main.transicao >= 0.0 and not _cortina_vista:
+				_cortina_vista = true
+				for k in 6:
+					_foto("p%d_cortina%d" % [feitas, k], 0.1 * k)
 		GameDef.State.ARMED:
 			if _armado_em < 0.0:
 				_armado_em = t
@@ -204,9 +258,9 @@ func _terminar() -> void:
 	if arquivo != "":
 		var f = File.new()
 		f.open(arquivo, File.WRITE)
-		f.store_line("t;quadro_us;estado;arena;process_ms;draw2d_ms;render_ms;desenhos3d;desenhos2d;itens2d")
+		f.store_line("t;quadro_us;estado;arena;process_ms;draw2d_ms;render_ms;desenhos3d;desenhos2d;itens2d;cortina;sino;foto")
 		for l in _linhas:
-			f.store_line("%s;%d;%s;%s;%.3f;%.3f;%.3f;%d;%d;%d" % l)
+			f.store_line("%s;%d;%s;%s;%.3f;%.3f;%.3f;%d;%d;%d;%s;%s;%s" % l)
 		f.close()
 	print("PARTIDA_TESTE: %d partidas, %d quadros" % [feitas, _linhas.size()])
 	var perf: Dictionary = Engine.get_meta("perf")

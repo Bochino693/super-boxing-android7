@@ -12,9 +12,9 @@ extends Reference
 ## NUMERO em um e escreva em NOTA o que mudou. Um carimbo que não sobe
 ## mente, e um carimbo que mente é pior do que carimbo nenhum.
 
-const NUMERO = 118
-const DATA = "21/10/2026"
-const NOTA = "Mali-450 (TX9): sem câmera o jogo não pede foto (vai direto ao ringue, como no Strike Kids); START também na tecla 1; logo do jogo grande no alto da luta; rosto do lutador com o detalhe do original; arena com MSAA 4x (bordas lisas, desliga sozinho se a placa não aceitar)"
+const NUMERO = 119
+const DATA = "22/10/2026"
+const NOTA = "Mali-450 (TX9): arena 3D na tela inteira com a faixa zebrada nas quatro bordas; lutador e ringue nítidos (texturas sem ETC1, 3D a 72% com MSAA, plateia do fundo desfocada sem chuvisco); coluna do lutador em onda; a webcam não fecha mais a cada luta (não some) e sem imagem ao vivo a pose não é pedida; a cortina para o ringue sem engasgo e o sino toca quando o ringue aparece; a foto do jogador volta a aparecer no TOP 20"
 
 ## Rodapé da abertura: cabe em uma linha discreta.
 static func curta() -> String:
