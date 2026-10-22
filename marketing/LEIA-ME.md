@@ -9,14 +9,33 @@ não importa nada daqui e nada daqui vai para o APK.
 
 | Pasta | O que é |
 | --- | --- |
-| `video/` | Vídeo promocional vertical (1080×1920: Reels, TikTok, Shorts, Status) e horizontal (1920×1080: YouTube, TV da loja, site), com som |
+| `video/` | O **comercial da máquina COLUNA** (`super_boxing_comercial_coluna_*`) e o vídeo promocional dos gabinetes torre e compacto, cada um vertical (1080×1920: Reels, TikTok, Shorts, Status) e horizontal (1920×1080: YouTube, TV da loja, site), com som |
 | `posts/` | Pôster vertical, post quadrado, banner horizontal e a página de catálogo com os dois gabinetes |
+| `adesivos/coluna/` | **O gabinete COLUNA** (o da foto de referência: capô com a bola, TV em pé, base de chapa xadrez): todos os adesivos em PDF tamanho real com sangria, prévias e o `montagem.jpg` (frente e lado já vestidos) |
 | `adesivos/torre/` e `adesivos/compacto/` | Os adesivos de cada gabinete em PDF, **tamanho real com sangria**, prontos para a gráfica |
 | `adesivos/comuns/` | Peças iguais para os dois modelos: como jogar (A3), aviso de segurança, adesivo de piso, logos recortados |
 | `adesivos/*/previas/` | Prévia de cada peça com a linha de corte, a área segura, os furos e as medidas (para conferir e mandar junto) |
 | `gabinetes/` | Desenho técnico dos dois gabinetes (frente e lado, com medidas e lista de peças) e os renders 3D |
 | `renders/` | O lutador recortado (fundo transparente) em alta: guarda, soco, campeão, nocaute, caído |
 | `TEXTOS_DIVULGACAO.md` | Legendas, frases e ficha técnica para postar e para propostas |
+
+## O gabinete COLUNA (o da foto de referência)
+
+| Peça | Medida (cm) |
+| --- | --- |
+| Coluna (L × P × A) | 62 × 48 × 175, TV 32" em pé na frente |
+| Capô (L × P × A) | 72 × 115 × 38, avança 67 cm sobre o jogador; a bola pendura embaixo, a 30 cm da frente |
+| Base (L × P × A) | 85 × 130 × 12; a coluna fica no fundo, o resto é o piso de chapa xadrez |
+| Altura total | 225 |
+
+Os adesivos (`adesivos/coluna/`): capô (frente, laterais e embaixo, com o
+furo do suporte da bola), frente da coluna em duas peças (o nome + a
+moldura amarela e preta da TV com a janela recortada; o painel de baixo com
+START, crédito, logo, lutador e FIGHT!), laterais, traseira (opcional) e o
+piso da base. O `montagem.jpg` mostra a máquina vestida, de frente e de
+lado. As medidas são uma proposta: confira o gabinete e a TV e ajuste em
+`MEDIDAS`, no começo de `tools/marketing/adesivos_coluna.py`. Os adesivos, a
+montagem e o modelo 3D do comercial (`tools/marketing/coluna3d`) saem de lá.
 
 ## Os dois gabinetes
 
@@ -79,6 +98,7 @@ o soco empurra o saco para trás.
 Precisa de Python 3 com `numpy`, `scipy` e `pillow` (e o `ffmpeg` para o vídeo):
 
 ```
+python tools/marketing/adesivos_coluna.py       # adesivos do gabinete COLUNA + montagem
 python tools/marketing/gerar_adesivos.py        # adesivos (torre, compacto, comuns)
 python tools/marketing/gerar_gabinetes.py       # desenho técnico + textura do saco
 python tools/marketing/gerar_posts.py           # pôsteres e catálogo
@@ -92,6 +112,11 @@ godot3 --video-driver GLES3 --path . res://tools/marketing/gabinete3d/gabinete3d
     --saida=marketing/gabinetes/renders --modelos=torre,compacto \
     --vistas=heroi,heroi_d,frente,lado --tamanho=1800x2340 --tela=QUADRO_DO_JOGO.jpg
 ```
+
+O comercial da COLUNA junta a captura do jogo com as cenas da máquina em 3D,
+com o jogo de verdade passando na tela dela (`coluna3d.tscn --cena=revelar`,
+`soco` e `orbita`, mais a `heroi --recorte` do cartão final), montadas por
+`tools/marketing/comercial_coluna.py`.
 
 O vídeo usa uma captura do jogo quadro a quadro, feita numa cópia preparada
 por `tools/marketing/captura/preparar_copia.py` (as instruções estão no
