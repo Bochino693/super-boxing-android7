@@ -2,6 +2,8 @@ extends Control
 
 ## Formas juntadas numa chamada só (ver `scripts/lote.gd`).
 const Lote = preload("res://scripts/lote.gd")
+## Placas, pílulas e anéis por textura (ver `scripts/formas.gd`).
+const Formas = preload("res://scripts/formas.gd")
 
 ## Punch Challenge — a máquina de soco da Lazer & Sport.
 ##
@@ -3215,13 +3217,18 @@ func _disparar_veredito() -> void:
 ## abertura), e dispara uma vez cada efeito de partícula. Tudo o que é
 ## trocado para o ensaio é guardado antes e devolvido depois, no mesmo
 ## quadro — o estado real do jogo nunca muda.
-## Os quadros do ensaio. Cada TELA NOVA entra num quadro par e o quadro
-## ímpar seguinte só a repete (já compilada, custa pouco): é o respiro em
-## que o carregador anima a barra. Depois das telas 2D vêm as etapas da
-## arena 3D, três quadros cada.
+## Os quadros do ensaio. ABERTURA MAIS CURTA (build 120): eram duas
+## telas novas a cada QUATRO quadros (cada uma repetida no quadro
+## seguinte, como respiro) e três quadros por etapa da arena — 82
+## quadros de carregador, cada um desenhando a tela inteira e passando
+## pela placa de vídeo. O que custa de verdade (letras novas, shaders
+## novos) acontece uma vez só, no quadro em que a tela aparece; a
+## repetição era tempo de tela de carregamento. Agora são duas telas por
+## quadro, sem repetir, e dois quadros por etapa da arena: uns 30.
 const ENSAIO_TELAS = 27
-const ENSAIO_QUADROS_2D = ENSAIO_TELAS * 2 + 2
-const ENSAIO_QUADROS_POR_ETAPA = 3
+const ENSAIO_TELAS_POR_QUADRO = 2
+const ENSAIO_QUADROS_2D = (ENSAIO_TELAS + ENSAIO_TELAS_POR_QUADRO - 1) / ENSAIO_TELAS_POR_QUADRO + 2
+const ENSAIO_QUADROS_POR_ETAPA = 2
 const ENSAIO_QUADROS = ENSAIO_QUADROS_2D + Arena3D.ETAPAS_DE_AQUECIMENTO * ENSAIO_QUADROS_POR_ETAPA + 2
 const ENSAIO_NOTAS = [900, 2600, 5100, 7050, 8420, 9310, 9820, 9999]
 const ENSAIO_POSICOES = [1, 2, 3, 6, 11, 17, 20, 0]
@@ -3278,13 +3285,25 @@ func _encerrar_ensaio() -> void:
 	update()
 
 func _draw_ensaio() -> void:
+	# os dois primeiros quadros são o da montagem: só a abertura, leve;
+	# depois, `ENSAIO_TELAS_POR_QUADRO` telas novas por quadro; depois das
+	# telas, a abertura leve
+	if _ensaio < 2:
+		_tela_do_ensaio(ENSAIO_TELAS)
+		return
+	var primeira = (_ensaio - 2) * ENSAIO_TELAS_POR_QUADRO
+	if primeira >= ENSAIO_TELAS:
+		_tela_do_ensaio(ENSAIO_TELAS)
+		return
+	for i in range(primeira, int(min(primeira + ENSAIO_TELAS_POR_QUADRO, ENSAIO_TELAS))):
+		_tela_do_ensaio(i)
+
+## Uma tela do ensaio, com dados de mentira, devolvendo o estado real.
+func _tela_do_ensaio(i: int) -> void:
 	var guardado = {}
 	for nome in ENSAIO_SALVA:
 		var valor = get(nome)
 		guardado[nome] = valor.duplicate() if (valor is Array or valor is Dictionary) else valor
-	# uma tela nova a cada DOIS quadros; depois das telas, a abertura leve
-	# os dois primeiros quadros são o da montagem: só a abertura, leve
-	var i = int(min(int(max(_ensaio - 2, 0)) / 2, ENSAIO_TELAS)) if _ensaio >= 2 else ENSAIO_TELAS
 	if _ensaio_ranking.empty():
 		var lista: Array = []
 		for k in 14:
@@ -3313,7 +3332,7 @@ func _draw_ensaio() -> void:
 		_draw_partida()
 		_draw_pancada()
 		_draw_clarao()
-		if i == 1 and _ensaio % 2 == 1:
+		if i == 1:
 			var nivel = ScoreTier.de(9999)
 			ImpactDirector.golpe(fx, _alvo(), nivel, CORES_FESTA)
 			ImpactDirector.festa(fx, _alvo(), nivel, CORES_FESTA)
@@ -3326,7 +3345,7 @@ func _draw_ensaio() -> void:
 		ranking_started_at = 0.0
 		verdict_time = [0.3, 1.0, 1.8, 2.3, 2.7, 3.2, 4.5, 2.0][i - 8]
 		_draw_ranking_reveal()
-		if i == 9 and _ensaio % 2 == 1:
+		if i == 9:
 			fx.chuva_de_confete(1080.0, 30, CORES_FESTA, 1.0)
 			fx.confete(Vector2(540.0, 1880.0), 28, CORES_FESTA, 900.0)
 			fx.fogos(Vector2(540.0, 700.0), CORES_FESTA)
@@ -6051,24 +6070,16 @@ func _draw_transicao() -> void:
 ## `lado` 1 = a faixa fica à direita da linha; -1 = à esquerda.
 func _zebra_diagonal(x_borda: float, lado: float, inclinacao: float, topo: float, base: float) -> void:
 	var LARG = 34.0
-	var PASSO = 64.0
-	var altura = base - topo
-	var n = int(ceil(altura / PASSO))
-	# A borda inteira num lote só (eram 31 chamadas por borda, 62 por
-	# quadro durante a cortina).
-	var lote := Lote.new()
-	for k in n:
-		var y0 = topo + float(k) * PASSO
-		var y1 = min(y0 + PASSO, base)
-		var f0 = (y0 - topo) / altura
-		var f1 = (y1 - topo) / altura
-		var x0 = x_borda + inclinacao * (1.0 - 2.0 * f0)
-		var x1 = x_borda + inclinacao * (1.0 - 2.0 * f1)
-		var cor = Paleta.AMBAR if k % 2 == 0 else Color("120a1c")
-		lote.quad(Vector2(x0, y0), Vector2(x0 + LARG * lado, y0 + 14.0),
-			Vector2(x1 + LARG * lado, y1 + 14.0), Vector2(x1, y1), cor)
-	lote.linha(Vector2(x_borda + inclinacao, topo), Vector2(x_borda - inclinacao, base), Paleta.AMBAR, 5.0)
-	lote.descarregar(self)
+	# A FAIXA É A MESMA IMAGEM DAS TARJAS DA ARENA (build 120), esticada
+	# na diagonal da cortina: um quadrilátero com textura, e não 31
+	# listras montadas no script a cada quadro, em cada borda.
+	var a = Vector2(x_borda + inclinacao, topo)
+	var b = Vector2(x_borda - inclinacao, base)
+	var largura = Vector2(LARG * lado, 0.0)
+	draw_primitive(PoolVector2Array([a, a + largura, b + largura, b]),
+		PoolColorArray([Paleta.AMBAR, Paleta.AMBAR, Paleta.AMBAR, Paleta.AMBAR]),
+		PoolVector2Array([Vector2(0, 0), Vector2(1, 0), Vector2(1, 1), Vector2(0, 1)]), ArenaQuadro.ZEBRA_V)
+	Lote.traco(self, a, b, Paleta.AMBAR, 5.0)
 
 ## O CLARÃO DO SOCO NUM FUNDO CLARO. Lavar a tela de branco não funciona
 ## aqui — branco sobre quase-branco não é clarão, é nada. O golpe acende
@@ -6639,23 +6650,38 @@ func _capitulo_da_marca(alpha: float) -> void:
 ## placar. Então o nome mora num nó próprio, e esta função é a ponte:
 ## a tela continua mandando quando, onde e com que opacidade.
 ## Raios girando atrás do escudo, magenta e ciano, achatados como a estrela.
+var _RAIOS_INDICES = PoolIntArray([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+	20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47])
+
 func _raios_do_escudo(centro: Vector2, alpha: float) -> void:
 	var giro = animation_time * 0.22
 	var n = 16
+	# Os dezesseis raios num desenho só (build 120): eram dezesseis
+	# polígonos, cada um com a sua chamada.
+	var pontos = PoolVector2Array()
+	var cores = PoolColorArray()
 	for i in n:
 		var a0 = giro + float(i) * TAU / float(n)
 		var a1 = a0 + TAU / float(n) * 0.5
 		var r = 700.0
 		var cor = Paleta.ROSA if i % 2 == 0 else Paleta.CIANO
 		var pulso = 0.08 + 0.05 * sin(animation_time * 1.7 + float(i) * 0.8)
-		draw_colored_polygon(PoolVector2Array([
+		var c = Compat.cor(cor, pulso * alpha)
+		pontos.append_array(PoolVector2Array([
 			centro,
 			centro + Vector2(cos(a0), sin(a0) * 0.72) * r,
 			centro + Vector2(cos(a1), sin(a1) * 0.72) * r,
-		]), Compat.cor(cor, pulso * alpha))
+		]))
+		cores.append_array(PoolColorArray([c, c, c]))
+	VisualServer.canvas_item_add_triangle_array(get_canvas_item(), _RAIOS_INDICES, pontos, cores)
 
 ## Brilhos nas pontas da estrela: acendem e apagam, cada um no seu tempo.
 func _faiscas_do_escudo(centro: Vector2, alpha: float) -> void:
+	# As cruzes num lote só e os miolos por textura (build 120).
+	var inicios = PoolVector2Array()
+	var fins = PoolVector2Array()
+	var cores = PoolColorArray()
+	var miolos = []
 	for i in 7:
 		var fase = fmod(animation_time * 0.9 + float(i) * 0.37, 1.0)
 		var v = sin(fase * PI)
@@ -6665,9 +6691,17 @@ func _faiscas_do_escudo(centro: Vector2, alpha: float) -> void:
 		var p = centro + Vector2(cos(ang) * 430.0, sin(ang) * 250.0)
 		var t = 26.0 * v
 		var cor = Color(1.0, 0.97, 0.88, v * alpha)
-		Lote.traco(self, p - Vector2(t, 0), p + Vector2(t, 0), cor, 3.0)
-		Lote.traco(self, p - Vector2(0, t), p + Vector2(0, t), cor, 3.0)
-		Lote.disco(self, p, 4.0 * v, cor)
+		inicios.append_array(PoolVector2Array([p - Vector2(t, 0), p - Vector2(0, t)]))
+		fins.append_array(PoolVector2Array([p + Vector2(t, 0), p + Vector2(0, t)]))
+		cores.append_array(PoolColorArray([cor, cor]))
+		miolos.append([p, 4.0 * v, cor])
+	if miolos.empty():
+		return
+	var lote = Lote.new()
+	lote.segmentos(inicios, fins, Color.white, 3.0, cores)
+	lote.descarregar(self)
+	for m in miolos:
+		Formas.disco(self, m[0], m[1], m[2])
 
 ## O nó do escudo (TextureRect com `escudo_vivo.shader`). Aparece só no
 ## quadro em que a abertura pediu, respira e balança de leve.
@@ -6765,7 +6799,9 @@ func _draw_score_hero() -> void:
 	var cor = Paleta.CIANO.linear_interpolate(cor_final, progresso_contagem * 0.82)
 	if verdict_time >= 0.0:
 		cor = cor_final
-	_draw_campo_de_forca(ALVO_DO_SOCO, cor, progresso, measuring)
+	# (O CAMPO DE FORÇA — 36 raios em volta do placar — saiu na build 120:
+	# desde a arena em tela cheia ele era desenhado POR BAIXO da imagem 3D,
+	# que é opaca, e custava meio milissegundo por quadro sem aparecer.)
 	# O anel enche numa curva de raiz: na escala reta até 9999 um soco
 	# comum (800–2000) acendia só a pontinha e parecia fraco.
 	progresso = sqrt(progresso)
@@ -6860,22 +6896,26 @@ func _medidor_do_impacto(fracao: float, cor: Color, modo: int, numero: String,
 	# diferente fica em lotes diferentes (build 116, para a TV Box): o vidro
 	# só muda no tranco final, os gomos mudam a cada quadro, e os arcos que
 	# giram lendo o sensor são desenhados parados e girados pela tela.
-	var vidro = Lote.new("medidor_vidro")
+	# O VIDRO E OS ARCOS QUE GIRAM SÃO TEXTURAS (build 120, ver `Formas`):
+	# o vidro mudava de cor a cada quadro da contagem e refazia centenas de
+	# pontos; os arcos eram dois lotes com transformação.
 	# o halo na cor do nível, maior no tranco
-	vidro.circulo(c, r + 30.0 + 14.0 * pop, Compat.cor(cor, 0.10 + 0.14 * pop))
+	Formas.disco(self, c, r + 30.0 + 14.0 * pop, Compat.cor(cor, 0.10 + 0.14 * pop))
 	# o vidro escuro, com a luz da cor por dentro e um aro fino
-	vidro.circulo(c, r + 12.0, Compat.cor("0b0616", 0.90))
-	vidro.circulo(c, r - 34.0, Compat.cor(cor, 0.08 + 0.10 * fracao))
-	vidro.anel(c, r + 12.0, Compat.cor(cor, 0.60), 3.0)
-	vidro.descarregar(self)
+	Formas.disco(self, c, r + 12.0, Compat.cor("0b0616", 0.90))
+	Formas.disco(self, c, r - 34.0, Compat.cor(cor, 0.08 + 0.10 * fracao))
+	Formas.peca(self, Formas.MEDIDOR_ARO, c, 1.0, Compat.cor(cor, 0.60))
 	# os gomos do medidor (forma fixa, só as cores mudam: ver `_desenhar_gomos`)
 	_desenhar_gomos(lendo, fracao, cor)
 	var lote = Lote.new("medidor")
 	# o arco contínuo da força por fora dos gomos, com a ponta brilhando
 	if lendo:
 		var giro = animation_time * 3.4
-		_arco_girando("medidor_giro_fora", c, giro, r + 2.0, 1.4, Paleta.CIANO, 5.0)
-		_arco_girando("medidor_giro_dentro", c, -giro * 0.7, r - 40.0, 0.9, Compat.cor(Paleta.CIANO, 0.5), 4.0)
+		Compat.transformar(self, c, giro, Vector2.ONE)
+		Formas.peca(self, Formas.MEDIDOR_GIRO_FORA, Vector2.ZERO, 1.0, Paleta.CIANO)
+		Compat.transformar(self, c, -giro * 0.7, Vector2.ONE)
+		Formas.peca(self, Formas.MEDIDOR_GIRO_DENTRO, Vector2.ZERO, 1.0, Compat.cor(Paleta.CIANO, 0.5))
+		Compat.transformar(self, Vector2.ZERO, 0.0, Vector2.ONE)
 	elif fracao > 0.0:
 		var fim = MEDIDOR_INICIO + MEDIDOR_VOLTA * fracao
 		lote.arco(c, r + 2.0, MEDIDOR_INICIO, fim, Compat.cor(cor, 0.30), 12.0)
@@ -6921,31 +6961,37 @@ func _desenhar_gomos(lendo: bool, fracao: float, cor: Color) -> void:
 	var chave = [lendo, varredura if lendo else 0.0, fracao, cor]
 	if chave != _gomos_chave:
 		_gomos_chave = chave
+		# O GOMO APAGADO É SEMPRE O MESMO: as 24 cores dele saem prontas e só
+		# os acesos (uns dez) são montados (build 120) — eram 40 listas de 24
+		# cores refeitas em todo quadro da leitura do sensor.
 		_gomos_cores = PoolColorArray()
-		var apagado = Color("2a1b43")
 		for g in MEDIDOR_GOMOS:
 			var f = (float(g) + 0.5) / float(MEDIDOR_GOMOS)
-			var tinta = apagado
-			var meio = 0.0
-			var ponta = 0.0
 			if lendo:
 				var atras = fposmod(varredura - f, 1.0)
 				if atras < 0.22:
-					tinta = Compat.cor(Paleta.CIANO, 0.95 - atras * 3.8)
-					meio = 1.0
+					_gomos_cores.append_array(_cores_do_gomo(Compat.cor(Paleta.CIANO, 0.95 - atras * 3.8), 1.0, 0.0))
+				else:
+					_gomos_cores.append_array(_GOMO_APAGADO)
 			elif f <= fracao:
 				# a ponta acesa é mais clara e mais comprida
 				var p = clamp(1.0 - (fracao - f) * 9.0, 0.0, 1.0)
-				tinta = cor.linear_interpolate(Color.white, 0.45 * p)
-				meio = 1.0
-				ponta = p
-			# cada pedaço: borda lisa, cor, cor, borda lisa (ver `Lote`)
-			var t0 = Color(tinta.r, tinta.g, tinta.b, 0.0)
-			var t1 = Color(tinta.r, tinta.g, tinta.b, tinta.a * meio)
-			var t2 = Color(tinta.r, tinta.g, tinta.b, tinta.a * ponta)
-			_gomos_cores.append_array(PoolColorArray([t0, t0, tinta, tinta, tinta, tinta, t0, t0,
-				t0, t0, t1, t1, t1, t1, t0, t0, t0, t0, t2, t2, t2, t2, t0, t0]))
+				_gomos_cores.append_array(_cores_do_gomo(cor.linear_interpolate(Color.white, 0.45 * p), 1.0, p))
+			else:
+				_gomos_cores.append_array(_GOMO_APAGADO)
 	VisualServer.canvas_item_add_triangle_array(get_canvas_item(), _gomos_forma[1], _gomos_forma[0], _gomos_cores)
+
+## As 24 cores de um gomo: três pedaços de oito pontos, cada um com borda
+## lisa, cor, cor, borda lisa (ver `Lote`). `meio` e `ponta` acendem o
+## segundo e o terceiro pedaço.
+static func _cores_do_gomo(tinta: Color, meio: float, ponta: float) -> PoolColorArray:
+	var t0 = Color(tinta.r, tinta.g, tinta.b, 0.0)
+	var t1 = Color(tinta.r, tinta.g, tinta.b, tinta.a * meio)
+	var t2 = Color(tinta.r, tinta.g, tinta.b, tinta.a * ponta)
+	return PoolColorArray([t0, t0, tinta, tinta, tinta, tinta, t0, t0,
+		t0, t0, t1, t1, t1, t1, t0, t0, t0, t0, t2, t2, t2, t2, t0, t0])
+
+var _GOMO_APAGADO = _cores_do_gomo(Color("2a1b43"), 0.0, 0.0)
 
 ## A direção de cada gomo do medidor, calculada uma vez.
 var _direcoes_gomos = PoolVector2Array()
@@ -6956,16 +7002,6 @@ func _direcoes_dos_gomos() -> PoolVector2Array:
 			var f = (float(g) + 0.5) / float(MEDIDOR_GOMOS)
 			_direcoes_gomos.append(Vector2.RIGHT.rotated(MEDIDOR_INICIO + MEDIDOR_VOLTA * f))
 	return _direcoes_gomos
-
-## Um arco que GIRA: desenhado sempre no mesmo lugar (de 0 a `abertura`,
-## em volta da origem) e girado pela transformação da tela. A forma nunca
-## muda, e o lote com nome não refaz nada de um quadro para o outro.
-func _arco_girando(nome: String, centro: Vector2, giro: float, raio: float, abertura: float, cor: Color, espessura: float) -> void:
-	var lote = Lote.new(nome)
-	lote.arco(Vector2.ZERO, raio, 0.0, abertura, cor, espessura)
-	Compat.transformar(self, centro, giro, Vector2.ONE)
-	lote.descarregar(self)
-	Compat.transformar(self, Vector2.ZERO, 0.0, Vector2.ONE)
 
 ## Barra segmentada de leitura instantânea. Segmentos são mais fáceis de
 ## comparar à distância que um retângulo contínuo e não criam partículas,
@@ -7105,20 +7141,19 @@ func _draw_cartoes_dos_socos(y: float, marcar_melhor: bool) -> void:
 
 		# O CARTÃO É UMA PÍLULA, e a pontuação mora num ANEL à esquerda: o
 		# anel enche até a força do soco, na cor do nível. Nada de caixa.
-		# As formas do cartão (pílula, contorno, anel, ponta) saem num lote
-		# só — uma chamada à placa de vídeo em vez de dez (ver `Lote`).
-		var lote = Lote.new("cartao_%d" % i)
+		# A PÍLULA, O BRILHO, A BORDA E O ANEL SÃO TEXTURAS (build 120, ver
+		# `Formas`): o cartão que pulsa refazia as cores de centenas de
+		# pontos a cada quadro. Só os arcos do soco feito ainda são lote.
 		var raio_cartao = caixa.size.y * 0.5
 		if eh_melhor or esperando:
-			lote.poligono(_contorno_arredondado(caixa.grow(10.0), raio_cartao + 10.0), Compat.cor(cor, (0.22 if eh_melhor else 0.16) * pulso))
-		var contorno = _contorno_arredondado(caixa, raio_cartao)
-		lote.poligono(contorno, Compat.cor("0b0616", 0.86))
-		lote.contorno(contorno, Compat.cor(cor, (0.95 if eh_melhor else 0.65) * pulso), 4.0 if eh_melhor else 2.5)
+			Formas.pilula_brilho(self, caixa.grow(10.0), Compat.cor(cor, (0.22 if eh_melhor else 0.16) * pulso))
+		Formas.pilula(self, caixa, Compat.cor("0b0616", 0.86))
+		Formas.pilula_borda(self, caixa, Compat.cor(cor, (0.95 if eh_melhor else 0.65) * pulso), eh_melhor)
 
 		var anel_c = Vector2(caixa.position.x + raio_cartao, caixa.get_center().y)
 		var anel_r = raio_cartao - 22.0
-		lote.circulo(anel_c, anel_r + 8.0, Compat.cor(cor, 0.10 if (feito or esperando) else 0.04))
-		lote.anel(anel_c, anel_r, Color("2a1b43"), 9.0)
+		Formas.peca_do_cartao(self, Formas.CARTAO_HALO, anel_c, anel_r, Compat.cor(cor, 0.10 if (feito or esperando) else 0.04))
+		Formas.peca_do_cartao(self, Formas.CARTAO_TRILHO, anel_c, anel_r, Color("2a1b43"))
 		var esq = anel_c.x + raio_cartao + 6.0
 		var dentro = caixa.end.x - 30.0 - esq
 
@@ -7131,6 +7166,7 @@ func _draw_cartoes_dos_socos(y: float, marcar_melhor: bool) -> void:
 				subida = 1.0 - pow(1.0 - idade / 0.6, 3.0)
 			var fracao = sqrt(clamp(float(pontos) / float(GameDef.SCORE_MAX), 0.0, 1.0)) * subida
 			var de = -PI * 0.5
+			var lote = Lote.new("cartao_%d" % i)
 			lote.arco(anel_c, anel_r, de, de + TAU * max(fracao, 0.001), Compat.cor(cor_nivel, 0.30), 15.0)
 			lote.arco(anel_c, anel_r, de, de + TAU * max(fracao, 0.001), cor_nivel, 8.0)
 			var ponta = anel_c + Vector2.RIGHT.rotated(de + TAU * fracao) * anel_r
@@ -7153,15 +7189,14 @@ func _draw_cartoes_dos_socos(y: float, marcar_melhor: bool) -> void:
 				Compat.ESQUERDA, esq, dentro)
 		elif esperando:
 			# o anel gira chamando o soco e a luva pulsa no meio
-			var giro = animation_time * 3.0
-			lote.descarregar(self)
-			_arco_girando("cartao_giro_%d" % i, anel_c, giro, anel_r, 2.2, Compat.cor(Paleta.AMBAR, pulso), 8.0)
+			Compat.transformar(self, anel_c, animation_time * 3.0, Vector2.ONE)
+			Formas.peca_do_cartao(self, Formas.CARTAO_GIRO, Vector2.ZERO, anel_r, Compat.cor(Paleta.AMBAR, pulso))
+			Compat.transformar(self, Vector2.ZERO, 0.0, Vector2.ONE)
 			Icones.luva(self, anel_c, 30.0 + 4.0 * pulso, Compat.cor(Paleta.AMBAR, pulso))
 			_texto("SOCO %d" % (i + 1), caixa.position.y + 52.0, 26, Compat.cor(cor.lightened(0.25), 0.95),
 				Compat.ESQUERDA, esq, dentro)
 			_letreiro("SOQUE!", Vector2(esq, caixa.position.y + 128.0), 60, Compat.cor(Paleta.AMBAR, pulso), Compat.cor(Paleta.AMBAR, 0.25 * pulso))
 		else:
-			lote.descarregar(self)
 			_placar("–", anel_c + Vector2(0.0, -4.0), Compat.cor(Paleta.TINTA_LEVE, 0.55), 40)
 			_texto("SOCO %d" % (i + 1), caixa.position.y + 52.0, 26, Compat.cor(cor.lightened(0.25), 0.8),
 				Compat.ESQUERDA, esq, dentro)
@@ -7187,50 +7222,6 @@ func _placar(texto: String, centro: Vector2, cor: Color, corpo := PLACAR_CORPO) 
 	Compat.texto(self, fonte, pos - Vector2(0.0, corpo * 0.045), texto, Compat.ESQUERDA, -1, corpo, cor.lightened(0.5))
 	Compat.texto(self, fonte, pos, texto, Compat.ESQUERDA, -1, corpo, cor)
 
-## O VAZIO ATRÁS DO PLACAR ERA O MAIOR PEDAÇO DA TELA.
-##
-## O medalhão ocupa o meio e o painel é alto: sobrava um retângulo preto
-## de mais de mil pixels em volta, justamente nos dois segundos em que
-## todo mundo está olhando. Agora o placar irradia — e irradia NA MEDIDA
-## DA PONTUAÇÃO, para que a tela inteira, e não só o número, diga se o
-## soco foi forte.
-func _draw_campo_de_forca(centro: Vector2, cor: Color, progresso: float, no_impacto: bool) -> void:
-	# No meio segundo do impacto ainda não há pontuação nenhuma para
-	# mostrar, então quem manda é o próprio golpe: começa no talo e
-	# desinfla enquanto a máquina "calcula".
-	var forca = progresso
-	if no_impacto:
-		forca = 1.0 - clamp(state_time / GameDef.IMPACTO_DURACAO, 0.0, 1.0)
-	# DOIS DISCOS, E OS DOIS MAIORES QUE O QUADRO. Eles tingem a tela
-	# inteira com a cor do nível; o miolo fica escondido atrás da arena,
-	# então o que se vê é o halo escapando em volta da moldura — que é
-	# exatamente o efeito que se quer, luz saindo de trás do quadro.
-	# Na TV Box os discos saem: cada um cobre mais de um milhão de pixels
-	# translúcidos (a placa de vídeo pinta a tela duas vezes a mais por
-	# quadro). Os raios abaixo já fazem o halo.
-	if not OS.has_feature("mobile"):
-		for i in range(2):
-			Compat.circulo(self, centro, 600.0 + float(i) * 190.0, Compat.cor(cor, 0.040 * forca), true, -1.0, true)
-	# E OS RAIOS COMEÇAM FORA DA MOLDURA. Nascendo no centro eles
-	# cruzariam a imagem do lutador; nascendo na borda, viram o brilho de
-	# um telão empurrando luz para os cantos da tela.
-	for i in range(36):
-		var ang = float(i) * TAU / 36.0 + animation_time * 0.22
-		var onda = 0.5 + 0.5 * sin(float(i) * 1.7 - animation_time * 4.0)
-		var perto = 500.0
-		var longe = perto + lerp(24.0, 260.0, forca * onda)
-		Lote.traco(self, centro + polar2cartesian(1.0, ang) * perto, centro + polar2cartesian(1.0, ang) * longe, Compat.cor(cor, 0.08 + 0.34 * forca * onda), 6.0)
-
-## AS DUAS COLUNAS DE PONTUAÇÃO SAÍRAM DAQUI E VIRARAM AS BARRAS DE DANO.
-##
-## Elas mediam a pontuação do soco, uma de cada lado do painel; a posição
-## é a mesma e o desenho é o mesmo — o que mudou foi o que elas contam.
-## Agora contam o estado do adversário, que é um número que só esta
-## versão do jogo produz. Ver `ArenaQuadro.barras`, onde elas moram desde
-## então, e `Lutador3D.DANO_POR_GOLPE`, que é quem alimenta o número.
-
-## Ouro, prata e bronze nos três primeiros; azul da casa nos demais. É a
-## convenção que todo mundo já lê sem legenda.
 func _cor_da_posicao(posicao: int) -> Color:
 	match posicao:
 		1:
@@ -8674,8 +8665,12 @@ func _regua_dos_niveis(rect: Rect2) -> void:
 ## Retângulo de cantos redondos. O Godot só desenha retângulo de canto
 ## vivo, e canto vivo em peça grande destoa do resto da tela — a placa,
 ## os cartões e os botões todos precisam da mesma família de formas.
+##
+## Por textura em "nove pedaços" quando há uma para o raio (build 120;
+## ver `Formas`): um ou dois microssegundos, e não trinta.
 func _placa(rect: Rect2, raio: float, cor: Color) -> void:
-	Traco.poligono(self, _contorno_arredondado(rect, raio), cor)
+	if not Formas.placa(self, rect, raio, cor):
+		Traco.poligono(self, _contorno_arredondado(rect, raio), cor)
 
 ## Os contornos já feitos, por retângulo e raio: os cartões pedem os mesmos
 ## a cada quadro.
@@ -8857,18 +8852,31 @@ func _draw_avatar(rect: Rect2, alpha: float) -> void:
 	var unit = min(rect.size.x, rect.size.y)
 	var tom = Compat.cor("50367d", 0.55 * alpha)
 
+	# PEQUENO (a linha do TOP 20, um boneco por linha sem foto), ele é
+	# duas texturas tingidas (build 120, ver `Formas`); grande (o visor da
+	# pose), continua desenhado, com as cantoneiras sempre de 4 px.
+	if rect.size.x <= 300.0 and is_equal_approx(rect.size.x, rect.size.y):
+		draw_texture_rect(Formas.AVATAR_TRACO, rect, false, tom)
+		draw_texture_rect(Formas.AVATAR_CANTOS, rect, false, Compat.cor(Paleta.AMBAR, 0.55 * alpha))
+		return
+
 	# Só o traço: cabeça e ombros em linha, sem massa.
-	Lote.aro(self, center + Vector2(0.0, -unit * 0.10), unit * 0.13, tom, unit * 0.035)
-	Lote.aro(self, center + Vector2(0.0, unit * 0.30), unit * 0.25, tom, unit * 0.035, PI * 1.08, PI * 1.92)
+	var lote = Lote.new()
+	lote.anel(center + Vector2(0.0, -unit * 0.10), unit * 0.13, tom, unit * 0.035)
+	lote.arco(center + Vector2(0.0, unit * 0.30), unit * 0.25, PI * 1.08, PI * 1.92, tom, unit * 0.035)
 
 	# Cantoneiras de enquadramento, como as de um visor de câmera.
 	var margem = unit * 0.10
 	var braco = unit * 0.14
+	var inicios = PoolVector2Array()
+	var fins = PoolVector2Array()
 	for sx in [-1.0, 1.0]:
 		for sy in [-1.0, 1.0]:
 			var canto = center + Vector2(sx * (rect.size.x * 0.5 - margem), sy * (rect.size.y * 0.5 - margem))
-			Lote.traco(self, canto, canto - Vector2(sx * braco, 0.0), Compat.cor(Paleta.AMBAR, 0.55 * alpha), 4.0)
-			Lote.traco(self, canto, canto - Vector2(0.0, sy * braco), Compat.cor(Paleta.AMBAR, 0.55 * alpha), 4.0)
+			inicios.append_array(PoolVector2Array([canto, canto]))
+			fins.append_array(PoolVector2Array([canto - Vector2(sx * braco, 0.0), canto - Vector2(0.0, sy * braco)]))
+	lote.segmentos(inicios, fins, Compat.cor(Paleta.AMBAR, 0.55 * alpha), 4.0)
+	lote.descarregar(self)
 
 func _draw_player_photo(rect: Rect2, path: String, alpha: float) -> void:
 	var texture = _photo_texture(path)

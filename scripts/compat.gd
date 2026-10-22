@@ -25,6 +25,8 @@ const _REFERENCIA = 64
 
 ## Linhas, círculos e arcos como polígonos que se juntam (ver `scripts/lote.gd`).
 const Lote = preload("res://scripts/lote.gd")
+## Peças redondas por textura (ver `scripts/formas.gd`).
+const Formas = preload("res://scripts/formas.gd")
 
 const _FONTE_PADRAO = "res://assets/fonts/SairaCondensed-ExtraBold.ttf"
 
@@ -32,6 +34,7 @@ const _FONTE_PADRAO = "res://assets/fonts/SairaCondensed-ExtraBold.ttf"
 ## dicionário é compartilhado e pode ser preenchido: é o jeito do Godot 3
 ## de ter uma variável estática.
 const _fontes = {}
+const _medidas = {}
 const _dados = {}
 
 
@@ -55,8 +58,15 @@ static func fonte(dados, tamanho: int, contorno: int = 0) -> Font:
 	if dados is Font:
 		return dados
 	tamanho = int(max(1, tamanho))
-	var chave = "%s|%d|%d" % [dados.resource_path, tamanho, contorno]
-	var pronta: DynamicFont = _fontes.get(chave)
+	# Uma tabela por arquivo de letra e uma chave inteira: montar o texto
+	# "caminho|tamanho|contorno" a cada letreiro era a maior parte do
+	# custo de escrever na tela (build 120).
+	var tabela = _fontes.get(dados)
+	if tabela == null:
+		tabela = {}
+		_fontes[dados] = tabela
+	var chave = tamanho * 256 + contorno
+	var pronta: DynamicFont = tabela.get(chave)
 	if pronta == null:
 		pronta = DynamicFont.new()
 		pronta.font_data = dados
@@ -65,14 +75,28 @@ static func fonte(dados, tamanho: int, contorno: int = 0) -> Font:
 		if contorno > 0:
 			pronta.outline_size = contorno
 			pronta.outline_color = Color(1, 1, 1, 1)
-		_fontes[chave] = pronta
+		tabela[chave] = pronta
 	return pronta
 
 
 ## Largura e altura do texto no tamanho pedido.
+##
+## Guardada por texto: os mesmos letreiros são medidos a cada quadro (para
+## centralizar, para caber), e medir é andar letra por letra na fonte.
 static func medida(dados, texto: String, tamanho: int) -> Vector2:
-	var ref = fonte(dados, _REFERENCIA)
-	return ref.get_string_size(texto) * (float(tamanho) / float(_REFERENCIA))
+	if dados == null:
+		dados = fonte_padrao()
+	var tabela = _medidas.get(dados)
+	if tabela == null:
+		tabela = {}
+		_medidas[dados] = tabela
+	var m = tabela.get(texto)
+	if m == null:
+		if tabela.size() > 800:
+			tabela.clear()
+		m = fonte(dados, _REFERENCIA).get_string_size(texto)
+		tabela[texto] = m
+	return m * (float(tamanho) / float(_REFERENCIA))
 
 
 static func ascent(dados, tamanho: int) -> float:
@@ -351,7 +375,14 @@ static func t2d(rotacao: float, escala: Vector2, _inclinacao: float, posicao: Ve
 static func circulo(alvo: CanvasItem, centro: Vector2, raio: float, cor: Color, cheio: bool = true,
 		espessura: float = -1.0, _liso: bool = false) -> void:
 	if cheio:
-		Lote.disco(alvo, centro, raio, cor)
+		# O DISCO CHEIO É UMA TEXTURA (build 120, ver `scripts/formas.gd`):
+		# um retângulo que a placa de vídeo junta com os vizinhos, e não um
+		# polígono de dezenas de lados por círculo — a luva do punho voando
+		# na abertura tem duas dúzias deles, e as faíscas mais quatorze.
+		if raio <= Formas.DISCO_RAIO_MAXIMO:
+			Formas.disco(alvo, centro, raio, cor)
+		else:
+			Lote.disco(alvo, centro, raio, cor)
 	else:
 		Lote.aro(alvo, centro, raio, cor, max(espessura, 1.0))
 

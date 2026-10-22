@@ -62,12 +62,25 @@ static func cinturao(ci: CanvasItem, centro: Vector2, raio: float, cor: Color) -
 ## círculos encostados sem contorno leem como cogumelo, e um polígono de
 ## poucos vértices escalado para virar contorno ganha bicos. Os dois
 ## riscos brancos (vinco dos dedos e faixa do punho) terminam a leitura.
+##
+## A LUVA É UMA IMAGEM (build 120), a única exceção à regra acima. Ela
+## pulsa no cartão que espera o soco, e cada quadro com outro tamanho e
+## outra cor refazia as oito formas e as bordas lisas no script: meio
+## milissegundo num PC, uns quatro na TV Box, para um ícone. As imagens
+## (`tools/gerar_icones.py`) são a mesma forma, desenhada 8x maior e
+## reduzida: o corpo branco com o contorno a 55% é tingido com a cor
+## pedida, e os riscos vão por cima sem tinta — dois retângulos com
+## textura, que a placa de vídeo junta no mesmo desenho.
+const LUVA_CORPO = preload("res://assets/ui/luva_corpo.png")
+const LUVA_BRILHO = preload("res://assets/ui/luva_brilho.png")
+## O raio da luva ocupa 98% da metade da imagem (ver o gerador).
+const LUVA_NA_IMAGEM = 0.98
+
 static func luva(ci: CanvasItem, centro: Vector2, raio: float, cor: Color) -> void:
-	var r = raio
-	_massa_da_luva(ci, centro, r, r * 0.10, cor.darkened(0.45))
-	_massa_da_luva(ci, centro, r, 0.0, cor)
-	Lote.traco(ci, centro + Vector2(-r * 0.24, -r * 0.22), centro + Vector2(r * 0.58, -r * 0.26), Color(1, 1, 1, 0.92), r * 0.11)
-	Lote.traco(ci, centro + Vector2(-r * 0.20, r * 0.42), centro + Vector2(r * 0.38, r * 0.42), Color(1, 1, 1, 0.92), r * 0.12)
+	var lado = raio * 2.0 / LUVA_NA_IMAGEM
+	var caixa = Rect2(centro - Vector2(lado, lado) * 0.5, Vector2(lado, lado))
+	ci.draw_texture_rect(LUVA_CORPO, caixa, false, cor)
+	ci.draw_texture_rect(LUVA_BRILHO, caixa, false)
 
 ## A LUVA SEM OS BRILHOS: só o vulto, na cor pedida.
 ##

@@ -162,17 +162,33 @@ static func background_estatico(canvas: CanvasItem) -> void:
 ## cabe em qualquer aparelho, agora que não vêm mais acompanhadas de uma
 ## tela inteira repintada por baixo.
 static func background_animado(canvas: CanvasItem, time: float) -> void:
+	# As lâmpadas e os riscos em dois lotes (build 120): eram até 46
+	# chamadas de `traco` por quadro, a abertura inteira.
+	var inicios = PoolVector2Array()
+	var fins = PoolVector2Array()
+	var cores = PoolColorArray()
 	for side in [0.0, 1.0]:
 		var x = lerp(28.0, 1052.0, side)
 		for i in range(_quantos(12)):
 			var y = 455.0 + i * 86.0
 			var light = 0.25 + 0.75 * pow(0.5 + 0.5 * sin(time * 3.2 - i * 0.65), 3.0)
-			Lote.traco(canvas, Vector2(x - 9, y), Vector2(x + 9, y - 7), Compat.cor(RED if i % 2 else AZUL, light * 0.8), 5.0)
+			inicios.append(Vector2(x - 9, y))
+			fins.append(Vector2(x + 9, y - 7))
+			cores.append(Compat.cor(RED if i % 2 else AZUL, light * 0.8))
+	var lote = Lote.new()
+	lote.segmentos(inicios, fins, Color.white, 5.0, cores)
+	inicios = PoolVector2Array()
+	fins = PoolVector2Array()
+	cores = PoolColorArray()
 	for i in range(_quantos(22)):
 		var speed = 26.0 + float(i % 4) * 16.0
 		var y = fposmod(float(i) * 97.0 - time * speed, 1860.0)
 		var x = 65.0 + fposmod(float(i) * 157.0, 950.0)
-		Lote.traco(canvas, Vector2(x, y), Vector2(x + 3, y - 10), Compat.cor(AZUL if i % 3 else RED, 0.16), 2.0)
+		inicios.append(Vector2(x, y))
+		fins.append(Vector2(x + 3, y - 10))
+		cores.append(Compat.cor(AZUL if i % 3 else RED, 0.16))
+	lote.segmentos(inicios, fins, Color.white, 2.0, cores)
+	lote.descarregar(canvas)
 
 ## O LOGO SUPER BOXING. `size` é o "tamanho de emblema" de sempre (o
 ## escudo antigo era quadrado); o logo é mais largo que alto, então a
@@ -346,12 +362,21 @@ static func _voo_vento(canvas: Control, centro: Vector2, raio: float, direcao: V
 ## para o ponto do impacto antes do impacto acontecer.
 static func _voo_riscos(canvas: Control, centro: Vector2, raio: float, direcao: Vector2, t: float) -> void:
 	var perp = Vector2(-direcao.y, direcao.x)
+	# Os dezoito riscos num lote só (build 120; eram dezoito chamadas).
+	var inicios = PoolVector2Array()
+	var fins = PoolVector2Array()
+	var cores = PoolColorArray()
 	for i in range(18):
 		var lado = perp * rand_range(-1.0, 1.0) * (raio * 1.9 + 260.0)
 		var origem = centro - direcao * rand_range(raio * 1.2, raio * 3.4 + 900.0) + lado
 		var comprimento = rand_range(120.0, 320.0) * (0.5 + t)
 		var cor = GOLD if i % 3 else WHITE
-		Lote.traco(canvas, origem, origem + direcao * comprimento, Compat.cor(cor, 0.16 + 0.22 * t), lerp(2.0, 6.0, t))
+		inicios.append(origem)
+		fins.append(origem + direcao * comprimento)
+		cores.append(Compat.cor(cor, 0.16 + 0.22 * t))
+	var lote = Lote.new()
+	lote.segmentos(inicios, fins, Color.white, lerp(2.0, 6.0, t), cores)
+	lote.descarregar(canvas)
 
 ## O PUNHO, montado na direção do voo.
 ##
@@ -448,19 +473,38 @@ static func _intro_impacto(canvas: Control, time: float) -> void:
 	var t = _janela(time, T_SOCO, 0.30)
 	if t < 1.0:
 		canvas.draw_rect(Rect2(0, 0, 1080, 1920), Compat.cor(WHITE, pow(1.0 - t, 2.0) * 0.55))
+	# As ondas e o leque num lote só (build 120): eram três anéis e vinte e
+	# seis traços, cada um com o seu desenho.
+	var lote = Lote.new()
 	for i in range(3):
 		var onda = _janela(time, T_SOCO + float(i) * 0.09, 0.62)
 		if onda <= 0.0 or onda >= 1.0:
 			continue
 		var raio = lerp(40.0, 780.0 + float(i) * 130.0, ease(onda, 0.35))
 		var cor: Color = [WHITE, GOLD, RED][i]
-		Traco.arco(canvas, SOCO, raio, Compat.cor(cor, (1.0 - onda) * 0.75), 10.0 - float(i) * 2.0)
+		lote.anel_leve(SOCO, raio, Compat.cor(cor, (1.0 - onda) * 0.75), 10.0 - float(i) * 2.0)
 	var leque = _janela(time, T_SOCO, 0.7)
 	if leque < 1.0:
+		var dirs = _direcoes_do_leque()
+		var perto = 180.0 + leque * 620.0
+		var longe = perto + lerp(230.0, 40.0, leque)
+		lote.segmentos(
+			Transform2D(Vector2(perto, 0.0), Vector2(0.0, perto), SOCO).xform(dirs),
+			Transform2D(Vector2(longe, 0.0), Vector2(0.0, longe), SOCO).xform(dirs),
+			Compat.cor(GOLD, (1.0 - leque) * 0.9), lerp(9.0, 2.0, leque)
+		)
+	lote.descarregar(canvas)
+
+## As 26 direções do leque do soco, guardadas.
+const _LEQUE = {}
+
+static func _direcoes_do_leque() -> PoolVector2Array:
+	if not _LEQUE.has("d"):
+		var d = PoolVector2Array()
 		for i in range(26):
-			var direcao = polar2cartesian(1.0, float(i) * TAU / 26.0 + 0.12)
-			var perto = 180.0 + leque * 620.0
-			Lote.traco(canvas, SOCO + direcao * perto, SOCO + direcao * (perto + lerp(230.0, 40.0, leque)), Compat.cor(GOLD, (1.0 - leque) * 0.9), lerp(9.0, 2.0, leque))
+			d.append(polar2cartesian(1.0, float(i) * TAU / 26.0 + 0.12))
+		_LEQUE["d"] = d
+	return _LEQUE["d"]
 
 ## O EMBLEMA NASCE DO PONTO DO SOCO e, no fim, caminha até o lugar exato
 ## em que a tela de abertura o desenha.
@@ -476,10 +520,20 @@ static func _intro_emblema(canvas: Control, time: float, morph: float) -> void:
 	var anel = (1.0 - morph) * clamp(abre * 1.4, 0.0, 1.0)
 	if anel > 0.01:
 		var raio = tamanho * 0.62
+		# Os 24 raios num lote só (build 120).
+		var inicios = PoolVector2Array()
+		var fins = PoolVector2Array()
+		var cores = PoolColorArray()
 		for i in range(24):
 			var ang = float(i) * TAU / 24.0 + time * 1.6
 			var brilho = 0.35 + 0.65 * pow(0.5 + 0.5 * sin(ang * 3.0 - time * 5.0), 2.0)
-			Lote.traco(canvas, centro + polar2cartesian(1.0, ang) * raio, centro + polar2cartesian(1.0, ang) * (raio + 26.0), Compat.cor(GOLD, anel * brilho * 0.8), 5.0)
+			var dir = polar2cartesian(1.0, ang)
+			inicios.append(centro + dir * raio)
+			fins.append(centro + dir * (raio + 26.0))
+			cores.append(Compat.cor(GOLD, anel * brilho * 0.8))
+		var lote = Lote.new()
+		lote.segmentos(inicios, fins, Color.white, 5.0, cores)
+		lote.descarregar(canvas)
 	# Opacidade cheia quase de imediato: o emblema NASCE do clarão, não
 	# aparece esmaecendo. Quem cresce é o tamanho, não a tinta — um
 	# emblema meio transparente sobre o escuro sai cinza, e cinza é a
