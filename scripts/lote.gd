@@ -683,7 +683,7 @@ static func _deslocado(tipo: int, lados: int, a: int) -> PoolIntArray:
 	if m != null:
 		return m
 	m = _somar(_molde(tipo, lados), a)
-	if _DESLOCADOS.size() > 2000:
+	if _DESLOCADOS.size() > 1200:
 		_DESLOCADOS.clear()
 	_DESLOCADOS[chave] = m
 	return m

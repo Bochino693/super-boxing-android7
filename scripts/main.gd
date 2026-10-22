@@ -3217,13 +3217,18 @@ func _disparar_veredito() -> void:
 ## abertura), e dispara uma vez cada efeito de partícula. Tudo o que é
 ## trocado para o ensaio é guardado antes e devolvido depois, no mesmo
 ## quadro — o estado real do jogo nunca muda.
-## Os quadros do ensaio. Cada TELA NOVA entra num quadro par e o quadro
-## ímpar seguinte só a repete (já compilada, custa pouco): é o respiro em
-## que o carregador anima a barra. Depois das telas 2D vêm as etapas da
-## arena 3D, três quadros cada.
+## Os quadros do ensaio. ABERTURA MAIS CURTA (build 120): eram duas
+## telas novas a cada QUATRO quadros (cada uma repetida no quadro
+## seguinte, como respiro) e três quadros por etapa da arena — 82
+## quadros de carregador, cada um desenhando a tela inteira e passando
+## pela placa de vídeo. O que custa de verdade (letras novas, shaders
+## novos) acontece uma vez só, no quadro em que a tela aparece; a
+## repetição era tempo de tela de carregamento. Agora são duas telas por
+## quadro, sem repetir, e dois quadros por etapa da arena: uns 30.
 const ENSAIO_TELAS = 27
-const ENSAIO_QUADROS_2D = ENSAIO_TELAS * 2 + 2
-const ENSAIO_QUADROS_POR_ETAPA = 3
+const ENSAIO_TELAS_POR_QUADRO = 2
+const ENSAIO_QUADROS_2D = (ENSAIO_TELAS + ENSAIO_TELAS_POR_QUADRO - 1) / ENSAIO_TELAS_POR_QUADRO + 2
+const ENSAIO_QUADROS_POR_ETAPA = 2
 const ENSAIO_QUADROS = ENSAIO_QUADROS_2D + Arena3D.ETAPAS_DE_AQUECIMENTO * ENSAIO_QUADROS_POR_ETAPA + 2
 const ENSAIO_NOTAS = [900, 2600, 5100, 7050, 8420, 9310, 9820, 9999]
 const ENSAIO_POSICOES = [1, 2, 3, 6, 11, 17, 20, 0]
@@ -3280,13 +3285,25 @@ func _encerrar_ensaio() -> void:
 	update()
 
 func _draw_ensaio() -> void:
+	# os dois primeiros quadros são o da montagem: só a abertura, leve;
+	# depois, `ENSAIO_TELAS_POR_QUADRO` telas novas por quadro; depois das
+	# telas, a abertura leve
+	if _ensaio < 2:
+		_tela_do_ensaio(ENSAIO_TELAS)
+		return
+	var primeira = (_ensaio - 2) * ENSAIO_TELAS_POR_QUADRO
+	if primeira >= ENSAIO_TELAS:
+		_tela_do_ensaio(ENSAIO_TELAS)
+		return
+	for i in range(primeira, int(min(primeira + ENSAIO_TELAS_POR_QUADRO, ENSAIO_TELAS))):
+		_tela_do_ensaio(i)
+
+## Uma tela do ensaio, com dados de mentira, devolvendo o estado real.
+func _tela_do_ensaio(i: int) -> void:
 	var guardado = {}
 	for nome in ENSAIO_SALVA:
 		var valor = get(nome)
 		guardado[nome] = valor.duplicate() if (valor is Array or valor is Dictionary) else valor
-	# uma tela nova a cada DOIS quadros; depois das telas, a abertura leve
-	# os dois primeiros quadros são o da montagem: só a abertura, leve
-	var i = int(min(int(max(_ensaio - 2, 0)) / 2, ENSAIO_TELAS)) if _ensaio >= 2 else ENSAIO_TELAS
 	if _ensaio_ranking.empty():
 		var lista: Array = []
 		for k in 14:
@@ -3315,7 +3332,7 @@ func _draw_ensaio() -> void:
 		_draw_partida()
 		_draw_pancada()
 		_draw_clarao()
-		if i == 1 and _ensaio % 2 == 1:
+		if i == 1:
 			var nivel = ScoreTier.de(9999)
 			ImpactDirector.golpe(fx, _alvo(), nivel, CORES_FESTA)
 			ImpactDirector.festa(fx, _alvo(), nivel, CORES_FESTA)
@@ -3328,7 +3345,7 @@ func _draw_ensaio() -> void:
 		ranking_started_at = 0.0
 		verdict_time = [0.3, 1.0, 1.8, 2.3, 2.7, 3.2, 4.5, 2.0][i - 8]
 		_draw_ranking_reveal()
-		if i == 9 and _ensaio % 2 == 1:
+		if i == 9:
 			fx.chuva_de_confete(1080.0, 30, CORES_FESTA, 1.0)
 			fx.confete(Vector2(540.0, 1880.0), 28, CORES_FESTA, 900.0)
 			fx.fogos(Vector2(540.0, 700.0), CORES_FESTA)

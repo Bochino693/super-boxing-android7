@@ -1,9 +1,38 @@
-SUPER BOXING - TV BOX MALI-450 (TX9) - OPENGL ES 2.0 - BUILD 119
+SUPER BOXING - TV BOX MALI-450 (TX9) - OPENGL ES 2.0 - BUILD 120
 =================================================================
 
 ESTA VERSAO E PARA TV BOX COM PLACA DE VIDEO MALI-450 (TX9): Godot 3.6,
 OpenGL ES 2.0. UM ARQUIVO SO: GERAR_APK_AGORA.bat gera o
 APK certo. Veja "GERAR O APK" mais abaixo.
+
+CONFIRA NA MAQUINA: o rodape da abertura e a Central mostram
+"BUILD 120". Se aparecer outro numero, o APK instalado e o antigo -
+gere o APK de novo com GERAR_APK_AGORA.bat e instale por cima.
+
+O QUE A BUILD 120 MUDA (BASE: A 119)
+------------------------------------
+- O JOGO FICOU LEVE NA TV BOX. O processador da TX9 refazia a tela
+  inteira (placar, cartoes, medidor, efeitos) em script a cada quadro, e
+  era isso que deixava a luta lenta. Medido quadro a quadro, o custo do
+  script caiu pela metade ou mais em todas as telas:
+  * espera do soco: de 4,5 para 1,8 ms (no PC; na TV Box ~8x isso);
+  * o instante do soco (o mais disputado): de 5,6 para 2,8 ms;
+  * o TOP 20: de 4,1 para 2,3 ms; a abertura: de 2,3 para 1,4 ms.
+- AS PECAS DA TELA SAO TEXTURAS (OpenGL): a luva, as placas de cantos
+  redondos, os cartoes dos socos, o vidro e os arcos do medidor, o boneco
+  sem foto e os circulos sao imagens tingidas, que a placa de video
+  desenha juntas - e nao formas montadas no script a cada quadro.
+- O EFEITO DO SOCO SAI NUM DESENHO SO (eram uns cinquenta), e o mesmo na
+  abertura animada, nos raios, nas faiscas e na cortina.
+- O QUE NINGUEM VIA NAO E MAIS DESENHADO: com a arena 3D na tela inteira,
+  o "campo de forca" do placar e o veu colorido do fundo ficavam por
+  baixo da imagem 3D e gastavam a placa de video a toa.
+- A TELA DE CARREGAMENTO E MAIS CURTA: o ensaio que prepara as telas
+  antes de liberar o jogo caiu de 82 para uns 32 quadros (no PC, de
+  4,9 para 2,9 s).
+- O REPOSITORIO TEM SO O JOGO: o kit de divulgacao (adesivos, renders e
+  videos, 139 MB) saiu da pasta - continua no historico do git, na build
+  119 (commit cabeab2).
 
 O QUE A BUILD 119 MUDA (BASE: A 118)
 ------------------------------------

@@ -162,17 +162,33 @@ static func background_estatico(canvas: CanvasItem) -> void:
 ## cabe em qualquer aparelho, agora que não vêm mais acompanhadas de uma
 ## tela inteira repintada por baixo.
 static func background_animado(canvas: CanvasItem, time: float) -> void:
+	# As lâmpadas e os riscos em dois lotes (build 120): eram até 46
+	# chamadas de `traco` por quadro, a abertura inteira.
+	var inicios = PoolVector2Array()
+	var fins = PoolVector2Array()
+	var cores = PoolColorArray()
 	for side in [0.0, 1.0]:
 		var x = lerp(28.0, 1052.0, side)
 		for i in range(_quantos(12)):
 			var y = 455.0 + i * 86.0
 			var light = 0.25 + 0.75 * pow(0.5 + 0.5 * sin(time * 3.2 - i * 0.65), 3.0)
-			Lote.traco(canvas, Vector2(x - 9, y), Vector2(x + 9, y - 7), Compat.cor(RED if i % 2 else AZUL, light * 0.8), 5.0)
+			inicios.append(Vector2(x - 9, y))
+			fins.append(Vector2(x + 9, y - 7))
+			cores.append(Compat.cor(RED if i % 2 else AZUL, light * 0.8))
+	var lote = Lote.new()
+	lote.segmentos(inicios, fins, Color.white, 5.0, cores)
+	inicios = PoolVector2Array()
+	fins = PoolVector2Array()
+	cores = PoolColorArray()
 	for i in range(_quantos(22)):
 		var speed = 26.0 + float(i % 4) * 16.0
 		var y = fposmod(float(i) * 97.0 - time * speed, 1860.0)
 		var x = 65.0 + fposmod(float(i) * 157.0, 950.0)
-		Lote.traco(canvas, Vector2(x, y), Vector2(x + 3, y - 10), Compat.cor(AZUL if i % 3 else RED, 0.16), 2.0)
+		inicios.append(Vector2(x, y))
+		fins.append(Vector2(x + 3, y - 10))
+		cores.append(Compat.cor(AZUL if i % 3 else RED, 0.16))
+	lote.segmentos(inicios, fins, Color.white, 2.0, cores)
+	lote.descarregar(canvas)
 
 ## O LOGO SUPER BOXING. `size` é o "tamanho de emblema" de sempre (o
 ## escudo antigo era quadrado); o logo é mais largo que alto, então a

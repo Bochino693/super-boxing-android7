@@ -134,7 +134,15 @@ func avancar(passo: float) -> void:
 			"palco", Rect2(rect_size.x * 0.25, rect_size.y * HORIZONTE - 10.0, rect_size.x * 0.5, 20.0),
 			Color(1.0, 0.86, 0.55, 0.40), 2.5
 		)
-	update()
+	# COBERTO PELA ARENA, NÃO HÁ O QUE REFAZER (build 120): o buraco é a
+	# tela inteira desde a arena em tela cheia, e o fundo seria redesenhado
+	# a cada quadro por baixo de uma imagem opaca.
+	if not _coberto():
+		update()
+
+## A arena cobre o fundo inteiro?
+func _coberto() -> bool:
+	return buraco.size != Vector2.ZERO and buraco.encloses(Rect2(Vector2.ZERO, rect_size))
 
 func _draw() -> void:
 	# O CENÁRIO MORA AQUI, e não no nó raiz.
@@ -162,5 +170,7 @@ func _draw() -> void:
 	else:
 		ArcadeStage.background_animado(self, tempo)
 	fx.desenhar(self)
-	if matiz.a > 0.001:
+	# O véu da cor do veredito só quando se vê o fundo: por baixo da arena
+	# opaca ele era uma tela inteira de pixels misturados à toa.
+	if matiz.a > 0.001 and not _coberto():
 		draw_rect(Rect2(Vector2.ZERO, rect_size), matiz)
