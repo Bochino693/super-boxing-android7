@@ -32,6 +32,7 @@ const _FONTE_PADRAO = "res://assets/fonts/SairaCondensed-ExtraBold.ttf"
 ## dicionário é compartilhado e pode ser preenchido: é o jeito do Godot 3
 ## de ter uma variável estática.
 const _fontes = {}
+const _medidas = {}
 const _dados = {}
 
 
@@ -55,8 +56,15 @@ static func fonte(dados, tamanho: int, contorno: int = 0) -> Font:
 	if dados is Font:
 		return dados
 	tamanho = int(max(1, tamanho))
-	var chave = "%s|%d|%d" % [dados.resource_path, tamanho, contorno]
-	var pronta: DynamicFont = _fontes.get(chave)
+	# Uma tabela por arquivo de letra e uma chave inteira: montar o texto
+	# "caminho|tamanho|contorno" a cada letreiro era a maior parte do
+	# custo de escrever na tela (build 120).
+	var tabela = _fontes.get(dados)
+	if tabela == null:
+		tabela = {}
+		_fontes[dados] = tabela
+	var chave = tamanho * 256 + contorno
+	var pronta: DynamicFont = tabela.get(chave)
 	if pronta == null:
 		pronta = DynamicFont.new()
 		pronta.font_data = dados
@@ -65,14 +73,28 @@ static func fonte(dados, tamanho: int, contorno: int = 0) -> Font:
 		if contorno > 0:
 			pronta.outline_size = contorno
 			pronta.outline_color = Color(1, 1, 1, 1)
-		_fontes[chave] = pronta
+		tabela[chave] = pronta
 	return pronta
 
 
 ## Largura e altura do texto no tamanho pedido.
+##
+## Guardada por texto: os mesmos letreiros são medidos a cada quadro (para
+## centralizar, para caber), e medir é andar letra por letra na fonte.
 static func medida(dados, texto: String, tamanho: int) -> Vector2:
-	var ref = fonte(dados, _REFERENCIA)
-	return ref.get_string_size(texto) * (float(tamanho) / float(_REFERENCIA))
+	if dados == null:
+		dados = fonte_padrao()
+	var tabela = _medidas.get(dados)
+	if tabela == null:
+		tabela = {}
+		_medidas[dados] = tabela
+	var m = tabela.get(texto)
+	if m == null:
+		if tabela.size() > 800:
+			tabela.clear()
+		m = fonte(dados, _REFERENCIA).get_string_size(texto)
+		tabela[texto] = m
+	return m * (float(tamanho) / float(_REFERENCIA))
 
 
 static func ascent(dados, tamanho: int) -> float:

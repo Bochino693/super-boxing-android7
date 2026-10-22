@@ -118,55 +118,86 @@ static func festa(fx: PunchFX, alvo: Vector2, nivel: Dictionary, cores: Array) -
 # ======================================================================
 ## O desenho do impacto, por nível. `t` vai de 0 a 1 ao longo de
 ## `PANCADA_DURACAO`; `forca` é a posição do golpe dentro da escala.
+##
+## TUDO NUM LOTE SÓ (build 120). Eram sete anéis, vinte riscos, dois
+## polígonos com borda lisa, um contorno, as rachaduras e catorze raios —
+## umas cinquenta chamadas, cada uma montando a sua forma no script e
+## mandando o seu desenho para a placa, no quadro mais disputado do jogo
+## (o do soco). Agora as formas fixas (o estrelão) são guardadas e só
+## transformadas, os traços saem juntos (`Lote.segmentos`) e o motor
+## recebe um desenho só. A ordem de pintura é a mesma de antes.
 static func desenhar(canvas: CanvasItem, nivel: Dictionary, t: float, alvo: Vector2, forca: float) -> void:
 	var some = pow(1.0 - t, 1.6)
 	var cor: Color = nivel["cor"]
-
+	var lote = Lote.new()
 	if bool(nivel["tunel"]):
-		_tunel_de_luz(canvas, alvo, t, cor)
-	_riscos_convergindo(canvas, alvo, t, some)
-	_estrelao(canvas, alvo, t, some, forca, cor)
+		_tunel_de_luz(lote, alvo, t, cor)
+	_riscos_convergindo(lote, alvo, t, some)
+	_estrelao(lote, alvo, t, some, forca, cor)
 	if bool(nivel["rachaduras"]):
-		_rachaduras(canvas, alvo, t, some)
+		_rachaduras(lote, alvo, t, some)
 	if bool(nivel["palco"]):
-		_palco_reage(canvas, alvo, t, some)
+		_palco_reage(lote, alvo, t, some)
+	lote.descarregar(canvas)
 
 ## O TÚNEL: anéis fugindo para o fundo, dando profundidade ao golpe.
 ## Só nos níveis altos — num soco médio ele roubaria a leitura do número.
-static func _tunel_de_luz(canvas: CanvasItem, centro: Vector2, t: float, cor: Color) -> void:
+static func _tunel_de_luz(lote, centro: Vector2, t: float, cor: Color) -> void:
 	for i in range(7):
 		var fase = fmod(t * 1.6 + float(i) / 7.0, 1.0)
 		var raio = lerp(1300.0, 90.0, fase)
 		var tinta: Color = cor if i % 2 == 0 else Paleta.AMBAR
-		Traco.arco(canvas, centro, raio, Compat.cor(tinta, fase * (1.0 - t) * 0.55), 14.0)
+		lote.anel_leve(centro, raio, Compat.cor(tinta, fase * (1.0 - t) * 0.55), 14.0)
 
-static func _riscos_convergindo(canvas: CanvasItem, centro: Vector2, t: float, some: float) -> void:
-	for i in range(20):
-		var ang = float(i) * TAU / 20.0 + 0.17
-		var de = 420.0 + (1.0 - t) * 420.0
-		var ate = de - lerp(220.0, 40.0, t)
-		Lote.traco(canvas, centro + polar2cartesian(1.0, ang) * de, centro + polar2cartesian(1.0, ang) * ate, Compat.cor(Paleta.AMBAR, some * 0.55), lerp(8.0, 2.0, t))
+## As direções dos vinte riscos, guardadas (são sempre as mesmas).
+const _DIRECOES = {}
+
+static func _direcoes_dos_riscos() -> PoolVector2Array:
+	if not _DIRECOES.has("riscos"):
+		var d = PoolVector2Array()
+		for i in range(20):
+			d.append(polar2cartesian(1.0, float(i) * TAU / 20.0 + 0.17))
+		_DIRECOES["riscos"] = d
+	return _DIRECOES["riscos"]
+
+static func _riscos_convergindo(lote, centro: Vector2, t: float, some: float) -> void:
+	var de = 420.0 + (1.0 - t) * 420.0
+	var ate = de - lerp(220.0, 40.0, t)
+	var dirs = _direcoes_dos_riscos()
+	lote.segmentos(
+		Transform2D(Vector2(de, 0.0), Vector2(0.0, de), centro).xform(dirs),
+		Transform2D(Vector2(ate, 0.0), Vector2(0.0, ate), centro).xform(dirs),
+		Compat.cor(Paleta.AMBAR, some * 0.55), lerp(8.0, 2.0, t)
+	)
 
 ## O ESTRELÃO DE HISTÓRIA EM QUADRINHOS. As pontas vêm de um molde fixo:
-## um estrelão que se sorteia a cada quadro é ruído, não impacto.
+## um estrelão que se sorteia a cada quadro é ruído, não impacto. O molde
+## (no tamanho 1, raio 330) é guardado; a cada quadro só muda a escala.
+const _ESTRELA = {}
+
+static func _molde_da_estrela() -> Array:
+	if _ESTRELA.empty():
+		var fora = PoolVector2Array()
+		for i in range(PANCADA_PONTAS * 2):
+			var ang = float(i) * TAU / float(PANCADA_PONTAS * 2) - PI * 0.5
+			var longo = i % 2 == 0
+			var variacao = 0.82 + 0.18 * sin(float(i) * 2.7)
+			fora.append(polar2cartesian((330.0 if longo else 170.0) * variacao, ang))
+		_ESTRELA["fora"] = fora
+		_ESTRELA["dentro"] = Transform2D(Vector2(0.72, 0.0), Vector2(0.0, 0.72), Vector2.ZERO).xform(fora)
+	return [_ESTRELA["fora"], _ESTRELA["dentro"]]
+
 static func _estrelao(
-	canvas: CanvasItem, centro: Vector2, t: float, some: float, forca: float, cor: Color
+	lote, centro: Vector2, t: float, some: float, forca: float, cor: Color
 ) -> void:
 	var escala = lerp(0.35, 1.0, ease(t, 0.28)) * (0.75 + forca * 0.55)
-	var fora = PoolVector2Array()
-	var dentro = PoolVector2Array()
-	for i in range(PANCADA_PONTAS * 2):
-		var ang = float(i) * TAU / float(PANCADA_PONTAS * 2) - PI * 0.5
-		var longo = i % 2 == 0
-		var variacao = 0.82 + 0.18 * sin(float(i) * 2.7)
-		var raio = (330.0 if longo else 170.0) * variacao * escala
-		fora.append(centro + polar2cartesian(1.0, ang) * raio)
-		dentro.append(centro + polar2cartesian(1.0, ang) * raio * 0.72)
-	Traco.poligono(canvas, fora, Compat.cor(Paleta.VERMELHO, some * 0.85))
-	Traco.poligono(canvas, dentro, Compat.cor(cor, some * 0.95))
-	Lote.borda(canvas, fora + PoolVector2Array([fora[0]]), Compat.cor(Paleta.CREME, some), 5.0)
+	var xf = Transform2D(Vector2(escala, 0.0), Vector2(0.0, escala), centro)
+	var molde = _molde_da_estrela()
+	lote.poligono_movel(molde[0], xf, Compat.cor(Paleta.VERMELHO, some * 0.85))
+	lote.poligono_movel(molde[1], xf, Compat.cor(cor, some * 0.95))
+	lote.contorno_movel(molde[0], xf, Compat.cor(Paleta.CREME, some), 5.0)
 
-static func _rachaduras(canvas: CanvasItem, centro: Vector2, t: float, some: float) -> void:
+static func _rachaduras(lote, centro: Vector2, t: float, some: float) -> void:
 	for i in range(3):
 		var ang = float(i) * TAU / 3.0 + 0.6
 		var ponta = centro
@@ -174,20 +205,24 @@ static func _rachaduras(canvas: CanvasItem, centro: Vector2, t: float, some: flo
 		for k in range(3):
 			ponta += polar2cartesian(1.0, ang + sin(float(k) * 2.1 + float(i)) * 0.45) * 130.0
 			caminho.append(ponta)
-		Lote.borda(canvas, caminho, Compat.cor(Paleta.CREME, some * 0.8), lerp(9.0, 2.0, t))
+		lote.linha_aberta(caminho, Compat.cor(Paleta.CREME, some * 0.8), lerp(9.0, 2.0, t))
 
 ## O PALCO INTEIRO REAGE: raios dourados saindo das quatro bordas para
 ## dentro. Reservado ao lendário e ao perfeito, que são o motivo de a
 ## fila existir.
-static func _palco_reage(canvas: CanvasItem, centro: Vector2, t: float, some: float) -> void:
+static func _palco_reage(lote, centro: Vector2, t: float, some: float) -> void:
+	var inicios = PoolVector2Array()
+	var fins = PoolVector2Array()
+	var comprimento = lerp(240.0, 900.0, t)
 	for i in range(14):
 		var lado = i % 4
-		var passo = (float(i) / 14.0 + t * 0.4)
+		var passo = fposmod(float(i) / 14.0 + t * 0.4, 1.0)
 		var origem = Vector2.ZERO
 		match lado:
-			0: origem = Vector2(fposmod(passo, 1.0) * 1080.0, -40.0)
-			1: origem = Vector2(1120.0, fposmod(passo, 1.0) * 1920.0)
-			2: origem = Vector2(fposmod(passo, 1.0) * 1080.0, 1960.0)
-			_: origem = Vector2(-40.0, fposmod(passo, 1.0) * 1920.0)
-		var direcao = (centro - origem).normalized()
-		Lote.traco(canvas, origem, origem + direcao * lerp(240.0, 900.0, t), Compat.cor(Paleta.AMBAR, some * 0.45), lerp(10.0, 3.0, t))
+			0: origem = Vector2(passo * 1080.0, -40.0)
+			1: origem = Vector2(1120.0, passo * 1920.0)
+			2: origem = Vector2(passo * 1080.0, 1960.0)
+			_: origem = Vector2(-40.0, passo * 1920.0)
+		inicios.append(origem)
+		fins.append(origem + (centro - origem).normalized() * comprimento)
+	lote.segmentos(inicios, fins, Compat.cor(Paleta.AMBAR, some * 0.45), lerp(10.0, 3.0, t))

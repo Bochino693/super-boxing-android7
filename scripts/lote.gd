@@ -56,9 +56,14 @@ const BORDA := 1.0
 ## Quanto a corda de um segmento pode se afastar do arco verdadeiro, em
 ## pixels. Abaixo de meio pixel a faceta não se vê, nem parada.
 const ERRO := 0.3
-const LADOS_MAXIMOS := 128
+## O teto de lados de uma volta. Era 128; só os anéis enormes dos efeitos
+## (o túnel do impacto, de até 1300 px de raio) chegavam lá, e cada lado a
+## mais é um punhado de números copiados do script para o motor a cada
+## quadro (build 120). Com 72, o anel de 1300 px erra 1,2 px — num anel
+## que voa translúcido pela tela.
+const LADOS_MAXIMOS := 72
 
-enum { _QUAD, _POLIGONO, _LINHA, _CONTORNO, _ARCO, _ANEL, _CIRCULO }
+enum { _QUAD, _POLIGONO, _LINHA, _CONTORNO, _ARCO, _ANEL, _CIRCULO, _LEQUE, _SEGMENTOS, _FAIXA }
 ## O que refazer de cada forma (ver o topo): tudo, pontos e cores, ou só
 ## as cores.
 enum { _TUDO, _SEM_TRIANGULOS, _SO_CORES }
@@ -225,6 +230,97 @@ func linha_aberta(pts: PoolVector2Array, cor: Color, largura: float, borda = BOR
 func linha(a: Vector2, b: Vector2, cor: Color, largura: float) -> void:
 	linha_aberta(PoolVector2Array([a, b]), cor, largura)
 
+## MUITOS TRAÇOS SOLTOS DE UMA VEZ, da mesma cor e largura (os riscos e
+## os raios do impacto): o traço `i` vai de `inicios[i]` a `fins[i]`. Um
+## laço curto por traço e os triângulos já prontos — eram vinte chamadas
+## de `traco`, cada uma com o seu desenho na placa. Só em lote SEM nome
+## (é coisa que muda a cada quadro).
+func segmentos(inicios: PoolVector2Array, fins: PoolVector2Array, cor: Color, largura: float) -> void:
+	var n = int(min(inicios.size(), fins.size()))
+	if n == 0 or cor.a <= 0.0:
+		return
+	var t = _transparente(cor)
+	var cores = PoolColorArray([t, t, cor, cor, cor, cor, t, t])
+	while cores.size() < n * 8:
+		cores.append_array(cores)
+	cores.resize(n * 8)
+	_cores.append_array(cores)
+	var meia = max(largura, 1.0) * 0.5
+	var pts = PoolVector2Array()
+	pts.resize(n * 8)
+	for i in n:
+		var a: Vector2 = inicios[i]
+		var b: Vector2 = fins[i]
+		var normal = (b - a).tangent().normalized()
+		var fora = normal * (meia + BORDA)
+		var dentro = normal * meia
+		var k = i * 8
+		pts[k] = a + fora
+		pts[k + 1] = b + fora
+		pts[k + 2] = a + dentro
+		pts[k + 3] = b + dentro
+		pts[k + 4] = a - dentro
+		pts[k + 5] = b - dentro
+		pts[k + 6] = a - fora
+		pts[k + 7] = b - fora
+	var inicio = _pontos.size()
+	_pontos.append_array(pts)
+	_indices.append_array(_deslocado(_SEGMENTOS, n, inicio))
+
+## UM ANEL DE EFEITO: sem a borda lisa e com lados para errar até 1,5 px
+## (`ERRO_LEVE`). Para os anéis translúcidos que atravessam a tela em
+## décimos de segundo (o túnel do impacto) — lá a faceta e o serrilhado
+## não se veem, e o anel cheio custava quatro voltas de pontos e o triplo
+## de triângulos. Só em lote SEM nome.
+const ERRO_LEVE := 1.5
+
+func anel_leve(centro: Vector2, raio: float, cor: Color, espessura: float) -> void:
+	if raio <= 0.0 or cor.a <= 0.0:
+		return
+	var meia = espessura * 0.5
+	var r = max(raio + meia, ERRO_LEVE * 2.0)
+	var lados = int(clamp(ceil(PI / acos(1.0 - ERRO_LEVE / r)), 12, LADOS_MAXIMOS))
+	var volta = _volta(lados)
+	_cores.append_array(_tinta(cor, lados * 2))
+	var inicio = _pontos.size()
+	_pontos.append_array(_levar(volta, raio + meia, centro))
+	_pontos.append_array(_levar(volta, max(raio - meia, 0.0), centro))
+	_indices.append_array(_deslocado(_FAIXA, lados, inicio))
+
+## UM POLÍGONO GUARDADO, LEVADO PELA TRANSFORMAÇÃO `xf` (o estrelão que
+## cresce): a borda lisa é calculada uma vez, no tamanho original, e a
+## cada quadro só se aplica a transformação — no motor. A borda cresce
+## junto com a forma. Só em lote SEM nome.
+func poligono_movel(pts: PoolVector2Array, xf: Transform2D, cor: Color) -> void:
+	var n = pts.size()
+	if n < 3 or cor.a <= 0.0:
+		return
+	_cores.append(cor)
+	_cores.append_array(_tinta(cor, n))
+	_cores.append_array(_tinta(_transparente(cor), n))
+	var inicio = _pontos.size()
+	_pontos.append_array(xf.xform(_pontos_do_poligono(pts, BORDA)))
+	_indices.append_array(_deslocado(_CIRCULO, n, inicio))
+
+## O contorno fechado de um polígono guardado, levado por `xf` (a linha
+## engrossa junto com a forma). Só em lote SEM nome.
+func contorno_movel(pts: PoolVector2Array, xf: Transform2D, cor: Color, largura: float) -> void:
+	var n = pts.size()
+	if n < 3 or cor.a <= 0.0:
+		return
+	var chave = [_CONTORNO, pts, largura]
+	var faixa = _forma(chave)
+	if faixa.empty():
+		faixa = _pontos_de_faixa(pts, max(largura, 1.0), BORDA, true)
+		_guardar(chave, faixa)
+	var t = _transparente(cor)
+	_cores.append_array(_tinta(t, n))
+	_cores.append_array(_tinta(cor, n * 2))
+	_cores.append_array(_tinta(t, n))
+	var inicio = _pontos.size()
+	_pontos.append_array(xf.xform(faixa))
+	_indices.append_array(_deslocado(_CONTORNO, n, inicio))
+
 ## Contorno fechado (`pts` sem repetir o primeiro ponto).
 func contorno(pts: PoolVector2Array, cor: Color, largura: float, borda = BORDA) -> void:
 	if not _nome.empty():
@@ -239,7 +335,7 @@ func arco(centro: Vector2, raio: float, de: float, ate: float, cor: Color, espes
 	if not _nome.empty():
 		_receita.append([_ARCO, centro, raio, de, ate, cor, espessura])
 		_forma.append([_ARCO, centro, raio, de, ate, espessura])
-		_topologia.append([_ARCO, passos(raio + espessura * 0.5)])
+		_topologia.append([_ARCO, _pontos_do_arco(de, ate, passos(raio + espessura * 0.5))])
 		return
 	_arco(centro, raio, de, ate, cor, espessura)
 
@@ -301,47 +397,14 @@ func _executar(item: Array) -> void:
 			_circulo(item[1], item[2], item[3])
 
 func _quad(a: Vector2, b: Vector2, c: Vector2, d: Vector2, ca: Color, cb: Color, cc: Color, cd: Color) -> void:
-	_cores.append(ca)
-	_cores.append(cb)
-	_cores.append(cc)
-	_cores.append(cd)
+	_cores.append_array(PoolColorArray([ca, cb, cc, cd]))
 	if _modo == _SO_CORES:
 		return
 	var i = _pontos.size()
-	_pontos.append(a)
-	_pontos.append(b)
-	_pontos.append(c)
-	_pontos.append(d)
+	_pontos.append_array(PoolVector2Array([a, b, c, d]))
 	if _modo == _SEM_TRIANGULOS:
 		return
-	_indices.append(i)
-	_indices.append(i + 1)
-	_indices.append(i + 2)
-	_indices.append(i)
-	_indices.append(i + 2)
-	_indices.append(i + 3)
-
-## Os triângulos entre duas voltas de `lados` pontos que começam em `a` e
-## `b` (a faixa de um anel, a borda lisa de um disco).
-func _faixa_fechada(a: int, b: int, lados: int) -> void:
-	for i in lados:
-		var j = i + 1 if i + 1 < lados else 0
-		_indices.append(a + i)
-		_indices.append(b + i)
-		_indices.append(b + j)
-		_indices.append(a + i)
-		_indices.append(b + j)
-		_indices.append(a + j)
-
-## O mesmo, para faixas abertas (sem ligar o último ao primeiro).
-func _faixa_aberta(a: int, b: int, pontos: int) -> void:
-	for i in pontos - 1:
-		_indices.append(a + i)
-		_indices.append(b + i)
-		_indices.append(b + i + 1)
-		_indices.append(a + i)
-		_indices.append(b + i + 1)
-		_indices.append(a + i + 1)
+	_indices.append_array(PoolIntArray([i, i + 1, i + 2, i, i + 2, i + 3]))
 
 func _circulo(centro: Vector2, raio: float, cor: Color) -> void:
 	var lados = passos(raio)
@@ -356,12 +419,7 @@ func _circulo(centro: Vector2, raio: float, cor: Color) -> void:
 	_pontos.append_array(_levar(volta, raio + BORDA, centro))
 	if _modo == _SEM_TRIANGULOS:
 		return
-	var d0 = ic + 1
-	for i in lados:
-		_indices.append(ic)
-		_indices.append(d0 + i)
-		_indices.append(d0 + (i + 1 if i + 1 < lados else 0))
-	_faixa_fechada(d0, d0 + lados, lados)
+	_indices.append_array(_deslocado(_CIRCULO, lados, ic))
 
 func _anel(centro: Vector2, raio: float, cor: Color, espessura: float) -> void:
 	var lados = passos(raio + espessura * 0.5)
@@ -378,15 +436,14 @@ func _anel(centro: Vector2, raio: float, cor: Color, espessura: float) -> void:
 		_pontos.append_array(_levar(volta, r, centro))
 	if _modo == _SEM_TRIANGULOS:
 		return
-	for k in 3:
-		_faixa_fechada(a + lados * k, a + lados * (k + 1), lados)
+	_indices.append_array(_deslocado(_ANEL, lados, a))
 
 ## O arco usa SEMPRE os lados da volta inteira (e não os do pedaço): o arco
 ## que cresce muda de posição, mas não de topologia (ver o topo).
 func _arco(centro: Vector2, raio: float, de: float, ate: float, cor: Color, espessura: float) -> void:
 	var meia = espessura * 0.5
 	var lados = passos(raio + meia)
-	var n = lados + 1
+	var n = _pontos_do_arco(de, ate, lados)
 	var transparente = _transparente(cor)
 	_cores.append_array(_tinta(transparente, n))
 	_cores.append_array(_tinta(cor, n * 2))
@@ -394,16 +451,32 @@ func _arco(centro: Vector2, raio: float, de: float, ate: float, cor: Color, espe
 	if _modo == _SO_CORES:
 		return
 	var a = _pontos.size()
-	var dirs = PoolVector2Array()
-	dirs.resize(n)
-	for i in n:
-		dirs[i] = polar2cartesian(1.0, lerp(de, ate, float(i) / float(lados)))
+	var dirs = _direcoes_do_arco(de, ate, lados)
 	for r in [raio + meia + BORDA, raio + meia, max(raio - meia, 0.0), max(raio - meia - BORDA, 0.0)]:
 		_pontos.append_array(_levar(dirs, r, centro))
 	if _modo == _SEM_TRIANGULOS:
 		return
-	for k in 3:
-		_faixa_aberta(a + n * k, a + n * (k + 1), n)
+	_indices.append_array(_deslocado(_ARCO, n, a))
+
+## O ARCO ANDA NOS PASSOS DA VOLTA INTEIRA, e não em `lados` fatias do
+## próprio tamanho (build 120). As direções saem de uma cópia da volta
+## unitária guardada (cortada no motor, `resize`) mais a ponta exata,
+## giradas por uma transformação — e não de um seno e um cosseno por
+## vértice no script, que era o grosso do custo do medidor enchendo e do
+## anel do cartão. Um arco curto fica com poucos pontos; o inteiro, com os
+## da volta. A topologia (quantos pontos) muda enquanto ele cresce, mas
+## os triângulos de cada tamanho já estão guardados (`_deslocado`).
+static func _pontos_do_arco(de: float, ate: float, lados: int) -> int:
+	return int(min(floor(min(abs(ate - de), TAU) / TAU * lados), lados - 1)) + 2
+
+static func _direcoes_do_arco(de: float, ate: float, lados: int) -> PoolVector2Array:
+	var abertura = min(abs(ate - de), TAU)
+	var d: PoolVector2Array = _volta(lados)
+	d.resize(_pontos_do_arco(de, ate, lados) - 1)
+	d.append(polar2cartesian(1.0, abertura))
+	var x = polar2cartesian(1.0, de)
+	var y = Vector2(-x.y, x.x) * (1.0 if ate >= de else -1.0)
+	return Transform2D(x, y, Vector2.ZERO).xform(d)
 
 func _poligono(pts: PoolVector2Array, cor: Color, cores: PoolColorArray, borda: float) -> void:
 	var n = pts.size()
@@ -429,6 +502,21 @@ func _poligono(pts: PoolVector2Array, cor: Color, cores: PoolColorArray, borda: 
 			_cores.append_array(_tinta(_transparente(cor), n))
 	if _modo == _SO_CORES:
 		return
+	var ic = _pontos.size()
+	_pontos.append_array(_pontos_do_poligono(pts, borda))
+	if _modo == _SEM_TRIANGULOS:
+		return
+	_indices.append_array(_deslocado(_CIRCULO if borda > 0.0 else _LEQUE, n, ic))
+
+## O centro, o contorno e a borda lisa de um polígono — guardados, porque
+## os mesmos polígonos (a pílula do cartão, a plaqueta) voltam a cada quadro
+## e a conta da borda é um laço por vértice no script.
+static func _pontos_do_poligono(pts: PoolVector2Array, borda: float) -> PoolVector2Array:
+	var chave = [_POLIGONO, pts, borda]
+	var prontos = _forma(chave)
+	if not prontos.empty():
+		return prontos
+	var n = pts.size()
 	var centro = Vector2.ZERO
 	var area = 0.0
 	for i in n:
@@ -439,10 +527,8 @@ func _poligono(pts: PoolVector2Array, cor: Color, cores: PoolColorArray, borda: 
 	centro /= float(n)
 	# o sentido do polígono decide para que lado a borda cresce
 	var sinal = 1.0 if area > 0.0 else -1.0
-	var ic = _pontos.size()
-	_pontos.append(centro)
-	var d0 = ic + 1
-	_pontos.append_array(pts)
+	prontos = PoolVector2Array([centro])
+	prontos.append_array(pts)
 	if borda > 0.0:
 		for i in n:
 			var p: Vector2 = pts[i]
@@ -455,15 +541,9 @@ func _poligono(pts: PoolVector2Array, cor: Color, cores: PoolColorArray, borda: 
 			normal = normal / tam if tam > 0.0001 else n1
 			# o canto vivo não estica a borda para longe
 			var escala = clamp(1.0 / max(normal.dot(n1), 0.35), 1.0, 2.5)
-			_pontos.append(p + normal * borda * escala)
-	if _modo == _SEM_TRIANGULOS:
-		return
-	for i in n:
-		_indices.append(ic)
-		_indices.append(d0 + i)
-		_indices.append(d0 + (i + 1 if i + 1 < n else 0))
-	if borda > 0.0:
-		_faixa_fechada(d0, d0 + n, n)
+			prontos.append(p + normal * borda * escala)
+	_guardar(chave, prontos)
+	return prontos
 
 ## As quatro fileiras de pontos de uma faixa (borda, cor, cor, borda) e as
 ## cores delas; `fechada` liga o último ponto ao primeiro.
@@ -479,11 +559,7 @@ func _faixa_de_linha(pts: PoolVector2Array, cor: Color, largura: float, borda: f
 	_pontos.append_array(_pontos_de_faixa(pts, largura, borda, fechada))
 	if _modo == _SEM_TRIANGULOS:
 		return
-	for k in 3:
-		if fechada:
-			_faixa_fechada(a + n * k, a + n * (k + 1), n)
-		else:
-			_faixa_aberta(a + n * k, a + n * (k + 1), n)
+	_indices.append_array(_deslocado(_CONTORNO if fechada else _LINHA, n, a))
 
 ## As quatro fileiras (fora, cor, cor, fora) ao longo de `pts`.
 static func _pontos_de_faixa(pts: PoolVector2Array, largura: float, borda: float, fechada: bool) -> PoolVector2Array:
@@ -543,7 +619,7 @@ func _contorno(pts: PoolVector2Array, cor: Color, largura: float, borda: float) 
 
 ## Os moldes de triângulos: [tipo, lados] -> PoolIntArray (feitos uma vez).
 static func _molde(tipo: int, lados: int) -> PoolIntArray:
-	var chave = tipo * 1000 + lados
+	var chave = tipo * 100000 + lados
 	var m: PoolIntArray = _E.guardados.get(chave, PoolIntArray())
 	if not m.empty():
 		return m
@@ -564,7 +640,50 @@ static func _molde(tipo: int, lados: int) -> PoolIntArray:
 			# `lados` aqui é o número de PONTOS ao longo da faixa aberta
 			for k in 3:
 				m.append_array(_faixa(lados * k, lados * (k + 1), lados, false))
+		_LEQUE:
+			# só o leque, para o polígono sem borda lisa
+			for i in lados:
+				m.append(0)
+				m.append(1 + i)
+				m.append(1 + (i + 1 if i + 1 < lados else 0))
+		_FAIXA:
+			# uma volta só entre duas fileiras (o anel sem borda lisa)
+			m.append_array(_faixa(0, lados, lados, true))
+		_SEGMENTOS:
+			# `lados` traços de 8 pontos: as três faixas de cada um
+			for i in lados:
+				var b = i * 8
+				for k in 3:
+					var f = b + k * 2
+					m.append_array(PoolIntArray([f, f + 2, f + 3, f, f + 3, f + 1]))
 	_E.guardados[chave] = m
+	return m
+
+## OS TRIÂNGULOS JÁ NO LUGAR (build 120). O molde acima começa do vértice
+## 0; dentro de um lote a forma começa em `a`. Somar `a` a cada índice era
+## um laço no script por forma e por quadro (milhares de contas na luta) —
+## e como cada tela pede as mesmas formas na mesma ordem a cada quadro, a
+## lista deslocada é guardada e só copiada (no motor) para o lote.
+const _DESLOCADOS = {}
+
+static func _deslocado(tipo: int, lados: int, a: int) -> PoolIntArray:
+	if lados >= 8192:
+		return _somar(_molde(tipo, lados), a)
+	var chave = (a * 16 + tipo) * 8192 + lados
+	var m = _DESLOCADOS.get(chave)
+	if m != null:
+		return m
+	m = _somar(_molde(tipo, lados), a)
+	if _DESLOCADOS.size() > 2000:
+		_DESLOCADOS.clear()
+	_DESLOCADOS[chave] = m
+	return m
+
+static func _somar(molde: PoolIntArray, a: int) -> PoolIntArray:
+	var m = PoolIntArray(molde)
+	if a != 0:
+		for i in m.size():
+			m[i] += a
 	return m
 
 static func _faixa(a: int, b: int, n: int, fechada: bool) -> PoolIntArray:
