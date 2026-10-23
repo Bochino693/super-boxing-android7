@@ -12,9 +12,9 @@ extends Reference
 ## NUMERO em um e escreva em NOTA o que mudou. Um carimbo que não sobe
 ## mente, e um carimbo que mente é pior do que carimbo nenhum.
 
-const NUMERO = 121
+const NUMERO = 122
 const DATA = "23/10/2026"
-const NOTA = "Mali-450 (TX9): efeitos pela placa de vídeo: faíscas, confete, fogos, poeira e flashes da plateia num desenho só por efeito (antes, um desenho por partícula: até 640 por quadro); o jogo é desenhado direto na TV em 1920x1080 (sem a tela intermediária, que custava duas passadas de tela cheia por quadro); sino do round em arquivo"
+const NOTA = "Mali-450 (TX9): 3D nítido — a arena nasce na resolução da TV (1080x1920, sem ampliar; desce sozinha para 85% e 72% se a luta ficar lenta); pernas do lutador com músculos (coxa, joelho, panturrilha), calção e barra assentados na coxa e joelhos sobre os pés; logo Lazer & Sport maior (200 px; na luta, no alto à direita); cartões do soco e linhas do TOP 20 entram com batida"
 
 ## Rodapé da abertura: cabe em uma linha discreta.
 static func curta() -> String:

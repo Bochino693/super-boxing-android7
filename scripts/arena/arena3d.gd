@@ -764,9 +764,9 @@ func _montar_sombra() -> void:
 ## A NITIDEZ DA ARENA ACOMPANHA A MÁQUINA — E SÓ MUDA ENTRE AS LUTAS.
 ##
 ## Com o lutador leve (11,5 mil vértices em vez de 44 mil) sobra fôlego, e
-## ele vai para a nitidez: a arena nasce em `Perfil.ARENA_ESCALA` (0,65 da
-## tela, os pixels da build 113; 0,55 era uma imagem ampliada quase 2x, borrada). Se a luta ficar
-## lenta, o jogo desce um degrau (ver `DEGRAUS`). Nunca no meio da luta:
+## ele vai para a nitidez: a arena nasce na resolução da tela (build 122;
+## ver `DEGRAUS`). Se a luta ficar lenta, o jogo desce um degrau. Nunca no
+## meio da luta:
 ## trocar o tamanho realoca a imagem, e no quadro da troca o lutador sumia.
 func _aplicar_tamanho() -> void:
 	var novo = _tamanho_do_degrau()
@@ -1268,25 +1268,33 @@ func _sombra_de_contato() -> void:
 ## OS DEGRAUS DO GRÁFICO. A arena é a conta mais cara do jogo. Cada degrau
 ## tira UMA coisa, a que menos se vê primeiro:
 ##
-##   0 COMPLETO      tudo, a arena em `Perfil.ARENA_ESCALA` (72%);
-##   1 SEM FACHOS    os cones de luz e os flashes da plateia
+##   0 NATIVO        tudo, a arena na resolução da tela (1080x1920: cada
+##                   pixel do 3D é um pixel da TV, sem ampliar nada);
+##   1 3D A 85%      a arena desenhada com 85% dos pixels de cada lado;
+##   2 3D A 72%      72% (o degrau de cima das builds 119 a 121);
+##   3 SEM FACHOS    os cones de luz e os flashes da plateia
 ##                   (transparentes, cobrem boa parte da tela);
-##   2 3D A 66%      a arena desenhada com 66% dos pixels de cada lado
-##                   (ampliada na tela, a imagem fica um pouco mais macia);
-##   3 3D A 60%      idem, 60% (na tela inteira, os mesmos pixels que a
+##   4 3D A 66%      66%, ainda sem fachos;
+##   5 3D A 60%      60% (na tela inteira, os mesmos pixels que a
 ##                   build 118 desenhava no quadro dela).
-## Até a build 118 o último degrau era 55% (o tamanho da build 111): o
-## lutador ampliado quase duas vezes ficava "pixelado em volta". Abaixo de
-## 60% a arena não desce mais — a nitidez do lutador é o jogo.
+## BUILD 122: A ARENA NASCE NA RESOLUÇÃO DA TELA. Até a 121 ela nascia em
+## 72% e era ampliada 1,39 vez — era a imagem "macia", o lutador sem
+## definição. A build 121 tirou da placa de vídeo duas passadas de tela
+## cheia e centenas de chamadas por quadro; esse fôlego vai para a
+## nitidez. Numa TV Box em 720p o degrau de cima é a resolução da TV (não
+## adianta desenhar mais pixels do que ela mostra).
+## Abaixo de 60% a arena não desce — a nitidez do lutador é o jogo.
 ##
 ## O jogo escolhe sozinho (`main.gd`, `_ajustar_degrau`): mede a luta em
 ## janelas de 4 s e, se ela ficou abaixo da meta de quadros, desce um
-## degrau — e guarda, para a próxima vez que a máquina ligar.
+## degrau (dois, se ficou abaixo da metade) — e guarda, para a próxima vez
+## que a máquina ligar. Cada build nova recomeça do degrau 0.
 ##
-## O degrau 1 entra na hora (é só esconder uma peça já compilada). O
-## tamanho (2 e 3) realoca a imagem da arena — no quadro da troca o
-## lutador sumiria —, então ele espera a arena sair da tela (`ligar`).
-const DEGRAUS = ["COMPLETO", "SEM FACHOS", "3D A 66%", "3D A 60%"]
+## Os fachos (3) entram na hora (é só esconder uma peça já compilada). O
+## tamanho realoca a imagem da arena — no quadro da troca o lutador
+## sumiria —, então ele espera a arena sair da tela (`ligar`).
+const DEGRAUS = ["NATIVO", "3D A 85%", "3D A 72%", "SEM FACHOS", "3D A 66%", "3D A 60%"]
+const ESCALA_DO_DEGRAU = [1.0, 0.85, 0.72, 0.72, 0.66, ARENA_ESCALA_SEGURA]
 var degrau = 0
 
 func aplicar_degrau(n: int) -> void:
@@ -1302,14 +1310,16 @@ func aplicar_degrau(n: int) -> void:
 		_aplicar_tamanho()
 
 func _enfeites_do_degrau() -> bool:
-	return degrau < 1
+	return degrau < 3
 
 func _escala_do_degrau() -> float:
-	if degrau >= 3:
-		return min(ARENA_ESCALA_SEGURA, Perfil.ARENA_ESCALA)
-	if degrau == 2:
-		return min(0.66, Perfil.ARENA_ESCALA)
-	return Perfil.ARENA_ESCALA
+	var e = min(float(ESCALA_DO_DEGRAU[degrau]), Perfil.ARENA_ESCALA)
+	# nunca mais pixels do que a TV mostra (TV Box em 720p: 720 de largura)
+	var janela = Perfil.janela()
+	var curto = min(janela.x, janela.y)
+	if curto > 0.0:
+		e = min(e, max(curto / TELA_LOGICA.x, ARENA_ESCALA_SEGURA))
+	return e
 
 ## O degrau pede um tamanho que ainda não entrou (a arena está na tela;
 ## entra na próxima vez que ela ligar). Enquanto isso, medir de novo a

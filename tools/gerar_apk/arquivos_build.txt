@@ -340,6 +340,7 @@ scripts/versao.gd
 shaders/brilho_letras.shader
 shaders/escudo_vivo.shader
 shaders/fundo_vivo.shader
+tools/ajustar_pernas_boxeador.py
 tools/ajustar_som_tv.py
 tools/android_quadros_plugin/PunchQuadros.java
 tools/android_quadros_plugin/montar_aar.py

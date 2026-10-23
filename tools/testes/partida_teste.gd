@@ -14,6 +14,10 @@ extends Node
 ## rodada passa pela pose e pela foto, e as fotos da tela pegam a cortina
 ## do ringue quadro a quadro. `--camera-cai=S` corta a webcam S segundos
 ## depois do START (a pose tem de desistir e ir para o ringue).
+## Com `--fotos`, a chegada de cada cartão de soco é fotografada em quatro
+## instantes, e `--serie=DE,ATE,PASSO` fotografa de PASSO em PASSO segundos
+## contados do início do resultado, e `--serie-top=DE,ATE,PASSO` o mesmo,
+## contado de quando o TOP 20 é anunciado (a entrada das linhas).
 
 class PlacaDeMentira:
 	extends SerialLink
@@ -60,6 +64,10 @@ var _start_em = -1.0
 var _quadro_cam = 0
 var _proximo_quadro_cam = 0.0
 var _cortina_vista = false
+var _ultimo_cartao = -1.0
+var _serie = []
+var _serie_top = []
+var _top_visto = false
 
 
 func _ready() -> void:
@@ -78,6 +86,13 @@ func _ready() -> void:
 			_natural = true
 		elif a == "--camera":
 			_camera = true
+		elif a.begins_with("--serie=") or a.begins_with("--serie-top="):
+			var partes = a.split("=")[1].split(",")
+			var lista = _serie_top if a.begins_with("--serie-top=") else _serie
+			var k = float(partes[0])
+			while k <= float(partes[1]) + 0.0001:
+				lista.append(k)
+				k += float(partes[2])
 		elif a.begins_with("--camera-cai="):
 			_camera = true
 			_camera_cai = float(a.substr(13))
@@ -186,6 +201,14 @@ func _process(delta: float) -> void:
 		_passo_da_camera()
 	if _esconder != "":
 		main.get_node(_esconder).visible = false
+	if pasta_fotos != "" and main.ranking_announced and not _top_visto:
+		_top_visto = true
+		for k in _serie_top:
+			_foto("p%d_top_%05.2f" % [feitas, k], k)
+	if pasta_fotos != "" and main.ultimo_soco_em != _ultimo_cartao and main.socos.size() > 0:
+		_ultimo_cartao = main.ultimo_soco_em
+		for d in [0.04, 0.12, 0.24, 0.45]:
+			_foto("p%d_cartao%d_%03d" % [feitas, main.socos.size(), int(d * 1000)], d)
 	match main.state:
 		GameDef.State.IDLE:
 			if _natural and _resultado_em >= 0.0:
@@ -225,6 +248,8 @@ func _process(delta: float) -> void:
 				_resultado_em = t
 				_fim_em = t
 				_foto("p%d_resultado" % feitas, 1.5)
+				for k in _serie:
+					_foto("p%d_serie_%05.2f" % [feitas, k], k)
 				if _natural:
 					for k in [4, 8, 12, 16, 20]:
 						_foto("p%d_fim_%02d" % [feitas, k], float(k))

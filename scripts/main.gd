@@ -6194,7 +6194,7 @@ func _draw_partida() -> void:
 	# inteira (sem transparência) — menos na contagem, onde ela é desenhada
 	# ao lado do visor da foto.
 	if state != GameDef.State.COUNTDOWN:
-		_marca_lateral(1760.0, 1.0, MARCA_ALTURA)
+		_marca_lateral(MARCA_NA_LUTA_Y, 1.0, MARCA_ALTURA)
 	match state:
 		GameDef.State.COUNTDOWN:
 			_texto_arcade("FAÇA SUA POSE", 340.0, 72, Paleta.CIANO, LARGURA_UTIL)
@@ -6540,7 +6540,7 @@ func _aviso_do_firmware_antigo() -> void:
 
 func _draw_show_idle() -> void:
 	var chegada = ease(abertura_chegada, 0.4)
-	_marca_da_casa(146.0, 132.0, chegada)
+	_marca_da_casa(80.0, MARCA_ALTURA, chegada)
 	var capitulo = int(state_time / ABERTURA_DURACAO) % ABERTURA_CAPITULOS
 	# Cada capítulo entra com o seu próprio esmaecer; sem isso só o
 	# primeiro teria entrada e os outros dariam um salto seco.
@@ -7080,6 +7080,20 @@ func _carregando(centro: Vector2, raio: float, cor: Color, texto := "") -> void:
 ## placar DANÇA de lado enquanto sobe de 0000 a 9999.
 const PLACAR_CORPO = 190
 
+## A chegada do cartão de um soco: quanto dura e de quanto abaixo ele sobe.
+const CARTAO_CHEGADA_S = 0.5
+const CARTAO_SOBE = 90.0
+## No veredito, um cartão entra este tanto depois do anterior.
+const CARTAO_CASCATA_S = 0.10
+
+## Há quanto tempo o cartão `i` está chegando (negativo: ainda não entrou).
+## No veredito os cartões nascem com ele, em cascata; na espera do segundo
+## soco eles já estão lá (o do soco novo conta do soco).
+func _idade_do_cartao(i: int, novo: bool) -> float:
+	if verdict_time >= 0.0 and state != GameDef.State.ARMED:
+		return verdict_time - CARTAO_CASCATA_S * float(i)
+	return animation_time - ultimo_soco_em if novo else 1000.0
+
 ## OS DOIS SOCOS, LADO A LADO E CADA UM COM O SEU NÚMERO.
 ##
 ## Este é o pedido "dois socos apresentados individualmente", e ele é uma
@@ -7130,13 +7144,30 @@ func _draw_cartoes_dos_socos(y: float, marcar_melhor: bool) -> void:
 		elif esperando:
 			cor = Paleta.AMBAR
 
-		# O cartão do soco recém-chegado nasce maior e volta ao tamanho.
+		# A CHEGADA DO CARTÃO (build 122): o soco recém-chegado SOBE de baixo,
+		# passa do ponto e assenta (batida), maior no começo, com um clarão
+		# branco por cima e um halo na cor do nível se abrindo para fora. Até
+		# a 121 ele só crescia 10 px no lugar — de longe, nem se via chegar.
+		# NO RESULTADO os cartões só aparecem quando o veredito abre: é dali
+		# que a chegada conta, em cascata (até a 121 ela contava do soco, e
+		# acabava escondida, durante a contagem do placar).
 		var crescer = 0.0
-		if feito and i == socos.size() - 1:
-			var idade = animation_time - ultimo_soco_em
-			if idade >= 0.0 and idade < 0.5:
-				crescer = (1.0 - idade / 0.5) * 10.0
+		var clarao = 0.0
+		var halo = -1.0
+		var novo = feito and i == socos.size() - 1
+		var idade = _idade_do_cartao(i, novo)
+		if idade < 0.0:
+			continue
+		if idade < CARTAO_CHEGADA_S:
+			var e = idade / CARTAO_CHEGADA_S
+			rect.position.y += (1.0 - _passo_com_batida(e)) * CARTAO_SOBE
+			if novo:
+				crescer = (1.0 - e) * 18.0
+				clarao = pow(1.0 - clamp(idade / 0.26, 0.0, 1.0), 2.0)
+				halo = e
 		var caixa = rect.grow(crescer)
+		if halo >= 0.0:
+			Formas.pilula_brilho(self, caixa.grow(12.0 + 46.0 * halo), Compat.cor(cor_nivel, 0.55 * (1.0 - halo)))
 		var pulso = 1.0
 		if esperando:
 			pulso = 0.62 + 0.38 * sin(animation_time * 4.4)
@@ -7150,6 +7181,8 @@ func _draw_cartoes_dos_socos(y: float, marcar_melhor: bool) -> void:
 		if eh_melhor or esperando:
 			Formas.pilula_brilho(self, caixa.grow(10.0), Compat.cor(cor, (0.22 if eh_melhor else 0.16) * pulso))
 		Formas.pilula(self, caixa, Compat.cor("0b0616", 0.86))
+		if clarao > 0.0:
+			Formas.pilula(self, caixa, Color(1, 1, 1, 0.38 * clarao))
 		Formas.pilula_borda(self, caixa, Compat.cor(cor, (0.95 if eh_melhor else 0.65) * pulso), eh_melhor)
 
 		var anel_c = Vector2(caixa.position.x + raio_cartao, caixa.get_center().y)
@@ -7162,7 +7195,6 @@ func _draw_cartoes_dos_socos(y: float, marcar_melhor: bool) -> void:
 		if feito:
 			# A CONTAGEM DO CARTÃO: o soco que acabou de chegar sobe de 0
 			# até os pontos dele, crescendo, enquanto o anel enche.
-			var idade = animation_time - ultimo_soco_em
 			var subida := 1.0
 			if i == socos.size() - 1 and idade >= 0.0 and idade < 0.6:
 				subida = 1.0 - pow(1.0 - idade / 0.6, 3.0)
@@ -7251,9 +7283,11 @@ const LISTA_TOPO = 336.0
 const LINHAS_VISIVEIS = 6
 const LISTA_RECORTE_TOPO = 330.0
 const LISTA_RECORTE_BASE = 1400.0
-const LINHA_CASCATA = 0.035
-const LINHA_ENTRADA = 0.24
-const LINHA_DESLIZE = 36.0
+const LINHA_CASCATA = 0.05
+## Build 122: cada linha chega da direita, de mais longe, passa do ponto e
+## assenta (batida) — antes deslizava 36 px e só esmaecia.
+const LINHA_ENTRADA = 0.34
+const LINHA_DESLIZE = 160.0
 
 const ATO_ANUNCIO = 1.70
 const ATO_TABELA = 0.60
@@ -7339,9 +7373,9 @@ func _ranking_linha(i: int, y: float, entrada: float, e_do_jogador: bool, destaq
 	var vazia = i >= ranking.size()
 	var posicao = i + 1
 	var cor = _cor_da_posicao(posicao)
-	var passo = _suave(entrada)
-	var tinta = passo
-	var card = Rect2(78.0 - (1.0 - passo) * LINHA_DESLIZE, y, 924.0, LINHA_ALTURA - 16.0)
+	var passo = _passo_com_batida(entrada)
+	var tinta = _suave(entrada * 1.4)
+	var card = Rect2(78.0 + (1.0 - passo) * LINHA_DESLIZE, y, 924.0, LINHA_ALTURA - 16.0)
 
 	if vazia:
 		# Vaga sem ninguém não vira ladrilho: a tabela termina onde
@@ -9335,9 +9369,15 @@ func _marca_da_casa(y: float, altura: float, alpha := 1.0) -> void:
 ## ela nunca fica menor que 90 px — abaixo disso a marca vira borrão.
 var _marca_pedida = {}
 
-## A altura da marca Lazer & Sport no canto de baixo (até a build 203 eram 90 px e
-## meio transparente: pequena demais vista de pé na frente da máquina).
-const MARCA_ALTURA := 160.0
+## A altura da marca Lazer & Sport (até a build 203 eram 90 px e meio
+## transparente; até a 121, 160 px). Build 122: 200 px, a versão pronta da
+## logo nesse tamanho (`Logos`), pixel por pixel.
+const MARCA_ALTURA := 200.0
+## NA LUTA A MARCA FICA NO ALTO, À DIREITA (build 122), logo abaixo da vida
+## do adversário: com 200 px no canto de baixo ela batia nas chamadas
+## centrais ("SOQUE AGORA!", o nível do golpe). No alto ela faz par com o
+## mostrador do impacto, à esquerda, e não cobre o lutador.
+const MARCA_NA_LUTA_Y := 272.0
 
 func _marca_lateral(y: float, alpha := 0.85, altura := 96.0) -> void:
 	_marca_pedida = {"y": y, "alpha": alpha, "altura": max(altura, 90.0)}

@@ -1404,7 +1404,12 @@ func _resolver() -> void:
 			var gp = Basis(Vector3.RIGHT, tomba)
 			frente_pe = gp * frente_pe
 			cima_pe = gp * cima_pe
-		var polo = (frente_pe + Vector3(0.40 * _lado_s(k), 0.0, 0.0)).normalized()
+		# O JOELHO SOBRE A PONTA DO PÉ. Até a build 121 o polo tinha 0,40 para
+		# fora: o joelho abria ~22° além do pé e, com a base larga da guarda,
+		# a perna desenhava um arco (coxa para fora, canela voltando) — a
+		# "perna torta" na tela. Um resto de abertura (0,12) mantém o joelho
+		# levemente para fora, como na guarda de verdade.
+		var polo = (frente_pe + Vector3(0.12 * _lado_s(k), 0.0, 0.0)).normalized()
 		var ik = _ik(raiz, pe, _l_coxa, _l_canela, polo)
 		var joelho: Vector3 = ik[0]
 		var tornozelo: Vector3 = ik[1]

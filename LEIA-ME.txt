@@ -1,4 +1,4 @@
-SUPER BOXING - TV BOX MALI-450 (TX9) - OPENGL ES 2.0 - BUILD 121
+SUPER BOXING - TV BOX MALI-450 (TX9) - OPENGL ES 2.0 - BUILD 122
 =================================================================
 
 ESTA VERSAO E PARA TV BOX COM PLACA DE VIDEO MALI-450 (TX9): Godot 3.6,
@@ -6,8 +6,39 @@ OpenGL ES 2.0. UM ARQUIVO SO: GERAR_APK_AGORA.bat gera o
 APK certo. Veja "GERAR O APK" mais abaixo.
 
 CONFIRA NA MAQUINA: o rodape da abertura e a Central mostram
-"BUILD 121". Se aparecer outro numero, o APK instalado e o antigo -
+"BUILD 122". Se aparecer outro numero, o APK instalado e o antigo -
 gere o APK de novo com GERAR_APK_AGORA.bat e instale por cima.
+
+O QUE A BUILD 122 MUDA (BASE: A 121)
+------------------------------------
+- 3D NITIDO: A ARENA NA RESOLUCAO DA TV. Ate a 121 a arena 3D era
+  desenhada em 72% da tela (778x1382) e ampliada 1,39 vez - era a imagem
+  "macia", o lutador sem definicao. Agora ela nasce em 1080x1920: cada
+  pixel do 3D e um pixel da TV, sem ampliar, com o antisserrilhado MSAA
+  4x. O folego veio da 121 (duas passadas de tela cheia e centenas de
+  chamadas a placa a menos por quadro). Se a luta ficar lenta, o jogo
+  desce sozinho: 85%, 72% (o tamanho da 121), sem os fachos de luz, 66%,
+  60% - e guarda o degrau. A Central mostra o degrau e o tamanho do 3D.
+  Numa TV Box em 720p o degrau de cima e a resolucao da TV.
+- AS PERNAS DO LUTADOR (sem nenhum poligono a mais - so a forma):
+  * a coxa ganhou os musculos (quadriceps na frente, a curva de fora, a
+    "gota" de dentro acima do joelho, o posterior atras) e a panturrilha
+    as duas cabecas do gemeo, afinando para o tornozelo;
+  * o calcao e a barra vermelha assentam na coxa: a boca da perna nao
+    abre mais em sino com um anel solto em volta (dava para ver o fundo
+    entre o pano e a perna);
+  * os joelhos apontam para a ponta do pe: antes abriam ~22 graus para
+    fora e a perna desenhava um arco ("perna torta").
+  O ajuste e reproduzivel: tools/ajustar_pernas_boxeador.py.
+- LOGO LAZER & SPORT MAIOR: 200 px (era 160; na abertura era 132). Na luta
+  ele fica no alto, a direita, logo abaixo da vida do adversario - em
+  baixo, desse tamanho, ele batia no "SOQUE AGORA!" e no nome do golpe.
+  No TOP 20 e na pose continua no canto de baixo/ao lado da camera.
+- OS BLOCOS DE RESULTADO ENTRAM COM FORCA: o cartao do soco sobe de baixo,
+  passa do ponto e assenta, com um clarao branco e um halo na cor do
+  nivel (e o segundo cartao entra logo depois, em cascata). Antes a
+  entrada acontecia escondida, durante a contagem do placar. As linhas do
+  TOP 20 chegam da direita, uma atras da outra, com batida.
 
 O QUE A BUILD 121 MUDA (BASE: A 120)
 ------------------------------------
