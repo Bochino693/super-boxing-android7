@@ -28,16 +28,13 @@ const FPS_FOLGADO = 29.5
 ## Um quadro acima disto é tranco de verdade (a 30 fps o normal é 33 ms).
 const QUADRO_CRITICO_MS = 48.0
 
-## A janela 3D (a arena) é desenhada nesta fração da resolução lógica e
-## ampliada na tela. Build 119: a arena ocupa a TELA INTEIRA, 1080 × 1920 →
-## 778 × 1382 (a build 118 desenhava 702 × 1001 num quadro de 1080 × 1540).
-## Ampliada 1,54 vez, a borda do lutador e a plateia ficavam "pixeladas";
-## em 1,39 vez, com o MSAA 4x da Mali-450 (resolvido dentro da placa), a
-## borda fica lisa. A área nova (treliça em cima, borda do ringue embaixo)
-## é só textura sem luz, a mais barata da cena. Se a luta sair lenta, o
-## jogo desce sozinho os degraus do gráfico (`Arena3D.DEGRAUS`: sem fachos,
-## 66%, 60% — o último custa o mesmo que a build 118) e guarda o degrau.
-const ARENA_ESCALA = 0.72
+## O teto da resolução da janela 3D (a arena), em fração da resolução
+## lógica. Build 122: 1,0 — a arena nasce do tamanho da tela (1080x1920),
+## pixel por pixel, sem ampliar. Até a 121 o teto era 0,72 (778x1382
+## ampliados 1,39 vez: a imagem "macia"). Se a luta sair lenta, o jogo
+## desce sozinho os degraus do gráfico (`Arena3D.DEGRAUS`: 85%, 72%, sem
+## fachos, 66%, 60%) e guarda o degrau.
+const ARENA_ESCALA = 1.0
 ## Antisserrilhado da arena: MSAA 4x. Na Mali-450 ele é resolvido dentro da
 ## placa (quase de graça, como no Strike Kids) e acaba com o pontilhado
 ## nas bordas do lutador, das cordas e dos postes. Se a placa devolver a
