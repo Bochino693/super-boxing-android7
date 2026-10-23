@@ -49,8 +49,9 @@ SAIDA = RAIZ / "assets" / "lutador3d" / "boxeador_tvbox.glb"
 ## ilha passa por ali), projetada em volta da direcao do olhar, e la e
 ## pintada uma iris nitida (castanha escura, anel escuro, pupila e um ponto
 ## de brilho). O relevo da pele fica liso nessa area.
-TEX_PELE = RAIZ / "assets" / "lutador3d" / "boxeador_2.jpg"
-TEX_RELEVO = RAIZ / "assets" / "lutador3d" / "boxeador_3.png"
+## (as ORIGINAIS: o jogo usa as com a musculatura, `definir_musculos_boxeador.py`)
+TEX_PELE = RAIZ / "tools" / "lutador3d_fontes" / "boxeador_2.jpg"
+TEX_RELEVO = RAIZ / "tools" / "lutador3d_fontes" / "boxeador_3.png"
 ## Onde as ilhas dos dois olhos estavam no atlas (px em 2048) e para onde vao.
 ILHA_DOS_OLHOS = (1545, 80, 1675, 150)
 AREA_DOS_OLHOS = (8, 8, 192)          # x, y, lado (px em 2048)

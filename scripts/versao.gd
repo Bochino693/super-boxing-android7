@@ -12,9 +12,9 @@ extends Reference
 ## NUMERO em um e escreva em NOTA o que mudou. Um carimbo que não sobe
 ## mente, e um carimbo que mente é pior do que carimbo nenhum.
 
-const NUMERO = 122
+const NUMERO = 123
 const DATA = "23/10/2026"
-const NOTA = "Mali-450 (TX9): 3D nítido — a arena nasce na resolução da TV (1080x1920, sem ampliar; desce sozinha para 85% e 72% se a luta ficar lenta); pernas do lutador com músculos (coxa, joelho, panturrilha), calção e barra assentados na coxa e joelhos sobre os pés; logo Lazer & Sport maior (200 px; na luta, no alto à direita); cartões do soco e linhas do TOP 20 entram com batida"
+const NOTA = "Mali-450 (TX9): lutador realista e bem definido — tanquinho, peitoral e serrátil esculpidos na textura (pele em 2048), luz principal de lado; cintura menos fina, alto da coxa sem culote, cinturão justo no cós e andando com ele; câmera de transmissão (arco lento, zoom no soco, recuo no soco dele, giro no nocaute)"
 
 ## Rodapé da abertura: cabe em uma linha discreta.
 static func curta() -> String:

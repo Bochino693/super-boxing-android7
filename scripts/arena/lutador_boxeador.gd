@@ -39,7 +39,8 @@ const MODELO = "res://assets/lutador3d/boxeador_tvbox.glb"
 ## .glb importado antes das próprias texturas saía SEM pintura — o lutador
 ## branco no APK. Vestidas aqui, na montagem, a ordem não importa mais.
 const TEXTURAS = {
-	"Pele": ["res://assets/lutador3d/boxeador_2.jpg", "res://assets/lutador3d/boxeador_3.png"],
+	# a pele com a musculatura pintada (`tools/definir_musculos_boxeador.py`)
+	"Pele": ["res://assets/lutador3d/boxeador_pele.jpg", "res://assets/lutador3d/boxeador_relevo.png"],
 	"Roupa": ["res://assets/lutador3d/boxeador_4.jpg", ""],
 	"Cinturao": ["res://assets/lutador3d/boxeador_0.jpg", ""],
 	"Placa": ["res://assets/lutador3d/boxeador_1.jpg", ""],
@@ -298,10 +299,12 @@ func montar() -> void:
 		var mat = _pele.mesh.surface_get_material(0) as SpatialMaterial
 		if mat != null:
 			_mat_pele = mat.duplicate() as SpatialMaterial
-			_definir(_mat_pele, 0.50, 0.22)
-			# Pele suada: menos áspera e com o relevo mais marcado — é o
-			# brilho nos músculos que desenha o corpo de longe.
-			_mat_pele.normal_scale = 1.15
+			_definir(_mat_pele, 0.44, 0.22)
+			# Pele suada: menos áspera — é o brilho nos músculos que desenha
+			# o corpo de longe. O relevo agora traz a musculatura (os gomos,
+			# o peitoral, o serrátil: `tools/definir_musculos_boxeador.py`),
+			# na escala em que foi esculpido.
+			_mat_pele.normal_scale = 1.0
 			_pele.set_surface_material(0, _mat_pele)
 			_mats_padrao.append(_mat_pele)
 	# O RESTO DA ROUPA TAMBÉM GANHA CONTORNO. Couro das luvas e das botas,
@@ -907,7 +910,7 @@ func _guarda_local(k: int, fechada: float) -> Vector3:
 func _combos_no_ar(dt: float) -> void:
 	_proximo_combo -= dt
 	if _proximo_combo <= 0.0 and _fila.empty():
-		_proximo_combo = _rng.randf_range(2.2, 4.8)
+		_proximo_combo = _rng.randf_range(1.6, 3.6)
 		var combo: Array = COMBOS[_rng.randi_range(0, COMBOS.size() - 1)]
 		var atraso = 0.0
 		for g in combo:
@@ -915,7 +918,13 @@ func _combos_no_ar(dt: float) -> void:
 			atraso += float(GOLPES[g[0]]["dur"]) * _rng.randf_range(0.62, 0.8)
 
 
+## O SOCO DELE VINDO NA CÂMERA (0..1): o quanto o jab ou o direto que está
+## no ar já esticou neste quadro. A arena faz a câmera recuar com ele — é o
+## que dá peso ao soco do lutador (build 123).
+var ameaca = 0.0
+
 func _golpes_em_andamento(dt: float) -> void:
+	ameaca = 0.0
 	if _fila.empty():
 		return
 	var vivos: Array = []
@@ -931,6 +940,8 @@ func _golpes_em_andamento(dt: float) -> void:
 			continue
 		vivos.append(g)
 		_aplicar_golpe(str(g["tipo"]), int(g["lado"]), tt, float(receita["pico"]))
+		if g["tipo"] in ["jab", "direto"]:
+			ameaca = max(ameaca, max(_envelope(tt, float(receita["pico"])), 0.0) * (1.0 if g["tipo"] == "direto" else 0.7))
 	_fila = vivos
 
 

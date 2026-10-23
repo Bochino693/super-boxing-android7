@@ -19,6 +19,8 @@ extends Viewport
 ## Resolução cheia do quadro (1:1 na tela): o ringue sai nítido. Build 119:
 ## a arena ocupa a TELA INTEIRA (ver `ArenaQuadro`).
 const TELA_LOGICA = Vector2(1080.0, 1920.0)
+## A força da luz principal (a do refletor de cima).
+const LUZ_CHAVE = 1.75
 ## Degrau magro para quando o vigia de desempenho apertar.
 const FATOR_MAGRO = 0.75
 const DESCE_PARA_MAGRO = 0.50
@@ -292,7 +294,10 @@ func _montar_mundo() -> void:
 	env.background_mode = Environment.BG_COLOR
 	env.background_color = COR_FUNDO
 	env.ambient_light_color = Color("39456a")
-	env.ambient_light_energy = 0.55
+	# Menos luz ambiente e a luz principal mais de lado (build 123): com a
+	# luz quase de frente o volume do corpo achatava — os gomos da barriga,
+	# o peitoral e o ombro só aparecem com sombra de um lado.
+	env.ambient_light_energy = 0.46
 	ambiente.environment = env
 	_mundo.add_child(ambiente)
 
@@ -310,9 +315,9 @@ func _montar_mundo() -> void:
 	camera.rotate_object_local(Vector3.RIGHT, -_inclinacao_da_tela())
 
 	_luz_chave = DirectionalLight.new()
-	_luz_chave.light_energy = 1.6
+	_luz_chave.light_energy = LUZ_CHAVE
 	_luz_chave.light_color = Color("fff1d8")
-	_luz_chave.rotation = Vector3(deg2rad(-52.0), deg2rad(28.0), 0.0)
+	_luz_chave.rotation = Vector3(deg2rad(-46.0), deg2rad(42.0), 0.0)
 	_mundo.add_child(_luz_chave)
 	# As luzes de recorte (rosa e azul) redesenham o lutador uma vez cada:
 	# na S905L ficam de fora (ver `Perfil.LUZES_DE_RECORTE`).
@@ -921,6 +926,7 @@ func etapa_de_aquecimento(n: int) -> void:
 
 
 func golpe(forca: float, derruba := false, pontos := -1, ultimo := false) -> Dictionary:
+	_zoom = max(_zoom, clamp(0.35 + forca * 0.75, 0.0, 1.0))
 	_tremor = clamp(0.35 + forca, 0.0, 1.35)
 	_clarao = clamp(0.4 + forca * 0.6, 0.0, 1.0)
 	_empurrao = forca
@@ -1098,13 +1104,39 @@ func jogador_no_chao(sim: bool) -> void:
 	_chao_alvo = 1.0 if sim else 0.0
 const CAMERA_MOLA = 7.5
 
+## A CÂMERA DE TRANSMISSÃO (build 123). Só contas de posição: nenhum
+## desenho a mais.
+##   * na espera ela faz um arco lento em volta do ringue (±6°) e chega um
+##     pouco mais perto e se afasta, como a câmera de uma luta na TV;
+##   * o soco do jogador dá um "soco de câmera": o campo de visão fecha e
+##     volta (`_zoom`);
+##   * o jab e o direto do lutador vêm na direção de quem joga: a câmera
+##     recua junto (`Lutador3D.ameaca`);
+##   * no nocaute ela gira devagar em volta do corpo caído.
+const ARCO = 0.11
+const ZOOM_DO_SOCO = 0.10
+var _zoom = 0.0
+var _zoom_env = 0.0
+var _ko_t = 0.0
+var _fov_base = 0.0
+
 func _camera(delta := 0.0) -> void:
-	var passeio = sin(_relogio * 0.33) * 0.16
+	if _fov_base <= 0.0:
+		_fov_base = camera.fov
+	_zoom = max(0.0, _zoom - delta * 1.8)
+	# sobe rápido, desce devagar
+	_zoom_env = lerp(_zoom_env, _zoom, 1.0 - exp(-(22.0 if _zoom > _zoom_env else 5.0) * min(delta, 0.05)))
+	camera.fov = _fov_base * (1.0 - ZOOM_DO_SOCO * _zoom_env)
 	var sacode = Vector3.ZERO
 	if _tremor > 0.02:
 		sacode = Vector3(rand_range(-1.0, 1.0), rand_range(-1.0, 1.0), rand_range(-0.4, 0.4)) * _tremor * 0.05
 	var extra = lutador.camera_extra() if lutador != null else Vector2.ZERO
-	var pos = Vector3(passeio * (1.0 - clamp(extra.x * 1.5, 0.0, 1.0)), _altura_da_camera + sin(_relogio * 0.21) * 0.05 - extra.y, _distancia - _empurrao * 0.30 - extra.x)
+	var ameaca = lutador.ameaca if lutador != null else 0.0
+	var livre = 1.0 - clamp(extra.x * 1.5, 0.0, 1.0)
+	var arco = sin(_relogio * 0.23) * ARCO * livre
+	var dolly = sin(_relogio * 0.17 + 1.3) * 0.10 * livre
+	var dist = _distancia - _empurrao * 0.30 - extra.x - dolly + ameaca * 0.07
+	var pos = Vector3(sin(arco) * dist, _altura_da_camera + sin(_relogio * 0.21) * 0.05 - extra.y + ameaca * 0.015, cos(arco) * dist)
 	var mira = Vector3(0.0, _altura_da_mira + _empurrao * 0.06, 0.0)
 	# NO SOCO NA TELA A CÂMERA OLHA NO ROSTO. Ela chegava perto do lutador
 	# ainda mirando o meio do corpo — de perto, o meio do corpo é a
@@ -1119,10 +1151,16 @@ func _camera(delta := 0.0) -> void:
 		mira.y = lerp(mira.y, rosto - 0.04, k)
 	var caido = lutador.queda if lutador != null else 0.0
 	if caido > 0.001:
-		# No nocaute a câmera afasta e desce: um corpo caído é largo.
+		# No nocaute a câmera afasta e desce: um corpo caído é largo. E gira
+		# devagar em volta dele (até ~24°), o replay da TV.
 		var t = ease(caido, 0.5)
-		pos = pos.linear_interpolate(Vector3(0.0, _altura_da_camera * 0.54, _distancia * 1.07), t)
+		_ko_t = _ko_t + delta if caido > 0.5 else max(0.0, _ko_t - delta * 2.0)
+		var giro = min(_ko_t * 0.14, 0.42) * t
+		var longe = Vector3(0.0, _altura_da_camera * 0.54, _distancia * 1.07).rotated(Vector3.UP, giro)
+		pos = pos.linear_interpolate(longe, t)
 		mira = mira.linear_interpolate(Vector3(0.0, _altura_da_mira * 0.58, 0.0), t)
+	else:
+		_ko_t = 0.0
 	var rolo = 0.0
 	# O JOGADOR NO CHÃO: depois do nocaute a câmera cai até a lona, meio
 	# de lado, olhando o lutador de baixo — quem perdeu vê o ginásio do
@@ -1172,7 +1210,7 @@ func _luzes() -> void:
 	if _rim_quente != null:
 		_rim_quente.light_energy = 2.0 + extra
 		_rim_frio.light_energy = 2.0 + extra
-	_luz_chave.light_energy = 1.6 + _clarao * 1.0
+	_luz_chave.light_energy = LUZ_CHAVE + _clarao * 1.0
 	# Materiais sem luz acendem pelo albedo: o salão inteiro pisca junto.
 	var acende = 1.0 + _clarao * 0.55
 	# MEIA PRECISÃO NA MALI-450: o relógio dos shaders dá a volta a cada
