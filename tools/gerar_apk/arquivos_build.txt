@@ -208,12 +208,12 @@ assets/lutador3d/boxeador_0.jpg
 assets/lutador3d/boxeador_0.jpg.import
 assets/lutador3d/boxeador_1.jpg
 assets/lutador3d/boxeador_1.jpg.import
-assets/lutador3d/boxeador_2.jpg
-assets/lutador3d/boxeador_2.jpg.import
-assets/lutador3d/boxeador_3.png
-assets/lutador3d/boxeador_3.png.import
 assets/lutador3d/boxeador_4.jpg
 assets/lutador3d/boxeador_4.jpg.import
+assets/lutador3d/boxeador_pele.jpg
+assets/lutador3d/boxeador_pele.jpg.import
+assets/lutador3d/boxeador_relevo.png
+assets/lutador3d/boxeador_relevo.png.import
 assets/lutador3d/boxeador_tvbox.glb
 assets/lutador3d/boxeador_tvbox.glb.import
 assets/tema/ate_o_fim.png
@@ -340,7 +340,7 @@ scripts/versao.gd
 shaders/brilho_letras.shader
 shaders/escudo_vivo.shader
 shaders/fundo_vivo.shader
-tools/ajustar_pernas_boxeador.py
+tools/ajustar_corpo_boxeador.py
 tools/ajustar_som_tv.py
 tools/android_quadros_plugin/PunchQuadros.java
 tools/android_quadros_plugin/montar_aar.py
@@ -368,6 +368,7 @@ tools/bancada_firmware/.gdignore
 tools/bancada_firmware/LEIA.txt
 tools/bancada_firmware/banco_tempo.c
 tools/bancada_firmware/ponte_boxe.c
+tools/definir_musculos_boxeador.py
 tools/diagramas/montagem_0_ligacao_completa.py
 tools/diagramas/montagem_1_mapa_do_nano.py
 tools/diagramas/montagem_2_ligacoes_por_parte.py
@@ -389,6 +390,8 @@ tools/gerar_logos.py
 tools/gerar_sons_arcade.py
 tools/gerar_tema.py
 tools/gerar_torcida.py
+tools/lutador3d_fontes/boxeador_2.jpg
+tools/lutador3d_fontes/boxeador_3.png
 tools/pintura.py
 tools/preparar_godot3.py
 tools/simplificar_boxeador.py

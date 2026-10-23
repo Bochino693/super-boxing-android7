@@ -1,4 +1,4 @@
-SUPER BOXING - TV BOX MALI-450 (TX9) - OPENGL ES 2.0 - BUILD 122
+SUPER BOXING - TV BOX MALI-450 (TX9) - OPENGL ES 2.0 - BUILD 123
 =================================================================
 
 ESTA VERSAO E PARA TV BOX COM PLACA DE VIDEO MALI-450 (TX9): Godot 3.6,
@@ -6,8 +6,42 @@ OpenGL ES 2.0. UM ARQUIVO SO: GERAR_APK_AGORA.bat gera o
 APK certo. Veja "GERAR O APK" mais abaixo.
 
 CONFIRA NA MAQUINA: o rodape da abertura e a Central mostram
-"BUILD 122". Se aparecer outro numero, o APK instalado e o antigo -
+"BUILD 123". Se aparecer outro numero, o APK instalado e o antigo -
 gere o APK de novo com GERAR_APK_AGORA.bat e instale por cima.
+
+O QUE A BUILD 123 MUDA (BASE: A 122)
+------------------------------------
+- O LUTADOR BEM DEFINIDO (realista, sem nenhum poligono a mais e sem custo
+  por quadro):
+  * O TANQUINHO E OS MUSCULOS ESCULPIDOS NA PELE. O corpo da TV Box tem
+    5 mil vertices: a forma grande ficou, mas o desenho miudo do abdomen
+    nao cabia na malha e a barriga saia lisa. Agora a anatomia e pintada
+    na textura, como nos jogos de console: os tres pares de gomos, a linha
+    do meio, os sulcos entre os gomos, a borda do reto, os obliquos, os
+    "dedos" do serratil e a borda do peitoral - como sombra na cor da pele
+    e como relevo (a luz pega a borda de cada gomo). Ferramenta:
+    tools/definir_musculos_boxeador.py.
+  * A pele entra na resolucao cheia (2048; era cortada para 1024 na
+    importacao): rosto, olhos e musculos mais nitidos.
+  * A luz principal vem mais de lado e a luz ambiente baixou: a sombra de
+    um lado e o que desenha o volume (com a luz de frente o corpo
+    achatava). Pele um pouco mais brilhante (suada).
+- AS PROPORCOES: medido de cada lado do eixo do corpo, a cintura tinha
+  11 cm e o alto da coxa 18 cm (cintura de vespa em cima de uma perna que
+  abria como calca de montaria). A cintura e o abdomen abriram e o lado
+  de fora do alto da coxa afinou; calcao e barra acompanham.
+- O CINTURAO DO SUPER BOXING justo na cintura: apertado como um aro ate
+  ficar rente ao cos do calcao, e com os mesmos pesos de osso do cos - na
+  guarda ele anda grudado no corpo, sem abrir vao nas costas. As letras do
+  cinto entram na resolucao cheia.
+  Ferramenta: tools/ajustar_corpo_boxeador.py (era ajustar_pernas).
+- A CAMERA DE TRANSMISSAO (so contas de posicao, nenhum desenho a mais):
+  * na espera do soco ela faz um arco lento em volta do ringue e chega um
+    pouco mais perto e se afasta, como numa luta na TV;
+  * o soco do jogador da um "soco de camera" (o quadro fecha e volta);
+  * o jab e o direto do lutador vem na direcao de quem joga e a camera
+    recua junto; ele solta combinacoes com mais frequencia;
+  * no nocaute ela gira devagar em volta do corpo caido.
 
 O QUE A BUILD 122 MUDA (BASE: A 121)
 ------------------------------------
