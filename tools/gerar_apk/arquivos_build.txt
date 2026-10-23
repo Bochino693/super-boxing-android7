@@ -208,8 +208,8 @@ assets/lutador3d/boxeador_0.jpg
 assets/lutador3d/boxeador_0.jpg.import
 assets/lutador3d/boxeador_1.jpg
 assets/lutador3d/boxeador_1.jpg.import
-assets/lutador3d/boxeador_4.jpg
-assets/lutador3d/boxeador_4.jpg.import
+assets/lutador3d/boxeador_calcao.jpg
+assets/lutador3d/boxeador_calcao.jpg.import
 assets/lutador3d/boxeador_pele.jpg
 assets/lutador3d/boxeador_pele.jpg.import
 assets/lutador3d/boxeador_relevo.png
@@ -392,6 +392,8 @@ tools/gerar_tema.py
 tools/gerar_torcida.py
 tools/lutador3d_fontes/boxeador_2.jpg
 tools/lutador3d_fontes/boxeador_3.png
+tools/lutador3d_fontes/boxeador_4.jpg
+tools/pintar_calcao_boxeador.py
 tools/pintura.py
 tools/preparar_godot3.py
 tools/simplificar_boxeador.py

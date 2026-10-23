@@ -1,4 +1,4 @@
-SUPER BOXING - TV BOX MALI-450 (TX9) - OPENGL ES 2.0 - BUILD 123
+SUPER BOXING - TV BOX MALI-450 (TX9) - OPENGL ES 2.0 - BUILD 124
 =================================================================
 
 ESTA VERSAO E PARA TV BOX COM PLACA DE VIDEO MALI-450 (TX9): Godot 3.6,
@@ -6,8 +6,29 @@ OpenGL ES 2.0. UM ARQUIVO SO: GERAR_APK_AGORA.bat gera o
 APK certo. Veja "GERAR O APK" mais abaixo.
 
 CONFIRA NA MAQUINA: o rodape da abertura e a Central mostram
-"BUILD 123". Se aparecer outro numero, o APK instalado e o antigo -
+"BUILD 124". Se aparecer outro numero, o APK instalado e o antigo -
 gere o APK de novo com GERAR_APK_AGORA.bat e instale por cima.
+
+O QUE A BUILD 124 MUDA (BASE: A 123)
+------------------------------------
+- A FRENTE DO CALCAO CHEIA: o pano era colado em cada coxa separadamente
+  (como bermuda de ciclismo) e na altura do gancho o meio da frente ficava
+  5 cm atras da frente das coxas - um "V" fundo entre as pernas. Agora o
+  pano atravessa o gancho na frente, com o volume do protetor que o
+  boxeador usa por baixo. A boca da perna continua rente (build 122).
+  (tools/ajustar_corpo_boxeador.py, passo 3)
+- A LISTRA DO CALCAO UNICA E CONTINUA: ela vinha em tres pedacos soltos
+  na textura e, na passagem do quadril para a perna, pulava uns 5 cm para
+  o lado - e de lado as duas nao se acompanhavam. Agora e uma listra so,
+  pintada pela linha do lado do calcao, do cos ate a barra, igual nos dois
+  lados (branco, dourado, vermelho, dourado, branco).
+  (tools/pintar_calcao_boxeador.py)
+- NA DERROTA, O ALTO DO GINASIO: quando o jogador leva o nocaute a camera
+  cai ate a lona e olha para cima - e o terco de cima da imagem era um ceu
+  escuro vazio. Agora, SO nesse momento, aparecem o teto com as fileiras
+  de lampadas, o telao de LED pendurado com a logo do jogo, a arquibancada
+  de cima e tres fachos descendo. Fora dele essas pecas ficam desligadas
+  (na luta normal a placa de video nem as ve).
 
 O QUE A BUILD 123 MUDA (BASE: A 122)
 ------------------------------------

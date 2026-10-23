@@ -31,6 +31,15 @@ a cintura de vespa em cima de uma perna que abria como calca de montaria
     angulo, alisado) ate a face de fora ficar a 8 mm do corpo, sem mudar o
     desenho; a placa acompanha. E ele passa a usar os pesos dos ossos do
     cos do calcao: na guarda anda grudado no corpo, sem abrir vao.
+
+PASSO 3 - A FRENTE DO CALCAO (build 124). O pano era colado em cada coxa
+separadamente, como bermuda de ciclismo: na altura do gancho o meio da
+frente ficava 5 cm atras da frente das coxas, um "V" fundo entre as pernas
+- a frente parecia vazia. Calcao de boxe tem a frente cheia (o protetor por
+baixo) e o pano atravessa o gancho. Os pontos da frente entre as pernas vem
+ate a superficie da frente das coxas, com o volume do protetor no meio; a
+transicao e suave e so para FORA (nada encosta na pele). A boca da perna
+continua rente (passo 1).
 """
 from __future__ import annotations
 
@@ -44,6 +53,7 @@ RAIZ = Path(__file__).resolve().parents[1]
 ARQUIVO = RAIZ / "assets" / "lutador3d" / "boxeador_tvbox.glb"
 MARCA = "pernas-122"
 MARCA_CORPO = "corpo-123"
+MARCA_CALCAO = "calcao-124"
 
 ## Musculos: (osso, t ao longo do osso 0..1, angulo em graus em volta do
 ## osso - 0 e a frente, positivo para FORA da perna, 180 atras -, largura em
@@ -454,6 +464,34 @@ def passo_corpo(g):
         print("%-8s pesos do cos do calcao" % nome)
 
 
+## A FRENTE DO CALCAO: a superficie que o pano alcanca entre as pernas (z da
+## frente das coxas), o volume do protetor no meio e onde ele fica.
+FRENTE_Z = 0.084
+PROTETOR = 0.018
+PROTETOR_Y = 0.772
+PROTETOR_LARGURA, PROTETOR_ALTURA = 0.042, 0.042
+
+
+def _passo_suave(v, de, ate):
+    t = np.clip((v - de) / (ate - de), 0.0, 1.0)
+    return t * t * (3.0 - 2.0 * t)
+
+
+def passo_calcao(g):
+    calcao = ler_malha(g, "Calcao")
+    C = calcao["P"].copy()
+    N = calcao["N"]
+    x, y, z = C[:, 0], C[:, 1], C[:, 2]
+    ax = np.abs(x)
+    alvo = (FRENTE_Z - 0.9 * x * x
+            + PROTETOR * np.exp(-(x / PROTETOR_LARGURA) ** 2 - ((y - PROTETOR_Y) / PROTETOR_ALTURA) ** 2))
+    w = ((1.0 - _passo_suave(ax, 0.035, 0.078))
+         * _passo_suave(y, 0.685, 0.718) * (1.0 - _passo_suave(y, 0.80, 0.865))
+         * _passo_suave(N[:, 2], -0.35, 0.30))
+    C[:, 2] = z + np.maximum(alvo - z, 0.0) * w
+    gravar_malha(g, calcao, C, "Calcao")
+
+
 def main():
     g = GLB(ARQUIVO)
     extras = g.j.setdefault("asset", {}).setdefault("extras", {})
@@ -467,6 +505,11 @@ def main():
         print("-- passo 2: as proporcoes e o cinturao")
         passo_corpo(g)
         extras["corpo"] = MARCA_CORPO
+        feito = True
+    if extras.get("calcao") != MARCA_CALCAO:
+        print("-- passo 3: a frente do calcao")
+        passo_calcao(g)
+        extras["calcao"] = MARCA_CALCAO
         feito = True
     if not feito:
         print("o lutador ja esta com todos os ajustes: nada a fazer")
