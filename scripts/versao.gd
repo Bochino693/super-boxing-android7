@@ -12,9 +12,9 @@ extends Reference
 ## NUMERO em um e escreva em NOTA o que mudou. Um carimbo que não sobe
 ## mente, e um carimbo que mente é pior do que carimbo nenhum.
 
-const NUMERO = 120
-const DATA = "22/10/2026"
-const NOTA = "Mali-450 (TX9): jogo mais leve: o desenho da tela por quadro custa metade (placas, cartões, medidor e luva por textura; impacto e abertura num desenho só; o que ficava escondido atrás da arena 3D não é mais desenhado) e a tela de carregamento é mais curta (ensaio de 82 para ~32 quadros)"
+const NUMERO = 121
+const DATA = "23/10/2026"
+const NOTA = "Mali-450 (TX9): efeitos pela placa de vídeo: faíscas, confete, fogos, poeira e flashes da plateia num desenho só por efeito (antes, um desenho por partícula: até 640 por quadro); o jogo é desenhado direto na TV em 1920x1080 (sem a tela intermediária, que custava duas passadas de tela cheia por quadro); sino do round em arquivo"
 
 ## Rodapé da abertura: cabe em uma linha discreta.
 static func curta() -> String:

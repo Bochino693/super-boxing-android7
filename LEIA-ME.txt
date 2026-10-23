@@ -1,4 +1,4 @@
-SUPER BOXING - TV BOX MALI-450 (TX9) - OPENGL ES 2.0 - BUILD 120
+SUPER BOXING - TV BOX MALI-450 (TX9) - OPENGL ES 2.0 - BUILD 121
 =================================================================
 
 ESTA VERSAO E PARA TV BOX COM PLACA DE VIDEO MALI-450 (TX9): Godot 3.6,
@@ -6,8 +6,38 @@ OpenGL ES 2.0. UM ARQUIVO SO: GERAR_APK_AGORA.bat gera o
 APK certo. Veja "GERAR O APK" mais abaixo.
 
 CONFIRA NA MAQUINA: o rodape da abertura e a Central mostram
-"BUILD 120". Se aparecer outro numero, o APK instalado e o antigo -
+"BUILD 121". Se aparecer outro numero, o APK instalado e o antigo -
 gere o APK de novo com GERAR_APK_AGORA.bat e instale por cima.
+
+O QUE A BUILD 121 MUDA (BASE: A 120)
+------------------------------------
+Mesmo visual da 120. O que mudou e o caminho ate a placa de video
+(OpenGL ES 2.0 da Mali-450), medido chamada por chamada:
+- OS EFEITOS SAO CALCULADOS PELA PLACA DE VIDEO. No Godot 3 com OpenGL
+  ES 2.0, cada faisca, brasa, estrela, pedaco de confete ou fogo de
+  artificio era UMA chamada separada a placa de video - e o motor
+  desenhava ate as particulas ja apagadas enquanto o efeito durava. No
+  soco forte isso passava de 600 chamadas num quadro so. Agora cada
+  efeito e uma malha unica e o shader da placa calcula onde cada
+  particula esta: 1 chamada por efeito. Contadas no OpenGL de verdade:
+  * o teste de todos os efeitos juntos: de 642 para 7 a 13 chamadas;
+  * a partida inteira, por tela: espera do soco 141 -> 104, o instante
+    do soco 286 -> 96, o resultado/TOP 20 314 -> 111, a abertura
+    116 -> 18; o pior quadro da partida: 448 -> 136.
+- A ARENA 3D TAMBEM: a poeira no ar, as estrelas e a poeira do soco e os
+  16 flashes de camera da plateia eram uma chamada por pedaco; agora
+  cada um e um desenho so (o brilho dos flashes tambem e conta da placa).
+- O JOGO E DESENHADO DIRETO NA TV. Ate a 120 o jogo era desenhado em pe
+  numa imagem a parte de 1080x1920 e so depois girado para a TV: duas
+  passadas de tela cheia a mais em TODO quadro (escrever 2 milhoes de
+  pixels e le-los de novo) - na Mali-450 isso e boa parte do que a placa
+  aguenta. Com a TV em 1920x1080 o giro de 90 graus e exato (cada pixel
+  do jogo cai num pixel da tela) e a imagem a parte nao existe mais. Se
+  a TV Box estiver em 720p, a imagem a parte continua, mas ja no tamanho
+  da TV (720x1280, menos da metade dos pixels). O diario mostra qual
+  caminho foi usado: "TELA: direto" ou "TELA: intermediaria".
+- O SINO DO ROUND VIROU ARQUIVO: era montado amostra por amostra em
+  script na abertura do jogo (26 mil voltas no processador da TV Box).
 
 O QUE A BUILD 120 MUDA (BASE: A 119)
 ------------------------------------

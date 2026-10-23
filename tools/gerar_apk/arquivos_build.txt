@@ -99,6 +99,8 @@ assets/audio/arcade/ranking_neutral_3.wav
 assets/audio/arcade/ranking_neutral_3.wav.import
 assets/audio/arcade/record.wav
 assets/audio/arcade/record.wav.import
+assets/audio/arcade/round_bell.wav
+assets/audio/arcade/round_bell.wav.import
 assets/audio/arcade/score_loop.wav
 assets/audio/arcade/score_loop.wav.import
 assets/audio/arcade/shutter.wav
@@ -290,6 +292,7 @@ scripts/arena/arena3d.gd
 scripts/arena/frases.gd
 scripts/arena/lutador.gd
 scripts/arena/lutador_boxeador.gd
+scripts/arena/particulas3d.gd
 scripts/arena/quadro.gd
 scripts/audio/audio_catalog.gd
 scripts/audio_bank.gd
@@ -306,6 +309,7 @@ scripts/diario.gd
 scripts/faxina.gd
 scripts/formas.gd
 scripts/fx.gd
+scripts/fx/emissor_gpu.gd
 scripts/fx/impact_director.gd
 scripts/fx/score_tier.gd
 scripts/game_def.gd
@@ -330,6 +334,7 @@ scripts/serial/null_serial_link.gd
 scripts/serial/serial_link.gd
 scripts/settings_store.gd
 scripts/statistics_store.gd
+scripts/tela_girada.gd
 scripts/traco.gd
 scripts/versao.gd
 shaders/brilho_letras.shader

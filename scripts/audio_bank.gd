@@ -113,26 +113,10 @@ func attract(level: float) -> void:
 			(_players[nome] as AudioStreamPlayer).stop()
 	music(level)
 
+## O laço da contagem de pontos vem do arquivo, como os outros sons. (Até a
+## build 120, se o arquivo faltasse, ele era montado amostra por amostra
+## em GDScript — no meio da rodada, justo quando o placar sobe.)
 func start_score_loop() -> void:
-	if not _players.has("score_loop"):
-		var player = AudioStreamPlayer.new()
-		player.bus = Catalog.bus_for("score_loop")
-		var stream = AudioStreamSample.new()
-		stream.format = AudioStreamSample.FORMAT_16_BITS
-		stream.mix_rate = 22050
-		stream.loop_mode = AudioStreamSample.LOOP_FORWARD
-		stream.loop_end = 22050
-		# 16 bits com sinal, little-endian (o `encode_s16` do Godot 4).
-		var pcm = StreamPeerBuffer.new()
-		for i in range(22050):
-			var t = float(i) / 22050.0
-			var envelope = 0.65 + 0.35 * cos(TAU * 8.0 * t)
-			var sample = (sin(TAU * 220.0 * t) + 0.25 * sin(TAU * 440.0 * t)) * envelope * 0.22
-			pcm.put_16(int(sample * 32767.0))
-		stream.data = pcm.data_array
-		player.stream = stream
-		add_child(player)
-		_players["score_loop"] = player
 	play("score_loop", -12.0)
 
 func score_progress(progress: float) -> void:
@@ -175,38 +159,6 @@ func _ready() -> void:
 		player.stream = stream
 		add_child(player)
 		_players[nome] = player
-	_criar_sino_de_round()
-
-## Sino próprio, preparado no arranque e nunca no quadro em que o soco é
-## liberado. Assim o APK não depende de um arquivo extra e a primeira
-## chamada não sofre criação/decodificação tardia em uma TV Box.
-func _criar_sino_de_round() -> void:
-	if _players.has("round_bell"):
-		return
-	var TAXA = 22050
-	var DURACAO = 1.20
-	var stream = AudioStreamSample.new()
-	stream.format = AudioStreamSample.FORMAT_16_BITS
-	stream.mix_rate = TAXA
-	var total = int(TAXA * DURACAO)
-	var pcm = StreamPeerBuffer.new()
-	for i in range(total):
-		var t = float(i) / float(TAXA)
-		var env = exp(-t * 3.1)
-		var ataque = exp(-t * 70.0) * sin(TAU * 3100.0 * t) * 0.24
-		var metal = (
-			sin(TAU * 620.0 * t) * 0.55
-			+ sin(TAU * 947.0 * t) * 0.34
-			+ sin(TAU * 1315.0 * t) * 0.20
-		) * env
-		pcm.put_16(int(clamp((metal + ataque) * 0.78, -1.0, 1.0) * 32767.0))
-	stream.data = pcm.data_array
-	var player = AudioStreamPlayer.new()
-	player.name = "Som_round_bell"
-	player.bus = Catalog.bus_for("round_bell")
-	player.stream = stream
-	add_child(player)
-	_players["round_bell"] = player
 
 ## SOM PEDIDO COM O JOGO SAINDO NÃO É SOM: É UM ERRO NO CONSOLE.
 ##

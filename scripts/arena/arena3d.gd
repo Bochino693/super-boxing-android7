@@ -65,6 +65,8 @@ const TEX_SAIA = "res://assets/arena/saia.png"
 const COR_FUNDO = Color("07051a")
 ## (Para `_juntar`: as cores das peças, prontas, ver `Lote._tinta`.)
 const Lote = preload("res://scripts/lote.gd")
+## Partículas e flashes calculados pela placa de vídeo.
+const Particulas3D = preload("res://scripts/arena/particulas3d.gd")
 const TEX_TORCIDA_BAIXO = "res://assets/arena/torcida_baixo.png"
 const TEX_TORCIDA_CIMA = "res://assets/arena/torcida_cima.png"
 
@@ -234,13 +236,17 @@ var _agito_alvo = 0.0
 var _agito_ate = 0.0
 var _mat_lona: SpatialMaterial = null
 var _mat_saia: ShaderMaterial = null
-var _flashes: MultiMeshInstance = null
-var _flash_fase = PoolRealArray()
+## Flashes, estrelas do soco e poeira: malhas calculadas pela placa de
+## vídeo (ver `scripts/arena/particulas3d.gd`).
+var _flashes = null
 var _fachos: Array = []
-var _impacto: CPUParticles = null
-var _poeira: CPUParticles = null
+var _impacto = null
+var _poeira = null
 var _sombra: MeshInstance = null
 var _mat_sombra: SpatialMaterial = null
+
+## O passo do quadro (as partículas da placa andam com ele).
+var _passo = 0.0
 
 var _distancia = 0.0
 var _inclinacao = _inclinacao_da_tela()
@@ -595,116 +601,64 @@ func _montar_fachos() -> void:
 
 func _montar_flashes() -> void:
 	# Flashes de câmera na plateia: estrela com halo (nunca quadrado).
+	# Uma malha só, e o pisca-pisca é conta do shader (build 121): eram
+	# 16 cópias de um quadrado — no OpenGL ES 2.0, 16 chamadas à placa por
+	# quadro — e 16 cores trocadas pelo script a cada quadro.
 	var quantos = 16
-	var malha = QuadMesh.new()
-	malha.size = Vector2(0.42, 0.42)
-	var tinta = _material_plano(load(TEX_BRILHO), true)
-	tinta.vertex_color_use_as_albedo = true
-	tinta.params_billboard_mode = SpatialMaterial.BILLBOARD_ENABLED
-	var mm = MultiMesh.new()
-	mm.transform_format = MultiMesh.TRANSFORM_3D
-	mm.color_format = MultiMesh.COLOR_FLOAT
-	mm.mesh = malha
-	mm.instance_count = quantos
 	var rng = RandomNumberGenerator.new()
 	rng.seed = 20260923
-	_flash_fase.resize(quantos)
+	var posicoes = []
+	var fases = []
 	for i in range(quantos):
-		var t = Transform()
-		t.origin = Vector3(rng.randf_range(-3.6, 3.6), rng.randf_range(0.2, 2.6), rng.randf_range(-4.6, -4.3))
-		mm.set_instance_transform(i, t)
-		mm.set_instance_color(i, Color(0, 0, 0, 0))
-		_flash_fase[i] = rng.randf() * TAU
-	_flashes = MultiMeshInstance.new()
-	_flashes.multimesh = mm
-	_flashes.material_override = tinta
-	_flashes.cast_shadow = GeometryInstance.SHADOW_CASTING_SETTING_OFF
+		posicoes.append(Vector3(rng.randf_range(-3.6, 3.6), rng.randf_range(0.2, 2.6), rng.randf_range(-4.6, -4.3)))
+		fases.append(rng.randf() * TAU)
+	_flashes = Particulas3D.new()
+	_flashes.name = "Flashes"
+	_flashes.preparar_flashes(posicoes, fases, load(TEX_BRILHO), 0.42)
 	_mundo.add_child(_flashes)
 
 
+## AS ESTRELAS DO SOCO E A POEIRA DA LONA, pela placa de vídeo (build 121;
+## ver `scripts/arena/particulas3d.gd`). Os números são os de antes: a
+## mesma saída em cone, velocidade, desaceleração, gravidade, tamanho e
+## cor — a escala é a que o `CPUParticles` do Godot 3 sorteava de fato.
+const IMPACTO_VIDA = 0.75
+const POEIRA_VIDA = 1.35
+
 func _montar_particulas() -> void:
-	var brilho = _material_plano(load(TEX_BRILHO), true)
-	brilho.params_billboard_mode = SpatialMaterial.BILLBOARD_PARTICLES
-	brilho.vertex_color_use_as_albedo = true
-	var estrela = QuadMesh.new()
-	estrela.size = Vector2(0.13, 0.13)
-	estrela.material = brilho
-	var processo = {
-		"forma": CPUParticles.EMISSION_SHAPE_SPHERE, "raio": 0.14,
-		"direcao": Vector3(0.0, 0.2, 1.0), "abertura": 80.0,
-		"vel_min": 2.4, "vel_max": 6.8, "gravidade": Vector3(0.0, -5.5, 0.0),
-		"amort_min": 1.5, "amort_max": 3.0, "escala_min": 0.35, "escala_max": 1.0,
-		"cor": Color("ffe7a8"), "rampa": [Color(1, 1, 1, 1), Color(1, 0.5, 0.2, 0)],
-	}
-	_impacto = _particulas("ParticulasImpacto", int(96 * Perfil.PARTICULAS_3D), 0.75, 0.96, processo, estrela, Vector3(0.0, 1.34, 0.36))
-
-	var po = _material_plano(_mancha_redonda(), true)
-	po.params_blend_mode = SpatialMaterial.BLEND_MODE_MIX
-	po.params_billboard_mode = SpatialMaterial.BILLBOARD_PARTICLES
-	po.vertex_color_use_as_albedo = true
-	var disco = QuadMesh.new()
-	disco.size = Vector2(0.34, 0.34)
-	disco.material = po
-	var po_proc = {
-		"forma": CPUParticles.EMISSION_SHAPE_BOX, "caixa": Vector3(0.7, 0.04, 0.38),
-		"direcao": Vector3(0.0, 1.0, 0.0), "abertura": 65.0,
-		"vel_min": 0.45, "vel_max": 1.3, "gravidade": Vector3(0.0, -0.6, 0.0),
-		"escala_min": 0.6, "escala_max": 1.6,
-		"cor": Color(0.62, 0.68, 0.85, 0.30), "rampa": [Color(1, 1, 1, 1), Color(1, 1, 1, 0)],
-	}
-	_poeira = _particulas("PoeiraDaLona", int(36 * Perfil.PARTICULAS_3D), 1.35, 0.88, po_proc, disco, Vector3(0.0, 0.08, -0.35))
+	var estrelas = cone_e(Vector3(0.0, 0.2, 1.0), 80.0, {
+		"vida": IMPACTO_VIDA, "vel_max": 6.8, "vel_min": 2.4 / 6.8, "amort": 3.0,
+		"grav": Vector3(0.0, -5.5, 0.0), "esfera": 0.14, "tam": 0.13,
+		"esc_min": 1.0, "esc_max": 1.0,
+		"cor_ini": Color("ffe7a8"), "cor_fim": Color("ffe7a8") * Color(1, 0.5, 0.2, 0),
+	})
+	_impacto = _particulas("ParticulasImpacto", int(96 * Perfil.PARTICULAS_3D), load(TEX_BRILHO), true,
+		estrelas, Vector3(0.0, 1.34, 0.36))
+	var cor_po = Color(0.62, 0.68, 0.85, 0.30)
+	var poeira = cone_e(Vector3(0.0, 1.0, 0.0), 65.0, {
+		"vida": POEIRA_VIDA, "vel_max": 1.3, "vel_min": 0.45 / 1.3, "amort": 0.0,
+		"grav": Vector3(0.0, -0.6, 0.0), "caixa": Vector3(0.7, 0.04, 0.38), "tam": 0.34,
+		"esc_min": 1.22, "esc_max": 1.6,
+		"cor_ini": cor_po, "cor_fim": Color(cor_po.r, cor_po.g, cor_po.b, 0.0),
+	})
+	_poeira = _particulas("PoeiraDaLona", int(36 * Perfil.PARTICULAS_3D), _mancha_redonda(), false,
+		poeira, Vector3(0.0, 0.08, -0.35))
 
 
-func _particulas(
-	nome: String, quantidade: int, vida: float, explosao: float,
-	processo: Dictionary, malha: Mesh, onde: Vector3
-) -> CPUParticles:
-	var p = CPUParticles.new()
+static func cone_e(direcao: Vector3, abertura: float, config: Dictionary) -> Dictionary:
+	var c = Particulas3D.cone(direcao, abertura)
+	for k in config:
+		c[k] = config[k]
+	return c
+
+
+func _particulas(nome: String, quantidade: int, textura: Texture, soma: bool, config: Dictionary, onde: Vector3):
+	var p = Particulas3D.new()
 	p.name = nome
-	# A quantidade é FIXA. A força do golpe muda `amount_ratio`, que não
-	# realoca nada; mudar `amount` refazia os buffers a cada soco.
-	p.amount = quantidade
-	p.lifetime = vida
-	p.one_shot = true
-	p.explosiveness = explosao
-	# O mesmo comportamento do material de processo do Godot 4: faixa
-	# [mín, máx] vira "valor máximo com sorteio" no Godot 3.
-	p.emission_shape = processo["forma"]
-	if processo.has("raio"):
-		p.emission_sphere_radius = processo["raio"]
-	if processo.has("caixa"):
-		p.emission_box_extents = processo["caixa"]
-	p.direction = processo["direcao"]
-	p.spread = processo["abertura"]
-	p.gravity = processo["gravidade"]
-	p.initial_velocity = processo["vel_max"]
-	p.initial_velocity_random = 1.0 - processo["vel_min"] / processo["vel_max"]
-	if processo.has("amort_max"):
-		p.damping = processo["amort_max"]
-		p.damping_random = 1.0 - processo["amort_min"] / processo["amort_max"]
-	p.scale_amount = processo["escala_max"]
-	p.scale_amount_random = 1.0 - processo["escala_min"] / processo["escala_max"]
-	p.color = processo["cor"]
-	var rampa = Gradient.new()
-	rampa.set_color(0, processo["rampa"][0])
-	rampa.set_color(1, processo["rampa"][1])
-	p.color_ramp = rampa
-	p.mesh = malha
+	p.preparar(quantidade, textura, soma, config)
 	p.translation = onde
-	p.emitting = false
 	_mundo.add_child(p)
 	return p
-
-
-## `amount_ratio` do Godot 4: a fração das partículas que sai neste golpe.
-## As partículas de processador do Godot 3 trocam a quantidade sem custo
-## de placa de vídeo (é só uma lista na memória).
-func _quantidade(p: CPUParticles, fracao: float) -> void:
-	if not p.has_meta("cheio"):
-		p.set_meta("cheio", p.amount)
-	var n = int(max(1, round(float(p.get_meta("cheio")) * fracao)))
-	if p.amount != n:
-		p.amount = n
 
 
 ## Mancha redonda e macia (branco no centro, transparente na borda),
@@ -900,9 +854,9 @@ func aquecer(quadros := 24) -> void:
 	_aquecendo = quadros
 	render_target_update_mode = Viewport.UPDATE_ALWAYS
 	if _impacto != null:
-		_impacto.restart()
+		_impacto.disparar(1.0, IMPACTO_VIDA + 0.05)
 	if _poeira != null:
-		_poeira.restart()
+		_poeira.disparar(1.0, POEIRA_VIDA + 0.05)
 
 
 ## O AQUECIMENTO EM ETAPAS, UMA COISA NOVA POR VEZ.
@@ -953,9 +907,9 @@ func etapa_de_aquecimento(n: int) -> void:
 				lutador.mostrar_pose("celebra")
 		5:
 			if _impacto != null:
-				_impacto.restart()
+				_impacto.disparar(1.0, IMPACTO_VIDA + 0.05)
 			if _poeira != null:
-				_poeira.restart()
+				_poeira.disparar(1.0, POEIRA_VIDA + 0.05)
 		_:
 			_etapa = -1
 			_conferir_msaa()
@@ -976,11 +930,9 @@ func golpe(forca: float, derruba := false, pontos := -1, ultimo := false) -> Dic
 	_publico = max(_publico, clamp(0.08 + forca * (1.15 if derruba else 0.85), 0.0, 1.0))
 	var economia = 1.0 if qualidade >= 0.55 else 0.55
 	if _impacto != null:
-		_quantidade(_impacto, clamp(lerp(0.22, 1.0, forca) * economia, 0.05, 1.0))
-		_impacto.restart()
+		_impacto.disparar(clamp(lerp(0.22, 1.0, forca) * economia, 0.05, 1.0), IMPACTO_VIDA + 0.05)
 	if derruba and _poeira != null:
-		_quantidade(_poeira, economia)
-		_poeira.restart()
+		_poeira.disparar(economia, POEIRA_VIDA + 0.05)
 	if lutador == null:
 		return {"nocaute": false, "dano": 0.0, "reacao": "", "desdenhou": false}
 	var resposta = lutador.bater(forca, derruba, pontos, ultimo)
@@ -1082,6 +1034,7 @@ func avancar(delta: float) -> void:
 		if _quadros_no_ar >= 12:
 			_conferir_msaa()
 	_relogio += delta
+	_passo = delta
 	_tremor = max(0.0, _tremor - delta * 2.2)
 	_clarao = max(0.0, _clarao - delta * 2.4)
 	_empurrao = max(0.0, _empurrao - delta * 1.6)
@@ -1291,13 +1244,11 @@ func _quatro_fases(ritmo: Array) -> Color:
 
 
 func _piscar() -> void:
-	var mm = _flashes.multimesh
-	for i in range(mm.instance_count):
-		var fase: float = _flash_fase[i]
-		var base = max(0.0, sin(_relogio * 1.7 + fase) - 0.93) * 12.0
-		var festa = (_clarao + _publico * 0.6 + _agito * 0.5) * max(0.0, sin(fase * 3.1 + _relogio * 22.0))
-		var a = clamp(base + festa, 0.0, 1.0)
-		mm.set_instance_color(i, Color(a, a * 0.97, a * 0.92, a))
+	if _flashes != null and _flashes.visible:
+		_flashes.piscar(_relogio, _clarao + _publico * 0.6 + _agito * 0.5)
+	for p in [_impacto, _poeira, _poeira_no_ar]:
+		if p != null:
+			p.avancar(_passo)
 
 
 func _sombra_de_contato() -> void:
@@ -1446,7 +1397,7 @@ var _mat_lampadas: SpatialMaterial = null
 ## degrau 1.
 var _mat_fachos: ShaderMaterial = null
 var _cones: Array = []
-var _poeira_no_ar: CPUParticles = null
+var _poeira_no_ar = null
 
 
 ## VÁRIAS PEÇAS, UMA MALHA. Cada peça desenhada à parte é uma chamada à
@@ -1600,32 +1551,17 @@ func _montar_ginasio() -> void:
 		lampadas.append([tampa, Transform(Basis(), centro + Vector3(0.0, 1.52, 0.0)), cor.lightened(0.4)])
 	_mat_lampadas = _material_aceso(Color.white, true)
 	_peca(_juntar(lampadas), _mat_lampadas, Vector3.ZERO)
-	# A POEIRA DANÇANDO NA LUZ (bem pouca, devagar; partículas de
-	# processador, uma chamada de desenho)
-	var ponto = _material_plano(_mancha_redonda(), true)
-	ponto.params_billboard_mode = SpatialMaterial.BILLBOARD_PARTICLES
-	ponto.vertex_color_use_as_albedo = true
-	var grao = QuadMesh.new()
-	grao.size = Vector2(0.035, 0.035)
-	grao.material = ponto
-	_poeira_no_ar = CPUParticles.new()
-	_poeira_no_ar.name = "PoeiraNoAr"
-	_poeira_no_ar.amount = int(48 * Perfil.PARTICULAS_3D)
-	_poeira_no_ar.lifetime = 9.0
-	_poeira_no_ar.preprocess = 9.0
-	_poeira_no_ar.emission_shape = CPUParticles.EMISSION_SHAPE_BOX
-	_poeira_no_ar.emission_box_extents = Vector3(2.0, 1.3, 1.6)
-	_poeira_no_ar.direction = Vector3(0.2, 1.0, 0.0)
-	_poeira_no_ar.spread = 180.0
-	_poeira_no_ar.initial_velocity = 0.08
-	_poeira_no_ar.initial_velocity_random = 0.75
-	_poeira_no_ar.gravity = Vector3(0.0, -0.01, 0.0)
-	_poeira_no_ar.scale_amount = 1.4
-	_poeira_no_ar.scale_amount_random = 0.64
-	_poeira_no_ar.color = Color(1.0, 0.92, 0.8, 0.35)
-	_poeira_no_ar.mesh = grao
-	_poeira_no_ar.translation = Vector3(0.0, 2.1, -1.2)
-	_mundo.add_child(_poeira_no_ar)
+	# A POEIRA DANÇANDO NA LUZ (bem pouca, devagar). Uma malha só, que a
+	# placa de vídeo anima (build 121): como `CPUParticles` eram 24
+	# chamadas à placa em todo quadro da luta.
+	var cor_grao = Color(1.0, 0.92, 0.8, 0.35)
+	_poeira_no_ar = _particulas("PoeiraNoAr", int(48 * Perfil.PARTICULAS_3D), _mancha_redonda(), true,
+		cone_e(Vector3(0.2, 1.0, 0.0), 180.0, {
+			"vida": 9.0, "vel_max": 0.08, "vel_min": 0.25, "amort": 0.0,
+			"grav": Vector3(0.0, -0.01, 0.0), "caixa": Vector3(2.0, 1.3, 1.6), "tam": 0.035,
+			"esc_min": 1.14, "esc_max": 1.4, "cor_ini": cor_grao, "cor_fim": cor_grao,
+		}), Vector3(0.0, 2.1, -1.2))
+	_poeira_no_ar.disparar(1.0, 9.0, true)
 
 
 ## Um giro cujo eixo Y aponta de `alvo` para `de` (o "para cima" de um
