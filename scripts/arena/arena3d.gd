@@ -331,6 +331,7 @@ func _montar_mundo() -> void:
 	_montar_flashes()
 	_montar_particulas()
 	_montar_ginasio()
+	_montar_teto()
 
 
 func _luz_pontual(cor: Color, onde: Vector3) -> OmniLight:
@@ -1166,6 +1167,7 @@ func _camera(delta := 0.0) -> void:
 	# de lado, olhando o lutador de baixo — quem perdeu vê o ginásio do
 	# chão. Cai rápido (com um quique) e só levanta na próxima rodada.
 	_chao = move_toward(_chao, _chao_alvo, delta * (2.4 if _chao_alvo > _chao else 1.2))
+	_mostrar_teto(_chao > 0.02)
 	if _chao > 0.001:
 		var t = _chao * _chao * (3.0 - 2.0 * _chao)
 		var quique = sin(clamp(_chao, 0.0, 1.0) * PI) * 0.05 * (1.0 if _chao_alvo > 0.5 else 0.0)
@@ -1645,3 +1647,116 @@ func _animar_ginasio() -> void:
 	if _mat_lampadas != null:
 		var acesa = clamp(0.80 + _clarao * 0.6 + 0.08 * sin(_relogio * 2.0), 0.0, 1.6)
 		_mat_lampadas.albedo_color = Color(acesa, acesa, acesa)
+
+
+
+# ------------------------------------------------- o teto da derrota
+## O TETO DA DERROTA (build 124). Quando o jogador leva o nocaute a câmera
+## cai até a lona e olha para cima — e o terço de cima da imagem era um
+## céu escuro vazio acima da treliça. Agora, SÓ nesse momento, aparece o
+## alto do ginásio: a arquibancada de cima (a mesma plateia animada), o
+## teto com as fileiras de lâmpadas, o telão de LED pendurado e três fachos
+## descendo do teto. São ~5 desenhos a mais, ligados apenas enquanto a
+## câmera está no chão: na luta normal eles nem existem para a placa.
+const SHADER_TETO = """
+shader_type spatial;
+render_mode unshaded, cull_disabled;
+uniform vec4 cor_lampada : hint_color = vec4(1.0, 0.84, 0.62, 1.0);
+uniform vec4 cor_fundo : hint_color = vec4(0.045, 0.028, 0.085, 1.0);
+uniform float relogio = 0.0;
+void fragment() {
+	vec2 g = UV * vec2(26.0, 6.0);
+	vec2 f = fract(g) - 0.5;
+	float d = length(f * vec2(1.0, 1.6));
+	float id = floor(g.x) * 1.7 + floor(g.y) * 13.1;
+	float pisca = 0.72 + 0.28 * sin(relogio * 1.8 + id);
+	float lampada = (1.0 - smoothstep(0.10, 0.20, d)) * pisca;
+	float halo = (1.0 - smoothstep(0.0, 0.5, d)) * 0.22 * pisca;
+	float viga = (1.0 - smoothstep(0.0, 0.06, abs(f.y - 0.5))) * 0.06;
+	// mais escuro longe do meio (o teto some no fundo)
+	float meio = 1.0 - 0.55 * abs(UV.x - 0.5) * 2.0;
+	ALBEDO = (cor_fundo.rgb + cor_lampada.rgb * (lampada + halo) + vec3(viga)) * meio;
+}
+"""
+
+const SHADER_TELAO = """
+shader_type spatial;
+render_mode unshaded;
+uniform sampler2D logo : hint_albedo;
+uniform float relogio = 0.0;
+void fragment() {
+	vec2 q = (UV - 0.5) * vec2(1.18, 1.32) + 0.5;
+	float dentro = step(0.0, q.x) * step(q.x, 1.0) * step(0.0, q.y) * step(q.y, 1.0);
+	vec4 c = texture(logo, clamp(q, 0.0, 1.0)) * dentro;
+	vec2 g = fract(UV * vec2(150.0, 84.0)) - 0.5;
+	float led = 1.0 - smoothstep(0.22, 0.5, length(g));
+	vec3 fundo = vec3(0.03, 0.0, 0.08) + vec3(0.10, 0.02, 0.16) * (0.5 + 0.5 * sin(relogio * 2.2 + UV.y * 7.0));
+	ALBEDO = mix(fundo, c.rgb * 1.15, c.a) * (0.62 + 0.55 * led);
+}
+"""
+
+var _teto: Spatial = null
+var _mats_teto: Array = []
+
+func _montar_teto() -> void:
+	_teto = Spatial.new()
+	_teto.name = "TetoDaDerrota"
+	_mundo.add_child(_teto)
+	# o teto com as lâmpadas: um plano alto, inclinado para a câmera do chão
+	var teto_mat = ShaderMaterial.new()
+	var sh = Shader.new()
+	sh.code = SHADER_TETO
+	teto_mat.shader = sh
+	_mats_teto.append(teto_mat)
+	var teto = QuadMesh.new()
+	teto.size = Vector2(18.0, 7.0)
+	_no_teto(_peca(teto, teto_mat, Vector3(0.0, 8.6, -4.6), Vector3(deg2rad(62.0), 0.0, 0.0)))
+	# a arquibancada de cima: a mesma plateia animada, num plano inclinado
+	if _mats_torcida.size() > 1:
+		var gente = (_mats_torcida[1] as ShaderMaterial).duplicate() as ShaderMaterial
+		gente.set_shader_param("semente", 7.7)
+		var faixa = QuadMesh.new()
+		faixa.size = Vector2(17.0, 2.9)
+		_no_teto(_peca(faixa, gente, Vector3(0.0, 6.0, -5.7), Vector3(deg2rad(24.0), 0.0, 0.0)))
+	# o telão de LED pendurado acima do ringue, com a logo do jogo
+	var caixa = CubeMesh.new()
+	caixa.size = Vector3(2.15, 1.25, 0.9)
+	_no_teto(_peca(caixa, _material_solido(Color("120c1c"), 0.6), Vector3(0.0, 4.35, -2.7), Vector3(deg2rad(14.0), 0.0, 0.0)))
+	var telao_mat = ShaderMaterial.new()
+	var sh2 = Shader.new()
+	sh2.code = SHADER_TELAO
+	telao_mat.shader = sh2
+	if ResourceLoader.exists("res://assets/logos/superboxing_h256.png"):
+		telao_mat.set_shader_param("logo", load("res://assets/logos/superboxing_h256.png"))
+	_mats_teto.append(telao_mat)
+	var tela = QuadMesh.new()
+	tela.size = Vector2(1.95, 1.08)
+	var giro = Basis(Vector3.RIGHT, deg2rad(14.0))
+	_no_teto(_peca(tela, telao_mat, Vector3(0.0, 4.35, -2.7) + giro * Vector3(0.0, 0.0, 0.452), Vector3(deg2rad(14.0), 0.0, 0.0)))
+	# três fachos descendo do teto até o ringue (aditivos, uma malha só)
+	var facho = QuadMesh.new()
+	facho.size = Vector2(1.1, 5.2)
+	var fachos = _juntar([
+		[facho, Transform(Basis(Vector3.FORWARD, 0.20), Vector3(-1.9, 4.4, -3.3))],
+		[facho, Transform(Basis(), Vector3(0.0, 5.6, -3.9))],
+		[facho, Transform(Basis(Vector3.FORWARD, -0.20), Vector3(1.9, 4.4, -3.3))],
+	])
+	var mat_facho = _material_plano(load(TEX_FACHO), true)
+	mat_facho.albedo_color = Color(0.55, 0.42, 0.75)
+	_no_teto(_peca(fachos, mat_facho, Vector3.ZERO))
+	_teto.visible = false
+
+
+func _no_teto(mi: MeshInstance) -> void:
+	_mundo.remove_child(mi)
+	_teto.add_child(mi)
+
+
+func _mostrar_teto(sim: bool) -> void:
+	if _teto == null:
+		return
+	if _teto.visible != sim:
+		_teto.visible = sim
+	if sim:
+		for m in _mats_teto:
+			(m as ShaderMaterial).set_shader_param("relogio", fposmod(_relogio, 600.0))

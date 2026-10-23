@@ -41,7 +41,8 @@ const MODELO = "res://assets/lutador3d/boxeador_tvbox.glb"
 const TEXTURAS = {
 	# a pele com a musculatura pintada (`tools/definir_musculos_boxeador.py`)
 	"Pele": ["res://assets/lutador3d/boxeador_pele.jpg", "res://assets/lutador3d/boxeador_relevo.png"],
-	"Roupa": ["res://assets/lutador3d/boxeador_4.jpg", ""],
+	# o calção com a listra contínua dos dois lados (`tools/pintar_calcao_boxeador.py`)
+	"Roupa": ["res://assets/lutador3d/boxeador_calcao.jpg", ""],
 	"Cinturao": ["res://assets/lutador3d/boxeador_0.jpg", ""],
 	"Placa": ["res://assets/lutador3d/boxeador_1.jpg", ""],
 }
