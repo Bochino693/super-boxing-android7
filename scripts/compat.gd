@@ -232,7 +232,7 @@ static func z(item: CanvasItem, valor: int) -> void:
 ## faixa preta.
 static func enquadrar(arvore: SceneTree, tamanho: Vector2) -> void:
 	var aspecto = SceneTree.STRETCH_ASPECT_KEEP
-	if OS.get_name() == "Android":
+	if OS.get_name() == "Android" or OS.has_environment("PUNCH_GIRADO"):
 		aspecto = SceneTree.STRETCH_ASPECT_IGNORE
 	arvore.set_screen_stretch(SceneTree.STRETCH_MODE_2D, aspecto, tamanho)
 

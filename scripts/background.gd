@@ -169,7 +169,6 @@ func _draw() -> void:
 			Rect2(0.0, y1 * k.y, arte.get_width(), (rect_size.y - y1) * k.y))
 	else:
 		ArcadeStage.background_animado(self, tempo)
-	fx.desenhar(self)
 	# O véu da cor do veredito só quando se vê o fundo: por baixo da arena
 	# opaca ele era uma tela inteira de pixels misturados à toa.
 	if matiz.a > 0.001 and not _coberto():

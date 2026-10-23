@@ -37,6 +37,10 @@ const EXTRA = [
 	# agudos; agora é sintetizado, só vozes graves (ver
 	# `tools/gerar_sons_arcade.py`).
 	"arena_ambiente",
+	# O sino do round: até a build 120 montado amostra por amostra em
+	# GDScript na abertura (26 mil voltas de laço no processador da TV Box);
+	# agora é um arquivo como os outros (`tools/gerar_sons_arcade.py`).
+	"round_bell",
 ]
 const LOOPS = ["music", "charge", "score_loop", "arena_ambiente"]
 const ROOT = "res://assets/audio/arcade/"

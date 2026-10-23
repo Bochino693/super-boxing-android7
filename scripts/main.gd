@@ -31,6 +31,7 @@ const Formas = preload("res://scripts/formas.gd")
 const TELA = Vector2(1080.0, 1920.0)
 const ArcadeStage = preload("res://scripts/presentation/arcade_stage.gd")
 const CaixaPreta = preload("res://scripts/caixa_preta.gd")
+const TelaGirada = preload("res://scripts/tela_girada.gd")
 
 # ======================================================================
 # AS BANDAS DA TELA
@@ -957,9 +958,10 @@ onready var arena: Arena3D = $Arena
 func _enter_tree() -> void:
 	# O pai entra antes dos filhos. Definir aqui o retângulo vertical garante
 	# que Fundo, Moldura, Arena e demais Controls já nasçam em 1080x1920.
-	# Dentro do Viewport vertical do carregador o giro é feito lá fora,
-	# na imagem pronta — aqui o jogo fica em pé e sem giro.
-	if OS.get_name() == "Android" and not _em_viewport_proprio():
+	# Dentro do Viewport vertical do carregador (TV fora de 1920x1080) o
+	# giro é feito lá fora, na imagem pronta — aqui o jogo fica em pé e sem
+	# giro. Numa TV em 1920x1080 o jogo é desenhado direto, girado aqui.
+	if TelaGirada.girada() and not _em_viewport_proprio():
 		anchor_left = 0.0
 		anchor_top = 0.0
 		anchor_right = 0.0
@@ -1059,7 +1061,7 @@ func _configurar_enquadramento_universal() -> void:
 		rect_scale = Vector2.ONE
 		rect_position = Vector2.ZERO
 		return
-	if OS.get_name() == "Android":
+	if TelaGirada.girada():
 		# A Smart Pro recusa um framebuffer 1080x1920 e o reduz no centro.
 		# Mantemos a janela em 1920x1080 e giramos esta cena 1080x1920.
 		Compat.enquadrar(get_tree(), Vector2(1920, 1080))
@@ -1067,7 +1069,7 @@ func _configurar_enquadramento_universal() -> void:
 		Compat.enquadrar(get_tree(), TELA)
 	rect_pivot_offset = Vector2.ZERO
 	rect_scale = Vector2.ONE
-	if OS.get_name() == "Android":
+	if TelaGirada.girada():
 		# 1080x1920 rotacionado -90 graus ocupa exatamente 1920x1080.
 		anchor_left = 0.0
 		anchor_top = 0.0
@@ -1086,7 +1088,7 @@ func _em_viewport_proprio() -> bool:
 
 func _ponto_da_tela_para_o_jogo(ponto: Vector2) -> Vector2:
 	# No Viewport o contêiner já entrega o ponto no espaço do jogo.
-	if OS.get_name() == "Android" and not _em_viewport_proprio():
+	if TelaGirada.girada() and not _em_viewport_proprio():
 		# Inversa de: tela = (jogo.y, 1080 - jogo.x).
 		return Vector2(TELA.x - ponto.y, ponto.x)
 	return ponto
@@ -3369,7 +3371,6 @@ func _tela_do_ensaio(i: int) -> void:
 	else:
 		state = GameDef.State.IDLE
 		_draw_show_idle()
-	fx.desenhar(self)
 	_draw_logo_do_alto()
 	_logo_do_alto = false
 	for nome in guardado:
@@ -5967,7 +5968,8 @@ func _draw() -> void:
 	else:
 		_draw_partida()
 
-	fx.desenhar(self)
+	# (As ondas de choque não são mais desenhadas aqui: desde a build 121
+	# elas são nós da camada de efeitos, desenhados pela placa — ver `fx.gd`.)
 	_draw_marca_pedida()
 	_draw_pancada()
 	_draw_clarao()

@@ -21,6 +21,8 @@ Gera em assets/audio/arcade/:
   torcida_top10      vinheta do TOP 10
   torcida_podio      rufar e fanfarra do podio
   torcida_recorde    rufar, fanfarra heroica e prato do recorde
+  round_bell         o sino do round (ate a build 120 era montado amostra
+                     por amostra em GDScript na abertura do jogo)
 
 Requer: numpy e scipy.
 """
@@ -375,6 +377,25 @@ def vinhetas():
     ], 1.8, 0.7, 6.0, 0.12)
 
 
+def sino_de_round():
+    """O sino do round: tres parciais metalicas com o mesmo decaimento e
+    um estalo agudo no ataque. A conta e a mesma que `audio_bank.gd` fazia
+    na abertura do jogo (sem normalizar: o volume e o de sempre)."""
+    t = tempo(1.20)
+    env = np.exp(-t * 3.1)
+    ataque = np.exp(-t * 70.0) * np.sin(2 * np.pi * 3100.0 * t) * 0.24
+    metal = (np.sin(2 * np.pi * 620.0 * t) * 0.55
+             + np.sin(2 * np.pi * 947.0 * t) * 0.34
+             + np.sin(2 * np.pi * 1315.0 * t) * 0.20) * env
+    m = np.clip((metal + ataque) * 0.78, -1.0, 1.0)
+    with wave.open(str(AUDIO / "round_bell.wav"), "wb") as w:
+        w.setnchannels(2)
+        w.setsampwidth(2)
+        w.setframerate(SR)
+        w.writeframes((np.repeat(m[:, None], 2, axis=1) * 32767.0).astype(np.int16).tobytes())
+    print("ok %-18s %5.2f s" % ("round_bell", len(m) / SR))
+
+
 if __name__ == "__main__":
     arena_ambiente()
     arena_publico()
@@ -382,3 +403,4 @@ if __name__ == "__main__":
     torcida_festa()
     good_player()
     vinhetas()
+    sino_de_round()

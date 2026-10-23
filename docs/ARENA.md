@@ -380,9 +380,11 @@ construída para custar pouco, não para impressionar em benchmark:
 - **uma malha só** para todo o ringue (lona, borda, quatro postes, nove
   cordas, fundo), com cor por vértice — um desenho em vez de trinta;
 - **três luzes**, nenhuma com sombra;
-- **flashes e silhuetas da plateia em `MultiMesh`** — dois desenhos, com
-  reação proporcional à força;
-- **dois emissores GPU reutilizados** para faíscas e poeira da lona;
+- **flashes da plateia, estrelas e poeira do soco e a poeira no ar como
+  malhas únicas** (`scripts/arena/particulas3d.gd`, build 121): o shader
+  de vértice calcula onde cada partícula está, e cada efeito é UM desenho.
+  No OpenGL ES 2.0 do Godot 3, `CPUParticles` e `MultiMesh` desenham cada
+  cópia com uma chamada própria à placa de vídeo;
 - **sem antisserrilhado, sem brilho, sem TAA**;
 - **a janela encolhe** quando o vigia de desempenho aperta
   (`Desempenho.qualidade < 0,55`), mas continua atualizando em todo quadro;

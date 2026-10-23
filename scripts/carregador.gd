@@ -132,7 +132,7 @@ func _ready() -> void:
 	_tela = Control.new()
 	_tela.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_tela.rect_size = TELA
-	if OS.get_name() == "Android":
+	if TelaGirada.girada():
 		# O MESMO GIRO de `main.gd`: jogo (x, y) -> tela (y, 1080 - x).
 		_tela.rect_rotation = -90.0
 		_tela.rect_position = Vector2(0.0, 1080.0)
@@ -186,6 +186,7 @@ func _iniciar_carga() -> void:
 ## A permissão da CÂMERA o Android guarda sozinho: só é pedida se faltar.
 const Lembranca = preload("res://scripts/lembranca_usb.gd")
 const CaixaPreta = preload("res://scripts/caixa_preta.gd")
+const TelaGirada = preload("res://scripts/tela_girada.gd")
 ## Quanto esperar o Android devolver uma permissão já dada antes (s).
 const ESPERA_DA_PERMISSAO_GUARDADA = 10.0
 ## Quanto esperar a contagem das câmeras do sistema (s).
@@ -386,7 +387,7 @@ func _passo_da_webcam() -> void:
 
 
 func _configurar_janela() -> void:
-	if OS.get_name() == "Android":
+	if TelaGirada.girada():
 		Compat.enquadrar(get_tree(), Vector2(1920, 1080))
 	else:
 		Compat.enquadrar(get_tree(), TELA)
@@ -506,51 +507,19 @@ func _montar_jogo() -> void:
 	_jogo = cena.instance()
 	if "entrada_segurada" in _jogo:
 		_jogo.entrada_segurada = true
-	if OS.get_name() == "Android" or OS.has_environment("PUNCH_SUBVIEWPORT"):
-		_tela_vertical().add_child(_jogo)
+	# Numa TV em 1920x1080 o jogo é desenhado direto na tela, já girado
+	# (`main.gd` gira a si mesmo); fora dela passa pela tela intermediária.
+	# Ver `scripts/tela_girada.gd`.
+	if TelaGirada.intermediaria():
+		TelaGirada.montar_intermediaria(self).add_child(_jogo)
+		Diario.marca("TELA: intermediaria %s" % str(TelaGirada.tamanho_intermediario()))
 	else:
 		add_child(_jogo)
+		Diario.marca("TELA: direto %s" % str(OS.get_window_size()))
 	move_child(_camada, get_child_count() - 1)
 	Diario.marca("MONTANDO: cena do jogo criada")
 	_progresso = 0.9
 	_mudar(Fase.AQUECENDO)
-
-
-## A TELA EM PÉ, DESENHADA INTEIRA E SÓ DEPOIS GIRADA.
-##
-## Antes o jogo era desenhado JÁ GIRADO na janela deitada: cada letra era
-## rasterizada de pé e colada de lado, e em tela com escala fracionária
-## (TV Box em 720p, por exemplo) os pixels da letra entortavam — o
-## "chuviscado". Agora o jogo inteiro é desenhado num Viewport de
-## 1080x1920, sem giro nenhum (as letras saem exatamente como no PC), e o
-## que gira é a IMAGEM pronta, uma vez só, no contêiner. Pixel de letra
-## nunca mais passa por rotação.
-func _tela_vertical() -> Viewport:
-	var caixa = ViewportContainer.new()
-	caixa.name = "TelaVertical"
-	caixa.stretch = false
-	caixa.rect_size = TELA
-	if OS.get_name() == "Android":
-		# jogo (x, y) -> tela (y, 1080 - x), igual ao giro antigo.
-		caixa.rect_rotation = -90.0
-		caixa.rect_position = Vector2(0.0, 1080.0)
-	var vp = Viewport.new()
-	vp.name = "Jogo"
-	vp.size = Vector2(int(TELA.x), int(TELA.y))
-	# SÓ 2D: a arena (o único 3D do jogo) é uma janela própria, com o seu
-	# buffer. Aqui um buffer de profundidade de 1080x1920 era memória
-	# parada — e na TV Box de 1 GB cada MB a menos é o launcher do Android
-	# que não é derrubado.
-	vp.disable_3d = true
-	vp.transparent_bg = false
-	vp.render_target_update_mode = Viewport.UPDATE_ALWAYS
-	vp.handle_input_locally = false
-	vp.usage = Viewport.USAGE_2D
-	caixa.add_child(vp)
-	add_child(caixa)
-	# Imagem pronta ampliada/girada com filtro (o `texture_filter` do 4).
-	vp.get_texture().flags = Texture.FLAG_FILTER
-	return vp
 
 
 func _topo_da_barra() -> float:

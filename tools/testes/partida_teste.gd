@@ -34,6 +34,7 @@ class Sonda:
 	func _process(_d):
 		dono._sonda(lado)
 
+const TelaGirada = preload("res://scripts/tela_girada.gd")
 const FORCAS = [[0.55, 0.92], [0.95, 0.99], [0.25, 0.4]]
 
 var main
@@ -85,7 +86,14 @@ func _ready() -> void:
 	Engine.set_meta("perf", {})
 	Engine.set_meta("estado", "INICIO")
 	main = load("res://scenes/main.tscn").instance()
-	add_child(main)
+	# a tela escolhida como no carregador: `PUNCH_GIRADO=1` desenha girado
+	# como na TV Box (direto se a janela for 1920x1080) e
+	# `PUNCH_SUBVIEWPORT=1` força a tela intermediária
+	if TelaGirada.intermediaria():
+		Compat.enquadrar(get_tree(), TelaGirada.JANELA if TelaGirada.girada() else TelaGirada.TELA)
+		TelaGirada.montar_intermediaria(self).add_child(main)
+	else:
+		add_child(main)
 	_ultimo_us = OS.get_ticks_usec()
 	for lado in [0, 1]:
 		var sd = Sonda.new()
