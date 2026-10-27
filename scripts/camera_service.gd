@@ -654,8 +654,6 @@ func _iniciar_uvc_android() -> void:
 
 var _erro_da_ponte_avisado = false
 var _pediu_cheio = false
-## A imagem da webcam está grande na tela (pose, Central): quadro cheio.
-var _previa_cheia = false
 
 ## QUADRO CHEIO (640x480) SÓ NA JANELA DA FOTO. Fora dela o PunchQuadros
 ## entrega 320x240: 4x menos bytes atravessando do Java para o jogo, menos
@@ -679,9 +677,8 @@ func _amostrar_uvc_android(agora: int) -> bool:
 	var largura = 0
 	var altura = 0
 	if _ponte_quadros != null:
-		# A janela da foto passou sem `capture_photo` e a imagem não está
-		# mais grande na tela: volta ao leve.
-		if _pediu_cheio and not _previa_cheia and agora > _obturador_ate_ms + 1500:
+		# A janela da foto passou sem `capture_photo`: volta ao leve.
+		if _pediu_cheio and agora > _obturador_ate_ms + 1500:
 			_quadro_cheio(false)
 		var q = _ponte_quadros.call("pollQuadro")
 		if q is Dictionary and q.has("dados"):
@@ -727,14 +724,11 @@ func _amostrar_uvc_android(agora: int) -> bool:
 ## leitura quase para — e o plugin deixa de converter quadros que
 ## ninguém vai ver, liberando CPU para o impacto.
 func definir_ritmo(ms: int) -> void:
-	# A PRÉVIA DA POSE EM RESOLUÇÃO CHEIA (build 126). O ritmo rápido é o da
-	# pose e da Central — as duas telas em que a imagem aparece GRANDE (o
-	# visor da pose tem 720x720). Até a build 125 a ponte só entregava o
-	# quadro cheio no meio segundo do obturador: a pose inteira era 320x240
-	# esticada três vezes, e o rosto de quem jogava aparecia pixelado.
-	_previa_cheia = ms <= Perfil.CAMERA_CONTAGEM_MS
-	if _previa_cheia:
-		_quadro_cheio(true)
+	# (A build 126 pedia o quadro CHEIO na pose inteira e na Central — 4x
+	# mais bytes do Java para o jogo, mais conversão e mais textura subindo
+	# a cada 125 ms. Na TV Box de 1 GB a webcam congelava e o jogo caía na
+	# rodada seguinte. Build 127: de volta ao quadro leve, cheio só no
+	# meio segundo do obturador, como em todas as builds estáveis.)
 	if ms == intervalo_uvc_ms:
 		return
 	intervalo_uvc_ms = ms
@@ -1169,10 +1163,12 @@ func pronta_para_foto() -> bool:
 ## espera por ela): a API clássica do Android já conta a câmera, ou há um
 ## aparelho de VÍDEO no barramento USB — o plugin responde sem abrir nada.
 func esperada() -> bool:
-	if not enabled:
+	# SÓ A PRIMEIRA ABERTURA (build 127). Uma webcam que já deu vídeo nesta
+	# sessão e agora está sem ele caiu ou travou: aí a rodada pula a foto na
+	# hora, como sempre — esperar por ela (e mexer nela no START) era o que
+	# derrubava o jogo na rodada seguinte.
+	if not enabled or _last_frame_ms > 0:
 		return false
-	if ao_vivo():
-		return true
 	if OS.get_name() != "Android":
 		# no PC: uma câmera aberta, ou a ponte que já entregou vídeo nesta
 		# sessão (a webcam de mentira dos testes)
@@ -1190,31 +1186,20 @@ func esperada() -> bool:
 	# Abrindo ou recusando, ele devolve o estado dela — e ela existe.
 	return not ("NENHUMA" in str(_android_bridge.call("getUsbCameraStatus")).to_upper())
 
-## O START CHEGOU COM A WEBCAM CONECTADA E SEM VÍDEO: o que faltava para
-## ela abrir acontece agora, e não no relógio da tela de espera.
+## O START CHEGOU COM A WEBCAM CONECTADA E AINDA SEM A PRIMEIRA IMAGEM:
+## o despertar e a conferência da permissão andam agora, e não no relógio
+## da tela de espera. SÓ ISSO: nada de fechar e reabrir a webcam no START
+## (build 127) — fechar e abrir em sequência é o que derruba a TV Box. Ela
+## abre pelo caminho de sempre (`_vigiar_webcam_android`).
 func apressar() -> void:
 	if adormecida or not enabled:
 		return
 	var agora = Time.get_ticks_msec()
-	_registro("START com a webcam conectada e ainda sem vídeo: abrindo já")
+	_registro("START com a webcam conectada e ainda sem a primeira imagem: acordando já")
 	if _etapa_despertar >= 0:
 		_proxima_etapa_ms = int(min(_proxima_etapa_ms, agora))
 	_permissoes_conferidas_ms = 0
 	_proxima_busca_ms = 0
-	if OS.get_name() == "Android" and _ponte_tem("getUvcStatus"):
-		var situacao = str(_android_bridge.call("getUvcStatus"))
-		# RECUSOU ANTES (o serviço de câmera ainda subindo depois do boot é
-		# o caso de sempre na primeira rodada): solta e abre do zero agora,
-		# em vez de esperar a próxima reabertura da tela de espera (30 s).
-		if _abertura_falhou(situacao) and _reaberturas < REABERTURAS_MAXIMAS:
-			_reaberturas += 1
-			_reaberta_em_ms = agora
-			_registro("reabrindo para a rodada (%s)" % situacao)
-			_android_bridge.call("stopUvcCamera")
-			_sem_video_desde_ms = agora
-			_uvc_proximo_religar_ms = agora + 1200
-			return
-	_uvc_proximo_religar_ms = int(min(_uvc_proximo_religar_ms, agora))
 
 func motivo_curto() -> String:
 	if not enabled:

@@ -30,27 +30,6 @@ static func girada() -> bool:
 	return OS.get_name() == "Android" or OS.has_environment("PUNCH_GIRADO")
 
 
-## A TELA PRINCIPAL DESENHADA DIRETO NA TV (build 126).
-##
-## No OpenGL ES 2.0 o Godot desenha a tela principal numa imagem à parte e,
-## no fim de cada quadro, COPIA essa imagem para a TV: uma passada de tela
-## cheia a mais por quadro (2 milhões de pixels escritos e lidos de novo),
-## só para permitir efeitos que leem a própria tela — e o jogo não usa
-## nenhum. Com `render_direct_to_screen` o quadro já nasce na TV. Ligado na
-## TV Box; no PC de teste só com `PUNCH_TELA_DIRETA=1` (as fotos dos testes
-## leem a imagem à parte, que deixa de existir).
-static func tela_direta() -> bool:
-	return OS.get_name() == "Android" or OS.has_environment("PUNCH_TELA_DIRETA")
-
-
-static func aplicar_tela_direta(arvore: SceneTree) -> void:
-	if tela_direta():
-		# Numa variável: `arvore.root.x = ...` o GDScript 3 tenta devolver
-		# o `root` para a árvore (só leitura) e acusa erro.
-		var raiz: Viewport = arvore.root
-		raiz.render_direct_to_screen = true
-
-
 ## Precisa da tela intermediária? Só com a TV fora de 1920x1080 (ou
 ## pedida para teste com `PUNCH_SUBVIEWPORT=1`).
 static func intermediaria() -> bool:
