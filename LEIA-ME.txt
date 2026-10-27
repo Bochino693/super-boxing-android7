@@ -1,4 +1,4 @@
-SUPER BOXING - TV BOX MALI-450 (TX9) - OPENGL ES 2.0 - BUILD 124
+SUPER BOXING - TV BOX MALI-450 (TX9) - OPENGL ES 2.0 - BUILD 125
 =================================================================
 
 ESTA VERSAO E PARA TV BOX COM PLACA DE VIDEO MALI-450 (TX9): Godot 3.6,
@@ -6,8 +6,27 @@ OpenGL ES 2.0. UM ARQUIVO SO: GERAR_APK_AGORA.bat gera o
 APK certo. Veja "GERAR O APK" mais abaixo.
 
 CONFIRA NA MAQUINA: o rodape da abertura e a Central mostram
-"BUILD 124". Se aparecer outro numero, o APK instalado e o antigo -
+"BUILD 125". Se aparecer outro numero, o APK instalado e o antigo -
 gere o APK de novo com GERAR_APK_AGORA.bat e instale por cima.
+
+O QUE A BUILD 125 MUDA (BASE: A 124)
+------------------------------------
+- A CAMERA NAO PULA MAIS NA PRIMEIRA PARTIDA: o primeiro quadro da arena
+  no ar era o primeiro DE VERDADE. O aquecimento desenhava o ringue, a
+  torcida e o lutador, mas nunca do jeito da luta (camera parada, imagem
+  da arena nunca posta na tela, antisserrilhado conferido so no ultimo
+  quadro). No PC isso dava 1,5 s de tela parada no primeiro quadro da
+  primeira luta - e nunca mais nas outras. Agora o fim do carregamento
+  poe a arena NO AR atras da tela de carregamento, exatamente como na
+  luta: camera andando, luzes, lutador e a tela da luta por cima.
+- O GRAFICO DE UMA BUILD NOVA SE ACERTA ANTES DA PRIMEIRA LUTA: cada build
+  nova comecava no grafico completo e so descia DURANTE a primeira luta -
+  e o tamanho novo so entrava na luta seguinte, entao a primeira luta
+  depois de instalar andava inteira no grafico mais pesado, aos trancos.
+  Agora, na primeira vez que a build nova liga, a tela de carregamento
+  fica alguns segundos a mais medindo a velocidade da arena e ja escolhe
+  o degrau certo. Nas outras vezes que a maquina liga, nao demora nada a
+  mais. Durante a luta o jogo continua conferindo, como antes.
 
 O QUE A BUILD 124 MUDA (BASE: A 123)
 ------------------------------------
