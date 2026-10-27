@@ -28,6 +28,10 @@ assets/arena/tarja_zebra.png
 assets/arena/tarja_zebra.png.import
 assets/arena/tarja_zebra_v.png
 assets/arena/tarja_zebra_v.png.import
+assets/arena/telao.png
+assets/arena/telao.png.import
+assets/arena/teto.png
+assets/arena/teto.png.import
 assets/arena/torcida_baixo.png
 assets/arena/torcida_baixo.png.import
 assets/arena/torcida_cima.png
@@ -389,6 +393,7 @@ tools/gerar_icones.py
 tools/gerar_logos.py
 tools/gerar_sons_arcade.py
 tools/gerar_tema.py
+tools/gerar_teto.py
 tools/gerar_torcida.py
 tools/lutador3d_fontes/boxeador_2.jpg
 tools/lutador3d_fontes/boxeador_3.png

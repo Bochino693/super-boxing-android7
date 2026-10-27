@@ -14,11 +14,9 @@ import java.util.concurrent.TimeUnit;
 
 import android.app.Activity;
 import android.app.ActivityManager;
-import android.app.Application;
 import android.content.ComponentCallbacks2;
 import android.content.Context;
 import android.content.res.Configuration;
-import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.SystemClock;
@@ -49,11 +47,12 @@ import org.godotengine.godot.plugin.UsedByGodot;
  *    (o Android deixa cada app ler o seu) e guarda os erros da sessao
  *    anterior: o jogo mostra na tela, e basta uma foto — sem cabo, sem ADB.
  *
- * 4. O USB SOLTO QUANDO O JOGO SAI DA FRENTE (build 126). A webcam e o
- *    Arduino ficavam abertos com o jogo escondido (outro app na tela, o
- *    instalador de APK) e o processo era encerrado com a webcam ainda
- *    transmitindo. Agora, com o jogo fora da tela, os dois sao fechados; e
- *    na saida do jogo a webcam e fechada ESPERANDO ela soltar de fato.
+ * 4. O USB SOLTO NA SAIDA DO JOGO (build 126). O processo era encerrado
+ *    com a webcam ainda transmitindo; agora, na saida, a webcam e o
+ *    Arduino sao fechados ESPERANDO a webcam soltar de fato. (A build 126
+ *    tambem soltava os dois com o jogo escondido, no onStop; a 128 tirou:
+ *    numa TV Box que cobre o jogo com uma tela inteira de permissao, isso
+ *    fechava o Arduino no meio do pedido e a permissao voltava a aparecer.)
  */
 public class PunchQuadros extends GodotPlugin {
     private Object ponte;
@@ -113,11 +112,6 @@ public class PunchQuadros extends GodotPlugin {
         }, "punch-logcat");
         leitor.setDaemon(true);
         leitor.start();
-        try {
-            observarCiclo(activity);
-        } catch (Throwable t) {
-            // sem o aviso de "escondido": o resto funciona igual
-        }
         return null;
     }
 
@@ -307,57 +301,11 @@ public class PunchQuadros extends GodotPlugin {
     }
 
     // ------------------------------------------------------------------
-    // 4. O USB SOLTO QUANDO O JOGO SAI DA FRENTE
+    // 4. O USB SOLTO NA SAIDA DO JOGO
     // ------------------------------------------------------------------
 
     /** Quantas vezes o USB foi solto por aqui (o jogo reabre a webcam ao ver mudar). */
     private volatile int solturas = 0;
-
-    /**
-     * JOGO ESCONDIDO (onStop: outro app inteiro na frente, o instalador de
-     * APK, a TV Box em espera): solta a webcam e o Arduino. Uma janela de
-     * permissao por cima NAO esconde o jogo (so pausa) e nao solta nada.
-     */
-    private void observarCiclo(final Activity jogo) {
-        jogo.getApplication().registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
-            @Override
-            public void onActivityStopped(Activity a) {
-                if (a != jogo) return;
-                Thread t = new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        soltarUsb("jogo escondido", 0);
-                    }
-                }, "punch-soltar-usb");
-                t.setDaemon(true);
-                t.start();
-            }
-
-            @Override
-            public void onActivityCreated(Activity a, Bundle b) {
-            }
-
-            @Override
-            public void onActivityStarted(Activity a) {
-            }
-
-            @Override
-            public void onActivityResumed(Activity a) {
-            }
-
-            @Override
-            public void onActivityPaused(Activity a) {
-            }
-
-            @Override
-            public void onActivitySaveInstanceState(Activity a, Bundle b) {
-            }
-
-            @Override
-            public void onActivityDestroyed(Activity a) {
-            }
-        });
-    }
 
     @UsedByGodot
     public int solturasDoUsb() {
