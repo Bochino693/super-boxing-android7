@@ -1,4 +1,4 @@
-SUPER BOXING - TV BOX MALI-450 (TX9) - OPENGL ES 2.0 - BUILD 125
+SUPER BOXING - TV BOX MALI-450 (TX9) - OPENGL ES 2.0 - BUILD 126
 =================================================================
 
 ESTA VERSAO E PARA TV BOX COM PLACA DE VIDEO MALI-450 (TX9): Godot 3.6,
@@ -6,8 +6,41 @@ OpenGL ES 2.0. UM ARQUIVO SO: GERAR_APK_AGORA.bat gera o
 APK certo. Veja "GERAR O APK" mais abaixo.
 
 CONFIRA NA MAQUINA: o rodape da abertura e a Central mostram
-"BUILD 125". Se aparecer outro numero, o APK instalado e o antigo -
+"BUILD 126". Se aparecer outro numero, o APK instalado e o antigo -
 gere o APK de novo com GERAR_APK_AGORA.bat e instale por cima.
+
+O QUE A BUILD 126 MUDA (BASE: A 125)
+------------------------------------
+- A WEBCAM JA NA PRIMEIRA RODADA: logo depois de ligar a maquina a webcam
+  ainda nem tinha comecado a abrir (ela acordava 15 s depois do
+  carregamento) e a primeira rodada pulava a foto, como se nao houvesse
+  camera. Agora ela acorda aos 7 s, e o START ve se ha uma webcam
+  CONECTADA (a camera do Android ou um aparelho de video no USB): se ha,
+  a pose mostra "PREPARANDO A CAMERA..." e a contagem so comeca com a
+  imagem dela (no maximo 8 s; se ela nao abrir, a rodada segue sem foto).
+  Sem webcam nenhuma, a rodada continua indo direto para o ringue.
+- A IMAGEM DA POSE NITIDA: durante a pose a webcam vinha em 320x240
+  esticada para o visor de 720x720 (o rosto pixelado). Agora a pose e a
+  Central recebem 640x480.
+- WEBCAM E ARDUINO SOLTOS AO SAIR: o VOLTAR do controle encerrava o jogo
+  com a webcam ainda transmitindo pelo USB. Agora a webcam e fechada e o
+  jogo espera ela soltar (no maximo 1,2 s) antes de sair; e com o jogo
+  escondido (outro app na frente, o instalador de APK, a TV Box em
+  espera) a webcam e o Arduino sao fechados e voltam sozinhos quando o
+  jogo volta para a frente.
+- 3D SEMPRE EM 1080: a escada do grafico descia a resolucao da arena ate
+  60% (o lutador ampliado 1,7 vez, "pixelado") - e, numa TV Box em que o
+  que pesa e o processador, sem ficar mais rapido. Agora a luta so tira
+  os fachos de luz; 85% so pela prova do carregador, e so se ela medir
+  que adianta.
+- MAIS RAPIDO NA MESMA RESOLUCAO: a tela e desenhada direto na TV (sem a
+  copia de tela cheia que o Godot fazia a cada quadro) e sairam os dois
+  fachos de frente (quase invisiveis, pintavam mais de uma tela inteira
+  por quadro). Medido no PC: a luta caiu de 13,6 para 9,4 milhoes de
+  pixels pintados por quadro, a tela de espera de 5,6 para 3,5.
+- O FUNDO DA ABERTURA E DA POSE SEM BLOCOS: ele era guardado comprimido
+  (ETC1 na TV Box), que quebra as linhas finas de neon em quadradinhos.
+  Agora vai sem compressao.
 
 O QUE A BUILD 125 MUDA (BASE: A 124)
 ------------------------------------

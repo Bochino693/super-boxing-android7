@@ -5,15 +5,24 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.InputStreamReader;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 
 import android.app.Activity;
 import android.app.ActivityManager;
+import android.app.Application;
 import android.content.ComponentCallbacks2;
 import android.content.Context;
 import android.content.res.Configuration;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.HandlerThread;
 import android.os.SystemClock;
+import android.util.Log;
 import android.view.View;
 
 import org.godotengine.godot.Dictionary;
@@ -39,6 +48,12 @@ import org.godotengine.godot.plugin.UsedByGodot;
  * 3. ERROS DA ABERTURA ANTERIOR. Na abertura, le o logcat do proprio jogo
  *    (o Android deixa cada app ler o seu) e guarda os erros da sessao
  *    anterior: o jogo mostra na tela, e basta uma foto — sem cabo, sem ADB.
+ *
+ * 4. O USB SOLTO QUANDO O JOGO SAI DA FRENTE (build 126). A webcam e o
+ *    Arduino ficavam abertos com o jogo escondido (outro app na tela, o
+ *    instalador de APK) e o processo era encerrado com a webcam ainda
+ *    transmitindo. Agora, com o jogo fora da tela, os dois sao fechados; e
+ *    na saida do jogo a webcam e fechada ESPERANDO ela soltar de fato.
  */
 public class PunchQuadros extends GodotPlugin {
     private Object ponte;
@@ -98,6 +113,11 @@ public class PunchQuadros extends GodotPlugin {
         }, "punch-logcat");
         leitor.setDaemon(true);
         leitor.start();
+        try {
+            observarCiclo(activity);
+        } catch (Throwable t) {
+            // sem o aviso de "escondido": o resto funciona igual
+        }
         return null;
     }
 
@@ -284,6 +304,152 @@ public class PunchQuadros extends GodotPlugin {
             }
         }
         return 0;
+    }
+
+    // ------------------------------------------------------------------
+    // 4. O USB SOLTO QUANDO O JOGO SAI DA FRENTE
+    // ------------------------------------------------------------------
+
+    /** Quantas vezes o USB foi solto por aqui (o jogo reabre a webcam ao ver mudar). */
+    private volatile int solturas = 0;
+
+    /**
+     * JOGO ESCONDIDO (onStop: outro app inteiro na frente, o instalador de
+     * APK, a TV Box em espera): solta a webcam e o Arduino. Uma janela de
+     * permissao por cima NAO esconde o jogo (so pausa) e nao solta nada.
+     */
+    private void observarCiclo(final Activity jogo) {
+        jogo.getApplication().registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
+            @Override
+            public void onActivityStopped(Activity a) {
+                if (a != jogo) return;
+                Thread t = new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        soltarUsb("jogo escondido", 0);
+                    }
+                }, "punch-soltar-usb");
+                t.setDaemon(true);
+                t.start();
+            }
+
+            @Override
+            public void onActivityCreated(Activity a, Bundle b) {
+            }
+
+            @Override
+            public void onActivityStarted(Activity a) {
+            }
+
+            @Override
+            public void onActivityResumed(Activity a) {
+            }
+
+            @Override
+            public void onActivityPaused(Activity a) {
+            }
+
+            @Override
+            public void onActivitySaveInstanceState(Activity a, Bundle b) {
+            }
+
+            @Override
+            public void onActivityDestroyed(Activity a) {
+            }
+        });
+    }
+
+    @UsedByGodot
+    public int solturasDoUsb() {
+        return solturas;
+    }
+
+    /**
+     * SAIDA DO JOGO: fecha a webcam e a porta do Arduino e espera a webcam
+     * soltar de fato, no maximo `esperaMs`. true = soltou dentro do prazo.
+     */
+    @UsedByGodot
+    public boolean soltarParaSair(int esperaMs) {
+        return soltarUsb("saida do jogo", Math.max(0, esperaMs));
+    }
+
+    @Override
+    public void onMainDestroy() {
+        soltarUsb("fim da tela do jogo", 800);
+        super.onMainDestroy();
+    }
+
+    private synchronized boolean soltarUsb(String porque, int esperaMs) {
+        boolean soltou = true;
+        try {
+            GodotPluginRegistry registro = GodotPluginRegistry.getPluginRegistry();
+            GodotPlugin camera = registro.getPlugin("PunchUsbSerial");
+            if (camera != null) {
+                camera.getClass().getMethod("stopUvcCamera").invoke(camera);
+                if (esperaMs > 0) soltou = esperarCameraSoltar(camera, esperaMs);
+            }
+            // O fechamento do PunchSerialSeguro ja espera a leitura parar.
+            GodotPlugin serial = registro.getPlugin("PunchSerialSeguro");
+            if (serial != null) serial.getClass().getMethod("closePort").invoke(serial);
+        } catch (Throwable t) {
+            soltou = false;
+        }
+        solturas++;
+        try {
+            Log.i("PunchCamera", "USB solto (" + porque + ")" + (soltou ? "" : " sem confirmacao"));
+        } catch (Throwable t) {
+            // nada
+        }
+        return soltou;
+    }
+
+    /**
+     * O `stopUvcCamera` so PEDE: a camera do sistema solta na thread dela, a
+     * UVC direta no executor da camera e o AUSBC na thread da interface. Uma
+     * marca enfileirada atras de cada pedido avisa quando todos terminaram.
+     */
+    private boolean esperarCameraSoltar(Object camera, int esperaMs) {
+        final CountDownLatch fim = new CountDownLatch(3);
+        Runnable marca = new Runnable() {
+            @Override
+            public void run() {
+                fim.countDown();
+            }
+        };
+        Class<?> c = camera.getClass();
+        try {
+            Field f = c.getDeclaredField("systemCameraThread");
+            f.setAccessible(true);
+            HandlerThread fio = (HandlerThread) f.get(camera);
+            if (fio == null || fio.getLooper() == null || !new Handler(fio.getLooper()).post(marca)) {
+                fim.countDown();
+            }
+        } catch (Throwable t) {
+            fim.countDown();
+        }
+        try {
+            Field f = c.getDeclaredField("cameraWorker");
+            f.setAccessible(true);
+            ((Executor) f.get(camera)).execute(marca);
+        } catch (Throwable t) {
+            fim.countDown();
+        }
+        try {
+            Activity a = getActivity();
+            if (a == null) {
+                fim.countDown();
+            } else {
+                a.runOnUiThread(marca);
+            }
+        } catch (Throwable t) {
+            fim.countDown();
+        }
+        try {
+            return fim.await(esperaMs, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return false;
+        }
     }
 
     // ------------------------------------------------------------------

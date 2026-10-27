@@ -1498,6 +1498,9 @@ var _luta_desenhos_2d := 0
 var degrau_grafico = Perfil.degrau_inicial()
 ## A build em que `degrau_grafico` foi medido.
 var degrau_da_build = Versao.NUMERO
+## A prova do carregador mediu que descer não deixa a luta mais rápida
+## (o que pesa é o processador): a luta não tira nada sozinha.
+var degrau_travado = false
 
 func _aplicar_degrau() -> void:
 	if arena == null or arena.degrau == degrau_grafico:
@@ -1508,8 +1511,10 @@ func _aplicar_degrau() -> void:
 	arena.aplicar_degrau(degrau_grafico)
 
 ## Uma luta abaixo da meta de quadros (85% de 30 na placa leve) desce o
-## gráfico um degrau — dois, se ela ficou abaixo da metade. Só desce:
-## subir e descer a cada luta faria o jogo trocar de cara toda hora.
+## gráfico um degrau. Só desce: subir e descer a cada luta faria o jogo
+## trocar de cara toda hora. E a luta só tira os fachos
+## (`Arena3D.DEGRAU_DA_LUTA`): encolher o 3D é decisão da prova do
+## carregador, que mede se adianta (build 126).
 ## Medido EM JANELAS DE 4 s DURANTE A LUTA (build 207), e não só no fim
 ## dela: na primeira luta numa TV Box fraca o gráfico já se acerta em
 ## poucos segundos, em vez de a luta inteira andar travada.
@@ -1518,7 +1523,7 @@ var _janela_tempo := 0.0
 var _janela_quadros := 0
 
 func _ajustar_degrau(qps: float, duracao: float) -> void:
-	if duracao < JANELA_DO_DEGRAU - 0.01 or degrau_grafico >= Arena3D.DEGRAUS.size() - 1:
+	if duracao < JANELA_DO_DEGRAU - 0.01 or degrau_grafico >= Arena3D.DEGRAU_DA_LUTA or degrau_travado:
 		return
 	# O degrau anterior (tamanho ou antisserrilhado) só entra na próxima
 	# luta: esta janela ainda mediu o gráfico antigo, e descer de novo por
@@ -1529,7 +1534,7 @@ func _ajustar_degrau(qps: float, duracao: float) -> void:
 	if qps >= meta * 0.85:
 		return
 	var antes = degrau_grafico
-	degrau_grafico = int(min(degrau_grafico + (2 if qps < meta * 0.5 else 1), Arena3D.DEGRAUS.size() - 1))
+	degrau_grafico = Arena3D.DEGRAU_DA_LUTA
 	Diario.marca("GRÁFICO: luta a %.0f qps (meta %.0f) — degrau %d → %d (%s)" % [
 		qps, meta, antes, degrau_grafico, Arena3D.DEGRAUS[degrau_grafico]])
 	_aplicar_degrau()
@@ -1646,7 +1651,11 @@ func _processar_contagem(delta: float) -> void:
 	# esperando, e a foto é sempre de um quadro de agora.
 	# A câmera nunca segura o relógio da partida. Se o quadro estiver vivo,
 	# a foto entra; se não estiver, o ranking usa o avatar e todo o restante
-	# do jogo segue no mesmo tempo, sem aviso de erro para o jogador.
+	# do jogo segue no mesmo tempo, sem aviso de erro para o jogador. A
+	# única espera é a da webcam CONECTADA que ainda está abrindo, com prazo
+	# (`_esperando_a_camera`).
+	if _esperando_a_camera(delta):
+		return
 	if not pose_finished and _pose_perdeu_a_imagem(delta):
 		Diario.marca("JOGO: a imagem da câmera caiu na pose — rodada sem foto, direto para o ringue")
 		pose_finished = true
@@ -2549,6 +2558,41 @@ func _pressionou_start() -> void:
 func _rodada_com_foto() -> bool:
 	return camera_enabled and camera_service != null and camera_service.pronta_para_foto()
 
+## A POSE ESPERA A WEBCAM QUE AINDA ESTÁ ABRINDO (build 126).
+##
+## "Quando não houver câmera, pule — mas reconheça a que está ligada já
+## na primeira rodada." Com uma webcam CONECTADA e ainda sem vídeo (a
+## máquina acabou de ligar, o serviço de câmera do Android ainda subindo),
+## a rodada não desiste da foto no START: a tela da pose diz "PREPARANDO A
+## CÂMERA" e a contagem só começa com o primeiro quadro ao vivo. Sem
+## nenhuma webcam no USB, nada muda: direto para o ringue. E se ela não
+## abrir em `ESPERA_DA_CAMERA` segundos, a rodada segue sem foto.
+const ESPERA_DA_CAMERA = 8.0
+var _espera_da_camera := -1.0
+
+## Um quadro da espera; true enquanto a contagem ainda não pode começar.
+func _esperando_a_camera(delta: float) -> bool:
+	if _espera_da_camera < 0.0:
+		return false
+	if camera_service != null and camera_service.pronta_para_foto():
+		Diario.marca("JOGO: a webcam chegou em %.1f s — pose com foto" % _espera_da_camera)
+		_espera_da_camera = -1.0
+		_pose_sem_imagem = 0.0
+		countdown_left = 3.0
+		last_count = 3
+		return false
+	_espera_da_camera += delta
+	if _espera_da_camera < ESPERA_DA_CAMERA:
+		return true
+	Diario.marca("JOGO: a webcam não abriu em %.0f s — rodada sem foto (%s)" % [
+		ESPERA_DA_CAMERA, camera_service.motivo_curto() if camera_service != null else "?"])
+	_espera_da_camera = -1.0
+	pose_finished = true
+	result_photo_path = ""
+	_recolhendo_saco = false
+	countdown_left = -1.2
+	return false
+
 ## A IMAGEM CAIU NO MEIO DA POSE: a rodada desiste da foto e segue para o
 ## ringue. Pedir "OLHE PARA A CÂMERA" com o boneco desenhado no lugar da
 ## pessoa é exatamente o "pede a foto sem a câmera". A câmera tem o prazo
@@ -2667,6 +2711,14 @@ func _comecar_contagem() -> void:
 	# SEM CÂMERA AO VIVO NÃO HÁ POSE: a rodada vai direto ao ringue, e lá
 	# o saco sobe primeiro se não estiver em cima (`_pedir_descida_do_saco`).
 	var com_foto = _rodada_com_foto()
+	# A WEBCAM ESTÁ CONECTADA, SÓ AINDA NÃO ABRIU (a primeira rodada depois
+	# de ligar a máquina): a pose espera por ela (ver `ESPERA_DA_CAMERA`).
+	_espera_da_camera = -1.0
+	if not com_foto and camera_enabled and camera_service != null and camera_service.esperada():
+		camera_service.apressar()
+		_espera_da_camera = 0.0
+		com_foto = true
+		Diario.marca("JOGO: webcam conectada ainda sem vídeo — a pose espera por ela (até %.0f s)" % ESPERA_DA_CAMERA)
 	_recolhendo_saco = com_foto and _motor_em_uso()
 	_recolhendo_desde = animation_time
 	_pose_sem_imagem = 0.0
@@ -2755,6 +2807,7 @@ func _entrar_em_abertura() -> void:
 	# cancelada, Central aberta) desfaz uma troca que ainda esperava a
 	# cortina fechar.
 	_troca_pendente = ""
+	_espera_da_camera = -1.0
 	if camera_service != null:
 		camera_service.retomar()
 	if arena != null:
@@ -3310,14 +3363,21 @@ func _encerrar_ensaio() -> void:
 ## descem o degrau antes da primeira luta. O carregador ainda está por
 ## cima (uma tela inteira a mais que na luta): a meta daqui é um pouco
 ## mais baixa que a da luta, que continua conferindo em janelas de 4 s.
+##
+## E SÓ DESCE O QUE ADIANTA (build 126). Um degrau que não deixou a arena
+## pelo menos `PROVA_GANHO` mais rápida volta para o de cima, e a prova
+## acaba: o que pesa ali é o processador, não os pixels, e encolher o 3D
+## só deixaria o lutador borrado sem ganhar nada.
 const PROVA_QUADROS = 4
 const PROVA_ASSENTAR = 6
 const PROVA_MEDIR = 24
 const PROVA_META = 0.80
+const PROVA_GANHO = 1.08
 var _prova = -1
 var _prova_q = 0
 var _prova_us = 0
 var _prova_tempos: Array = []
+var _prova_qps_antes = 0.0
 ## Build nova (ou instalação nova): a prova mede e escolhe o degrau.
 var _degrau_a_medir = true
 
@@ -3352,19 +3412,35 @@ func _passo_da_prova() -> bool:
 	_prova_q = 0
 	var meta = float(Perfil.fps())
 	var ultimo = Arena3D.DEGRAUS.size() - 1
+	if _prova_qps_antes > 0.0 and qps < _prova_qps_antes * PROVA_GANHO:
+		Diario.marca("PROVA: %.0f qps no degrau %d contra %.0f no %d — não adiantou, volta" % [
+			qps, degrau_grafico, _prova_qps_antes, degrau_grafico - 1])
+		_mudar_degrau_na_prova(degrau_grafico - 1)
+		degrau_travado = true
+		return _fim_da_prova()
 	if qps >= meta * PROVA_META or degrau_grafico >= ultimo:
 		Diario.marca("PROVA: %.0f qps no degrau %d (%s), fica" % [qps, degrau_grafico, Arena3D.DEGRAUS[degrau_grafico]])
-		_degrau_a_medir = false
-		_salvar()
-		return true
-	var antes = degrau_grafico
-	degrau_grafico = int(min(degrau_grafico + (2 if qps < meta * 0.5 else 1), ultimo))
+		return _fim_da_prova()
 	Diario.marca("PROVA: %.0f qps (meta %.0f), degrau %d → %d (%s)" % [
-		qps, meta, antes, degrau_grafico, Arena3D.DEGRAUS[degrau_grafico]])
-	# um instante fora do ar: o tamanho novo entra já
+		qps, meta, degrau_grafico, degrau_grafico + 1, Arena3D.DEGRAUS[degrau_grafico + 1]])
+	_prova_qps_antes = qps
+	_mudar_degrau_na_prova(degrau_grafico + 1)
+	return false
+
+## Um instante fora do ar: o tamanho novo entra já.
+func _mudar_degrau_na_prova(n: int) -> void:
+	degrau_grafico = n
 	arena.ligar(false)
 	arena.aplicar_degrau(degrau_grafico)
 	arena.ligar(true)
+
+## O degrau está escolhido e guardado. Se o tamanho mudou no último passo,
+## a arena ainda fica `PROVA_QUADROS` quadros no ar com ele: o primeiro
+## quadro do tamanho novo também acontece atrás do carregador.
+func _fim_da_prova() -> bool:
+	_degrau_a_medir = false
+	_salvar()
+	_prova = 0
 	return false
 
 ## A tela da luta por cima da arena no ar, com o estado real devolvido.
@@ -5945,6 +6021,7 @@ func _carregar() -> void:
 	var degrau_salvo = int(data.get("degrau_grafico", degrau_grafico))
 	if build_do_degrau == Versao.NUMERO:
 		degrau_grafico = int(clamp(degrau_salvo, 0, Arena3D.DEGRAUS.size() - 1))
+		degrau_travado = bool(data.get("degrau_travado", false))
 	# ...e é medido de novo antes da primeira luta (`_passo_da_prova`)
 	_degrau_a_medir = build_do_degrau != Versao.NUMERO
 	degrau_da_build = Versao.NUMERO
@@ -5999,6 +6076,7 @@ func _salvar() -> void:
 		"teto_efeitos": teto_efeitos,
 		"degrau_grafico": degrau_grafico,
 		"degrau_da_build": degrau_da_build,
+		"degrau_travado": degrau_travado,
 		"camera_preview_mirrored_v2": camera_mirrored,
 		"statistics": statistics,
 	})
@@ -6329,7 +6407,12 @@ func _draw_partida() -> void:
 				# nos primeiros segundos de qualquer rodada.
 				if camera_enabled:
 					_carregando(rect.get_center() + Vector2(0.0, 210.0), 30.0, Paleta.CIANO)
-			if _recolhendo_saco:
+			if _espera_da_camera >= 0.0:
+				# A webcam conectada ainda abrindo: a contagem espera por ela
+				# (ver `ESPERA_DA_CAMERA`).
+				_carregando(Vector2(540.0, 1400.0), 40.0, Paleta.CIANO)
+				_rotulo("PREPARANDO A CÂMERA…", 1490.0, Paleta.CIANO)
+			elif _recolhendo_saco:
 				# O saco ainda está subindo para a foto: a contagem espera.
 				_carregando(Vector2(540.0, 1400.0), 40.0, Paleta.AMBAR)
 				_rotulo("AGUARDE: RECOLHENDO O SACO", 1490.0, Paleta.AMBAR)

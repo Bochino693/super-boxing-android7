@@ -169,6 +169,24 @@ func ao_voltar() -> void:
 	_permissoes_conferidas_ms = 0
 	_uvc_proximo_religar_ms = int(min(_uvc_proximo_religar_ms, Time.get_ticks_msec() + 1500))
 	_proxima_busca_ms = 0
+	# A WEBCAM FOI SOLTA ENQUANTO O JOGO ESTAVA ESCONDIDO (build 126: ver
+	# `PunchQuadros.soltarUsb`). Ela volta como numa abertura nova — sem
+	# esperar o vigia descobrir que os quadros pararam.
+	if _ponte_quadros != null:
+		var solturas = int(_ponte_quadros.call("solturasDoUsb"))
+		if solturas != _solturas_vistas:
+			_solturas_vistas = solturas
+			_registro("a webcam foi solta com o jogo escondido: abrindo de novo")
+			_uvc_teve_video = false
+			_uvc_parada = false
+			_sem_video_desde_ms = 0
+			_uvc_quadro_ms = 0
+			_uvc_proximo_religar_ms = Time.get_ticks_msec() + 1000
+			if estado == Estado.ACESA:
+				estado = Estado.SUBINDO
+				status = "RETOMANDO A CÂMERA…"
+
+var _solturas_vistas = 0
 
 ## O DESPERTAR EM ETAPAS, UMA POR VEZ, COM FOLGA ENTRE ELAS.
 ##
@@ -178,9 +196,11 @@ func ao_voltar() -> void:
 ## próxima abertura do jogo mostra qual foi.
 ## Depois da animação de abertura inteira (~5,5 s) e do Arduino (6 s):
 ## a luva da entrada anda sem nada de câmera por baixo.
-## Na S905L a câmera acorda 15 s depois: longe do pico de memória do
-## carregamento e da abertura (a câmera do Android também gasta memória).
-const DESPERTAR_ATRASO_MS = 15000
+## ERAM 15 s (longe do pico de memória da S905L) — e quem chegava logo
+## depois de a máquina ligar jogava a primeira rodada SEM a câmera: ela
+## nem tinha começado a abrir (build 126). Agora 7 s, e o START com a
+## webcam conectada e ainda fechada apressa tudo na hora (`apressar`).
+const DESPERTAR_ATRASO_MS = 7000
 const DESPERTAR_PASSO_MS = 300
 var _etapa_despertar = -1
 var _proxima_etapa_ms = 0
@@ -623,9 +643,9 @@ func _iniciar_uvc_android() -> void:
 		return
 	if not _permissoes_ok or _caca != Caca.PONTE:
 		return
-	# A primeira chamada do plugin só começa a contar as câmeras: a próxima
-	# tentativa vem logo, e não 8 s depois.
-	_uvc_proximo_religar_ms = Time.get_ticks_msec() + 2000
+	# A primeira chamada do plugin só começa a contar as câmeras (a conta
+	# volta em milissegundos): a próxima tentativa vem logo.
+	_uvc_proximo_religar_ms = Time.get_ticks_msec() + 1000
 	_uvc_parada = false
 	if _feed != null or (_servidor_tem_camera() and not _ponte_tem_camera()):
 		return
@@ -634,6 +654,8 @@ func _iniciar_uvc_android() -> void:
 
 var _erro_da_ponte_avisado = false
 var _pediu_cheio = false
+## A imagem da webcam está grande na tela (pose, Central): quadro cheio.
+var _previa_cheia = false
 
 ## QUADRO CHEIO (640x480) SÓ NA JANELA DA FOTO. Fora dela o PunchQuadros
 ## entrega 320x240: 4x menos bytes atravessando do Java para o jogo, menos
@@ -657,8 +679,9 @@ func _amostrar_uvc_android(agora: int) -> bool:
 	var largura = 0
 	var altura = 0
 	if _ponte_quadros != null:
-		# A janela da foto passou sem `capture_photo`: volta ao leve.
-		if _pediu_cheio and agora > _obturador_ate_ms + 1500:
+		# A janela da foto passou sem `capture_photo` e a imagem não está
+		# mais grande na tela: volta ao leve.
+		if _pediu_cheio and not _previa_cheia and agora > _obturador_ate_ms + 1500:
 			_quadro_cheio(false)
 		var q = _ponte_quadros.call("pollQuadro")
 		if q is Dictionary and q.has("dados"):
@@ -704,6 +727,14 @@ func _amostrar_uvc_android(agora: int) -> bool:
 ## leitura quase para — e o plugin deixa de converter quadros que
 ## ninguém vai ver, liberando CPU para o impacto.
 func definir_ritmo(ms: int) -> void:
+	# A PRÉVIA DA POSE EM RESOLUÇÃO CHEIA (build 126). O ritmo rápido é o da
+	# pose e da Central — as duas telas em que a imagem aparece GRANDE (o
+	# visor da pose tem 720x720). Até a build 125 a ponte só entregava o
+	# quadro cheio no meio segundo do obturador: a pose inteira era 320x240
+	# esticada três vezes, e o rosto de quem jogava aparecia pixelado.
+	_previa_cheia = ms <= Perfil.CAMERA_CONTAGEM_MS
+	if _previa_cheia:
+		_quadro_cheio(true)
 	if ms == intervalo_uvc_ms:
 		return
 	intervalo_uvc_ms = ms
@@ -1128,6 +1159,63 @@ func quadro_recente() -> bool:
 func pronta_para_foto() -> bool:
 	return pronta() and tem_imagem() and quadro_recente()
 
+## HÁ UMA WEBCAM CONECTADA, MESMO QUE AINDA SEM VÍDEO? (build 126)
+##
+## "Na primeira vez que eu ligo a câmera não puxa: está na config, mas o
+## jogo ignora, como se não tivesse." A rodada só tinha foto com vídeo AO
+## VIVO no instante do START, e logo depois de ligar a máquina a webcam
+## ainda nem tinha aberto. Esta pergunta separa "não há câmera" (a foto é
+## pulada na hora, como antes) de "há câmera, ainda abrindo" (a pose
+## espera por ela): a API clássica do Android já conta a câmera, ou há um
+## aparelho de VÍDEO no barramento USB — o plugin responde sem abrir nada.
+func esperada() -> bool:
+	if not enabled:
+		return false
+	if ao_vivo():
+		return true
+	if OS.get_name() != "Android":
+		# no PC: uma câmera aberta, ou a ponte que já entregou vídeo nesta
+		# sessão (a webcam de mentira dos testes)
+		return _feed != null or _uvc_texture != null or not CameraServer.feeds().empty()
+	if _android_bridge == null:
+		_preparar_android_usb()
+	if _android_bridge == null:
+		return false
+	if _ponte_tem_camera():
+		return true
+	if not _ponte_tem("getUsbCameraStatus"):
+		return false
+	# Sem câmera aberta (nem abrindo), o plugin responde pelo barramento:
+	# "NENHUMA WEBCAM USB/UVC DETECTADA" é a única resposta de "não há".
+	# Abrindo ou recusando, ele devolve o estado dela — e ela existe.
+	return not ("NENHUMA" in str(_android_bridge.call("getUsbCameraStatus")).to_upper())
+
+## O START CHEGOU COM A WEBCAM CONECTADA E SEM VÍDEO: o que faltava para
+## ela abrir acontece agora, e não no relógio da tela de espera.
+func apressar() -> void:
+	if adormecida or not enabled:
+		return
+	var agora = Time.get_ticks_msec()
+	_registro("START com a webcam conectada e ainda sem vídeo: abrindo já")
+	if _etapa_despertar >= 0:
+		_proxima_etapa_ms = int(min(_proxima_etapa_ms, agora))
+	_permissoes_conferidas_ms = 0
+	_proxima_busca_ms = 0
+	if OS.get_name() == "Android" and _ponte_tem("getUvcStatus"):
+		var situacao = str(_android_bridge.call("getUvcStatus"))
+		# RECUSOU ANTES (o serviço de câmera ainda subindo depois do boot é
+		# o caso de sempre na primeira rodada): solta e abre do zero agora,
+		# em vez de esperar a próxima reabertura da tela de espera (30 s).
+		if _abertura_falhou(situacao) and _reaberturas < REABERTURAS_MAXIMAS:
+			_reaberturas += 1
+			_reaberta_em_ms = agora
+			_registro("reabrindo para a rodada (%s)" % situacao)
+			_android_bridge.call("stopUvcCamera")
+			_sem_video_desde_ms = agora
+			_uvc_proximo_religar_ms = agora + 1200
+			return
+	_uvc_proximo_religar_ms = int(min(_uvc_proximo_religar_ms, agora))
+
 func motivo_curto() -> String:
 	if not enabled:
 		return "CÂMERA DESLIGADA NA CENTRAL"
@@ -1300,13 +1388,24 @@ func _parar_uvc_android() -> void:
 	_uvc_texture = null
 	_proxima_leitura_uvc_ms = 0
 
-## Saída do jogo: nada de esperar a câmera fechar.
+## SAÍDA DO JOGO: A WEBCAM FECHADA DE VERDADE, COM PRAZO (build 126).
+##
+## Até a build 125 o pedido de fechar saía e o processo era encerrado no
+## mesmo instante — com a webcam ainda transmitindo pelo USB. Era o VOLTAR
+## do controle (o caminho para sair do jogo e instalar outro APK) que
+## deixava o driver USB da TV Box no meio de uma transmissão. Agora a ponte
+## dos quadros fecha a câmera e ESPERA ela soltar, no máximo
+## `ESPERA_PARA_SAIR_MS`: nunca a espera sem fim que congelava a saída.
+const ESPERA_PARA_SAIR_MS = 1200
+
 func soltar_para_sair() -> void:
 	enabled = false
 	set_process(false)
 	if OS.get_name() != "Android":
 		_parar_feed()
-	elif _android_bridge != null and not _ponte_tem("shutdown"):
+	elif _ponte_quadros != null:
+		_ponte_quadros.call("soltarParaSair", ESPERA_PARA_SAIR_MS)
+	elif _android_bridge != null:
 		_android_bridge.call("stopUvcCamera")
 
 func _exit_tree() -> void:

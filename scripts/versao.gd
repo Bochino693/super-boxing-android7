@@ -12,9 +12,9 @@ extends Reference
 ## NUMERO em um e escreva em NOTA o que mudou. Um carimbo que não sobe
 ## mente, e um carimbo que mente é pior do que carimbo nenhum.
 
-const NUMERO = 125
+const NUMERO = 126
 const DATA = "27/10/2026"
-const NOTA = "Mali-450 (TX9): a câmera não pula mais na primeira partida — o fim do carregamento põe a arena no ar como na luta (câmera andando, imagem na tela, MSAA já conferido), e numa build nova mede a velocidade ali mesmo e acerta o degrau do gráfico antes da primeira luta"
+const NOTA = "Mali-450 (TX9): webcam reconhecida já na primeira rodada (com ela conectada e ainda abrindo a pose espera; sem ela, pula); webcam e Arduino soltos ao sair e com o jogo escondido; 3D sempre em 1080 (a luta só tira os fachos), sem a cópia de tela cheia por quadro e sem os dois fachos de frente; prévia da pose em 640x480 e o fundo sem compressão em blocos"
 
 ## Rodapé da abertura: cabe em uma linha discreta.
 static func curta() -> String:
