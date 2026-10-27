@@ -18,6 +18,12 @@ extends Node
 ## instantes, e `--serie=DE,ATE,PASSO` fotografa de PASSO em PASSO segundos
 ## contados do início do resultado, e `--serie-top=DE,ATE,PASSO` o mesmo,
 ## contado de quando o TOP 20 é anunciado (a entrada das linhas).
+## `--carregador` liga o jogo como na máquina: carregador, ensaio e só
+## então as partidas (a PRIMEIRA partida depois de ligar é diferente das
+## outras: tudo o que ainda não foi desenhado nenhuma vez aparece nela).
+## `--log-camera=arquivo` grava por quadro a câmera da arena (posição e
+## campo de visão), o tempo do quadro, o estado, o degrau do gráfico e o
+## número do quadro desenhado.
 
 class PlacaDeMentira:
 	extends SerialLink
@@ -67,6 +73,10 @@ var _cortina_vista = false
 var _ultimo_cartao = -1.0
 var _serie = []
 var _serie_top = []
+var _carregador = null
+var _log_camera = ""
+var _linhas_camera = []
+var _t_total = 0.0
 var _top_visto = false
 
 
@@ -82,6 +92,10 @@ func _ready() -> void:
 			_esconder = a.substr(11)
 		elif a.begins_with("--degrau="):
 			_degrau = int(a.substr(9))
+		elif a == "--carregador":
+			_carregador = true
+		elif a.begins_with("--log-camera="):
+			_log_camera = a.substr(13)
 		elif a == "--natural":
 			_natural = true
 		elif a == "--camera":
@@ -100,15 +114,21 @@ func _ready() -> void:
 	# para medir; ver o resumo "PERF" no fim).
 	Engine.set_meta("perf", {})
 	Engine.set_meta("estado", "INICIO")
-	main = load("res://scenes/main.tscn").instance()
-	# a tela escolhida como no carregador: `PUNCH_GIRADO=1` desenha girado
-	# como na TV Box (direto se a janela for 1920x1080) e
-	# `PUNCH_SUBVIEWPORT=1` força a tela intermediária
-	if TelaGirada.intermediaria():
-		Compat.enquadrar(get_tree(), TelaGirada.JANELA if TelaGirada.girada() else TelaGirada.TELA)
-		TelaGirada.montar_intermediaria(self).add_child(main)
+	if _carregador != null:
+		# o jogo nasce dentro do carregador; as partidas começam quando ele
+		# termina (ver `_process`)
+		_carregador = load("res://scenes/carregador.tscn").instance()
+		add_child(_carregador)
 	else:
-		add_child(main)
+		main = load("res://scenes/main.tscn").instance()
+		# a tela escolhida como no carregador: `PUNCH_GIRADO=1` desenha girado
+		# como na TV Box (direto se a janela for 1920x1080) e
+		# `PUNCH_SUBVIEWPORT=1` força a tela intermediária
+		if TelaGirada.intermediaria():
+			Compat.enquadrar(get_tree(), TelaGirada.JANELA if TelaGirada.girada() else TelaGirada.TELA)
+			TelaGirada.montar_intermediaria(self).add_child(main)
+		else:
+			add_child(main)
 	_ultimo_us = OS.get_ticks_usec()
 	for lado in [0, 1]:
 		var sd = Sonda.new()
@@ -176,7 +196,21 @@ func _passo_da_camera() -> void:
 
 
 func _process(delta: float) -> void:
+	_t_total += delta
+	if main == null:
+		# carregador: espera a fase PRONTO (a última)
+		if _carregador != null and _carregador._jogo != null and int(_carregador.fase) == 5:
+			main = _carregador._jogo
+			print("PARTIDA_TESTE: carregador pronto em %.1f s" % _t_total)
+		_ultimo_us = OS.get_ticks_usec()
+		return
 	var agora = OS.get_ticks_usec()
+	if _log_camera != "" and main.arena != null and main.arena.camera != null:
+		var c = main.arena.camera.global_transform.origin
+		_linhas_camera.append("%.3f;%.4f;%d;%s;%s;%.4f;%.4f;%.4f;%.3f;%dx%d;%d;%.1f;%.1f;%d" % [
+			_t_total, delta, agora - _ultimo_us, GameDef.State.keys()[main.state], str(main.arena.ativa()),
+			c.x, c.y, c.z, main.arena.camera.fov, main.arena.size.x, main.arena.size.y, main.degrau_grafico,
+			_proc_us / 1000.0, _render_us / 1000.0, Engine.get_frames_drawn()])
 	var estado = GameDef.State.keys()[main.state] if main.state < GameDef.State.size() else str(main.state)
 	if main.state == GameDef.State.IDLE and main.intro_active:
 		estado = "INTRO"
@@ -288,6 +322,13 @@ func _foto(nome: String, depois: float) -> void:
 
 func _terminar() -> void:
 	set_process(false)
+	if _log_camera != "":
+		var fc = File.new()
+		fc.open(_log_camera, File.WRITE)
+		fc.store_line("t;delta;quadro_us;estado;arena;cx;cy;cz;fov;tam;degrau;logica_ms;desenho_ms;quadro")
+		for l in _linhas_camera:
+			fc.store_line(l)
+		fc.close()
 	if arquivo != "":
 		var f = File.new()
 		f.open(arquivo, File.WRITE)

@@ -1127,6 +1127,9 @@ func _montar_arena() -> void:
 ## recordes (`ESPERA_DO_RANKING`) e a Central também não o querem: ali
 ## a moldura já saiu da tela.
 func _arena_no_ar() -> bool:
+	# a prova do fim do ensaio, atrás do carregador (ver `_passo_da_prova`)
+	if _prova >= 0:
+		return true
 	if central_aberta or intro_active:
 		return false
 	if _tabela_no_ar():
@@ -1490,7 +1493,8 @@ var _luta_desenhos_2d := 0
 
 ## O DEGRAU DO GRÁFICO DA ARENA (ver `Arena3D.DEGRAUS`), escolhido pelo
 ## próprio jogo luta a luta e guardado. Cada build nova recomeça do degrau
-## inicial do perfil (`Perfil.degrau_inicial`) e reavalia.
+## inicial do perfil (`Perfil.degrau_inicial`) e reavalia — a primeira vez
+## ainda no carregador (`_passo_da_prova`), antes da primeira luta.
 var degrau_grafico = Perfil.degrau_inicial()
 ## A build em que `degrau_grafico` foi medido.
 var degrau_da_build = Versao.NUMERO
@@ -3260,7 +3264,7 @@ func _passo_do_ensaio() -> void:
 		if etapa <= Arena3D.ETAPAS_DE_AQUECIMENTO:
 			Diario.marca("ENSAIO: arena etapa %d" % etapa)
 			arena.etapa_de_aquecimento(etapa)
-	if _ensaio > ENSAIO_QUADROS:
+	if _ensaio > ENSAIO_QUADROS and _passo_da_prova():
 		_encerrar_ensaio()
 
 ## Para o carregador: quanto do aquecimento já foi (0 a 1) e se acabou.
@@ -3269,7 +3273,7 @@ func aquecimento_progresso() -> float:
 		return 1.0
 	if _ensaio < 0:
 		return 0.0
-	return clamp(float(_ensaio) / float(ENSAIO_QUADROS), 0.0, 1.0)
+	return clamp(float(_ensaio) / float(ENSAIO_QUADROS + PROVA_QUADROS), 0.0, 1.0)
 
 func aquecimento_pronto() -> bool:
 	return _ensaio_feito or (_ensaio < 0 and not entrada_segurada)
@@ -3280,13 +3284,107 @@ func _encerrar_ensaio() -> void:
 	if _ensaio < 0:
 		return
 	_ensaio = -1
+	_prova = -1
 	_ensaio_feito = true
 	if arena != null:
 		arena.etapa_de_aquecimento(Arena3D.ETAPAS_DE_AQUECIMENTO)
 	fx.limpar()
 	update()
 
+## A ARENA VAI AO AR ANTES DO JOGO (build 125). "Sempre na primeira
+## partida a câmera pula": o primeiro quadro da arena no ar era o primeiro
+## DE VERDADE. As etapas do aquecimento desenham o ringue, a torcida e o
+## lutador, mas nunca como na luta — a câmera parada, a imagem da arena
+## nunca posta na tela e o MSAA conferido só no último quadro. Numa placa
+## em que o MSAA falha, a arena seguia sem ele numa imagem que nenhum
+## quadro do aquecimento tinha usado: no PC, 1,5 s de tela parada no
+## primeiro quadro da primeira luta, e nunca mais. Agora o ensaio termina
+## com a arena NO AR atrás do carregador: câmera andando, luzes, lutador e
+## a tela da luta por cima, do jeito que ela vai aparecer.
+##
+## E O DEGRAU DE UMA BUILD NOVA SAI DAQUI. Cada build nova recomeça no
+## degrau completo, e ele só descia DURANTE a primeira luta — com o tamanho
+## novo esperando a luta seguinte: a primeira luta depois de instalar
+## andava inteira no gráfico mais pesado, aos trancos. Na build nova estes
+## mesmos quadros medem a velocidade (`PROVA_MEDIR` quadros por degrau) e
+## descem o degrau antes da primeira luta. O carregador ainda está por
+## cima (uma tela inteira a mais que na luta): a meta daqui é um pouco
+## mais baixa que a da luta, que continua conferindo em janelas de 4 s.
+const PROVA_QUADROS = 4
+const PROVA_ASSENTAR = 6
+const PROVA_MEDIR = 24
+const PROVA_META = 0.80
+var _prova = -1
+var _prova_q = 0
+var _prova_us = 0
+var _prova_tempos: Array = []
+## Build nova (ou instalação nova): a prova mede e escolhe o degrau.
+var _degrau_a_medir = true
+
+## Um quadro da prova; true quando ela acabou.
+func _passo_da_prova() -> bool:
+	if arena == null or arena.lutador == null:
+		return true
+	var agora = OS.get_ticks_usec()
+	var dt = float(agora - _prova_us) / 1000000.0
+	_prova_us = agora
+	_prova += 1
+	if _prova == 0:
+		Diario.marca("PROVA: arena no ar atrás do carregador%s" % (" (medindo o degrau)" if _degrau_a_medir else ""))
+		return false
+	if not _degrau_a_medir:
+		return _prova >= PROVA_QUADROS
+	_prova_q += 1
+	if _prova_q <= PROVA_ASSENTAR:
+		return false
+	_prova_tempos.append(dt)
+	if _prova_tempos.size() < PROVA_MEDIR:
+		return false
+	# a média sem o pior quadro: um soluço do Android não derruba o degrau
+	var tempos = _prova_tempos.duplicate()
+	tempos.sort()
+	tempos.pop_back()
+	var soma = 0.0
+	for t in tempos:
+		soma += t
+	var qps = float(tempos.size()) / max(soma, 0.001)
+	_prova_tempos.clear()
+	_prova_q = 0
+	var meta = float(Perfil.fps())
+	var ultimo = Arena3D.DEGRAUS.size() - 1
+	if qps >= meta * PROVA_META or degrau_grafico >= ultimo:
+		Diario.marca("PROVA: %.0f qps no degrau %d (%s), fica" % [qps, degrau_grafico, Arena3D.DEGRAUS[degrau_grafico]])
+		_degrau_a_medir = false
+		_salvar()
+		return true
+	var antes = degrau_grafico
+	degrau_grafico = int(min(degrau_grafico + (2 if qps < meta * 0.5 else 1), ultimo))
+	Diario.marca("PROVA: %.0f qps (meta %.0f), degrau %d → %d (%s)" % [
+		qps, meta, antes, degrau_grafico, Arena3D.DEGRAUS[degrau_grafico]])
+	# um instante fora do ar: o tamanho novo entra já
+	arena.ligar(false)
+	arena.aplicar_degrau(degrau_grafico)
+	arena.ligar(true)
+	return false
+
+## A tela da luta por cima da arena no ar, com o estado real devolvido.
+func _tela_da_prova() -> void:
+	var guardado = {}
+	for nome in ENSAIO_SALVA:
+		var valor = get(nome)
+		guardado[nome] = valor.duplicate() if (valor is Array or valor is Dictionary) else valor
+	fundo.visible = true
+	state = GameDef.State.ARMED
+	_draw_partida()
+	_draw_logo_do_alto()
+	_logo_do_alto = false
+	for nome in guardado:
+		set(nome, guardado[nome])
+
 func _draw_ensaio() -> void:
+	if _prova >= 0:
+		_tela_da_prova()
+		return
 	# os dois primeiros quadros são o da montagem: só a abertura, leve;
 	# depois, `ENSAIO_TELAS_POR_QUADRO` telas novas por quadro; depois das
 	# telas, a abertura leve
@@ -5847,6 +5945,8 @@ func _carregar() -> void:
 	var degrau_salvo = int(data.get("degrau_grafico", degrau_grafico))
 	if build_do_degrau == Versao.NUMERO:
 		degrau_grafico = int(clamp(degrau_salvo, 0, Arena3D.DEGRAUS.size() - 1))
+	# ...e é medido de novo antes da primeira luta (`_passo_da_prova`)
+	_degrau_a_medir = build_do_degrau != Versao.NUMERO
 	degrau_da_build = Versao.NUMERO
 	# Aplicado na arena em `_montar_arena`, antes do ensaio que compila os
 	# shaders.
