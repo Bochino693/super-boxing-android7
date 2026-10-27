@@ -32,8 +32,8 @@ const QUADRO_CRITICO_MS = 48.0
 ## lógica. Build 122: 1,0 — a arena nasce do tamanho da tela (1080x1920),
 ## pixel por pixel, sem ampliar. Até a 121 o teto era 0,72 (778x1382
 ## ampliados 1,39 vez: a imagem "macia"). Se a luta sair lenta, o jogo
-## desce sozinho os degraus do gráfico (`Arena3D.DEGRAUS`: 85%, 72%, sem
-## fachos, 66%, 60%) e guarda o degrau.
+## desce sozinho os degraus do gráfico (`Arena3D.DEGRAUS`: primeiro sem
+## fachos, ainda em 1080; 85% só se a prova medir que adianta) e guarda.
 const ARENA_ESCALA = 1.0
 ## Antisserrilhado da arena: MSAA 4x. Na Mali-450 ele é resolvido dentro da
 ## placa (quase de graça, como no Strike Kids) e acaba com o pontilhado

@@ -14,6 +14,9 @@ extends Node
 ## rodada passa pela pose e pela foto, e as fotos da tela pegam a cortina
 ## do ringue quadro a quadro. `--camera-cai=S` corta a webcam S segundos
 ## depois do START (a pose tem de desistir e ir para o ringue).
+## `--camera-atrasa=S` deixa a webcam sem quadros até S segundos depois do
+## primeiro START (a primeira rodada depois de ligar a máquina): a pose
+## espera por ela e só então conta e fotografa.
 ## Com `--fotos`, a chegada de cada cartão de soco é fotografada em quatro
 ## instantes, e `--serie=DE,ATE,PASSO` fotografa de PASSO em PASSO segundos
 ## contados do início do resultado, e `--serie-top=DE,ATE,PASSO` o mesmo,
@@ -66,6 +69,7 @@ var _degrau = -1
 var _natural = false
 var _camera = false
 var _camera_cai = -1.0
+var _camera_atrasa = -1.0
 var _start_em = -1.0
 var _quadro_cam = 0
 var _proximo_quadro_cam = 0.0
@@ -110,6 +114,9 @@ func _ready() -> void:
 		elif a.begins_with("--camera-cai="):
 			_camera = true
 			_camera_cai = float(a.substr(13))
+		elif a.begins_with("--camera-atrasa="):
+			_camera = true
+			_camera_atrasa = float(a.substr(16))
 	# Cronômetros por chamada (só quando o código foi instrumentado à mão,
 	# para medir; ver o resumo "PERF" no fim).
 	Engine.set_meta("perf", {})
@@ -129,6 +136,7 @@ func _ready() -> void:
 			TelaGirada.montar_intermediaria(self).add_child(main)
 		else:
 			add_child(main)
+		TelaGirada.aplicar_tela_direta(get_tree())
 	_ultimo_us = OS.get_ticks_usec()
 	for lado in [0, 1]:
 		var sd = Sonda.new()
@@ -177,6 +185,11 @@ func _passo_da_camera() -> void:
 	var cs = main.camera_service
 	if _camera_cai >= 0.0 and _start_em >= 0.0 and t - _start_em >= _camera_cai:
 		return
+	if _camera_atrasa >= 0.0 and feitas == 0 and (_start_em < 0.0 or t - _start_em < _camera_atrasa):
+		# conectada e ainda sem vídeo: a ponte existe, quadro nenhum
+		if cs._uvc_texture == null:
+			cs._uvc_texture = ImageTexture.new()
+		return
 	if t < _proximo_quadro_cam:
 		return
 	_proximo_quadro_cam = t + 0.125
@@ -186,7 +199,7 @@ func _passo_da_camera() -> void:
 	img.fill(Color(0.25, 0.3, 0.45))
 	var lado = 60 + (_quadro_cam * 7) % 80
 	img.fill_rect(Rect2(130 - lado / 2, 120 - lado / 2, lado, lado), Color(0.95, 0.8, 0.6))
-	if cs._uvc_texture == null:
+	if cs._uvc_texture == null or cs._uvc_texture.get_width() == 0:
 		cs._uvc_texture = ImageTexture.new()
 		cs._uvc_texture.create_from_image(img, Texture.FLAG_FILTER)
 	else:
@@ -262,7 +275,10 @@ func _process(delta: float) -> void:
 				_foto("p%d_start" % feitas, 0.5)
 		GameDef.State.COUNTDOWN:
 			if main.transicao < 0.0 and not main.pose_finished:
-				_foto("p%d_pose" % feitas, 0.0)
+				if main._espera_da_camera >= 0.0:
+					_foto("p%d_pose_espera" % feitas, 0.0)
+				else:
+					_foto("p%d_pose" % feitas, 0.0)
 			if main.pose_finished and main.transicao >= 0.0 and not _cortina_vista:
 				_cortina_vista = true
 				for k in 6:

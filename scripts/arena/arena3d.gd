@@ -203,7 +203,8 @@ void fragment() {
 }
 """
 
-## O último degrau do gráfico (ver `DEGRAUS`).
+## O menor tamanho da arena, numa TV que mostra menos que 1080 de largura
+## (ver `_escala_do_degrau`).
 const ARENA_ESCALA_SEGURA = 0.60
 ## A torcida da S905L (`SHADER_TORCIDA_SEGURA`): folga em cima da fileira e
 ## onde começa o encosto (o mesmo `ASSENTO` de `tools/gerar_torcida.py`).
@@ -1310,31 +1311,29 @@ func _sombra_de_contato() -> void:
 ##
 ##   0 NATIVO        tudo, a arena na resolução da tela (1080x1920: cada
 ##                   pixel do 3D é um pixel da TV, sem ampliar nada);
-##   1 3D A 85%      a arena desenhada com 85% dos pixels de cada lado;
-##   2 3D A 72%      72% (o degrau de cima das builds 119 a 121);
-##   3 SEM FACHOS    os cones de luz e os flashes da plateia
-##                   (transparentes, cobrem boa parte da tela);
-##   4 3D A 66%      66%, ainda sem fachos;
-##   5 3D A 60%      60% (na tela inteira, os mesmos pixels que a
-##                   build 118 desenhava no quadro dela).
-## BUILD 122: A ARENA NASCE NA RESOLUÇÃO DA TELA. Até a 121 ela nascia em
-## 72% e era ampliada 1,39 vez — era a imagem "macia", o lutador sem
-## definição. A build 121 tirou da placa de vídeo duas passadas de tela
-## cheia e centenas de chamadas por quadro; esse fôlego vai para a
-## nitidez. Numa TV Box em 720p o degrau de cima é a resolução da TV (não
-## adianta desenhar mais pixels do que ela mostra).
-## Abaixo de 60% a arena não desce — a nitidez do lutador é o jogo.
+##   1 SEM FACHOS    os cones de luz e os flashes da plateia
+##                   (transparentes, cobrem boa parte da tela) — ainda
+##                   na resolução da tela;
+##   2 3D A 85%      a arena com 85% dos pixels de cada lado, sem fachos.
 ##
-## O jogo escolhe sozinho (`main.gd`, `_ajustar_degrau`): mede a luta em
-## janelas de 4 s e, se ela ficou abaixo da meta de quadros, desce um
-## degrau (dois, se ficou abaixo da metade) — e guarda, para a próxima vez
-## que a máquina ligar. Cada build nova recomeça do degrau 0.
+## BUILD 126: O 3D FICA EM 1080. Até a 125 a escada seguia descendo a
+## resolução até 60% (72%, 66%, 60%): a imagem ampliada 1,4 a 1,7 vez era
+## o lutador "pixelado" — e numa TV Box em que o que pesa é o processador
+## (a Mali-450 não deforma o lutador: quem faz isso é a CPU) encolher a
+## imagem nem deixava o jogo mais rápido. Agora a luta só tira os fachos
+## (`main._ajustar_degrau`); os 85% só entram pela prova do carregador
+## (`main._passo_da_prova`), e só se ela MEDIR que encolher adiantou.
+## Numa TV Box em 720p o degrau de cima é a resolução da TV (não adianta
+## desenhar mais pixels do que ela mostra).
 ##
-## Os fachos (3) entram na hora (é só esconder uma peça já compilada). O
-## tamanho realoca a imagem da arena — no quadro da troca o lutador
+## Os fachos entram e saem na hora (é só esconder uma peça já compilada).
+## O tamanho realoca a imagem da arena — no quadro da troca o lutador
 ## sumiria —, então ele espera a arena sair da tela (`ligar`).
-const DEGRAUS = ["NATIVO", "3D A 85%", "3D A 72%", "SEM FACHOS", "3D A 66%", "3D A 60%"]
-const ESCALA_DO_DEGRAU = [1.0, 0.85, 0.72, 0.72, 0.66, ARENA_ESCALA_SEGURA]
+const DEGRAUS = ["NATIVO", "SEM FACHOS", "3D A 85%"]
+const ESCALA_DO_DEGRAU = [1.0, 1.0, 0.85]
+## O último degrau que a luta pode pedir sozinha: sem fachos, na resolução
+## da tela.
+const DEGRAU_DA_LUTA = 1
 var degrau = 0
 
 func aplicar_degrau(n: int) -> void:
@@ -1350,7 +1349,7 @@ func aplicar_degrau(n: int) -> void:
 		_aplicar_tamanho()
 
 func _enfeites_do_degrau() -> bool:
-	return degrau < 3
+	return degrau < 1
 
 func _escala_do_degrau() -> float:
 	var e = min(float(ESCALA_DO_DEGRAU[degrau]), Perfil.ARENA_ESCALA)
@@ -1557,9 +1556,10 @@ func _montar_ginasio() -> void:
 		# o facho (só os de luz branca e os coloridos de dentro)
 		if i >= 1 and i <= 5:
 			cones.append(_facho(onde - giro.y * 0.11, alvo, cores[i], 0.30 if cores[i] == Color("fff1d8") else 0.22, cones.size()))
-	# DOIS FACHOS DE CIMA, de refletores fora do quadro, cruzando no ringue
-	cones.append(_facho(Vector3(-1.9, 5.2, 1.2), Vector3(0.15, 0.0, -0.2), Color("fff3e0"), 0.07, cones.size()))
-	cones.append(_facho(Vector3(1.9, 5.2, 1.2), Vector3(-0.15, 0.0, -0.2), Color("fff3e0"), 0.07, cones.size()))
+	# (Os dois fachos de cima, de refletores fora do quadro cruzando no
+	# ringue, saíram na build 126: perto da câmera e quase transparentes,
+	# eles pintavam 2,2 milhões de pixels por quadro — mais de uma tela
+	# inteira — por uma névoa que quase não se via.)
 	_peca(_juntar(carcacas), _material_aceso(Color("2a2b36")), Vector3.ZERO)
 	_mat_fachos = ShaderMaterial.new()
 	var sf = Shader.new()
