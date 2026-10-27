@@ -391,7 +391,6 @@ func _configurar_janela() -> void:
 		Compat.enquadrar(get_tree(), Vector2(1920, 1080))
 	else:
 		Compat.enquadrar(get_tree(), TELA)
-	TelaGirada.aplicar_tela_direta(get_tree())
 
 
 func _carregar_fonte(caminho: String) -> Resource:

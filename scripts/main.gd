@@ -2566,9 +2566,12 @@ func _rodada_com_foto() -> bool:
 ## a rodada não desiste da foto no START: a tela da pose diz "PREPARANDO A
 ## CÂMERA" e a contagem só começa com o primeiro quadro ao vivo. Sem
 ## nenhuma webcam no USB, nada muda: direto para o ringue. E se ela não
-## abrir em `ESPERA_DA_CAMERA` segundos, a rodada segue sem foto.
-const ESPERA_DA_CAMERA = 8.0
+## abrir em `ESPERA_DA_CAMERA` segundos, a rodada segue sem foto — e as
+## próximas rodadas não esperam mais (build 127): uma webcam que não abre
+## não segura a fila de jogadores, rodada após rodada.
+const ESPERA_DA_CAMERA = 6.0
 var _espera_da_camera := -1.0
+var _camera_nao_abriu := false
 
 ## Um quadro da espera; true enquanto a contagem ainda não pode começar.
 func _esperando_a_camera(delta: float) -> bool:
@@ -2587,6 +2590,7 @@ func _esperando_a_camera(delta: float) -> bool:
 	Diario.marca("JOGO: a webcam não abriu em %.0f s — rodada sem foto (%s)" % [
 		ESPERA_DA_CAMERA, camera_service.motivo_curto() if camera_service != null else "?"])
 	_espera_da_camera = -1.0
+	_camera_nao_abriu = true
 	pose_finished = true
 	result_photo_path = ""
 	_recolhendo_saco = false
@@ -2714,7 +2718,8 @@ func _comecar_contagem() -> void:
 	# A WEBCAM ESTÁ CONECTADA, SÓ AINDA NÃO ABRIU (a primeira rodada depois
 	# de ligar a máquina): a pose espera por ela (ver `ESPERA_DA_CAMERA`).
 	_espera_da_camera = -1.0
-	if not com_foto and camera_enabled and camera_service != null and camera_service.esperada():
+	if not com_foto and not _camera_nao_abriu and camera_enabled and camera_service != null \
+			and camera_service.esperada():
 		camera_service.apressar()
 		_espera_da_camera = 0.0
 		com_foto = true

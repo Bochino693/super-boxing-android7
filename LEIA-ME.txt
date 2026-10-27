@@ -1,4 +1,4 @@
-SUPER BOXING - TV BOX MALI-450 (TX9) - OPENGL ES 2.0 - BUILD 126
+SUPER BOXING - TV BOX MALI-450 (TX9) - OPENGL ES 2.0 - BUILD 127
 =================================================================
 
 ESTA VERSAO E PARA TV BOX COM PLACA DE VIDEO MALI-450 (TX9): Godot 3.6,
@@ -6,8 +6,30 @@ OpenGL ES 2.0. UM ARQUIVO SO: GERAR_APK_AGORA.bat gera o
 APK certo. Veja "GERAR O APK" mais abaixo.
 
 CONFIRA NA MAQUINA: o rodape da abertura e a Central mostram
-"BUILD 126". Se aparecer outro numero, o APK instalado e o antigo -
+"BUILD 127". Se aparecer outro numero, o APK instalado e o antigo -
 gere o APK de novo com GERAR_APK_AGORA.bat e instale por cima.
+
+O QUE A BUILD 127 MUDA (BASE: A 126)
+------------------------------------
+- A WEBCAM NAO CONGELA MAIS E O JOGO NAO CAI NO NOVO START. A 126 mexeu
+  demais na webcam a cada rodada:
+  * pedia a imagem CHEIA (640x480 ou maior) durante a pose inteira e na
+    Central - 4 vezes mais dados atravessando do Android para o jogo a
+    cada 125 ms, numa TV Box de 1 GB. Voltou ao quadro leve, como em
+    todas as builds estaveis (o cheio so no meio segundo da foto);
+  * no START, com a webcam sem imagem, ela era FECHADA E REABERTA na hora,
+    e o vigia dela comecava a fechar/abrir dentro da rodada. Fechar e
+    abrir a webcam em sequencia e o que derruba a TV Box. Agora o START
+    nunca mexe na webcam.
+- A ESPERA DA PRIMEIRA RODADA SO PARA A WEBCAM QUE AINDA NAO ABRIU: se a
+  webcam ja deu imagem nesta sessao e agora esta sem ela, a rodada pula a
+  foto na hora, como antes. A espera ("PREPARANDO A CAMERA...") e de no
+  maximo 6 s e acontece uma vez so: se a webcam nao abrir, as rodadas
+  seguintes nao esperam mais.
+- A TELA VOLTOU AO CAMINHO DE SEMPRE DO GODOT (a 126 desenhava direto na
+  TV, um modo que nao deu para testar na Mali-450).
+- Continua da 126: 3D em 1080, fundo sem blocos, sem os dois fachos de
+  frente, webcam e Arduino soltos ao sair e com o jogo escondido.
 
 O QUE A BUILD 126 MUDA (BASE: A 125)
 ------------------------------------
@@ -21,7 +43,7 @@ O QUE A BUILD 126 MUDA (BASE: A 125)
   Sem webcam nenhuma, a rodada continua indo direto para o ringue.
 - A IMAGEM DA POSE NITIDA: durante a pose a webcam vinha em 320x240
   esticada para o visor de 720x720 (o rosto pixelado). Agora a pose e a
-  Central recebem 640x480.
+  Central recebem 640x480. (Desfeito na 127: congelava a webcam.)
 - WEBCAM E ARDUINO SOLTOS AO SAIR: o VOLTAR do controle encerrava o jogo
   com a webcam ainda transmitindo pelo USB. Agora a webcam e fechada e o
   jogo espera ela soltar (no maximo 1,2 s) antes de sair; e com o jogo
@@ -34,7 +56,7 @@ O QUE A BUILD 126 MUDA (BASE: A 125)
   os fachos de luz; 85% so pela prova do carregador, e so se ela medir
   que adianta.
 - MAIS RAPIDO NA MESMA RESOLUCAO: a tela e desenhada direto na TV (sem a
-  copia de tela cheia que o Godot fazia a cada quadro) e sairam os dois
+  copia de tela cheia que o Godot fazia a cada quadro; desfeito na 127) e sairam os dois
   fachos de frente (quase invisiveis, pintavam mais de uma tela inteira
   por quadro). Medido no PC: a luta caiu de 13,6 para 9,4 milhoes de
   pixels pintados por quadro, a tela de espera de 5,6 para 3,5.

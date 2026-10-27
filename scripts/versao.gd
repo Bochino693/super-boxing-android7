@@ -12,9 +12,9 @@ extends Reference
 ## NUMERO em um e escreva em NOTA o que mudou. Um carimbo que não sobe
 ## mente, e um carimbo que mente é pior do que carimbo nenhum.
 
-const NUMERO = 126
+const NUMERO = 127
 const DATA = "27/10/2026"
-const NOTA = "Mali-450 (TX9): webcam reconhecida já na primeira rodada (com ela conectada e ainda abrindo a pose espera; sem ela, pula); webcam e Arduino soltos ao sair e com o jogo escondido; 3D sempre em 1080 (a luta só tira os fachos), sem a cópia de tela cheia por quadro e sem os dois fachos de frente; prévia da pose em 640x480 e o fundo sem compressão em blocos"
+const NOTA = "Mali-450 (TX9): webcam estável e ciclo completo — a prévia da pose volta ao quadro leve (o cheio na pose inteira congelava a webcam), o START nunca fecha nem reabre a webcam, a espera da primeira rodada só vale para a webcam que ainda não abriu (uma vez, até 6 s), e a tela volta ao caminho de sempre do Godot"
 
 ## Rodapé da abertura: cabe em uma linha discreta.
 static func curta() -> String:

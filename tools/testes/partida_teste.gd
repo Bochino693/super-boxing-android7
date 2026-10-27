@@ -136,7 +136,6 @@ func _ready() -> void:
 			TelaGirada.montar_intermediaria(self).add_child(main)
 		else:
 			add_child(main)
-		TelaGirada.aplicar_tela_direta(get_tree())
 	_ultimo_us = OS.get_ticks_usec()
 	for lado in [0, 1]:
 		var sd = Sonda.new()
@@ -229,12 +228,15 @@ func _process(delta: float) -> void:
 		estado = "INTRO"
 	Engine.set_meta("estado", estado)
 	_quadros_por_estado[estado] = _quadros_por_estado.get(estado, 0) + 1
-	_linhas.append([stepify(t, 0.001), agora - _ultimo_us, estado, main.arena.ativa(),
-		_proc_us / 1000.0, _flush_us / 1000.0, _render_us / 1000.0,
-		int(Performance.get_monitor(Performance.RENDER_DRAW_CALLS_IN_FRAME)),
-		int(Performance.get_monitor(Performance.RENDER_2D_DRAW_CALLS_IN_FRAME)),
-		int(Performance.get_monitor(Performance.RENDER_2D_ITEMS_IN_FRAME)),
-		stepify(main.transicao, 0.001), main.sons.playing("round_bell"), main.pose_finished])
+	# as linhas só existem para o arquivo do `--perfil` (sem ele, a memória
+	# medida por rodada é só a do jogo)
+	if arquivo != "":
+		_linhas.append([stepify(t, 0.001), agora - _ultimo_us, estado, main.arena.ativa(),
+			_proc_us / 1000.0, _flush_us / 1000.0, _render_us / 1000.0,
+			int(Performance.get_monitor(Performance.RENDER_DRAW_CALLS_IN_FRAME)),
+			int(Performance.get_monitor(Performance.RENDER_2D_DRAW_CALLS_IN_FRAME)),
+			int(Performance.get_monitor(Performance.RENDER_2D_ITEMS_IN_FRAME)),
+			stepify(main.transicao, 0.001), main.sons.playing("round_bell"), main.pose_finished])
 	_ultimo_us = agora
 	t += delta
 	if _degrau >= 0 and main.degrau_grafico != _degrau:
@@ -262,7 +264,10 @@ func _process(delta: float) -> void:
 				feitas += 1
 				_socos = 0
 				_resultado_em = -1.0
-				print("PARTIDA_TESTE: rodada %d voltou sozinha à abertura em %.1f s" % [feitas, t - _fim_em])
+				print("PARTIDA_TESTE: rodada %d voltou sozinha à abertura em %.1f s  •  memória %.1f MB, texturas %.1f MB, objetos %d" % [
+					feitas, t - _fim_em, OS.get_static_memory_usage() / 1048576.0,
+					Performance.get_monitor(Performance.RENDER_TEXTURE_MEM_USED) / 1048576.0,
+					int(Performance.get_monitor(Performance.OBJECT_COUNT))])
 				_foto("p%d_abertura" % (feitas - 1), 1.5)
 			if feitas >= partidas:
 				_terminar()
@@ -352,7 +357,10 @@ func _terminar() -> void:
 		for l in _linhas:
 			f.store_line("%s;%d;%s;%s;%.3f;%.3f;%.3f;%d;%d;%d;%s;%s;%s" % l)
 		f.close()
-	print("PARTIDA_TESTE: %d partidas, %d quadros" % [feitas, _linhas.size()])
+	var quadros = 0
+	for q in _quadros_por_estado.values():
+		quadros += int(q)
+	print("PARTIDA_TESTE: %d partidas, %d quadros" % [feitas, quadros])
 	var perf: Dictionary = Engine.get_meta("perf")
 	var chaves = perf.keys()
 	chaves.sort_custom(self, "_mais_caro")
