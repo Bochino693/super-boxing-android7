@@ -563,19 +563,32 @@ func _vigiar_webcam_android(agora: int) -> void:
 		# A CÂMERA RECUSOU (ocupada pela abertura anterior, serviço de
 		# câmera ainda subindo depois do boot, webcam que caiu): o plugin
 		# guarda a falha e não tenta de novo sozinho. Soltar zera a falha;
-		# a próxima volta abre do zero. Sem vídeo por muito tempo, mesmo
-		# sem falha dita, faz o mesmo.
+		# a próxima volta abre do zero.
 		var recusou = _abertura_falhou(situacao) and "SISTEMA" in situacao.to_upper()
+		# A CÂMERA DO SISTEMA RECUSOU ABRIR: NÃO HÁ NADA ABERTO (build 128).
+		# É o caso de sempre logo depois de o jogo reabrir: o serviço de
+		# câmera do Android ainda está soltando a webcam do processo
+		# anterior. Soltar aqui só zera a falha guardada no plugin — nenhum
+		# aparelho é fechado — então a nova tentativa vem logo, em qualquer
+		# tela (era só na tela de espera, a cada 30 s, no máximo 3 vezes: a
+		# webcam ficava fora a sessão inteira).
+		if recusou:
+			_tentativas_recusadas += 1
+			var espera = int(min(RECUSA_ESPERA_MAXIMA_MS, 2000 * _tentativas_recusadas))
+			_registro("recusou abrir (%s): tentando de novo em %.1f s" % [situacao, espera / 1000.0])
+			_android_bridge.call("stopUvcCamera")
+			_uvc_proximo_religar_ms = agora + espera
+			return
 		var demorou = _sem_video_desde_ms > 0 and agora - _sem_video_desde_ms > SEM_VIDEO_REABRIR_MS
-		# REABRIR É RARO E SÓ NA TELA DE ESPERA. Fechar e abrir a webcam em
-		# sequência mexe no driver USB (código nativo) e na memória do
-		# sistema; na build 98 isso acontecia a cada poucos segundos e a TV
-		# Box derrubava o launcher e o jogo. Agora: só quando a câmera do
-		# SISTEMA recusou (a UVC direta nunca entra neste ciclo), no máximo
-		# a cada 30 s, no máximo 3 vezes por abertura do jogo.
+		# SEM VÍDEO POR MUITO TEMPO, SEM FALHA DITA: a webcam pode estar
+		# aberta e muda. REABRIR ESSA É RARO E SÓ NA TELA DE ESPERA: fechar e
+		# abrir uma webcam aberta em sequência mexe no driver USB (código
+		# nativo) e na memória do sistema; na build 98 isso acontecia a cada
+		# poucos segundos e a TV Box derrubava o launcher e o jogo. Então: no
+		# máximo a cada 30 s, no máximo 3 vezes por abertura do jogo.
 		var pode = janelas_liberadas and _reaberturas < REABERTURAS_MAXIMAS \
 			and agora - _reaberta_em_ms >= SEM_VIDEO_REABRIR_MS
-		if (recusou or demorou) and pode:
+		if demorou and pode:
 			_reaberturas += 1
 			_reaberta_em_ms = agora
 			_registro("reabrindo do zero, %d de %d (%s)" % [_reaberturas, REABERTURAS_MAXIMAS, situacao])
@@ -605,6 +618,10 @@ func _vigiar_webcam_android(agora: int) -> void:
 
 ## Sem vídeo desde quando (0 = ainda não começou a esperar).
 var _sem_video_desde_ms = 0
+## Quantas vezes seguidas a câmera do sistema recusou abrir (a espera até a
+## próxima tentativa cresce até `RECUSA_ESPERA_MAXIMA_MS`).
+var _tentativas_recusadas = 0
+const RECUSA_ESPERA_MAXIMA_MS = 10000
 const SEM_VIDEO_REABRIR_MS = 30000
 const REABERTURAS_MAXIMAS = 3
 var _reaberturas = 0
@@ -632,11 +649,13 @@ func _webcam_do_sistema() -> bool:
 		_classica_vista = true
 		Lembranca.guardar(Lembranca.CAMERA_DO_SISTEMA)
 		return true
-	# O guardado vale enquanto a caçada é nova: se a webcam foi trocada por
-	# uma que o Android não mostra como câmera, depois de 45 s sem vídeo a
-	# janela USB volta a ser possível (é o único caminho para essa webcam).
-	return Lembranca.sabe(Lembranca.CAMERA_DO_SISTEMA) \
-		and Time.get_ticks_msec() - _caca_desde_ms < 45000
+	# O GUARDADO VALE SEMPRE (build 128). Valia só 45 s de caçada: depois
+	# disso, com a câmera do sistema ainda recusando (o jogo acabou de
+	# reabrir), o jogo pedia a janela USB da webcam — um caminho que essa
+	# webcam nem usa — e a pessoa via "permissão de USB" na tela. Uma webcam
+	# trocada por uma que o Android não mostra como câmera é caso da Central:
+	# "procurar de novo" esquece o guardado (`procurar_de_novo`).
+	return Lembranca.sabe(Lembranca.CAMERA_DO_SISTEMA)
 
 func _iniciar_uvc_android() -> void:
 	if OS.get_name() != "Android" or _android_bridge == null:
@@ -707,6 +726,7 @@ func _amostrar_uvc_android(agora: int) -> bool:
 	_uvc_quadro_ms = agora
 	_uvc_teve_video = true
 	_sem_video_desde_ms = 0
+	_tentativas_recusadas = 0
 	var imagem = Compat.imagem(largura, altura, false, Image.FORMAT_RGBA8, dados)
 	if imagem == null or imagem.is_empty():
 		return false
@@ -1090,6 +1110,9 @@ func procurar_de_novo() -> void:
 	if OS.get_name() == "Android":
 		# Recomeça a caçada do zero, já pedindo ao plugin.
 		_registro("procurar de novo (Central)")
+		Lembranca.guardar(Lembranca.CAMERA_DO_SISTEMA, false)
+		_classica_vista = false
+		_tentativas_recusadas = 0
 		_caca = Caca.NENHUMA
 		_caca_desde_ms = 0
 		_uvc_teve_video = false

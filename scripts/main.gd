@@ -2569,8 +2569,15 @@ func _rodada_com_foto() -> bool:
 ## abrir em `ESPERA_DA_CAMERA` segundos, a rodada segue sem foto — e as
 ## próximas rodadas não esperam mais (build 127): uma webcam que não abre
 ## não segura a fila de jogadores, rodada após rodada.
-const ESPERA_DA_CAMERA = 6.0
+const ESPERA_DA_CAMERA = 8.0
+## A WEBCAM VIVA E LIDA DEVAGAR (build 128). Na tela de espera a webcam é
+## lida a cada 1,5 s; no START o último quadro podia ter passado do prazo
+## de "quadro de agora" e a rodada pulava a foto com a câmera funcionando.
+## Com imagem nos últimos 10 s (`ao_vivo`), a pose espera um quadro novo —
+## na pose a leitura é rápida, e ele chega em décimos de segundo.
+const ESPERA_DA_CAMERA_VIVA = 3.0
 var _espera_da_camera := -1.0
+var _espera_maxima := ESPERA_DA_CAMERA
 var _camera_nao_abriu := false
 
 ## Um quadro da espera; true enquanto a contagem ainda não pode começar.
@@ -2585,12 +2592,13 @@ func _esperando_a_camera(delta: float) -> bool:
 		last_count = 3
 		return false
 	_espera_da_camera += delta
-	if _espera_da_camera < ESPERA_DA_CAMERA:
+	if _espera_da_camera < _espera_maxima:
 		return true
-	Diario.marca("JOGO: a webcam não abriu em %.0f s — rodada sem foto (%s)" % [
-		ESPERA_DA_CAMERA, camera_service.motivo_curto() if camera_service != null else "?"])
+	Diario.marca("JOGO: a webcam não deu imagem em %.0f s — rodada sem foto (%s)" % [
+		_espera_maxima, camera_service.motivo_curto() if camera_service != null else "?"])
 	_espera_da_camera = -1.0
-	_camera_nao_abriu = true
+	if _espera_maxima >= ESPERA_DA_CAMERA:
+		_camera_nao_abriu = true
 	pose_finished = true
 	result_photo_path = ""
 	_recolhendo_saco = false
@@ -2718,12 +2726,18 @@ func _comecar_contagem() -> void:
 	# A WEBCAM ESTÁ CONECTADA, SÓ AINDA NÃO ABRIU (a primeira rodada depois
 	# de ligar a máquina): a pose espera por ela (ver `ESPERA_DA_CAMERA`).
 	_espera_da_camera = -1.0
-	if not com_foto and not _camera_nao_abriu and camera_enabled and camera_service != null \
-			and camera_service.esperada():
-		camera_service.apressar()
-		_espera_da_camera = 0.0
-		com_foto = true
-		Diario.marca("JOGO: webcam conectada ainda sem vídeo — a pose espera por ela (até %.0f s)" % ESPERA_DA_CAMERA)
+	if not com_foto and camera_enabled and camera_service != null:
+		if camera_service.ao_vivo():
+			_espera_da_camera = 0.0
+			_espera_maxima = ESPERA_DA_CAMERA_VIVA
+			com_foto = true
+			Diario.marca("JOGO: webcam viva, último quadro antigo — a pose espera um quadro novo")
+		elif not _camera_nao_abriu and camera_service.esperada():
+			camera_service.apressar()
+			_espera_da_camera = 0.0
+			_espera_maxima = ESPERA_DA_CAMERA
+			com_foto = true
+			Diario.marca("JOGO: webcam conectada ainda sem vídeo — a pose espera por ela (até %.0f s)" % ESPERA_DA_CAMERA)
 	_recolhendo_saco = com_foto and _motor_em_uso()
 	_recolhendo_desde = animation_time
 	_pose_sem_imagem = 0.0

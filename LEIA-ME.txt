@@ -1,4 +1,4 @@
-SUPER BOXING - TV BOX MALI-450 (TX9) - OPENGL ES 2.0 - BUILD 127
+SUPER BOXING - TV BOX MALI-450 (TX9) - OPENGL ES 2.0 - BUILD 128
 =================================================================
 
 ESTA VERSAO E PARA TV BOX COM PLACA DE VIDEO MALI-450 (TX9): Godot 3.6,
@@ -6,8 +6,36 @@ OpenGL ES 2.0. UM ARQUIVO SO: GERAR_APK_AGORA.bat gera o
 APK certo. Veja "GERAR O APK" mais abaixo.
 
 CONFIRA NA MAQUINA: o rodape da abertura e a Central mostram
-"BUILD 127". Se aparecer outro numero, o APK instalado e o antigo -
+"BUILD 128". Se aparecer outro numero, o APK instalado e o antigo -
 gere o APK de novo com GERAR_APK_AGORA.bat e instale por cima.
+
+O QUE A BUILD 128 MUDA (BASE: A 127)
+------------------------------------
+- O JOGO NAO FECHA MAIS DEPOIS DE PERDER: a unica coisa nova na tela da
+  derrota era o alto do ginasio (build 124), desenhado por dois shaders
+  proprios que a placa de video so compilava NA HORA DO NOCAUTE - nenhum
+  quadro do aquecimento os desenhava. Agora o teto e o telao sao imagens
+  prontas (tools/gerar_teto.py) desenhadas pelo mesmo material do resto
+  do ginasio, e a vista da derrota (camera no chao, teto, telao) e
+  desenhada uma vez atras da tela de carregamento.
+- A WEBCAM VOLTA SOZINHA DEPOIS DE O JOGO REABRIR: logo depois de o jogo
+  reabrir, a camera do Android ainda esta soltando a webcam do processo
+  anterior e recusa abrir. O jogo so tentava de novo a cada 30 s, so na
+  tela de espera e no maximo 3 vezes - a webcam ficava fora a sessao
+  inteira. Agora tenta de novo em 2, 4, 6... ate 10 s, em qualquer tela
+  (quando ela recusa, nao ha nada aberto para fechar).
+- SEM "PERMISSAO DE USB" DA WEBCAM a toa: depois de 45 s sem imagem o
+  jogo pedia a janela USB da webcam - um caminho que a webcam do gabinete
+  nem usa. Uma webcam que ja abriu pelo sistema nunca mais pede essa
+  janela (o "procurar de novo" da Central esquece, para trocar de webcam).
+- A FOTO NAO E MAIS PULADA COM A CAMERA FUNCIONANDO: na tela de espera a
+  webcam e lida a cada 1,5 s e o ultimo quadro podia passar do prazo no
+  START. Com imagem nos ultimos 10 s a pose espera um quadro novo (na pose
+  a leitura e rapida: chega em decimos de segundo).
+- A webcam e o Arduino nao sao mais soltos "com o jogo escondido" (build
+  126): numa TV Box que cobre o jogo com uma tela inteira de permissao,
+  isso fechava o Arduino no meio do pedido. Continuam soltos na saida.
+- Teste novo: partida_teste --perder / --alternar (derrotas seguidas).
 
 O QUE A BUILD 127 MUDA (BASE: A 126)
 ------------------------------------

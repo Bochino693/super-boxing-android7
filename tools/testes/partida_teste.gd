@@ -14,6 +14,10 @@ extends Node
 ## rodada passa pela pose e pela foto, e as fotos da tela pegam a cortina
 ## do ringue quadro a quadro. `--camera-cai=S` corta a webcam S segundos
 ## depois do START (a pose tem de desistir e ir para o ringue).
+## `--perder` não soca nunca (o lutador leva o jogador a nocaute: a
+## derrota inteira, com a câmera no chão e o teto do ginásio) e
+## `--alternar` perde uma rodada sim, outra não. Toda volta à abertura
+## conta como rodada, com ou sem resultado.
 ## `--camera-atrasa=S` deixa a webcam sem quadros até S segundos depois do
 ## primeiro START (a primeira rodada depois de ligar a máquina): a pose
 ## espera por ela e só então conta e fotografa.
@@ -67,6 +71,8 @@ var _quadros_por_estado = {}
 var _esconder = ""
 var _degrau = -1
 var _natural = false
+var _perder = 0  # 0 soca, 1 perde sempre, 2 perde uma sim, outra não
+var _estado_antes = -1
 var _camera = false
 var _camera_cai = -1.0
 var _camera_atrasa = -1.0
@@ -101,6 +107,12 @@ func _ready() -> void:
 		elif a.begins_with("--log-camera="):
 			_log_camera = a.substr(13)
 		elif a == "--natural":
+			_natural = true
+		elif a == "--perder":
+			_perder = 1
+			_natural = true
+		elif a == "--alternar":
+			_perder = 2
 			_natural = true
 		elif a == "--camera":
 			_camera = true
@@ -260,7 +272,7 @@ func _process(delta: float) -> void:
 			_foto("p%d_cartao%d_%03d" % [feitas, main.socos.size(), int(d * 1000)], d)
 	match main.state:
 		GameDef.State.IDLE:
-			if _natural and _resultado_em >= 0.0:
+			if _natural and (_resultado_em >= 0.0 or (_estado_antes >= 0 and _estado_antes != GameDef.State.IDLE)):
 				feitas += 1
 				_socos = 0
 				_resultado_em = -1.0
@@ -269,6 +281,7 @@ func _process(delta: float) -> void:
 					Performance.get_monitor(Performance.RENDER_TEXTURE_MEM_USED) / 1048576.0,
 					int(Performance.get_monitor(Performance.OBJECT_COUNT))])
 				_foto("p%d_abertura" % (feitas - 1), 1.5)
+				_estado_antes = GameDef.State.IDLE
 			if feitas >= partidas:
 				_terminar()
 				return
@@ -291,7 +304,10 @@ func _process(delta: float) -> void:
 		GameDef.State.ARMED:
 			if _armado_em < 0.0:
 				_armado_em = t
-			if t - _armado_em > 1.6 and not main.golpe_registrado:
+			var perde = _perder == 1 or (_perder == 2 and feitas % 2 == 1)
+			if perde:
+				_foto("p%d_perdendo" % feitas, 4.0)
+			elif t - _armado_em > 1.6 and not main.golpe_registrado:
 				var f = FORCAS[feitas % FORCAS.size()][min(_socos, 1)]
 				main._receber_hit({"speed": lerp(main.hit_min_speed, main.hit_max_speed, f), "accel": 2.0,
 					"duration_ms": 45.0, "axis": main.sensor_eixo})
@@ -317,6 +333,8 @@ func _process(delta: float) -> void:
 				main._entrar_em_abertura()
 		_:
 			_armado_em = -1.0
+	if main.state != GameDef.State.IDLE:
+		_estado_antes = main.state
 
 
 ## O START do teste é a tecla 1, como no gabinete com teclado.
