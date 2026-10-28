@@ -16,6 +16,7 @@ import android.app.Activity;
 import android.app.ActivityManager;
 import android.content.ComponentCallbacks2;
 import android.content.Context;
+import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -53,6 +54,16 @@ import org.godotengine.godot.plugin.UsedByGodot;
  *    tambem soltava os dois com o jogo escondido, no onStop; a 128 tirou:
  *    numa TV Box que cobre o jogo com uma tela inteira de permissao, isso
  *    fechava o Arduino no meio do pedido e a permissao voltava a aparecer.)
+ *
+ * 5. O JOGO ABRE SOZINHO AO LIGAR A TV (build 129, o metodo do boliche):
+ *    a tela inicial invisivel (PunchInicioAtivo), o aviso de "ligou"
+ *    (PunchLigou) e a volta da espera (InicioDaTv). Os nomes das funcoes
+ *    sao os mesmos do StrikeSerial do boliche:
+ *      tela_inicial()          "jogo", "escolher" ou "outra|Nome"
+ *      escolher_tela_inicial() abre a escolha da tela inicial do Android
+ *      pedir_tela_inicial()    o mesmo, pedido pelo jogo na tela de espera
+ *                              (so as janelas de escolha do Android)
+ *      sair_para_tv()          abre a tela inicial da propria TV
  */
 public class PunchQuadros extends GodotPlugin {
     private Object ponte;
@@ -112,6 +123,18 @@ public class PunchQuadros extends GodotPlugin {
         }, "punch-logcat");
         leitor.setDaemon(true);
         leitor.start();
+        // A TV voltando da espera (ligada pelo controle) reinicia o jogo,
+        // com a webcam e o Arduino soltos antes (como na saida do jogo).
+        try {
+            InicioDaTv.ouvirTela(activity, new Runnable() {
+                @Override
+                public void run() {
+                    soltarUsb("volta da espera", 1200);
+                }
+            });
+        } catch (Throwable t) {
+            Log.i("PunchQuadros", "inicio: tela: " + t);
+        }
         return null;
     }
 
@@ -397,6 +420,77 @@ public class PunchQuadros extends GodotPlugin {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             return false;
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // 5. O JOGO ABRE SOZINHO AO LIGAR A TV
+    // ------------------------------------------------------------------
+
+    /** A TV abre o jogo sozinha ao ligar? "jogo", "escolher" ou "outra|Nome" ("" = sem resposta). */
+    @UsedByGodot
+    public String tela_inicial() {
+        Activity a = getActivity();
+        if (a == null) {
+            return "";
+        }
+        try {
+            return InicioDaTv.estado(a);
+        } catch (Throwable t) {
+            Log.i("PunchQuadros", "tela inicial: " + t);
+            return "";
+        }
+    }
+
+    /** Abre a escolha da tela inicial do Android (o que abriu: InicioDaTv.escolher). */
+    @UsedByGodot
+    public String escolher_tela_inicial() {
+        return escolher(false);
+    }
+
+    /** O jogo pedindo sozinho (tela de espera): so as janelas de escolha do Android. */
+    @UsedByGodot
+    public String pedir_tela_inicial() {
+        return escolher(true);
+    }
+
+    private String escolher(boolean sozinho) {
+        Activity a = getActivity();
+        if (a == null) {
+            return "";
+        }
+        try {
+            return InicioDaTv.escolher(a, sozinho);
+        } catch (Throwable t) {
+            Log.i("PunchQuadros", "tela inicial: " + t);
+            return "";
+        }
+    }
+
+    /** Abre a tela inicial da propria TV: o nome dela, "config" (os ajustes) ou "". */
+    @UsedByGodot
+    public String sair_para_tv() {
+        Activity a = getActivity();
+        if (a == null) {
+            return "";
+        }
+        try {
+            return InicioDaTv.sairParaTv(a);
+        } catch (Throwable t) {
+            Log.i("PunchQuadros", "sair para a TV: " + t);
+            return "";
+        }
+    }
+
+    @Override
+    public void onMainActivityResult(int pedido, int resultado, Intent dados) {
+        Activity a = getActivity();
+        if (pedido == InicioDaTv.PEDIDO_PAPEL && a != null) {
+            try {
+                InicioDaTv.depoisDoPapel(a, resultado);
+            } catch (Throwable t) {
+                Log.i("PunchQuadros", "tela inicial: " + t);
+            }
         }
     }
 

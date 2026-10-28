@@ -143,9 +143,18 @@ const SACO_SOCORRO_Y = SACO_ESTADO_Y + SACO_ESTADO_H + 24.0
 ## Os passos "vel_sobe"/"vel_desce" em PASSOS ficam em SACO_VEL_Y + 110.
 const SACO_VEL_Y = SACO_SOCORRO_Y + 200.0
 
-const DADOS_DIAG_Y = 600.0
-const DADOS_RITMO_Y = 1194.0
-const DADOS_APAGAR_Y = 1490.0
+## A seção "ABRIR O JOGO AO LIGAR A TV", embaixo do SALDO (página OPERAÇÃO).
+const INICIO_TV_Y = 1320.0
+
+## A seção dos STARTS (build 129) entra logo embaixo dos MELHORES DA CASA
+## e empurra as outras três 230 px para baixo (a página rola).
+const DADOS_STARTS_Y = 590.0
+const DADOS_DIAG_Y = 830.0
+const DADOS_RITMO_Y = 1424.0
+## O RITMO tem até SEIS linhas (a dos custos da luta só aparece depois da
+## primeira luta); a moldura e o botão EFEITOS contavam quatro, e o botão
+## tapava a linha da arena 3D. Agora a conta é de seis.
+const DADOS_APAGAR_Y = DADOS_RITMO_Y + 362.0
 
 const BOTOES_SIMPLES = {
 	"fechar": Rect2(920, 140, 68, 64),
@@ -154,6 +163,9 @@ const BOTOES_SIMPLES = {
 	"modo_ficha": Rect2(570, 406, 400, 68),
 	"mapear_start": Rect2(110, 620, 400, 68),
 	"mapear_credito": Rect2(570, 620, 400, 68),
+	# A TV BOX ABRE O JOGO SOZINHA (build 129): ver `_central_inicio_da_tv`.
+	"inicio_tv": Rect2(110, INICIO_TV_Y + 226.0, 400, 60),
+	"sair_tv": Rect2(570, INICIO_TV_Y + 226.0, 400, 60),
 	# --- página GOLPE
 	# OS TRÊS BOTÕES QUE REGULAM A MÁQUINA EM UM SOCO.
 	#
@@ -183,11 +195,12 @@ const BOTOES_SIMPLES = {
 	"instalar_camera": Rect2(570, 920, 400, 56),
 	"testar_som": Rect2(300, 1698, 480, 60),
 	# --- página DADOS
+	"zerar_starts": Rect2(690, DADOS_STARTS_Y + 81.0, 280, 64),
 	"zerar": Rect2(110, DADOS_APAGAR_Y + 70.0, 207, 60),
 	"zerar_stats": Rect2(327, DADOS_APAGAR_Y + 70.0, 207, 60),
 	"zerar_ranking": Rect2(544, DADOS_APAGAR_Y + 70.0, 207, 60),
 	"reconectar": Rect2(761, DADOS_APAGAR_Y + 70.0, 209, 60),
-	"teto_efeitos": Rect2(110, DADOS_RITMO_Y + 196.0, 400, 56),
+	"teto_efeitos": Rect2(110, DADOS_RITMO_Y + 268.0, 400, 56),
 	# --- página SACO
 	"motor_ligado": Rect2(110, 400, 204, 64),
 	"motor_zerar": Rect2(328, 400, 204, 64),
@@ -210,6 +223,7 @@ const BOTOES_SIMPLES = {
 const PAGINA_DO_CONTROLE = {
 	"fechar": -1, "padroes": -1, "salvar": -1,
 	"modo_livre": 0, "modo_ficha": 0, "mapear_start": 0, "mapear_credito": 0,
+	"inicio_tv": 0, "sair_tv": 0,
 	"vmin": 1, "vmax": 1, "referencia": 1, "curva": 1,
 	"usar_min": 1, "usar_ref": 1, "usar_max": 1, "auto_escala": 1,
 	"esquecer_escala": 1,
@@ -219,6 +233,7 @@ const PAGINA_DO_CONTROLE = {
 	"espelhar_camera": 2, "sondar_camera": 2, "instalar_camera": 2, "diagnosticar": 2,
 	"camera_obrigatoria": 2,
 	"vol_musica": 2, "vol_efeitos": 2, "testar_som": 2,
+	"zerar_starts": 3,
 	"zerar": 3, "zerar_stats": 3, "zerar_ranking": 3, "reconectar": 3,
 	"teto_efeitos": 3,
 	"motor_ligado": 4, "motor_zerar": 4, "motor_ajuste_sobe": 4, "motor_ajuste_desce": 4,
@@ -245,6 +260,16 @@ var _ok_segurado = -1.0
 var game_mode = "free"
 var credits = 0
 var plays = 0
+## QUANTAS PARTIDAS A MÁQUINA COMEÇOU, POR MODO (build 129). Cada START que
+## virou partida conta uma vez — no modo FICHA, é a ficha descontada.
+## Ficam gravados (sobrevivem a desligar a máquina) e só zeram pelo botão
+## ZERAR STARTS da página DADOS, que anota a data do recomeço.
+var starts_livre = 0
+var starts_ficha = 0
+var starts_desde = ""
+## Grava a contagem pouco depois do START, já com a cortina aberta: no
+## quadro do START o jogo está ligando a arena (ver `_contar_start`).
+var _gravar_starts_em = -1.0
 ## AS CINCO MELHORES MARCAS, em ordem decrescente.
 ##
 ## Guardar cinco em vez de uma só não é enfeite: com um recorde único,
@@ -1159,6 +1184,10 @@ func _notification(what: int) -> void:
 			# câmera confere na hora se está viva e se já foi autorizada.
 			if camera_service != null:
 				camera_service.ao_voltar()
+			# De volta da escolha da tela inicial (ou da tela da TV): a
+			# Central confere de novo se a TV já abre o jogo sozinha.
+			if central_aberta:
+				_inicio_estado = InicioDaTv.estado()
 		NOTIFICATION_WM_GO_BACK_REQUEST:
 			# Na Central o VOLTAR fecha a Central (o teclado já cuida).
 			if central_aberta or calib_ativo:
@@ -1310,6 +1339,9 @@ func _process(delta: float) -> void:
 	# A gravação pendente sai assim que a anterior termina, e nunca no
 	# quadro em que ela foi pedida. Ver `SettingsStore.save_data_async`.
 	SettingsStore.bombear()
+	if _gravar_starts_em >= 0.0 and animation_time >= _gravar_starts_em:
+		_gravar_starts_em = -1.0
+		_salvar()
 	# Algumas fotos por quadro, se houver faxina aberta. Sem faxina, não
 	# custa nada; com faxina, o jogo continua aceitando soco e START.
 	faxina.passo()
@@ -1631,10 +1663,41 @@ func _processar_abertura(delta: float) -> void:
 			abertura_chegada = 1.0
 		return
 	abertura_chegada = min(1.0, abertura_chegada + delta * 2.2)
+	_tela_inicial_t += delta
+	if _tela_inicial_t >= 6.0:
+		_tela_inicial_t = 0.0
+		_pedir_tela_inicial()
 	if aviso_de_credito >= 0.0:
 		aviso_de_credito += delta
 		if aviso_de_credito > 2.6:
 			aviso_de_credito = -1.0
+
+## O JOGO COMO TELA INICIAL DA TV (build 129, o método do boliche).
+##
+## Enquanto a TV não abre o jogo sozinha, UMA VEZ a cada vez que o jogo
+## abre, na tela de espera, o jogo pede a escolha ao Android ("Super
+## Boxing" + SEMPRE). Uma janela do Android de cada vez: só depois de a
+## câmera e o Arduino terem tido a vez deles (as janelas de permissão
+## deles vêm primeiro) e com o jogo na frente (`Porteiro.livre`).
+const TELA_INICIAL_DEPOIS_S = 20.0
+var _tela_inicial_pedida = false
+var _tela_inicial_t = 0.0
+## Na Central: "jogo", "escolher", "outra|Nome" ou "" (fora da TV Box), e
+## o que a última escolha abriu ("-" = nenhuma ainda).
+var _inicio_estado = ""
+var _inicio_passo = "-"
+
+func _pedir_tela_inicial() -> void:
+	if _tela_inicial_pedida or entrada_segurada or central_aberta:
+		return
+	if animation_time < _perifericos_em + TELA_INICIAL_DEPOIS_S or not Porteiro.livre():
+		return
+	_tela_inicial_pedida = true
+	var agora = InicioDaTv.estado()
+	if agora == "" or agora == "jogo":
+		return
+	var abriu = InicioDaTv.pedir()
+	Diario.marca("JOGO: tela inicial da TV = %s; pedida ao Android (%s)" % [agora, abriu if abriu != "" else "nada abriu"])
 
 func _processar_contagem(delta: float) -> void:
 	# A POSE INTEIRA ACONTECE SOBRE IMAGEM AO VIVO — OU NÃO ACONTECE.
@@ -2692,6 +2755,23 @@ func _iniciar_rodada() -> void:
 	# FECHADA (ver `_trocar_com_cortina`).
 	_trocar_com_cortina("_comecar_contagem")
 
+## Um START virou partida: conta no modo da hora. A gravação sai um
+## segundo depois (`_gravar_starts_em`), e não neste quadro, que é o da
+## cortina fechada — o mais pesado da troca de tela.
+func _contar_start() -> void:
+	if game_mode == "credit":
+		starts_ficha += 1
+	else:
+		starts_livre += 1
+	if starts_desde.empty():
+		starts_desde = _data_e_hora()
+	_gravar_starts_em = animation_time + 1.0
+
+## "28/10/2026 14:30", do relógio da máquina.
+func _data_e_hora() -> String:
+	var d = Time.get_datetime_dict_from_system()
+	return "%02d/%02d/%04d %02d:%02d" % [d.day, d.month, d.year, d.hour, d.minute]
+
 func _comecar_contagem() -> void:
 	if state != GameDef.State.IDLE and state != GameDef.State.RESULT:
 		return
@@ -2699,6 +2779,7 @@ func _comecar_contagem() -> void:
 		# A Central abriu enquanto a cortina passava: não há rodada.
 		_devolver_credito()
 		return
+	_contar_start()
 	if camera_service != null:
 		camera_service.retomar()
 	rodada_encerrada_antecipadamente = false
@@ -5303,6 +5384,8 @@ func _toggle_central() -> void:
 		if camera_service != null:
 			camera_service.retomar()
 		central_aberta = true
+		_inicio_estado = InicioDaTv.estado()
+		_inicio_passo = "-"
 		# O foco do controle remoto começa na aba da página aberta.
 		_foco_central = central_pagina
 		sons.silence()
@@ -5567,6 +5650,20 @@ func _click_central(p: Vector2) -> void:
 	elif _tocou("mapear_credito", p):
 		mapeando = "" if mapeando == "credito" else "credito"
 		return
+	elif _tocou("inicio_tv", p):
+		_inicio_estado = InicioDaTv.estado()
+		if _inicio_estado == "":
+			_show_notice("SÓ NA TV BOX (ANDROID)")
+		elif _inicio_estado == "jogo":
+			_show_notice("A TV JÁ ABRE O JOGO SOZINHA")
+		else:
+			_inicio_passo = InicioDaTv.escolher()
+			Diario.marca("JOGO: Central abriu a escolha da tela inicial (%s)" % _inicio_passo)
+		return
+	elif _tocou("sair_tv", p):
+		if InicioDaTv.sair_para_tv() == "":
+			_show_notice("SÓ NA TV BOX (ANDROID)" if OS.get_name() != "Android" else "A TV NÃO ABRIU A TELA DELA")
+		return
 	elif _tocou("motor_ligado", p):
 		saco.ligado = not saco.ligado
 		if not saco.ligado:
@@ -5693,6 +5790,14 @@ func _click_central(p: Vector2) -> void:
 				foto_teste_ate_ms = OS.get_ticks_msec() + 650
 			RankingStore.delete_photo(test_path)
 			_show_notice("CAPTURA DA CÂMERA APROVADA")
+	elif _tocou("zerar_starts", p):
+		if not _confirmar("starts"):
+			return
+		starts_livre = 0
+		starts_ficha = 0
+		starts_desde = _data_e_hora()
+		_salvar()
+		_show_notice("STARTS ZERADOS — CONTANDO DE NOVO")
 	elif _tocou("zerar", p):
 		if not _confirmar("contadores"):
 			return
@@ -5953,6 +6058,9 @@ func _carregar() -> void:
 	saco.carregar(data.get("saco_motor", {}))
 	credits = int(data.get("credits", credits))
 	plays = int(data.get("plays", plays))
+	starts_livre = int(data.get("starts_livre", 0))
+	starts_ficha = int(data.get("starts_ficha", 0))
+	starts_desde = str(data.get("starts_desde", ""))
 	# MIGRAÇÃO: instalações antigas guardavam um recorde só. Ele vira a
 	# primeira linha do ranking, para o dono não perder a marca da casa
 	# ao atualizar o software.
@@ -6065,6 +6173,9 @@ func _salvar() -> void:
 		"modo_livre_padrao": true,
 		"credits": credits,
 		"plays": plays,
+		"starts_livre": starts_livre,
+		"starts_ficha": starts_ficha,
+		"starts_desde": starts_desde,
 		"ranking": ranking,
 		"ranking_schema": RankingStore.ESQUEMA,
 		"sensor_escala": ESCALA_DO_SENSOR,
@@ -7848,6 +7959,58 @@ func _central_operacao() -> void:
 		],
 		1244.0, 20, Paleta.CREME
 	)
+	_central_inicio_da_tv()
+
+## ABRIR O JOGO AO LIGAR A TV (build 129, o método do boliche): se a TV
+## já abre o jogo sozinha e, se não, como fazer. O botão da esquerda abre
+## a escolha do Android; o da direita sai para a tela da própria TV.
+func _central_inicio_da_tv() -> void:
+	var y = INICIO_TV_Y
+	_secao(Rect2(80, y, 920, 340), "ABRIR O JOGO AO LIGAR A TV", Paleta.VERDE)
+	var largura = 840.0
+	var x = 120.0
+	var linhas = []
+	if _inicio_estado == "":
+		_texto("SÓ NA TV BOX (ANDROID)", y + 92.0, 24, Paleta.TINTA_FRACA)
+		linhas = [
+			"Na TV Box o jogo vira a tela inicial: abre sozinho ao ligar a TV.",
+			"",
+			"",
+		]
+	elif _inicio_estado == "jogo":
+		_texto("SIM — A TV ABRE O SUPER BOXING SOZINHA", y + 92.0, 24, Paleta.VERDE)
+		linhas = [
+			"Ligando na tomada, pelo controle remoto (volta da espera) e a cada HOME.",
+			"Para usar a TV (ajustes, outros apps): SAIR PARA A TELA DA TV, abaixo.",
+			"",
+		]
+	else:
+		var nome = InicioDaTv.nome_da_outra(_inicio_estado)
+		_texto(
+			"NÃO — HOJE A TV ABRE \"%s\"" % nome.to_upper() if nome != "" else "NÃO — O ANDROID AINDA PERGUNTA",
+			y + 92.0, 24, Paleta.AMBAR
+		)
+		linhas = [
+			"OK em ESCOLHER: na janela do Android, escolha SUPER BOXING e SEMPRE.",
+			"(ou: HOME no controle remoto > SUPER BOXING > SEMPRE)",
+			"",
+		]
+		if _inicio_passo == "app":
+			linhas[2] = "Abriu a página do app? LIMPAR PADRÕES, volte e HOME > SUPER BOXING > SEMPRE."
+		elif _inicio_passo == "":
+			linhas[2] = "Esta TV não abriu nenhuma escolha: faça pelo PC, com o adb (veja o LEIA-ME)."
+	for i in range(linhas.size()):
+		if linhas[i] != "":
+			_texto_cabendo(linhas[i], y + 138.0 + 34.0 * float(i), 15, Paleta.CREME, largura, x)
+	_botao(
+		BOTOES_SIMPLES["inicio_tv"], "JÁ ABRE SOZINHO" if _inicio_estado == "jogo" else "ESCOLHER COMO TELA INICIAL",
+		_inicio_estado == "jogo", Paleta.VERDE, 18, _inicio_estado == ""
+	)
+	_botao(BOTOES_SIMPLES["sair_tv"], "SAIR PARA A TELA DA TV", false, Paleta.CIANO, 18, _inicio_estado == "")
+	_texto_cabendo(
+		"Sem a Central: HOME 5 vezes seguidas no controle também sai para a TV. Um HOME volta ao jogo.",
+		y + 318.0, 14, Paleta.TINTA_FRACA, largura, x
+	)
 
 ## A ficha de um botão mapeado: qual controle, qual índice, e um contador
 ## que sobe a cada aperto. O contador é o que prova que o mapeamento
@@ -8235,6 +8398,7 @@ func _central_dados() -> void:
 		522.0, 16, Paleta.TINTA_LEVE, Compat.ESQUERDA, 120.0, 860.0
 	)
 	_texto("Recorde da casa: %04d" % _melhor(), 552.0, 18, Paleta.AMBAR, Compat.ESQUERDA, 120.0, 860.0)
+	_central_starts()
 
 	# A SEÇÃO CRESCEU PORQUE AS LINHAS NÃO CABIAM — e não caber não era
 	# um detalhe de estética: as três últimas linhas do diagnóstico
@@ -8401,7 +8565,7 @@ func _central_dados() -> void:
 	# outro vídeo, outra TV, outra resolução. Sem número, o conserto vira
 	# palpite. Estas quatro linhas são o número — e é o que se manda para
 	# quem for consertar, em vez de "está travado".
-	var caixa_ritmo = Rect2(80, DADOS_RITMO_Y, 920, _altura_da_pilha(4) + 76.0)
+	var caixa_ritmo = Rect2(80, DADOS_RITMO_Y, 920, _altura_da_pilha(6) + 76.0)
 	_secao(caixa_ritmo, "RITMO DA MÁQUINA", Paleta.VERDE)
 	_pilha(caixa_ritmo)
 	var fps = desempenho.fps()
@@ -8477,6 +8641,29 @@ func _central_dados() -> void:
 		Paleta.AMBAR if faxina.rodando else Paleta.TINTA_LEVE,
 		Compat.ESQUERDA, 120.0, 860.0
 	)
+
+## OS STARTS DA MÁQUINA (build 129): quantas partidas começaram em cada
+## modo, desde quando, e o botão que zera (pede confirmação).
+func _central_starts() -> void:
+	var y = DADOS_STARTS_Y
+	_secao(Rect2(80, y, 920, 220), "STARTS — PARTIDAS INICIADAS", Paleta.AMBAR)
+	_ficha_de_starts(Rect2(110, y + 60.0, 270, 106), "MODO LIVRE", starts_livre, Paleta.CIANO, game_mode == "free")
+	_ficha_de_starts(Rect2(395, y + 60.0, 270, 106), "MODO FICHA", starts_ficha, Paleta.ROSA, game_mode == "credit")
+	_botao(BOTOES_SIMPLES["zerar_starts"], "ZERAR STARTS", false, Paleta.VERMELHO, 17)
+	_texto_cabendo(
+		"Total %d  •  contando desde %s  •  zerar pede confirmação" % [
+			starts_livre + starts_ficha, starts_desde if not starts_desde.empty() else "agora"
+		],
+		y + 200.0, 15, Paleta.TINTA_LEVE, 860.0, 110.0
+	)
+
+func _ficha_de_starts(rect: Rect2, titulo: String, quantos: int, cor: Color, atual: bool) -> void:
+	_cartao(rect, Color("170c29"), cor if atual else Paleta.CARTAO_BORDA, 1.0, 2.0)
+	_texto(
+		titulo + ("  (AGORA)" if atual else ""), rect.position.y + 32.0, 15,
+		cor if atual else Paleta.TINTA_FRACA, Compat.CENTRO, rect.position.x, rect.size.x
+	)
+	_texto("%d" % quantos, rect.position.y + 86.0, 30, Paleta.CREME, Compat.CENTRO, rect.position.x, rect.size.x)
 
 ## UMA PILHA DE LINHAS DENTRO DE UMA SEÇÃO DA CENTRAL.
 ##
@@ -9321,7 +9508,8 @@ func _anotar_texto(
 	# auditoria acusaria sobreposições que não existem enquanto deixaria
 	# passar as que existem.
 	var acima = Compat.ascent(fonte_texto, corpo)
-	var abaixo = fonte_texto.get_descent(corpo)
+	# Godot 3: a fonte é um DynamicFontData; o descendente sai da altura.
+	var abaixo = Compat.altura(fonte_texto, corpo) - acima
 	if _auditando_o_miolo and (y - acima < CENTRAL_TOPO or y + abaixo > CENTRAL_BASE):
 		# Fora da janela que rola: as faixas opacas cobrem esta linha
 		# inteira. Ela volta à vista quando o operador rolar a página, e

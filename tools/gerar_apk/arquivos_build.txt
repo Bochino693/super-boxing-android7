@@ -318,6 +318,7 @@ scripts/fx/impact_director.gd
 scripts/fx/score_tier.gd
 scripts/game_def.gd
 scripts/icones.gd
+scripts/inicio_da_tv.gd
 scripts/led_frame.gd
 scripts/lembranca_usb.gd
 scripts/letreiro.gd
@@ -346,6 +347,9 @@ shaders/escudo_vivo.shader
 shaders/fundo_vivo.shader
 tools/ajustar_corpo_boxeador.py
 tools/ajustar_som_tv.py
+tools/android_quadros_plugin/InicioDaTv.java
+tools/android_quadros_plugin/PunchInicioAtivo.java
+tools/android_quadros_plugin/PunchLigou.java
 tools/android_quadros_plugin/PunchQuadros.java
 tools/android_quadros_plugin/montar_aar.py
 tools/android_usb_plugin/.gdignore
