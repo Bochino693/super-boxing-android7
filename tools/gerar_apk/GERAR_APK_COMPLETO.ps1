@@ -1,3 +1,7 @@
+# GERAR_APK_AGORA.bat -TelaInicial : depois de gerar, instala pelo adb na
+# TV Box ligada ao PC (depuracao USB/rede) e ja deixa o jogo como TELA
+# INICIAL da TV - ela abre o jogo sozinha ao ligar (como no boliche).
+param([switch]$TelaInicial)
 $ErrorActionPreference = "Stop"
 # Este script mora em tools\gerar_apk; o projeto e a pasta dois niveis acima.
 #
@@ -13,7 +17,7 @@ Set-Location $Raiz
 # (SUPERBOXING_BUILD=...): se a pasta tiver arquivos de builds diferentes
 # misturados (zip novo extraido por cima de um velho), a geracao para aqui,
 # antes de fazer qualquer coisa.
-$Build = 128
+$Build = 129
 $VersaoGodot = "3.6.2"
 $VersaoModelos = "3.6.2.stable"
 $UrlBase = "https://github.com/godotengine/godot/releases/download/3.6.2-stable"
@@ -338,18 +342,32 @@ if (-not $ModeloOk) {
     Write-Host "      Modelo Android instalado." -ForegroundColor Green
 }
 
-# TV BOX: o jogo aparece na tela inicial da TV (Leanback) e pode ser o
-# aplicativo de inicio da maquina (HOME), como na versao do Godot 4. No
-# Godot 3 isso e escrito no manifesto do modelo Android.
+# TV BOX: o jogo aparece no lancador da TV (Leanback). No Godot 3 isso e
+# escrito no manifesto do modelo Android.
+#
+# A TELA INICIAL (HOME) NAO E MAIS O GODOTAPP (build 129). Quem abre o jogo
+# ao ligar a TV e a PunchInicioAtivo, a tela inicial invisivel do plugin
+# PunchQuadros (o metodo do boliche): ela vem no manifesto do plugin. Com
+# o GodotApp tambem como HOME, a escolha do Android mostraria dois "Super
+# Boxing" - e o HOME 5 vezes (saida do operador) nao funcionaria.
 $Manifesto = Join-Path $AndroidBuildDir "AndroidManifest.xml"
 $ManifestoTexto = [System.IO.File]::ReadAllText($Manifesto)
-if ($ManifestoTexto -notmatch "SUPERBOXING_TV_BOX") {
+if ($ManifestoTexto -match "SUPERBOXING_TV_BOX") {
+    # Modelo de uma build ate a 128: tira o HOME do GodotApp.
+    $SemHome = [regex]::Replace($ManifestoTexto,
+        '\r?\n[ \t]*<category android:name="android\.intent\.category\.HOME" />\r?\n[ \t]*<category android:name="android\.intent\.category\.DEFAULT" />', '')
+    $SemHome = $SemHome.Replace('<!-- SUPERBOXING_TV_BOX: tela inicial da TV e aplicativo de inicio -->',
+        '<!-- SUPERBOXING_TV_BOX: no lancador da TV (a tela inicial e a PunchInicioAtivo) -->')
+    if ($SemHome -ne $ManifestoTexto) {
+        [System.IO.File]::WriteAllText($Manifesto, $SemHome, (New-Object System.Text.UTF8Encoding($false)))
+        $ManifestoTexto = $SemHome
+        Write-Host "      Manifesto: o GodotApp saiu da tela inicial (agora e a PunchInicioAtivo)." -ForegroundColor Green
+    }
+} else {
     $Categorias = @'
 <category android:name="android.intent.category.LAUNCHER" />
-                <!-- SUPERBOXING_TV_BOX: tela inicial da TV e aplicativo de inicio -->
+                <!-- SUPERBOXING_TV_BOX: no lancador da TV (a tela inicial e a PunchInicioAtivo) -->
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
-                <category android:name="android.intent.category.HOME" />
-                <category android:name="android.intent.category.DEFAULT" />
 '@
     $ManifestoTexto = $ManifestoTexto.Replace('<category android:name="android.intent.category.LAUNCHER" />', $Categorias.TrimEnd())
     $Recursos = @'
@@ -360,7 +378,7 @@ if ($ManifestoTexto -notmatch "SUPERBOXING_TV_BOX") {
 '@
     $ManifestoTexto = $ManifestoTexto.Replace('<!--CHUNK_USER_PERMISSIONS_BEGIN-->', $Recursos.TrimEnd())
     [System.IO.File]::WriteAllText($Manifesto, $ManifestoTexto, (New-Object System.Text.UTF8Encoding($false)))
-    Write-Host "      Manifesto: TV Box (Leanback + inicio)." -ForegroundColor Green
+    Write-Host "      Manifesto: TV Box (Leanback)." -ForegroundColor Green
 }
 
 # TELA CHEIA: a Activity do modelo do Godot 3 deixa uma margem para as barras
@@ -793,13 +811,62 @@ try {
         if ($Conteudo.Contains("Lcom/lazersport/punch/quadros/PunchQuadros;")) { $TemQuadros = $true; break }
     }
     if (-not $TemQuadros) { Parar "O APK saiu SEM a ponte da camera (PunchQuadros): a camera nao apareceria no jogo." }
+    # A TELA INICIAL (build 129): a classe e a entrada dela no manifesto.
+    $TemInicio = $false
+    foreach ($Dex in ($Zip.Entries | Where-Object { $_.FullName -match '^classes\d*\.dex$' })) {
+        $Leitor = New-Object System.IO.StreamReader($Dex.Open(), [System.Text.Encoding]::GetEncoding(28591))
+        $Conteudo = $Leitor.ReadToEnd()
+        $Leitor.Close()
+        if ($Conteudo.Contains("Lcom/lazersport/punch/quadros/PunchInicioAtivo;")) { $TemInicio = $true; break }
+    }
+    if (-not $TemInicio) { Parar "O APK saiu SEM a tela inicial (PunchInicioAtivo): o jogo nao abriria sozinho ao ligar a TV." }
+    $Entrada = $Zip.GetEntry("AndroidManifest.xml")
+    $Bytes = New-Object byte[] $Entrada.Length
+    $Fluxo = $Entrada.Open()
+    $Lido = 0
+    while ($Lido -lt $Bytes.Length) {
+        $n = $Fluxo.Read($Bytes, $Lido, $Bytes.Length - $Lido)
+        if ($n -le 0) { break }
+        $Lido += $n
+    }
+    $Fluxo.Close()
+    $NoManifesto = ([System.Text.Encoding]::Unicode.GetString($Bytes) + [System.Text.Encoding]::GetEncoding(28591).GetString($Bytes)).Contains("PunchInicioAtivo")
+    if (-not $NoManifesto) {
+        Write-Host "AVISO: o manifesto do APK parece nao ter a tela inicial (PunchInicioAtivo): o jogo pode nao abrir sozinho ao ligar a TV." -ForegroundColor Yellow
+    }
 } finally {
     $Zip.Dispose()
 }
 
 Write-Host ""
 Write-Host "APK GERADO E CONFERIDO - build $Build, sem erros" -ForegroundColor Green
-Write-Host "Conferido: motor ARM 32 e 64 bits, plugin USB (Arduino + camera) e ponte da camera dentro do APK."
+Write-Host "Conferido: motor ARM 32 e 64 bits, plugin USB (Arduino + camera), ponte da camera e tela inicial dentro do APK."
 Write-Host "Arquivo: $($Apk.FullName)"
 Write-Host "Tamanho: $([math]::Round($Apk.Length / 1MB, 2)) MB"
 Write-Host "SHA256: $((Get-FileHash -LiteralPath $Apk.FullName -Algorithm SHA256).Hash)"
+
+# -TelaInicial: instala pelo adb e faz do jogo a TELA INICIAL da TV (ela abre
+# o jogo sozinha ao ligar, na tomada ou pelo controle remoto).
+if ($TelaInicial) {
+    Write-Host ""
+    Write-Host "Instalando na TV Box pelo adb (depuracao USB/rede ligada)..." -ForegroundColor Cyan
+    $Adb = Join-Path $env:ANDROID_HOME "platform-tools\adb.exe"
+    $Pacote = "com.lazersport.superboxing"
+    $Logs = Join-Path $Raiz "build\android"
+    $LogInstalar = Join-Path $Logs "adb-instalar.log"
+    $Cod = Rodar-Com-Registro $Adb ('install -r "' + $Apk.FullName + '"') $LogInstalar $Raiz "O adb" 10
+    if ($Cod -eq 0 -and (Ler-Compartilhado $LogInstalar) -match 'Success') {
+        $LogInicio = Join-Path $Logs "adb-tela-inicial.log"
+        $CodInicio = Rodar-Com-Registro $Adb "shell cmd package set-home-activity $Pacote/com.lazersport.punch.quadros.PunchInicioAtivo" $LogInicio $Raiz "O adb" 2 $true
+        if ($CodInicio -eq 0 -and (Ler-Compartilhado $LogInicio) -notmatch 'Error|Exception|Unknown') {
+            Write-Host "O jogo agora e a TELA INICIAL da TV: abre sozinho ao ligar." -ForegroundColor Green
+        } else {
+            Write-Host "A TV nao aceitou o jogo como tela inicial pelo adb: na Central Tecnica (OPERACAO) use 'ABRIR O JOGO AO LIGAR A TV' (veja build\android\adb-tela-inicial.log)." -ForegroundColor Yellow
+        }
+        $null = Rodar-Com-Registro $Adb "shell monkey -p $Pacote -c android.intent.category.LAUNCHER 1" (Join-Path $Logs "adb-abrir.log") $Raiz "O adb" 2 $true
+        Write-Host "Instalado e aberto na TV Box." -ForegroundColor Green
+    } else {
+        Write-Host "O adb nao instalou (TV Box conectada? depuracao ligada?). Veja build\android\adb-instalar.log. O APK esta pronto: instale pelo pendrive." -ForegroundColor Yellow
+    }
+    $null = Rodar-Com-Registro $Adb "kill-server" (Join-Path $Logs "adb-parar.log") $Raiz "O adb" 1 $true
+}

@@ -1,4 +1,4 @@
-SUPER BOXING - TV BOX MALI-450 (TX9) - OPENGL ES 2.0 - BUILD 128
+SUPER BOXING - TV BOX MALI-450 (TX9) - OPENGL ES 2.0 - BUILD 129
 =================================================================
 
 ESTA VERSAO E PARA TV BOX COM PLACA DE VIDEO MALI-450 (TX9): Godot 3.6,
@@ -6,8 +6,52 @@ OpenGL ES 2.0. UM ARQUIVO SO: GERAR_APK_AGORA.bat gera o
 APK certo. Veja "GERAR O APK" mais abaixo.
 
 CONFIRA NA MAQUINA: o rodape da abertura e a Central mostram
-"BUILD 128". Se aparecer outro numero, o APK instalado e o antigo -
+"BUILD 129". Se aparecer outro numero, o APK instalado e o antigo -
 gere o APK de novo com GERAR_APK_AGORA.bat e instale por cima.
+
+O QUE A BUILD 129 MUDA (BASE: A 128) - O JOGO ABRE SOZINHO AO LIGAR A TV
+------------------------------------------------------------------------
+O MESMO METODO DO BOLICHE (Strike Kids 7.3), passado para o boxe:
+- O JOGO E A TELA INICIAL DA TV: o APK traz uma tela inicial do Android
+  invisivel (PunchInicioAtivo, no plugin PunchQuadros) que so abre o
+  jogo. Escolhida uma vez ("SEMPRE"), o Android abre o jogo ao ligar na
+  tomada, ao voltar para o inicio e a cada HOME; se o jogo fechar ou
+  cair, o Android volta para a tela inicial - e o jogo abre de novo. Nao
+  precisa de "Launch on Boot" nem de outro app (desligue ou desinstale).
+- ENQUANTO A TV NAO ABRE O JOGO SOZINHA, O PROPRIO JOGO PEDE: na tela de
+  espera (uma vez a cada vez que abre, depois das janelas da camera e do
+  Arduino), o Android pergunta qual e a tela inicial. Escolha SUPER BOXING
+  e SEMPRE. Passo a passo: "ABRIR O JOGO SOZINHO AO LIGAR A TV", abaixo.
+- LIGADA NA TOMADA: alem da tela inicial, o aviso de "ligou" do Android
+  (BOOT_COMPLETED, PunchLigou) tambem abre o jogo.
+- LIGADA PELO CONTROLE REMOTO: o controle nao desliga a TV Box de verdade
+  (ela fica em espera) e, ao ligar de novo, nada "liga". Agora o jogo
+  percebe a tela apagar e acender: depois de 10 s ou mais apagada, ele
+  solta a webcam e o Arduino (esperando a webcam soltar de fato) e
+  reinicia do zero, como ao ligar na tomada - sem a imagem travada da
+  placa de video depois da espera.
+- CENTRAL TECNICA, pagina OPERACAO, secao "ABRIR O JOGO AO LIGAR A TV":
+  diz SIM ou NAO; "ESCOLHER COMO TELA INICIAL" abre a escolha do Android
+  e "SAIR PARA A TELA DA TV" abre o inicio da propria TV (ajustes, Wi-Fi,
+  outros apps; um HOME volta ao jogo). Sem a Central: HOME 5 vezes
+  seguidas no controle remoto tambem sai para a TV.
+- GERAR_APK_AGORA.bat -TelaInicial (opcional, com a TV Box ligada ao PC
+  pelo adb): gera, instala e ja deixa o jogo como tela inicial.
+- Ate a 128 o proprio jogo (GodotApp) se dizia tela inicial. Agora quem
+  e a tela inicial e so a PunchInicioAtivo (o .bat tira o HOME do jogo
+  sozinho). Por isso, NA PRIMEIRA VEZ depois de instalar a 129 o Android
+  pode perguntar de novo qual e a tela inicial: SUPER BOXING e SEMPRE.
+- CONTADOR DE STARTS (Central Tecnica, pagina DADOS, secao "STARTS -
+  PARTIDAS INICIADAS"): quantas partidas a maquina comecou no MODO LIVRE
+  e quantas no MODO FICHA (a ficha descontada), o total e desde quando
+  esta contando. Conta cada START que virou partida, fica gravado
+  (desligar a maquina nao zera) e so zera pelo botao ZERAR STARTS (clique
+  duas vezes em ate 4 s; a data do recomeco fica anotada). O CONTADORES
+  da secao APAGAR continua zerando so creditos e "partidas contadas".
+- Pagina DADOS: o botao EFEITOS tapava a linha "arena 3D" do RITMO DA
+  MAQUINA depois da primeira luta; a moldura agora tem lugar para as seis
+  linhas.
+- Nada muda no jogo, na camera, no Arduino nem no firmware.
 
 O QUE A BUILD 128 MUDA (BASE: A 127)
 ------------------------------------
@@ -998,6 +1042,39 @@ A camera abre sozinha e se religa se parar. O jogo tenta os dois caminhos
 do Android (camera do sistema e Camera2/webcam externa), um de cada vez,
 ate vir imagem. Se nao vier, a linha "SEM CAMERA" embaixo da tela diz o
 motivo (PLUGIN: ... ou CAMERA2: ...) - fotografe e mande.
+
+ABRIR O JOGO SOZINHO AO LIGAR A TV
+----------------------------------
+O jogo e uma TELA INICIAL do Android: escolhido uma vez, a TV Box abre o
+Super Boxing sozinha - ligando na tomada, pelo controle remoto (volta da
+espera) e a cada HOME. Nao precisa de outro app (o "Launch on Boot" pode
+ser DESLIGADO ou desinstalado: dois apps abrindo o jogo ao mesmo tempo so
+atrapalham).
+  1. Instale o APK (por cima do antigo: as configuracoes ficam) e abra o
+     jogo uma vez.
+  2. Na tela de espera o jogo pede sozinho: o Android pergunta qual e a
+     tela inicial (ou "Definir Super Boxing como app de tela inicial?").
+     Escolha SUPER BOXING e aperte SEMPRE (ou "Definir como padrao").
+     Nao apareceu nada? Aperte HOME no controle remoto: escolha SUPER
+     BOXING e SEMPRE.
+     Nao perguntou (abriu o inicio da TV de novo)? Abra o jogo, segure OK
+     6 s (Central Tecnica), pagina OPERACAO, secao "ABRIR O JOGO AO LIGAR
+     A TV": ela diz SIM ou NAO e "ESCOLHER COMO TELA INICIAL" abre a
+     escolha do Android (a janela "Definir como app de tela inicial", os
+     ajustes da tela inicial ou a janela "Sempre / So uma vez"). Se abrir
+     a pagina do app do inicio da TV: aperte LIMPAR PADROES (em "Abrir
+     por padrao"), volte e aperte HOME > SUPER BOXING > SEMPRE.
+  3. Confira: tire a TV Box da tomada, ligue de novo - abre o jogo.
+     Desligue pelo controle, espere 15 s e ligue - abre o jogo (ele
+     reinicia do zero quando a tela fica 10 s ou mais apagada).
+  ULTIMO RECURSO, PELO PC (TV Box com a depuracao USB/rede ligada):
+     adb shell cmd package set-home-activity com.lazersport.superboxing/com.lazersport.punch.quadros.PunchInicioAtivo
+  ou gere e instale com: GERAR_APK_AGORA.bat -TelaInicial
+PARA USAR A TV (ajustes, Wi-Fi, outros apps): na Central, "SAIR PARA A
+TELA DA TV" - ou aperte HOME 5 vezes seguidas no controle remoto. Um
+HOME volta ao jogo. Para a TV deixar de abrir o jogo: nos ajustes do
+Android, tela inicial (ou "Apps padrao") > o inicio da TV; ou desinstale
+o Super Boxing.
 
 SE A ABERTURA TRAVAR
 --------------------
