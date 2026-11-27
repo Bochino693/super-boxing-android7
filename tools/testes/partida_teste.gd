@@ -28,6 +28,11 @@ extends Node
 ## `--carregador` liga o jogo como na máquina: carregador, ensaio e só
 ## então as partidas (a PRIMEIRA partida depois de ligar é diferente das
 ## outras: tudo o que ainda não foi desenhado nenhuma vez aparece nela).
+## `--forcas=A,B` troca as forças dos dois socos (0..1 da régua) em todas
+## as partidas — `--forcas=0.95,0.30` faz o primeiro mais forte, e o placar
+## do segundo tem de contar 0,30 (e depois apresentar o primeiro).
+## `--curto` entrega o segundo soco como a placa entrega o soco rápido
+## demais (`REJECT,CURTO`): ele tem de contar como o soco no teto.
 ## `--log-camera=arquivo` grava por quadro a câmera da arena (posição e
 ## campo de visão), o tempo do quadro, o estado, o degrau do gráfico e o
 ## número do quadro desenhado.
@@ -88,6 +93,11 @@ var _log_camera = ""
 var _linhas_camera = []
 var _t_total = 0.0
 var _top_visto = false
+var _forcas = []
+var _estado_impresso = ""
+var _curto = false
+var _placar_visto = -1
+var _revelacao_vista = false
 
 
 func _ready() -> void:
@@ -108,6 +118,11 @@ func _ready() -> void:
 			_log_camera = a.substr(13)
 		elif a == "--natural":
 			_natural = true
+		elif a.begins_with("--forcas="):
+			for x in a.substr(9).split(","):
+				_forcas.append(float(x))
+		elif a == "--curto":
+			_curto = true
 		elif a == "--perder":
 			_perder = 1
 			_natural = true
@@ -239,6 +254,9 @@ func _process(delta: float) -> void:
 	if main.state == GameDef.State.IDLE and main.intro_active:
 		estado = "INTRO"
 	Engine.set_meta("estado", estado)
+	if estado != _estado_impresso:
+		_estado_impresso = estado
+		print("PARTIDA_TESTE: %.1f s  estado %s  %s" % [t, estado, main.notice])
 	_quadros_por_estado[estado] = _quadros_por_estado.get(estado, 0) + 1
 	# as linhas só existem para o arquivo do `--perfil` (sem ele, a memória
 	# medida por rodada é só a do jogo)
@@ -309,12 +327,24 @@ func _process(delta: float) -> void:
 				_foto("p%d_perdendo" % feitas, 4.0)
 			elif t - _armado_em > 1.6 and not main.golpe_registrado:
 				var f = FORCAS[feitas % FORCAS.size()][min(_socos, 1)]
-				main._receber_hit({"speed": lerp(main.hit_min_speed, main.hit_max_speed, f), "accel": 2.0,
-					"duration_ms": 45.0, "axis": main.sensor_eixo})
+				if _forcas.size() >= 2:
+					f = float(_forcas[min(_socos, 1)])
+				if _curto and _socos == 1:
+					main._recusa_da_placa({"reason": "CURTO", "peak_g": 0.0, "duration_ms": 0.9,
+						"gyro_dps": 0.0, "speed": 0.0})
+					print("PARTIDA_TESTE: soco 2 entregue como REJECT,CURTO (0,9 ms) -> registrado=%s" % str(main.golpe_registrado))
+				else:
+					main._receber_hit({"speed": lerp(main.hit_min_speed, main.hit_max_speed, f), "accel": 2.0,
+						"duration_ms": 45.0, "axis": main.sensor_eixo})
 				_socos += 1
 				_armado_em = -1.0
 				_foto("p%d_soco%d" % [feitas, _socos], 0.15)
 		GameDef.State.RESULT:
+			if main.verdict_time >= 0.0 and _placar_visto != main.socos.size() * 10 + int(main._revelando_o_mais_forte):
+				_placar_visto = main.socos.size() * 10 + int(main._revelando_o_mais_forte)
+				print("PARTIDA_TESTE: veredito  socos=%d  placar=%d  mostrado=%d  melhor_da_rodada=%d  apresentando_o_mais_forte=%s  socos=%s" % [
+					main.socos.size(), main.result_score, int(round(main.displayed_score)), main.rodada_score,
+					str(main._revelando_o_mais_forte), str(_pontos_dos_socos())])
 			if _resultado_em < 0.0:
 				_resultado_em = t
 				_fim_em = t
@@ -337,8 +367,23 @@ func _process(delta: float) -> void:
 		_estado_antes = main.state
 
 
+func _pontos_dos_socos() -> Array:
+	var r = []
+	for s in main.socos:
+		r.append(int(s["pontos"]))
+	return r
+
+
 ## O START do teste é a tecla 1, como no gabinete com teclado.
 func _tecla_start() -> void:
+	# O Godot sem tela ("Server", o headless) não entrega tecla simulada:
+	# aperta o START pelo mesmo caminho que a tecla 1 chamaria.
+	if OS.get_name() == "Server":
+		var agora = OS.get_ticks_msec()
+		if agora - main.ultimo_start_ms >= main.REPIQUE_MS:
+			main.ultimo_start_ms = agora
+			main._pressionou_start()
+		return
 	for apertada in [true, false]:
 		var e = InputEventKey.new()
 		e.scancode = KEY_1

@@ -12,9 +12,9 @@ extends Reference
 ## NUMERO em um e escreva em NOTA o que mudou. Um carimbo que não sobe
 ## mente, e um carimbo que mente é pior do que carimbo nenhum.
 
-const NUMERO = 129
-const DATA = "28/10/2026"
-const NOTA = "Mali-450 (TX9): o jogo abre sozinho ao ligar a TV, igual ao boliche — tela inicial invisível do Android (escolhida uma vez: SUPER BOXING + SEMPRE), aviso de \"ligou\" da tomada e volta da espera do controle remoto (reinicia do zero, com webcam e Arduino soltos antes); o jogo pede a escolha na tela de espera; Central (OPERAÇÃO): ABRIR O JOGO AO LIGAR A TV e SAIR PARA A TELA DA TV; HOME 5 vezes também sai. Central (DADOS): contador de STARTS por modo (livre / ficha), gravado e com ZERAR STARTS"
+const NUMERO = 130
+const DATA = "27/11/2026"
+const NOTA = "Liso como o boliche: 30 quadros travados na batida da TV (plugin PunchQuadros) e a linha do jogo na frente do processador; o soco forte demais (\"CURTO\" na placa) conta como o mais forte em vez de sumir e devolver a ficha; a placa que cai no meio da luta é esperada (9 s) em vez de encerrar; o 2º soco mostra a força DELE e depois o mais forte é apresentado (é ele que vai para o ranking); nocaute com queda física (joelhos cedem, senta, desaba de costas, poeira e baque na lona); pele lisa, sem os gomos pintados"
 
 ## Rodapé da abertura: cabe em uma linha discreta.
 static func curta() -> String:

@@ -18,7 +18,10 @@ const CAMADA_DAS_LUZES := 2
 
 const DANO_POR_GOLPE = 0.62
 const DANO_MINIMO = 0.02
-const TEMPO_NA_LONA = 1.10
+## Deitado antes de levantar, no relógio do lutador (que corre 1,4 vez o
+## real no boxeador): a queda com física (build 130) leva quase um segundo
+## até as costas assentarem, e ele ainda fica um instante apagado na lona.
+const TEMPO_NA_LONA = 2.4
 const TEMPO_LEVANTAR = 2.0
 
 const PAPEIS_CONTINUOS = ["idle", "guard"]
@@ -192,6 +195,22 @@ static func reacao_para_forca(forca: float) -> String:
 	if f >= 0.18:
 		return "hit_light"
 	return "taunt_weak"
+
+
+## O BAQUE NA LONA (build 130): verdadeiro uma vez, no quadro em que as
+## costas do lutador nocauteado batem no chão — é aí que a poeira sobe, a
+## imagem treme e a queda soa (e não no instante do soco).
+var _baque = false
+
+func baque_na_lona() -> bool:
+	if _baque:
+		_baque = false
+		return true
+	return false
+
+## Onde o corpo bateu (no mundo da arena), para a poeira subir ali.
+func ponto_do_baque() -> Vector3:
+	return global_transform.origin
 
 
 func clarao(valor: float) -> void:

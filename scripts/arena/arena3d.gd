@@ -631,6 +631,7 @@ func _montar_flashes() -> void:
 ## cor — a escala é a que o `CPUParticles` do Godot 3 sorteava de fato.
 const IMPACTO_VIDA = 0.75
 const POEIRA_VIDA = 1.35
+const POEIRA_ONDE = Vector3(0.0, 0.08, -0.35)
 
 func _montar_particulas() -> void:
 	var estrelas = cone_e(Vector3(0.0, 0.2, 1.0), 80.0, {
@@ -649,7 +650,7 @@ func _montar_particulas() -> void:
 		"cor_ini": cor_po, "cor_fim": Color(cor_po.r, cor_po.g, cor_po.b, 0.0),
 	})
 	_poeira = _particulas("PoeiraDaLona", int(36 * Perfil.PARTICULAS_3D), _mancha_redonda(), false,
-		poeira, Vector3(0.0, 0.08, -0.35))
+		poeira, POEIRA_ONDE)
 
 
 static func cone_e(direcao: Vector3, abertura: float, config: Dictionary) -> Dictionary:
@@ -946,7 +947,11 @@ func golpe(forca: float, derruba := false, pontos := -1, ultimo := false) -> Dic
 	var economia = 1.0 if qualidade >= 0.55 else 0.55
 	if _impacto != null:
 		_impacto.disparar(clamp(lerp(0.22, 1.0, forca) * economia, 0.05, 1.0), IMPACTO_VIDA + 0.05)
-	if derruba and _poeira != null:
+	# A POEIRA DO NOCAUTE sobe quando o corpo BATE na lona (`_baque`), e
+	# não no instante do soco. Sem o lutador (ou num lutador sem queda com
+	# física) ela continua saindo no soco, do meio do ringue.
+	if derruba and _poeira != null and not (lutador != null and lutador.has_method("_qf_passo")):
+		_poeira.translation = POEIRA_ONDE
 		_poeira.disparar(economia, POEIRA_VIDA + 0.05)
 	if lutador == null:
 		return {"nocaute": false, "dano": 0.0, "reacao": "", "desdenhou": false}
@@ -993,6 +998,29 @@ func fim_de_rodada(desfecho: String) -> void:
 		lutador.fim_de_rodada(desfecho)
 
 
+## O CORPO BATEU NA LONA (build 130): a poeira sobe de onde ele caiu, a
+## imagem treme, as cordas balançam e a torcida explode. O jogo pergunta
+## por `baque_na_lona` para tocar a queda no mesmo quadro.
+var _baque_para_o_jogo = false
+
+func _no_baque() -> void:
+	_baque_para_o_jogo = true
+	_tremor = max(_tremor, 0.85)
+	_publico = max(_publico, 0.95)
+	_cordas_vel += 3.0
+	if _poeira != null:
+		var p = lutador.ponto_do_baque()
+		_poeira.translation = Vector3(p.x, POEIRA_ONDE.y, p.z)
+		_poeira.disparar(1.0 if qualidade >= 0.55 else 0.55, POEIRA_VIDA + 0.05)
+
+## Verdadeiro uma vez, no quadro em que o lutador nocauteado bateu na lona.
+func baque_na_lona() -> bool:
+	if _baque_para_o_jogo:
+		_baque_para_o_jogo = false
+		return true
+	return false
+
+
 ## Pede ao lutador o soco na câmera. Falso se ele não pode agora.
 func soco_na_tela() -> bool:
 	return lutador != null and _ativa and lutador.soco_na_tela()
@@ -1009,6 +1037,9 @@ func tela_atingida() -> bool:
 
 
 func preparar() -> void:
+	_baque_para_o_jogo = false
+	if _poeira != null:
+		_poeira.translation = POEIRA_ONDE
 	_cam_pos = Vector3.INF
 	_chao = 0.0
 	_chao_alvo = 0.0
@@ -1065,6 +1096,8 @@ func avancar(delta: float) -> void:
 	if lutador != null:
 		lutador.ponto_da_camera = camera.global_position
 		lutador.atualizar(delta)
+		if lutador.baque_na_lona():
+			_no_baque()
 	_mexer_cordas(delta)
 	_sombra_de_contato()
 	_camera(delta)

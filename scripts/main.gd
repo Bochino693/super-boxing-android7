@@ -562,6 +562,15 @@ var _troca_progresso = 0.0
 var result_score = 0
 var result_speed = 0.0
 var result_simulado = false
+## A NOTA DA RODADA: o soco mais forte (build 130). `result_score` é a
+## nota do soco que está NA TELA — o placar de cada soco conta a força
+## dele, mesmo que o anterior tenha sido mais forte; esta é a que vai
+## para o ranking, para a estatística e para a apresentação final.
+var rodada_score = 0
+## O SOCO MAIS FORTE É APRESENTADO DEPOIS DO ÚLTIMO (build 130): quando o
+## último não foi o melhor, o placar dele sai e o do melhor conta de novo.
+var _revelou_o_mais_forte = false
+var _revelando_o_mais_forte = false
 ## Posição conquistada no ranking (1 a 20), ou 0 se o golpe não entrou.
 var posicao_no_ranking = 0
 var displayed_score = 0.0
@@ -1005,7 +1014,7 @@ func _ready() -> void:
 	# efeitos que ela aguenta e roda a 30 quadros por segundo constantes.
 	desempenho.qualidade = Perfil.QUALIDADE_INICIAL
 	desempenho.teto = Perfil.TETO_INICIAL
-	Engine.target_fps = Perfil.FPS
+	_ligar_ritmo_da_tv()
 	fonte = Compat.fonte_padrao()
 	if ResourceLoader.exists("res://assets/fonts/Bungee-Regular.ttf"):
 		fonte = load("res://assets/fonts/Bungee-Regular.ttf")
@@ -1072,6 +1081,58 @@ func _ready() -> void:
 	# de simplesmente parar. As deixas da entrada tocam por cima.
 	sons.music(-30.0)
 	set_process(true)
+
+## 30 QUADROS NA BATIDA DA TV (build 130) — o método do Strike Kids GLES2.
+##
+## Os 30 quadros eram segurados pelo relógio do Godot (`target_fps`): ele
+## dorme até completar 33 ms e entrega o quadro, mas a TV troca a imagem na
+## batida DELA, e o quadro que chega logo depois de uma batida espera a
+## seguinte — quadros de 1, 2 e 3 batidas misturados. A média dava 30, e o
+## movimento "agarrava". Agora, na TV Box, cada quadro diz ao Android em
+## que batida aparecer (plugin PunchQuadros, `QuadrosDaTv.java`): sempre
+## duas batidas, uniforme do começo ao fim, e quem segura o jogo no ritmo é
+## a própria tela (o relógio do Godot fica livre). Sem o plugin novo (APK
+## antigo) ou numa TV Box sem o recurso, volta ao relógio do Godot.
+var _ritmo_da_tv = false
+var _conferir_ritmo_em = 4.0
+
+func _ponte_dos_quadros() -> Object:
+	if OS.get_name() != "Android" or not Engine.has_singleton("PunchQuadros"):
+		return null
+	return Engine.get_singleton("PunchQuadros")
+
+func _ligar_ritmo_da_tv() -> void:
+	Engine.target_fps = Perfil.FPS
+	_ritmo_da_tv = false
+	var ponte = _ponte_dos_quadros()
+	if ponte == null:
+		return
+	# Sem `has_method`: no objeto do plugin ele responde "não" para tudo
+	# (ver `CameraService`). Um APK com o plugin antigo devolve nulo.
+	var batidas = int(round(60.0 / float(Perfil.FPS)))
+	if ponte.call("definir_quadros", batidas) == true:
+		_ritmo_da_tv = true
+		Engine.target_fps = 0
+		Diario.marca("TELA: %d quadros por segundo na batida da TV" % Perfil.FPS)
+
+## O ritmo da TV continua de pé? Uma TV Box sem `presentation_time` só
+## descobre no primeiro quadro: aí o jogo volta ao relógio do Godot.
+func _conferir_ritmo_da_tv() -> void:
+	if not _ritmo_da_tv or animation_time < _conferir_ritmo_em:
+		return
+	_conferir_ritmo_em = animation_time + 5.0
+	var ponte = _ponte_dos_quadros()
+	if ponte != null and ponte.call("quadros_falharam") == true:
+		_ritmo_da_tv = false
+		Engine.target_fps = Perfil.FPS
+		Diario.marca("TELA: sem presentation_time — 30 quadros pelo relógio do Godot")
+
+## Para a Central: como os quadros estão sendo segurados.
+func ritmo_de_quadros() -> String:
+	var ponte = _ponte_dos_quadros()
+	if _ritmo_da_tv and ponte != null:
+		return str(ponte.call("ritmo_de_quadros"))
+	return "%d quadros pelo relógio do Godot" % Perfil.FPS
 
 ## Mantém o quadro lógico em 1080x1920 e deixa o Godot calcular a escala
 ## final. Não aplicamos margem nem reduzimos o nó raiz: em uma tela 9:16 o
@@ -1339,6 +1400,7 @@ func _process(delta: float) -> void:
 	# A gravação pendente sai assim que a anterior termina, e nunca no
 	# quadro em que ela foi pedida. Ver `SettingsStore.save_data_async`.
 	SettingsStore.bombear()
+	_conferir_ritmo_da_tv()
 	if _gravar_starts_em >= 0.0 and animation_time >= _gravar_starts_em:
 		_gravar_starts_em = -1.0
 		_salvar()
@@ -1390,6 +1452,10 @@ func _process(delta: float) -> void:
 		arena.qualidade = desempenho.qualidade
 		arena.ligar(_arena_no_ar())
 		arena.avancar(passo)
+		if arena.baque_na_lona():
+			# O BAQUE: a queda soa quando as costas batem na lona.
+			sons.play("arena_queda", 0.0)
+			tremor = max(tremor, 16.0)
 		if arena.tela_atingida():
 			# O nocaute vem primeiro: a luva final também chega na espera
 			# do soco, quando a vida do jogador acaba.
@@ -1966,9 +2032,40 @@ func _esperando_o_saco() -> bool:
 	_mudar_ciclo(CicloSaco.EM_BAIXO, "placa confirmou embaixo e o saco assentou")
 	return false
 
+## A PLACA CAIU NO MEIO DA RODADA E ESTÁ VOLTANDO (ver `_on_serial_closed`).
+var _sensor_caiu_em = -1.0
+const TOLERANCIA_DA_QUEDA_DO_SENSOR = 9.0
+
+## Verdadeiro enquanto a rodada espera a placa voltar: relógio parado.
+## Voltou: o sensor é armado de novo e a luta segue. Não voltou a tempo:
+## sem sensor não há rodada honesta — antes do primeiro golpe a ficha
+## volta; entre as duas tentativas, fica o resultado já conquistado.
+func _esperando_o_sensor_voltar() -> bool:
+	if _sensor_caiu_em < 0.0:
+		return false
+	if sensor_presente and firmware_optico_identificado and link != null and link.is_open():
+		_sensor_caiu_em = -1.0
+		_armar_sensor_optico()
+		_show_notice("SENSOR DE VOLTA — PODE BATER!")
+		return false
+	if animation_time - _sensor_caiu_em <= TOLERANCIA_DA_QUEDA_DO_SENSOR:
+		_show_notice("SENSOR RECONECTANDO — AGUARDE")
+		return true
+	_sensor_caiu_em = -1.0
+	if socos.empty():
+		_devolver_credito()
+		_entrar_em_abertura()
+	else:
+		_entrar_em_resultado(true)
+	_show_notice("SENSOR DESCONECTADO — RECONECTANDO")
+	return true
+
 func _processar_armado(delta: float) -> void:
 	# ACABOU DE ENTRAR NO RINGUE: o saco está descendo.
 	if _esperando_saco_no_ringue():
+		return
+	# A PLACA CAIU: o relógio do soco espera ela voltar.
+	if _esperando_o_sensor_voltar():
 		return
 	# O SACO PRECISA CONTINUAR EMBAIXO. Se ele sair (a placa religou e
 	# recolheu, alguém mexeu), o relógio do soco PARA, o jogo pede o saco
@@ -2115,30 +2212,34 @@ func _fechar_rodada() -> void:
 	# próximo START.
 	if camera_service != null:
 		camera_service.retomar()
+	# A NOTA DA RODADA É O SOCO MAIS FORTE — mas ela NÃO substitui mais a
+	# do soco que está na tela. Até a build 129 este ponto trocava
+	# `result_score` pelo melhor ANTES de o placar do segundo soco contar:
+	# um segundo soco de 3000 depois de um primeiro de 8000 aparecia como
+	# 8000. Agora o placar conta este soco, e o melhor é apresentado
+	# depois (ver `_revelar_o_mais_forte`).
 	var melhor = 0
-	var melhor_v = 0.0
 	var simulado = false
 	for soco in socos:
 		if int(soco["pontos"]) >= melhor:
 			melhor = int(soco["pontos"])
-			melhor_v = float(soco["velocidade"])
 		if bool(soco["simulado"]):
 			simulado = true
-	result_score = int(clamp(melhor, 0, GameDef.SCORE_MAX))
-	result_speed = melhor_v
-	result_simulado = simulado
+	rodada_score = int(clamp(melhor, 0, GameDef.SCORE_MAX))
+	_revelou_o_mais_forte = rodada_score <= result_score
+	_revelando_o_mais_forte = false
 
 	plays += 1
-	var origem = "SIMULAÇÃO" if result_simulado else "ÓPTICO LM393"
-	posicao_no_ranking = _entrar_no_ranking(result_score, result_photo_path, origem)
+	var origem = "SIMULAÇÃO" if simulado else "ÓPTICO LM393"
+	posicao_no_ranking = _entrar_no_ranking(rodada_score, result_photo_path, origem)
 	photo_retained = posicao_no_ranking > 0
 	# A TABELA SÓ APARECE 2,5 s (NO MÍNIMO) DEPOIS DAQUI. Tempo de sobra
 	# para o pool de linhas decodificar qualquer foto do Top 20 que ainda
 	# não estava em cache, antes de a tela precisar dela de verdade.
 	_prewarm_fotos_do_ranking()
 	statistics = StatisticsStore.record(
-		statistics, result_score,
-		GameDef.faixa_de(result_score),
+		statistics, rodada_score,
+		GameDef.faixa_de(rodada_score),
 		posicao_no_ranking > 0
 	)
 	_aprender_a_regua()
@@ -2184,6 +2285,8 @@ func _aprender_a_regua() -> void:
 func _entrar_em_resultado(encerrar_rodada := false) -> void:
 	if encerrar_rodada:
 		rodada_encerrada_antecipadamente = true
+	if _rodada_terminou():
+		_sensor_caiu_em = -1.0
 	# A nota mostrada é a DESTE soco. A rodada só é fechada — ranking,
 	# estatística, disco — quando o último golpe já foi dado.
 	if socos.empty():
@@ -2193,6 +2296,9 @@ func _entrar_em_resultado(encerrar_rodada := false) -> void:
 		var ultimo: Dictionary = socos[socos.size() - 1]
 		result_score = int(ultimo["pontos"])
 		result_speed = float(ultimo["velocidade"])
+	_revelou_o_mais_forte = false
+	_revelando_o_mais_forte = false
+	rodada_score = _melhor_soco_da_rodada()
 	if _rodada_terminou():
 		_fechar_rodada()
 	else:
@@ -2246,6 +2352,11 @@ func _tabela_no_ar() -> bool:
 		return false
 	if _nocaute_em_cena():
 		return false
+	# O MAIS FORTE AINDA VAI SER APRESENTADO: a tabela espera por ele.
+	if not _revelou_o_mais_forte or (_revelando_o_mais_forte and verdict_time < 0.0):
+		return false
+	if _revelando_o_mais_forte:
+		return verdict_time >= ESPERA_DEPOIS_DO_MAIS_FORTE
 	return verdict_time >= _espera_do_ranking()
 
 const SONS_RANKING_NEUTROS = [
@@ -2305,6 +2416,14 @@ func _processar_resultado(delta: float) -> void:
 			_armar_proximo_soco()
 		return
 
+	# O SOCO MAIS FORTE, DEPOIS DO ÚLTIMO: o último soco foi contado pelo
+	# que ele valeu, e só então o placar apresenta o melhor da rodada. O
+	# nocaute (a luva, o "K.O.", a queda) termina antes.
+	if not _revelou_o_mais_forte and verdict_time >= ESPERA_PARA_O_PROXIMO_SOCO \
+			and not _nocaute_em_cena() and _troca_pendente.empty():
+		_revelar_o_mais_forte()
+		return
+
 	if not _troca_pendente.empty():
 		return
 	if posicao_no_ranking > 0:
@@ -2325,6 +2444,65 @@ var _ato_carimbou = false
 var _festa_ranking_decorrido = 0.0
 var _festa_ranking_proximo = 0.0
 var _festa_ranking_canhao = 0
+
+## Quanto o melhor soco fica no placar, depois de apresentado, antes da
+## tabela.
+const ESPERA_DEPOIS_DO_MAIS_FORTE = 3.0
+
+func _melhor_soco_da_rodada() -> int:
+	var melhor = 0
+	for soco in socos:
+		melhor = int(max(melhor, int(soco["pontos"])))
+	return int(clamp(melhor, 0, GameDef.SCORE_MAX))
+
+## O índice do soco mais forte (o primeiro dos empatados).
+func _indice_do_mais_forte() -> int:
+	var melhor_i = -1
+	var melhor_p = -1
+	for i in socos.size():
+		if int(socos[i]["pontos"]) > melhor_p:
+			melhor_p = int(socos[i]["pontos"])
+			melhor_i = i
+	return melhor_i
+
+## O cartão que entra com destaque (sobe, clareia, conta): o soco que
+## acabou de chegar — ou o mais forte, quando ele é apresentado no fim.
+func _cartao_em_destaque() -> int:
+	if _revelando_o_mais_forte:
+		return _indice_do_mais_forte()
+	return socos.size() - 1
+
+## APRESENTA O SOCO MAIS FORTE DA RODADA (build 130).
+##
+## O último soco já foi contado pelo que ele valeu. Se o mais forte foi
+## outro, o placar do último sai (a mesma troca da plaqueta do primeiro
+## para o segundo soco) e o do mais forte conta de novo, com o veredito, o
+## som e a festa do nível dele — é a nota que vai para o ranking.
+func _revelar_o_mais_forte() -> void:
+	_revelou_o_mais_forte = true
+	if rodada_score <= result_score or socos.empty():
+		return
+	sons.stop("score_loop")
+	_troca_placar = "%04d" % int(round(displayed_score))
+	_troca_cor = GameDef.classificar(result_score)["cor_faixa"] as Color
+	_troca_nome = ScoreTier.nome_de(result_score) if verdict_time >= 0.0 else ""
+	_troca_frase = arena_frase
+	_troca_progresso = sqrt(clamp(displayed_score / float(GameDef.SCORE_MAX), 0.0, 1.0))
+	_troca = 0.0
+	_revelando_o_mais_forte = true
+	var i = _indice_do_mais_forte()
+	result_score = rodada_score
+	if i >= 0:
+		result_speed = float(socos[i]["velocidade"])
+	displayed_score = 0.0
+	result_time = 0.0
+	verdict_time = -1.0
+	proximo_tique = 0
+	proximo_fogo = 0.0
+	arena_frase = "O %dº SOCO FOI O SEU MAIS FORTE!" % (i + 1)
+	fundo.matiz = Color(0, 0, 0, 0)
+	sons.play("charge", -8.0)
+	sons.start_score_loop()
 
 func _marcar_atos_do_ranking() -> void:
 	if posicao_no_ranking <= 0:
@@ -2907,6 +3085,7 @@ func _entrar_em_abertura() -> void:
 	# cancelada, Central aberta) desfaz uma troca que ainda esperava a
 	# cortina fechar.
 	_troca_pendente = ""
+	_sensor_caiu_em = -1.0
 	_espera_da_camera = -1.0
 	if camera_service != null:
 		camera_service.retomar()
@@ -3153,7 +3332,10 @@ func _registrar_impacto(
 		sons.play("arena_publico", -11.0 + forca_visual * 8.0)
 	if arena_nocaute:
 		arena_frase = ArenaFrases.de_nocaute(arena_semente)
-		sons.play("arena_queda", 0.0)
+		# A QUEDA SOA NO BAQUE (`Arena3D.baque_na_lona`), quase um segundo
+		# depois do soco; sem o lutador 3D, soa aqui.
+		if arena == null or not arena.modelo_avancado():
+			sons.play("arena_queda", 0.0)
 		sons.play("arena_publico", -2.0)
 	# RANKING, ESTATÍSTICA E DISCO SAÍRAM DAQUI, e isso é a correção que
 	# os dois socos exigem: enquanto estavam neste ponto, cada soco entrava
@@ -3337,8 +3519,9 @@ func _disparar_veredito() -> void:
 	if id_nivel == "LEVE":
 		# Golpe fraco recebe a reação curta enviada pelo operador.
 		sons.play("not_supress", -2.0)
-	elif _dois_socos_bons():
+	elif _dois_socos_bons() and not _revelando_o_mais_forte:
 		# A fala longa é reservada à conquista completa: dois bons golpes.
+		# (Uma vez só: na apresentação do mais forte ela já foi dita.)
 		sons.play("good_player", -2.0)
 	else:
 		sons.play(str(nivel["som"]), 0.5)
@@ -3353,7 +3536,9 @@ func _disparar_veredito() -> void:
 	tremor = max(tremor, float(receita["tremor"]) * 0.8)
 	clarao = max(clarao, float(receita["clarao"]) * 0.7)
 
-	if posicao_no_ranking == 1:
+	# O RECORDE TOCA NO PLACAR DO SOCO QUE FEZ O RECORDE: se o último não
+	# foi o mais forte, a fanfarra espera a apresentação do mais forte.
+	if posicao_no_ranking == 1 and result_score >= rodada_score:
 		for sound in ["win", "medium", "lose", "legendary"]:
 			sons.stop(sound)
 		sons.play("record", -2.0)
@@ -3397,6 +3582,7 @@ const ENSAIO_SALVA = [
 	"pancada_nivel", "pancada_forca", "socos", "clarao", "tremor", "_rachadura",
 	"_rachadura_t", "_cambaleio_t", "countdown_left", "pose_finished", "desfecho", "_ko_t",
 	"arena_frase", "zoom_impacto", "ranking", "ultimo_soco_em",
+	"rodada_score", "_revelou_o_mais_forte", "_revelando_o_mais_forte",
 ]
 var _ensaio = -1
 var _ensaio_ranking: Array = []
@@ -3598,6 +3784,7 @@ func _tela_do_ensaio(i: int) -> void:
 		# O resultado de cada nível: número, nome, cor e o círculo.
 		state = GameDef.State.RESULT
 		result_score = nota
+		rodada_score = nota
 		displayed_score = float(nota)
 		verdict_time = 0.4
 		result_time = 1.0
@@ -3617,6 +3804,7 @@ func _tela_do_ensaio(i: int) -> void:
 		state = GameDef.State.RESULT
 		posicao_no_ranking = ENSAIO_POSICOES[i - 8]
 		result_score = nota
+		rodada_score = nota
 		ranking_announced = true
 		ranking_started_at = 0.0
 		verdict_time = [0.3, 1.0, 1.8, 2.3, 2.7, 3.2, 4.5, 2.0][i - 8]
@@ -4683,15 +4871,17 @@ func _on_serial_closed(_porta: String) -> void:
 		proxima_tentativa = animation_time + 2.5
 	if estava_falando:
 		sons.play("disconnect_alert", -4.0)
-	# Sem sensor não há rodada honesta. Antes do primeiro golpe, devolve a
-	# ficha; entre as duas tentativas, preserva o resultado já conquistado.
-	if not central_aberta and state in [GameDef.State.COUNTDOWN, GameDef.State.ARMED]:
-		if socos.empty():
-			_devolver_credito()
-			_entrar_em_abertura()
-		else:
-			_entrar_em_resultado(true)
-		_show_notice("SENSOR DESCONECTADO — RECONECTANDO")
+	# A PLACA CAIU NO MEIO DA RODADA (build 130): o relógio do soco PARA e a
+	# rodada espera a placa voltar (`_esperando_o_sensor_voltar`). Um soco
+	# forte sacode o gabinete — o cabo, a fonte do motor — e o Arduino
+	# reinicia em dois ou três segundos; encerrar a rodada na hora jogava o
+	# jogador de volta para a abertura no meio da luta.
+	var rodada_no_meio = state in [GameDef.State.COUNTDOWN, GameDef.State.ARMED, GameDef.State.MEASURING] \
+		or (state == GameDef.State.RESULT and not _rodada_terminou())
+	if not central_aberta and rodada_no_meio:
+		if _sensor_caiu_em < 0.0:
+			_sensor_caiu_em = animation_time
+		_show_notice("SENSOR RECONECTANDO — AGUARDE")
 
 func _on_serial_line(line: String) -> void:
 	var msg = ArduinoProtocol.parse(line)
@@ -5009,6 +5199,36 @@ const RECUSAS = {
 	"FRACO": "MAIS FORTE! SOCO LENTO NÃO CONTA",
 }
 
+## O SOCO FORTE DEMAIS VOLTAVA PARA A ABERTURA (build 130).
+##
+## A palheta atravessa o feixe tanto mais depressa quanto mais forte o
+## soco. O firmware recusa como `CURTO` o pulso mais rápido que o teto
+## (`ArduinoProtocol.velocidade_teto`) — pensado para descartar vibração —
+## e o soco MAIS FORTE da noite caía justamente ali: não contava, a tela
+## dizia "vibração", o tempo acabava sem soco nenhum e a máquina devolvia
+## a ficha e voltava para a abertura.
+##
+## Agora, com a máquina esperando o soco, um `CURTO` com duração de soco de
+## verdade (não um cisco elétrico de microssegundos) conta como o soco no
+## teto da régua — passando pelas MESMAS travas do HIT (tempo morto, um
+## golpe por tentativa, saco descendo). Sem regravar o Arduino.
+const CURTO_MINIMO_MS = 0.30
+
+func _curto_vira_golpe(msg: Dictionary) -> bool:
+	if state != GameDef.State.ARMED or central_aberta or calib_ativo:
+		return false
+	var ms = float(msg.get("duration_ms", 0.0))
+	if ms < CURTO_MINIMO_MS:
+		return false
+	ultima_recusa = "CURTO aceito como soco no teto (%.2f ms)" % ms
+	_receber_hit({
+		"speed": hit_max_speed,
+		"accel": float(msg.get("peak_g", 0.0)),
+		"duration_ms": ms,
+		"axis": "O",
+	})
+	return true
+
 func _recusa_da_placa(msg: Dictionary) -> void:
 	# Golpe recusado ainda é prova de que o sensor está vivo e medindo.
 	_sensor_apareceu()
@@ -5025,6 +5245,9 @@ func _recusa_da_placa(msg: Dictionary) -> void:
 		float(msg["gyro_dps"]), float(msg["speed"]),
 	]
 	telemetria = "RECUSADO: %s" % ultima_recusa
+	# O SOCO RÁPIDO DEMAIS É O MAIS FORTE (build 130).
+	if motivo == "CURTO" and _curto_vira_golpe(msg):
+		return
 	# Só incomoda quem está jogando quando ele está esperando um soco —
 	# fora daí a informação fica na Central, que é onde se regula.
 	if state == GameDef.State.ARMED and not central_aberta:
@@ -7121,6 +7344,11 @@ func _draw_score_hero() -> void:
 	# comum (800–2000) acendia só a pontinha e parecia fraco.
 	progresso = sqrt(progresso)
 	_draw_arena()
+	# A SAÍDA DO PLACAR DO ÚLTIMO SOCO quando o mais forte é apresentado.
+	if _revelando_o_mais_forte and _troca >= 0.0:
+		var saida = clamp(_troca / TROCA_SAIDA, 0.0, 1.0)
+		if saida < 1.0:
+			_draw_troca_saindo(saida)
 
 	# A plaqueta: metade sobre a moldura, metade fora. É o que a faz
 	# parecer pregada no quadro em vez de flutuando embaixo dele.
@@ -7140,6 +7368,8 @@ func _draw_score_hero() -> void:
 				pop = sin(PI * verdict_time / MEDIDOR_POP_S)
 				escala += 0.24 * pop
 		var rotulo = "LENDO SENSOR" if measuring else ("PONTOS" if verdict_time >= 0.0 else "CONTANDO")
+		if _revelando_o_mais_forte and not measuring:
+			rotulo = "O MAIS FORTE" if verdict_time >= 0.0 else "SEU MELHOR SOCO"
 		_medidor_do_impacto(progresso, cor, MEDIDOR_LENDO if measuring else MEDIDOR_PRONTO,
 			"- - -" if measuring else "%d" % int(round(displayed_score)), escala, pop, rotulo)
 
@@ -7175,7 +7405,7 @@ func _draw_score_hero() -> void:
 		_draw_cartoes_dos_socos(ArenaQuadro.PAINEIS_Y, socos.size() >= SOCOS_POR_RODADA)
 		if posicao_no_ranking > 0:
 			_apoio("%dº LUGAR NO TOP 20" % posicao_no_ranking, 1878.0, Paleta.AMBAR)
-		elif _rodada_terminou() and result_score < RankingStore.MINIMO:
+		elif _rodada_terminou() and rodada_score < RankingStore.MINIMO:
 			_apoio("O TOP 20 COMEÇA EM %d PONTOS" % RankingStore.MINIMO, 1878.0, Paleta.TINTA_FRACA)
 
 ## O MOSTRADOR DE IMPACTO: REDONDO, NO CANTO, CONTANDO EM ESCALA.
@@ -7467,7 +7697,7 @@ func _draw_cartoes_dos_socos(y: float, marcar_melhor: bool) -> void:
 		var crescer = 0.0
 		var clarao = 0.0
 		var halo = -1.0
-		var novo = feito and i == socos.size() - 1
+		var novo = feito and i == _cartao_em_destaque()
 		var idade = _idade_do_cartao(i, novo)
 		if idade < 0.0:
 			continue
@@ -7509,7 +7739,7 @@ func _draw_cartoes_dos_socos(y: float, marcar_melhor: bool) -> void:
 			# A CONTAGEM DO CARTÃO: o soco que acabou de chegar sobe de 0
 			# até os pontos dele, crescendo, enquanto o anel enche.
 			var subida := 1.0
-			if i == socos.size() - 1 and idade >= 0.0 and idade < 0.6:
+			if i == _cartao_em_destaque() and idade >= 0.0 and idade < 0.6:
 				subida = 1.0 - pow(1.0 - idade / 0.6, 3.0)
 			var fracao = sqrt(clamp(float(pontos) / float(GameDef.SCORE_MAX), 0.0, 1.0)) * subida
 			var de = -PI * 0.5
@@ -7520,7 +7750,7 @@ func _draw_cartoes_dos_socos(y: float, marcar_melhor: bool) -> void:
 			lote.circulo(ponta, 6.0, Color.white)
 			lote.descarregar(self)
 			var mostrado = int(round(float(pontos) * subida))
-			var escala = lerp(0.6, 1.0, subida) + (0.18 * sin(PI * clamp((idade - 0.6) / 0.3, 0.0, 1.0)) if i == socos.size() - 1 else 0.0)
+			var escala = lerp(0.6, 1.0, subida) + (0.18 * sin(PI * clamp((idade - 0.6) / 0.3, 0.0, 1.0)) if i == _cartao_em_destaque() else 0.0)
 			var texto_n = "%d" % mostrado
 			var corpo_n = 42 if texto_n.length() <= 3 else 34
 			Compat.transformar(self, anel_c, 0.0, Vector2(escala, escala))
@@ -7655,7 +7885,7 @@ func _ranking_cabecalho(entrou: bool, celebracao: Dictionary, tabela: float) -> 
 	draw_rect(Rect2(MARGEM + 40.0, 236.0, LARGURA_UTIL - 80.0, 3.0), Compat.cor(Paleta.CIANO, 0.5 * a))
 	if not entrou:
 		var recado = "TENTE SUPERAR ESSAS MARCAS"
-		if result_score < RankingStore.MINIMO:
+		if rodada_score < RankingStore.MINIMO:
 			recado = "SÓ ENTRA QUEM FAZ %d PONTOS OU MAIS" % RankingStore.MINIMO
 		_texto_cabendo(recado, 296.0, 34, Compat.cor(Paleta.TINTA_FRACA, a), LARGURA_UTIL)
 		return
@@ -7753,8 +7983,8 @@ func _ranking_rodape() -> void:
 		_rotulo("VOCÊ FOI NOCAUTEADO", 1456.0, Paleta.TINTA_FRACA)
 		_texto_arcade("K.O.", 1570.0, 100, Paleta.VERMELHO, LARGURA_UTIL)
 	else:
-		_rotulo("SEU SOCO", 1456.0, Paleta.TINTA_FRACA)
-		_texto_arcade("%04d" % result_score, 1570.0, 100, ScoreTier.cor_de(result_score), LARGURA_UTIL)
+		_rotulo("SEU SOCO MAIS FORTE" if socos.size() > 1 else "SEU SOCO", 1456.0, Paleta.TINTA_FRACA)
+		_texto_arcade("%04d" % rodada_score, 1570.0, 100, ScoreTier.cor_de(rodada_score), LARGURA_UTIL)
 	_rotulo("START • JOGAR NOVAMENTE", 1720.0, Paleta.AMBAR)
 	_marca_lateral(1760.0, 1.0, MARCA_ALTURA)
 
@@ -8578,7 +8808,10 @@ func _central_dados() -> void:
 	)
 	# A luta medida no lugar das chamadas de desenho: com a Central aberta
 	# a arena está parada, e é a luta que interessa (ver `_medir_a_luta`).
-	_linha(_luta_resumo + ("  •  PLACA LEVE (30 qps)" if Perfil.leve else "  •  placa completa"), 17, Paleta.AMBAR)
+	# E COMO OS 30 QUADROS SÃO SEGURADOS (build 130): na batida da TV
+	# (liso) ou pelo relógio do Godot (APK antigo, TV Box sem o recurso).
+	_linha(_luta_resumo + ("  •  %d qps NA BATIDA DA TV" % Perfil.FPS if _ritmo_da_tv
+		else "  •  %d qps pelo relógio do Godot" % Perfil.FPS), 17, Paleta.AMBAR)
 	if not _luta_custos.empty():
 		_linha(_luta_custos, 17, Paleta.AMBAR)
 	# A ESCALA DENUNCIA A TELA DEITADA.

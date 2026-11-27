@@ -18,6 +18,7 @@ import android.content.ComponentCallbacks2;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
+import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.SystemClock;
@@ -29,6 +30,8 @@ import org.godotengine.godot.Godot;
 import org.godotengine.godot.plugin.GodotPlugin;
 import org.godotengine.godot.plugin.GodotPluginRegistry;
 import org.godotengine.godot.plugin.UsedByGodot;
+
+import javax.microedition.khronos.opengles.GL10;
 
 /**
  * A PONTE DOS QUADROS DA WEBCAM PARA O GODOT 3 — E A CAIXA-PRETA DA PLACA.
@@ -64,6 +67,14 @@ import org.godotengine.godot.plugin.UsedByGodot;
  *      pedir_tela_inicial()    o mesmo, pedido pelo jogo na tela de espera
  *                              (so as janelas de escolha do Android)
  *      sair_para_tv()          abre a tela inicial da propria TV
+ *
+ * 6. LISO (build 130, o metodo do Strike Kids GLES2):
+ *      definir_quadros(2)      30 quadros travados na batida da TV
+ *                              (QuadrosDaTv: EGL_ANDROID_presentation_time)
+ *      ritmo_de_quadros()      o que esta valendo (para a Central)
+ *    e a linha do jogo (a do desenho, onde o Godot roda tudo) com a
+ *    prioridade que o Android da a linha que desenha a tela dos apps
+ *    (DISPLAY), mais o modo de desempenho constante onde a TV Box tem.
  */
 public class PunchQuadros extends GodotPlugin {
     private Object ponte;
@@ -263,6 +274,83 @@ public class PunchQuadros extends GodotPlugin {
             }
         }
         return out;
+    }
+
+    // ------------------------------------------------------------------
+    // 6. LISO: ritmo de quadros na batida da TV e a linha do jogo na frente
+    // ------------------------------------------------------------------
+
+    /** 2 = 30 quadros travados na batida da TV; 1 = como antes. */
+    @UsedByGodot
+    public boolean definir_quadros(int batidas) {
+        Activity a = getActivity();
+        if (a == null || Build.VERSION.SDK_INT < 18) {
+            return false;
+        }
+        QuadrosDaTv.definir(a, batidas);
+        return !QuadrosDaTv.falhou();
+    }
+
+    /** "2 batidas por quadro (TV 60 Hz) - atrasados 0.4%", ou por que nao. */
+    @UsedByGodot
+    public String ritmo_de_quadros() {
+        return QuadrosDaTv.descrever() + (prioridade.isEmpty() ? "" : " - " + prioridade);
+    }
+
+    /** O jogo precisa voltar ao relogio do Godot (TV Box sem o recurso). */
+    @UsedByGodot
+    public boolean quadros_falharam() {
+        return QuadrosDaTv.falhou();
+    }
+
+    private boolean prioridadeFeita = false;
+    private volatile String prioridade = "";
+
+    /** (linha do desenho) o quadro esta pronto e vai para a tela. */
+    @Override
+    public void onGLDrawFrame(GL10 gl) {
+        if (!prioridadeFeita) {
+            prioridadeFeita = true;
+            priorizarJogo();
+        }
+        QuadrosDaTv.antesDeTrocar();
+    }
+
+    /**
+     * O JOGO NA FRENTE DO PROCESSADOR: no Godot o jogo inteiro (scripts,
+     * lutador, desenho) roda nesta linha de execucao (a do GLSurfaceView),
+     * que nasce com prioridade NORMAL - a webcam, o Arduino e o sistema
+     * dividiam o processador com ela e o jogo dava uma "lentidao do nada".
+     * Ela passa a ter a prioridade que o proprio Android da a linha que
+     * desenha a tela dos apps (DISPLAY). E, na TV Box que tem, o modo de
+     * desempenho constante (sem o processador subir e descer de velocidade
+     * no meio da luta).
+     */
+    private void priorizarJogo() {
+        try {
+            android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_DISPLAY);
+            prioridade = "linha do jogo DISPLAY";
+        } catch (Throwable t) {
+            prioridade = "prioridade: " + t;
+        }
+        final Activity a = getActivity();
+        if (a == null || Build.VERSION.SDK_INT < 24) {
+            return;
+        }
+        a.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    android.os.PowerManager pm = (android.os.PowerManager) a.getSystemService(Context.POWER_SERVICE);
+                    if (pm != null && pm.isSustainedPerformanceModeSupported()) {
+                        a.getWindow().setSustainedPerformanceMode(true);
+                        prioridade = prioridade + ", desempenho constante";
+                    }
+                } catch (Throwable t) {
+                    // sem o modo: segue normal
+                }
+            }
+        });
     }
 
     // ------------------------------------------------------------------

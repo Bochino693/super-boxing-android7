@@ -216,8 +216,6 @@ assets/lutador3d/boxeador_calcao.jpg
 assets/lutador3d/boxeador_calcao.jpg.import
 assets/lutador3d/boxeador_pele.jpg
 assets/lutador3d/boxeador_pele.jpg.import
-assets/lutador3d/boxeador_relevo.png
-assets/lutador3d/boxeador_relevo.png.import
 assets/lutador3d/boxeador_tvbox.glb
 assets/lutador3d/boxeador_tvbox.glb.import
 assets/tema/ate_o_fim.png
@@ -347,10 +345,12 @@ shaders/escudo_vivo.shader
 shaders/fundo_vivo.shader
 tools/ajustar_corpo_boxeador.py
 tools/ajustar_som_tv.py
+tools/alisar_pele_boxeador.py
 tools/android_quadros_plugin/InicioDaTv.java
 tools/android_quadros_plugin/PunchInicioAtivo.java
 tools/android_quadros_plugin/PunchLigou.java
 tools/android_quadros_plugin/PunchQuadros.java
+tools/android_quadros_plugin/QuadrosDaTv.java
 tools/android_quadros_plugin/montar_aar.py
 tools/android_usb_plugin/.gdignore
 tools/android_usb_plugin/build.gradle.kts
@@ -411,3 +411,5 @@ tools/testes/arena_teste.gd
 tools/testes/arena_teste.tscn
 tools/testes/partida_teste.gd
 tools/testes/partida_teste.tscn
+tools/testes/queda_teste.gd
+tools/testes/queda_teste.tscn
