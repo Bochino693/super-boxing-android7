@@ -55,6 +55,12 @@ O QUE A BUILD 130 MUDA (BASE: A 129) - LISO, SOCO FORTE CONTA, QUEDA DE VERDADE
   forma pela luz; uma textura a menos por pixel na Mali-450).
 - Testes novos: tools/testes/queda_teste (filma a queda) e partida_teste
   --forcas=A,B / --curto (o Godot sem tela tambem aperta START).
+- GERAR_APK_AGORA.bat NAO DEIXA NADA RODANDO NO PC: o Gradle deixava o
+  "daemon" (java.exe / OpenJDK Platform binary) vivo por ate 3 horas e o
+  adb ficava aberto - parecia que a geracao nao terminava. Agora os dois
+  sao encerrados no fim, e com sucesso a janela fecha sozinha em 30 s (ou
+  numa tecla). Com FALHA ela continua parada, para fotografar. (Nada disso
+  muda o APK nem o jogo na TV Box.)
 
 O QUE A BUILD 129 MUDA (BASE: A 128) - O JOGO ABRE SOZINHO AO LIGAR A TV
 ------------------------------------------------------------------------

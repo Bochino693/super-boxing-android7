@@ -17,7 +17,7 @@ Set-Location $Raiz
 # (SUPERBOXING_BUILD=...): se a pasta tiver arquivos de builds diferentes
 # misturados (zip novo extraido por cima de um velho), a geracao para aqui,
 # antes de fazer qualquer coisa.
-$Build = 129
+$Build = 130
 $VersaoGodot = "3.6.2"
 $VersaoModelos = "3.6.2.stable"
 $UrlBase = "https://github.com/godotengine/godot/releases/download/3.6.2-stable"
@@ -25,6 +25,8 @@ $UrlBase = "https://github.com/godotengine/godot/releases/download/3.6.2-stable"
 $env:ANDROID_HOME = "C:\AndroidSdk"
 $env:ANDROID_SDK_ROOT = "C:\AndroidSdk"
 $ApkEsperado = Join-Path $Raiz "build\android\SuperBoxing.apk"
+# O Gradle so existe depois que a exportacao comecou (ver Encerrar-Fundo).
+$script:GradleUsado = $false
 $PluginPronto = Join-Path $Raiz "android\plugins\PunchUsbSerial-release.aar"
 
 # Qualquer falha sai UMA vez, em portugues, sem o bloco tecnico do
@@ -32,6 +34,9 @@ $PluginPronto = Join-Path $Raiz "android\plugins\PunchUsbSerial-release.aar"
 function Parar([string]$Motivo) {
     Write-Host ""
     Write-Host $Motivo -ForegroundColor Red
+    if (Get-Command Encerrar-Fundo -ErrorAction SilentlyContinue) {
+        try { Encerrar-Fundo } catch { }
+    }
     exit 1
 }
 trap {
@@ -723,6 +728,25 @@ function Rodar-Com-Registro([string]$Programa, [string]$Argumentos, [string]$Log
     return [int]$p.ExitCode
 }
 
+# NADA FICA RODANDO DEPOIS DA GERACAO (build 130). O Gradle deixa o "daemon"
+# (java.exe, "OpenJDK Platform binary" no Gerenciador de Tarefas) vivo por
+# ate 3 horas esperando a proxima montagem, e a exportacao do Godot deixa o
+# servidor do adb aberto. A janela terminava, mas os dois continuavam
+# rodando no PC - parecia que a geracao nao se encerrava. Aqui os dois sao
+# encerrados no fim (deu certo ou nao). Nao muda nada no APK.
+function Encerrar-Fundo {
+    $PastaGradle = Join-Path $Raiz "android\build"
+    $Gradlew = Join-Path $PastaGradle "gradlew.bat"
+    if ($script:GradleUsado -and (Test-Path -LiteralPath $Gradlew)) {
+        $Linha = '/d /s /c ""' + $Gradlew + '" --stop"'
+        $null = Rodar-Com-Registro $env:ComSpec $Linha (Join-Path $Raiz "build\android\gradle-parar.log") $PastaGradle "O Gradle" 2 $true
+    }
+    $AdbFundo = Join-Path $env:ANDROID_HOME "platform-tools\adb.exe"
+    if (Test-Path -LiteralPath $AdbFundo) {
+        $null = Rodar-Com-Registro $AdbFundo "kill-server" (Join-Path $Raiz "build\android\adb-parar.log") $Raiz "O adb" 1 $true
+    }
+}
+
 # O GODOT DIZ SO "Building of Android project failed". Para saber POR QUE, o
 # Gradle roda de novo aqui, sozinho, e a parte "What went wrong" aparece.
 function Diagnosticar-Falha([string]$Log) {
@@ -762,6 +786,7 @@ Write-Host "[4/4] Exportando APK..." -ForegroundColor Cyan
 $LogExport = Join-Path $Raiz "build\android\exportacao.log"
 New-Item -ItemType Directory -Path (Split-Path $LogExport) -Force | Out-Null
 $Exportar = Join-Path $Scripts "EXPORTAR_APK_ANDROID.bat"
+$script:GradleUsado = $true
 $Codigo = Rodar-Com-Registro $env:ComSpec ('/d /s /c ""' + $Exportar + '" "' + $Godot + '""') $LogExport $Raiz "O Godot" 60
 if ($Codigo -ne 0) {
     Diagnosticar-Falha $LogExport
@@ -870,3 +895,9 @@ if ($TelaInicial) {
     }
     $null = Rodar-Com-Registro $Adb "kill-server" (Join-Path $Logs "adb-parar.log") $Raiz "O adb" 1 $true
 }
+
+# Fim: o Gradle e o adb nao ficam rodando no PC (ver Encerrar-Fundo).
+# Protegido: o APK ja esta pronto e conferido; nada aqui vira "FALHA".
+Write-Host "Encerrando o Gradle e o adb (nada fica rodando no PC)..." -ForegroundColor DarkGray
+try { Encerrar-Fundo } catch { }
+exit 0
