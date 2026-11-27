@@ -28,5 +28,7 @@ echo %~dp0build\android\SuperBoxing.apk
 echo.
 echo Copie o APK para a TV Box (pendrive) e instale por cima do atual:
 echo ranking, fotos e ajustes ficam (a assinatura e sempre a mesma).
-pause
+echo.
+echo Terminou: a janela fecha sozinha em 30 s (ou aperte uma tecla).
+timeout /t 30 >nul 2>&1 || pause
 exit /b 0
