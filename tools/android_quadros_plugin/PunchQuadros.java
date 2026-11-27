@@ -58,10 +58,13 @@ import javax.microedition.khronos.opengles.GL10;
  *    numa TV Box que cobre o jogo com uma tela inteira de permissao, isso
  *    fechava o Arduino no meio do pedido e a permissao voltava a aparecer.)
  *
- * 5. O JOGO ABRE SOZINHO AO LIGAR A TV (build 129, o metodo do boliche):
- *    a tela inicial invisivel (PunchInicioAtivo), o aviso de "ligou"
- *    (PunchLigou) e a volta da espera (InicioDaTv). Os nomes das funcoes
- *    sao os mesmos do StrikeSerial do boliche:
+ * 5. O JOGO ABRE SOZINHO AO LIGAR A TV (build 133, o padrao do Strike
+ *    Kids 8.8): o aviso de "ligou" (PunchLigou, com novas tentativas) ou o
+ *    AUTO START, e a volta da espera (InicioDaTv). O jogo NAO e mais tela
+ *    inicial (a TV nunca pergunta "app padrao"). Os nomes das funcoes sao
+ *    os mesmos do StrikeSerial do boliche:
+ *      abrir_ao_ligar()        "sim" ou "sobrepor" (Android 10+ sem a permissao)
+ *      pedir_sobrepor()        abre a pagina "sobrepor a outros apps"
  *      tela_inicial()          "jogo", "escolher" ou "outra|Nome"
  *      escolher_tela_inicial() abre a escolha da tela inicial do Android
  *      pedir_tela_inicial()    o mesmo, pedido pelo jogo na tela de espera
@@ -553,6 +556,50 @@ public class PunchQuadros extends GodotPlugin {
             Log.i("PunchQuadros", "tela inicial: " + t);
             return "";
         }
+    }
+
+    /** "sim" (o aviso de "ligou" abre o jogo) ou "sobrepor" (Android 10+ sem a permissao). */
+    @UsedByGodot
+    public String abrir_ao_ligar() {
+        Activity a = getActivity();
+        if (a == null) {
+            return "";
+        }
+        try {
+            return InicioDaTv.abreAoLigar(a);
+        } catch (Throwable t) {
+            Log.i("PunchQuadros", "abrir ao ligar: " + t);
+            return "";
+        }
+    }
+
+    /** Abre a pagina "sobrepor a outros apps" do jogo: "ajustes" ou "". */
+    @UsedByGodot
+    public String pedir_sobrepor() {
+        Activity a = getActivity();
+        if (a == null) {
+            return "";
+        }
+        try {
+            return InicioDaTv.pedirSobrepor(a);
+        } catch (Throwable t) {
+            Log.i("PunchQuadros", "sobrepor: " + t);
+            return "";
+        }
+    }
+
+    /** O jogo na frente: o aviso de "ligou" nao o abre de novo (nem o auto start o pausa a toa). */
+    @Override
+    public void onMainResume() {
+        Activity a = getActivity();
+        if (a != null) {
+            InicioDaTv.jogoNaFrente(a);
+        }
+    }
+
+    @Override
+    public void onMainPause() {
+        InicioDaTv.naFrente = false;
     }
 
     /** Abre a tela inicial da propria TV: o nome dela, "config" (os ajustes) ou "". */

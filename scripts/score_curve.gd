@@ -108,10 +108,21 @@ const CHANCE_PERFEITA = 1000
 ##      seguidas nunca vê o mesmo número, e o 9998 de "encostou no teto"
 ##      deixou de existir: quem encosta no teto cai espalhado entre ~9000
 ##      e ~9900.
-const VARIACAO = 0.13
-const CHANCE_DE_EMBALO = 0.18
-const EMBALO_MIN = 0.06
-const EMBALO_MAX = 0.16
+##
+## A FORÇA MANDA NA NOTA (build 131). Com o sorteio largo de antes (±13%,
+## um "dia bom/ruim" de até 16% em 18% das vezes e a sorte da parede entre
+## 55% e 100%) o soco MAIS FRACO marcava mais pontos com frequência: 9%
+## das vezes entre dois socos com 5% de diferença, 16% perto do topo entre
+## socos com 12% de diferença. Para quem bate, isso lê como "a máquina não
+## mede". Agora o sorteio é estreito (±7%, embalo raro e pequeno, sorte da
+## parede entre 82% e 100%): os mesmos casos caem para 0,2% e 1%. O número
+## continua vivo (nunca repete, nunca redondo), o topo continua difícil (o
+## soco no teto fica entre ~9100 e ~9500) e o 9999 continua raro.
+const VARIACAO = 0.07
+const CHANCE_DE_EMBALO = 0.08
+const EMBALO_MIN = 0.03
+const EMBALO_MAX = 0.07
+const SORTE_DA_PAREDE_MIN = 0.82
 const LIMIAR_DIFICIL = 8000
 ## Quanto sobra acima da parede e quão depressa ela "endurece".
 const FAIXA_ALTA = 1998.0
@@ -129,7 +140,7 @@ static func variar(pontos: int, sorte: RandomNumberGenerator, recentes: Array = 
 		var embalo = sorte.randf_range(EMBALO_MIN, EMBALO_MAX)
 		fator += embalo if sorte.randf() < 0.5 else -embalo
 	var nota = base * max(fator, 0.5)
-	nota = parede_dos_8000(nota, sorte.randf_range(0.55, 1.0))
+	nota = parede_dos_8000(nota, sorte.randf_range(SORTE_DA_PAREDE_MIN, 1.0))
 	var final = int(round(nota)) + sorte.randi_range(-TREMIDO_DOS_DIGITOS, TREMIDO_DOS_DIGITOS)
 	final = int(clamp(final, 1, GameDef.SCORE_MAX - 1))
 	# Número redondo ou repetido parece valor de tabela: desvia.
@@ -148,6 +159,20 @@ static func parede_dos_8000(nota: float, sorte: float) -> float:
 		return nota
 	var excesso = (nota - LIMIAR_DIFICIL) * clamp(sorte, 0.0, 1.0)
 	return LIMIAR_DIFICIL + FAIXA_ALTA * (1.0 - exp(-excesso / ESCALA_ALTA))
+
+## TODO SOCO CONTA (build 131), como numa máquina de soco comum: o soco
+## abaixo do piso da régua (a placa o chama de FRACO) não é mais recusado —
+## ele marca pouco. A nota fica ABAIXO da que o soco mais fraco da régua
+## pagaria (a curva sai de quase zero no piso), então continua valendo
+## "mais forte, mais pontos": de 1 a `NOTA_ABAIXO_DO_PISO`, pela fração do
+## piso que o soco alcançou.
+const NOTA_ABAIXO_DO_PISO = 18
+
+static func nota_abaixo_do_piso(speed: float, min_speed: float) -> int:
+	if speed <= 0.0 or min_speed <= 0.0:
+		return 3
+	var fracao = clamp(speed / min_speed, 0.0, 1.0)
+	return int(clamp(round(NOTA_ABAIXO_DO_PISO * fracao), 1, NOTA_ABAIXO_DO_PISO))
 
 ## O 9999 continua sendo um prêmio: só o golpe que encostou no teto da
 ## tabela entra no sorteio, e um em `CHANCE_PERFEITA` leva.

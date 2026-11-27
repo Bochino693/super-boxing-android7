@@ -24,28 +24,28 @@ import android.util.Log;
 import org.godotengine.godot.utils.ProcessPhoenix;
 
 /**
- * O JOGO ABRE SOZINHO AO LIGAR A TV - de qualquer jeito que ela seja ligada
- * (build 129: o mesmo metodo do Strike Kids, o boliche).
+ * O JOGO ABRE SOZINHO AO LIGAR A TV - o padrao do Strike Kids 8.8 (build 133).
  *
- * 1. TELA INICIAL: o jogo e uma tela inicial do Android (PunchInicioAtivo).
- *    Escolhido como a tela inicial da TV, e ele que o Android abre ao ligar
- *    na tomada, ao voltar para o inicio e a cada HOME. estado() diz se ja e;
- *    escolher() abre a escolha do Android (o papel HOME do Android 10+, os
- *    ajustes da tela inicial ou a janela "Sempre / So uma vez") - o jogo
- *    pede sozinho na tela de espera enquanto nao for (sozinho = true).
- * 2. VOLTA DA ESPERA: desligada pelo CONTROLE, a TV nao desliga de verdade
- *    (fica em espera) e nada "liga" de novo - um app de "abrir ao ligar" nao
- *    percebe nada. Com o processo do jogo vivo (mesmo fechado ou atras de
- *    outro app), ouvirTela() percebe a tela apagar e acender: depois de 10 s
- *    ou mais apagada, o jogo solta a webcam e o Arduino (esperando a webcam
- *    soltar de fato) e reinicia do zero (como ao ligar na tomada), vindo
- *    para a frente sem a imagem travada da placa de video depois da espera.
- *    Ligada na tomada, PunchLigou tambem abre o jogo.
- * 3. SAIDA DO OPERADOR: sairParaTv() abre a tela inicial da propria TV (a
- *    Central Tecnica, ou HOME 5 vezes seguidas - pediuParaSair()).
+ * 1. NAO E MAIS TELA INICIAL. Ate a build 132 o jogo se oferecia como a
+ *    tela inicial do Android (PunchInicioAtivo com HOME): havia TV Box que
+ *    esquecia o "SEMPRE" e perguntava "app padrao" a cada vez que ligava.
+ *    Agora a TV Box usa a propria tela inicial e nunca pergunta nada.
+ * 2. QUEM ABRE O JOGO AO LIGAR: o aviso de "ligou" do Android (PunchLigou,
+ *    abrirAoLigar) - na hora e de novo aos 2,5 / 6 / 12 / 25 s, se a tela
+ *    da TV Box cobrir o jogo (TV Box lenta ainda monta o lancador dela
+ *    quando o aviso chega). Um app de AUTO START (Launch on Boot) pode
+ *    abrir junto: o jogo ja na frente nao e aberto de novo (naFrente).
+ *    Android ate o 9: sempre pode. Android 10+: so com "sobrepor a outros
+ *    apps" (pedirSobrepor, pela Central).
+ * 3. VOLTA DA ESPERA: desligada pelo CONTROLE, a TV nao desliga de verdade
+ *    (fica em espera) e nada "liga" de novo. Com o processo do jogo vivo,
+ *    ouvirTela() percebe a tela apagar e acender: depois de 10 s ou mais
+ *    apagada, o jogo solta a webcam e o Arduino e reinicia do zero.
+ * 4. SAIDA DO OPERADOR: sairParaTv() abre a tela inicial da propria TV (a
+ *    Central). O HOME do controle tambem leva a ela, agora direto.
  *
- * O papel HOME (Android 10+) e pedido por reflexao: o plugin e compilado
- * contra o Android 7.1, que ainda nao tem o RoleManager.
+ * O ARDUINO PERGUNTA UMA VEZ SO: isso e do plugin USB (UsbAttachActivity
+ * directBootAware) - ver o manifesto dele.
  */
 final class InicioDaTv {
 
@@ -58,6 +58,11 @@ final class InicioDaTv {
     private static final long JANELA_SAIR_MS = 10000;
     private static final long APAGADA_PARA_REINICIAR_MS = 10000;
     private static final long ESPERA_AO_ACENDER_MS = 1500;
+
+    /** Na hora e de novo, se a tela da TV Box cobrir o jogo (o do Strike Kids). */
+    private static final long[] TENTATIVAS_MS = {0, 2500, 6000, 12000, 25000};
+    /** O jogo esta na frente (PunchQuadros: onMainResume / onMainPause). */
+    static volatile boolean naFrente = false;
 
     private static long pedidoEm = 0;
     private static boolean pedidoSozinho = false;
@@ -94,7 +99,79 @@ final class InicioDaTv {
         }
     }
 
+    // ------------------------------------------------------------ ligou
+
+    /** O Android deixa o aviso de "ligou" abrir uma tela? (ate o 9 sempre; 10+ so com "sobrepor") */
+    static boolean podeAbrirDeFundo(Context c) {
+        if (Build.VERSION.SDK_INT < 29) {
+            return true;
+        }
+        try {
+            return Settings.canDrawOverlays(c);
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    /** A TV ligou (ou o jogo foi atualizado): abre o jogo, tentando de novo se nao veio. */
+    static void abrirAoLigar(final Context c, final BroadcastReceiver.PendingResult fim) {
+        final Handler h = new Handler(Looper.getMainLooper());
+        for (int k = 0; k < TENTATIVAS_MS.length; k++) {
+            final boolean ultima = k == TENTATIVAS_MS.length - 1;
+            h.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        if (!naFrente) {
+                            Log.i(TAG, "inicio: ligou: abrindo o jogo");
+                            abrirJogo(c);
+                        }
+                        if (ultima && !naFrente && !podeAbrirDeFundo(c)) {
+                            Log.i(TAG, "inicio: Android 10+ sem 'sobrepor a outros apps': o jogo nao pode abrir sozinho");
+                        }
+                    } catch (Throwable t) {
+                        Log.i(TAG, "inicio: ligou: " + t);
+                    } finally {
+                        if (ultima && fim != null) {
+                            fim.finish();
+                        }
+                    }
+                }
+            }, TENTATIVAS_MS[k]);
+        }
+    }
+
+    /** O jogo veio para a frente. */
+    static void jogoNaFrente(Context c) {
+        naFrente = true;
+    }
+
+    /** Para a Central: "sim" (abre sozinho ao ligar) ou "sobrepor" (Android 10+ sem a permissao). */
+    static String abreAoLigar(Context c) {
+        return podeAbrirDeFundo(c) ? "sim" : "sobrepor";
+    }
+
+    private static Intent telaDeSobrepor(Context c) {
+        if (Build.VERSION.SDK_INT < 23) {
+            return null;
+        }
+        Intent i = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + c.getPackageName()));
+        if (i.resolveActivity(c.getPackageManager()) != null) {
+            return i;
+        }
+        i = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION);
+        return i.resolveActivity(c.getPackageManager()) != null ? i : null;
+    }
+
+    /** Abre a pagina "sobrepor a outros apps" do jogo: "ajustes" ou "" (a TV nao tem). */
+    static String pedirSobrepor(Activity a) {
+        Intent i = telaDeSobrepor(a);
+        return i != null && abrir(a, i) ? "ajustes" : "";
+    }
+
     // ------------------------------------------------------------ tela inicial
+    // (Ate a build 132 o jogo era candidato a tela inicial. Continua aqui
+    // so o que diz qual e a tela inicial da TV e como sair para ela.)
 
     /** A tela inicial que o Android abre hoje (null, ou a janela de escolha). */
     private static ResolveInfo padrao(Context c) {

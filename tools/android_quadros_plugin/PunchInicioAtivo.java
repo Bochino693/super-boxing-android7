@@ -4,32 +4,24 @@ import android.app.Activity;
 import android.os.Bundle;
 
 /**
- * O JOGO ABRE SOZINHO AO LIGAR A TV (build 129, igual ao boliche).
+ * ABRE O JOGO E FECHA (build 133).
  *
- * Esta atividade invisivel e uma TELA INICIAL do Android (filtro HOME no
- * manifesto). Escolhida como a tela inicial da TV ("Sempre"), e ela que o
- * Android abre ao ligar a TV, ao voltar do modo de espera para o inicio e a
- * cada HOME do controle: so traz o jogo para a frente (ou abre) e fecha na
- * hora. Se o jogo fechar ou cair, o Android volta para a tela inicial - e o
- * jogo abre de novo. Ao contrario de um aviso de "ligou" (BOOT_COMPLETED), o
- * Android nunca bloqueia a tela inicial de abrir uma tela, em nenhuma versao.
- *
- * HOME apertado 5 vezes seguidas (ou o jogo caindo sem parar) abre a tela
- * inicial da propria TV (InicioDaTv.pediuParaSair): a saida do operador sem
- * a Central. Um HOME de novo volta ao jogo.
+ * Ate a build 132 esta era a TELA INICIAL do Android (HOME): escolhida com
+ * "SEMPRE", o Android a abria ao ligar e a cada HOME. Havia TV Box que
+ * esquecia o "SEMPRE" e perguntava "app padrao" a cada vez que ligava - o
+ * padrao do Strike Kids 8.8 tirou isso: o jogo nao e mais candidato a tela
+ * inicial (o manifesto nao a declara como HOME e ela nao e exportada) e
+ * quem abre o jogo ao ligar e o aviso de "ligou" (PunchLigou) ou o AUTO
+ * START. Ela fica so como um atalho interno que abre o jogo.
  */
 public class PunchInicioAtivo extends Activity {
     @Override
     protected void onCreate(Bundle estado) {
         super.onCreate(estado);
         try {
-            if (InicioDaTv.pediuParaSair(this)) {
-                InicioDaTv.sairParaTv(this);
-            } else {
-                InicioDaTv.abrirJogo(this);
-            }
+            InicioDaTv.abrirJogo(this);
         } catch (Throwable ignorado) {
-            // nada: a tela inicial nunca pode cair
+            // nada: nunca pode cair
         }
         finish();
     }

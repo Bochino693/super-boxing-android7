@@ -1245,10 +1245,10 @@ func _notification(what: int) -> void:
 			# câmera confere na hora se está viva e se já foi autorizada.
 			if camera_service != null:
 				camera_service.ao_voltar()
-			# De volta da escolha da tela inicial (ou da tela da TV): a
+			# De volta da página "sobrepor" (ou da tela da TV): a
 			# Central confere de novo se a TV já abre o jogo sozinha.
 			if central_aberta:
-				_inicio_estado = InicioDaTv.estado()
+				_inicio_estado = InicioDaTv.abrir_ao_ligar()
 		NOTIFICATION_WM_GO_BACK_REQUEST:
 			# Na Central o VOLTAR fecha a Central (o teclado já cuida).
 			if central_aberta or calib_ativo:
@@ -1729,41 +1729,20 @@ func _processar_abertura(delta: float) -> void:
 			abertura_chegada = 1.0
 		return
 	abertura_chegada = min(1.0, abertura_chegada + delta * 2.2)
-	_tela_inicial_t += delta
-	if _tela_inicial_t >= 6.0:
-		_tela_inicial_t = 0.0
-		_pedir_tela_inicial()
 	if aviso_de_credito >= 0.0:
 		aviso_de_credito += delta
 		if aviso_de_credito > 2.6:
 			aviso_de_credito = -1.0
 
-## O JOGO COMO TELA INICIAL DA TV (build 129, o método do boliche).
+## ABRIR O JOGO AO LIGAR A TV (build 133, o padrão do Strike Kids 8.8).
 ##
-## Enquanto a TV não abre o jogo sozinha, UMA VEZ a cada vez que o jogo
-## abre, na tela de espera, o jogo pede a escolha ao Android ("Super
-## Boxing" + SEMPRE). Uma janela do Android de cada vez: só depois de a
-## câmera e o Arduino terem tido a vez deles (as janelas de permissão
-## deles vêm primeiro) e com o jogo na frente (`Porteiro.livre`).
-const TELA_INICIAL_DEPOIS_S = 20.0
-var _tela_inicial_pedida = false
-var _tela_inicial_t = 0.0
-## Na Central: "jogo", "escolher", "outra|Nome" ou "" (fora da TV Box), e
-## o que a última escolha abriu ("-" = nenhuma ainda).
+## O jogo NÃO pede mais para ser a tela inicial da TV (até a 132 pedia, na
+## tela de espera): quem o abre ao ligar é o aviso de "ligou" do Android ou
+## o AUTO START, e a TV Box nunca mais pergunta "app padrão" (ver
+## `InicioDaTv`). Na Central: "sim", "sobrepor" ou "" (fora da TV Box), e
+## o que o último pedido abriu ("-" = nenhum ainda).
 var _inicio_estado = ""
 var _inicio_passo = "-"
-
-func _pedir_tela_inicial() -> void:
-	if _tela_inicial_pedida or entrada_segurada or central_aberta:
-		return
-	if animation_time < _perifericos_em + TELA_INICIAL_DEPOIS_S or not Porteiro.livre():
-		return
-	_tela_inicial_pedida = true
-	var agora = InicioDaTv.estado()
-	if agora == "" or agora == "jogo":
-		return
-	var abriu = InicioDaTv.pedir()
-	Diario.marca("JOGO: tela inicial da TV = %s; pedida ao Android (%s)" % [agora, abriu if abriu != "" else "nada abriu"])
 
 func _processar_contagem(delta: float) -> void:
 	# A POSE INTEIRA ACONTECE SOBRE IMAGEM AO VIVO — OU NÃO ACONTECE.
@@ -5194,7 +5173,7 @@ func _sensor_apareceu() -> void:
 const RECUSAS = {
 	"CURTO": "EVENTO CURTO DEMAIS — VIBRAÇÃO, NÃO SOCO",
 	"LENTO": "SUBIDA LENTA — EMPURRÃO, NÃO IMPACTO",
-	"SUSTENTADO": "FORÇA SUSTENTADA — O SINAL NÃO CAIU",
+	"SUSTENTADO": "ISSO FOI EMPURRÃO — SOQUE!",
 	"GIRO": "O ALVO NÃO SE MOVEU — BAIXE O GIRO MÍNIMO",
 	"FRACO": "MAIS FORTE! SOCO LENTO NÃO CONTA",
 }
@@ -5226,6 +5205,43 @@ func _curto_vira_golpe(msg: Dictionary) -> bool:
 		"accel": float(msg.get("peak_g", 0.0)),
 		"duration_ms": ms,
 		"axis": "O",
+		# A velocidade real dele não foi medida: não entra na régua
+		# automática (entrando no teto, ela empurraria o teto para cima a
+		# cada soco assim, e a máquina ficaria mais difícil sozinha).
+		"fora_da_regua": true,
+	})
+	return true
+
+## TODO SOCO CONTA (build 131), como numa máquina de soco comum. A placa
+## chama de FRACO o soco que passou pela palheta mais devagar que o piso da
+## régua; até a 130 ele não contava ("MAIS FORTE! SOCO LENTO NÃO CONTA") e
+## a pessoa ficava sem número. Agora ele é um soco, com a nota que a
+## velocidade dele dá (baixa: ver `ScoreCurve.nota_abaixo_do_piso`), pelas
+## mesmas travas do HIT. Não entra na régua automática: ela descreve os
+## socos de dentro da faixa.
+##
+## A ÚNICA EXCEÇÃO É O BALANÇO DO SACO: depois de um soco ele vai e volta
+## pelo feixe, e as últimas passadas (devagar) chegam como FRACO. Contadas,
+## elas dariam o segundo soco sozinhas. Nos `SACO_BALANCANDO_MS` depois do
+## soco anterior um FRACO é tomado como balanço (só fica anotado na
+## Central). O HIT não tem essa exceção.
+const SACO_BALANCANDO_MS = 4000
+
+func _fraco_vira_golpe(msg: Dictionary) -> bool:
+	if state != GameDef.State.ARMED or central_aberta or calib_ativo:
+		return false
+	var desde = OS.get_ticks_msec() - ultimo_golpe_ms
+	if desde < SACO_BALANCANDO_MS:
+		ultima_recusa = "FRACO tomado como balanço do saco (%d ms depois do soco anterior)" % desde
+		return true
+	var v = float(msg.get("speed", 0.0))
+	ultima_recusa = "FRACO contado como soco fraco (%.2f m/s)" % v
+	_receber_hit({
+		"speed": v,
+		"accel": float(msg.get("peak_g", 0.0)),
+		"duration_ms": float(msg.get("duration_ms", 0.0)),
+		"axis": "O",
+		"fora_da_regua": true,
 	})
 	return true
 
@@ -5248,9 +5264,14 @@ func _recusa_da_placa(msg: Dictionary) -> void:
 	# O SOCO RÁPIDO DEMAIS É O MAIS FORTE (build 130).
 	if motivo == "CURTO" and _curto_vira_golpe(msg):
 		return
+	# E O SOCO LENTO É UM SOCO FRACO (build 131): conta, marcando pouco.
+	if motivo == "FRACO" and _fraco_vira_golpe(msg):
+		return
 	# Só incomoda quem está jogando quando ele está esperando um soco —
 	# fora daí a informação fica na Central, que é onde se regula.
-	if state == GameDef.State.ARMED and not central_aberta:
+	# (O CURTO que sobra aqui é ruído elétrico de microssegundos, não um
+	# soco: fica só na Central. Dizer "não contou" a quem nem bateu confunde.)
+	if state == GameDef.State.ARMED and not central_aberta and motivo != "CURTO":
 		_show_notice(str(RECUSAS.get(motivo, "GOLPE RECUSADO: %s" % motivo)))
 		if motivo == "FRACO":
 			_fraco_ate = animation_time + 1.8
@@ -5341,7 +5362,8 @@ func _receber_hit(msg: Dictionary) -> void:
 	# só é recalculada no fim da rodada. Um soco nunca muda a régua que
 	# ele mesmo está usando — senão dois socos iguais na mesma rodada
 	# pagariam diferente, e é impossível explicar isso a quem jogou.
-	auto_escala.registrar(speed)
+	if not bool(msg.get("fora_da_regua", false)):
+		auto_escala.registrar(speed)
 	_processar_golpe(speed, false, pico, duracao)
 
 ## O SORTEIO DA NOTA tem gerador próprio, semeado no arranque: não
@@ -5372,16 +5394,13 @@ func _processar_golpe(
 		_notas_recentes.push_front(pontos)
 		if _notas_recentes.size() > ScoreCurve.MEMORIA_DE_NOTAS:
 			_notas_recentes.resize(ScoreCurve.MEMORIA_DE_NOTAS)
+	# TODO SOCO CONTA (build 131): o que fica abaixo do piso da régua marca
+	# pouco, mas marca. Até a 130 ele "não chegava a pontuar" e a tentativa
+	# voltava — a pessoa batia e a máquina não dizia número nenhum.
+	if pontos <= 0:
+		pontos = ScoreCurve.nota_abaixo_do_piso(speed, hit_min_speed)
 	ultima_velocidade = speed
 	ultima_nota = pontos
-	if pontos <= 0:
-		# Fraco demais não gasta a tentativa: o jogador bate de novo.
-		if not simulado:
-			golpe_registrado = false
-			ultima_recusa = "fraco demais: %.2f m/s não chega à zona de pontuação" % speed
-		_show_notice("MAIS FORTE! ESSE NÃO CHEGOU A PONTUAR")
-		_fraco_ate = animation_time + 1.8
-		return
 	_registrar_impacto(pontos, speed, simulado, pico_g, duracao_ms)
 
 ## AS FITAS DA MÁQUINA ACOMPANHANDO O PLACAR.
@@ -5607,7 +5626,7 @@ func _toggle_central() -> void:
 		if camera_service != null:
 			camera_service.retomar()
 		central_aberta = true
-		_inicio_estado = InicioDaTv.estado()
+		_inicio_estado = InicioDaTv.abrir_ao_ligar()
 		_inicio_passo = "-"
 		# O foco do controle remoto começa na aba da página aberta.
 		_foco_central = central_pagina
@@ -5755,6 +5774,128 @@ func _rect_na_tela(alvo: Dictionary) -> Rect2:
 		r.position.y -= central_rolagem
 	return r
 
+## Retângulo do alvo NO ESPAÇO DA PÁGINA (o rodapé fixo vai para baixo do
+## fim da página, como em `_centro_na_pagina`).
+func _rect_na_pagina(alvo: Dictionary) -> Rect2:
+	var r: Rect2 = alvo["r"]
+	var c = _centro_na_pagina(alvo)
+	return Rect2(c - r.size * 0.5, r.size)
+
+## A SETA LEVA AO VIZINHO DE VERDADE (build 131).
+##
+## Era "o centro mais perto naquela direção", com o desvio de lado pesando
+## pouco: para baixo podia ir para o botão da outra coluna na MESMA linha,
+## para o lado podia subir para as abas, e (medido em
+## tools/testes/navegacao_teste) 98 setas das cinco páginas iam para onde
+## o técnico não esperava. Agora é a busca de foco do Android para TV
+## (FocusFinder), a que todo controle remoto já ensinou:
+##   • PARA O LADO: só na mesma linha (os botões que dividem a altura com o
+##     atual); sem vizinho na linha, o foco fica onde está.
+##   • PARA CIMA/BAIXO: vence o botão da próxima linha que está na mesma
+##     coluna (dividem a largura com o atual). Um botão de outra coluna só
+##     ganha se a linha dele inteira vier antes — aí é ele o "logo abaixo".
+##     Empate: a distância pesada (13 × ao longo² + de lado²).
+##   • Subindo para as abas, o foco cai na aba da página aberta.
+func _vizinho_na_central(lista: Array, de: int, direcao: Vector2) -> int:
+	var a = _rect_na_pagina(lista[de])
+	var horizontal = direcao.x != 0.0
+	var melhor = -1
+	var melhor_r = Rect2()
+	for i in range(lista.size()):
+		if i == de:
+			continue
+		var b = _rect_na_pagina(lista[i])
+		if not _foco_candidato(a, b, direcao):
+			continue
+		if horizontal and not _foco_no_feixe(a, b, direcao):
+			continue
+		if melhor < 0 or _foco_melhor(a, b, melhor_r, direcao):
+			melhor = i
+			melhor_r = b
+	# As abas: entrar nelas por baixo é ir para a aba da página aberta.
+	if melhor >= 0 and melhor < PAGINAS.size() and de >= PAGINAS.size() and direcao == Vector2.UP:
+		melhor = central_pagina
+	return melhor
+
+## Está naquela direção (as regras do FocusFinder do Android).
+static func _foco_candidato(a: Rect2, b: Rect2, d: Vector2) -> bool:
+	if d == Vector2.LEFT:
+		return (a.end.x > b.end.x or a.position.x >= b.end.x) and a.position.x > b.position.x
+	if d == Vector2.RIGHT:
+		return (a.position.x < b.position.x or a.end.x <= b.position.x) and a.end.x < b.end.x
+	if d == Vector2.UP:
+		return (a.end.y > b.end.y or a.position.y >= b.end.y) and a.position.y > b.position.y
+	return (a.position.y < b.position.y or a.end.y <= b.position.y) and a.end.y < b.end.y
+
+## Divide a faixa com o atual: a mesma linha (para o lado) ou a mesma
+## coluna (para cima/baixo).
+static func _foco_no_feixe(a: Rect2, b: Rect2, d: Vector2) -> bool:
+	if d.x != 0.0:
+		return b.end.y > a.position.y and b.position.y < a.end.y
+	return b.end.x > a.position.x and b.position.x < a.end.x
+
+static func _foco_inteiro_naquela_direcao(a: Rect2, b: Rect2, d: Vector2) -> bool:
+	if d == Vector2.LEFT:
+		return a.position.x >= b.end.x
+	if d == Vector2.RIGHT:
+		return a.end.x <= b.position.x
+	if d == Vector2.UP:
+		return a.position.y >= b.end.y
+	return a.end.y <= b.position.y
+
+static func _foco_ao_longo(a: Rect2, b: Rect2, d: Vector2) -> float:
+	var v = 0.0
+	if d == Vector2.LEFT:
+		v = a.position.x - b.end.x
+	elif d == Vector2.RIGHT:
+		v = b.position.x - a.end.x
+	elif d == Vector2.UP:
+		v = a.position.y - b.end.y
+	else:
+		v = b.position.y - a.end.y
+	return max(0.0, v)
+
+static func _foco_ate_a_borda_de_la(a: Rect2, b: Rect2, d: Vector2) -> float:
+	var v = 0.0
+	if d == Vector2.LEFT:
+		v = a.position.x - b.position.x
+	elif d == Vector2.RIGHT:
+		v = b.end.x - a.end.x
+	elif d == Vector2.UP:
+		v = a.position.y - b.position.y
+	else:
+		v = b.end.y - a.end.y
+	return max(1.0, v)
+
+static func _foco_de_lado(a: Rect2, b: Rect2, d: Vector2) -> float:
+	if d.x != 0.0:
+		return abs(a.get_center().y - b.get_center().y)
+	return abs(a.get_center().x - b.get_center().x)
+
+## `b1` (o que está na mesma faixa) ganha de `b2` (fora dela) — a não ser
+## que `b2` esteja inteiro antes de `b1` começar.
+static func _foco_faixa_ganha(a: Rect2, b1: Rect2, b2: Rect2, d: Vector2) -> bool:
+	var f1 = _foco_no_feixe(a, b1, d)
+	var f2 = _foco_no_feixe(a, b2, d)
+	if f2 or not f1:
+		return false
+	if not _foco_inteiro_naquela_direcao(a, b2, d):
+		return true
+	if d.x != 0.0:
+		return true
+	return _foco_ao_longo(a, b1, d) < _foco_ate_a_borda_de_la(a, b2, d)
+
+static func _foco_melhor(a: Rect2, b1: Rect2, b2: Rect2, d: Vector2) -> bool:
+	if _foco_faixa_ganha(a, b1, b2, d):
+		return true
+	if _foco_faixa_ganha(a, b2, b1, d):
+		return false
+	var l1 = _foco_ao_longo(a, b1, d)
+	var l2 = _foco_ao_longo(a, b2, d)
+	var s1 = _foco_de_lado(a, b1, d)
+	var s2 = _foco_de_lado(a, b2, d)
+	return 13.0 * l1 * l1 + s1 * s1 < 13.0 * l2 * l2 + s2 * s2
+
 func _navegar_central_pelo_controle(tecla: int, repetindo: bool) -> bool:
 	var direcao = Vector2.ZERO
 	match tecla:
@@ -5782,26 +5923,7 @@ func _navegar_central_pelo_controle(tecla: int, repetindo: bool) -> bool:
 	if lista.empty():
 		return true
 	_foco_central = int(clamp(_foco_central, 0, lista.size() - 1))
-	# Tudo medido no espaço da PÁGINA (os fixos do rodapé entram com a
-	# rolagem somada): assim descer percorre a página inteira, e os
-	# botões do rodapé só ganham quando não há mais nada abaixo.
-	var daqui = _centro_na_pagina(lista[_foco_central])
-	var melhor = -1
-	var melhor_nota = INF
-	for i in range(lista.size()):
-		if i == _foco_central:
-			continue
-		var d = _centro_na_pagina(lista[i]) - daqui
-		var ao_longo = d.dot(direcao)
-		if ao_longo <= 4.0:
-			continue
-		var de_lado = abs(d.dot(Vector2(-direcao.y, direcao.x)))
-		var nota = ao_longo + de_lado * 1.2
-		if bool(lista[i]["fixo"]) and not bool(lista[_foco_central]["fixo"]) and abs(direcao.y) > 0.5:
-			nota += 2000.0
-		if nota < melhor_nota:
-			melhor_nota = nota
-			melhor = i
+	var melhor = _vizinho_na_central(lista, _foco_central, direcao)
 	if melhor >= 0:
 		_foco_central = melhor
 		sons.play("tick", -14.0)
@@ -5874,14 +5996,14 @@ func _click_central(p: Vector2) -> void:
 		mapeando = "" if mapeando == "credito" else "credito"
 		return
 	elif _tocou("inicio_tv", p):
-		_inicio_estado = InicioDaTv.estado()
+		_inicio_estado = InicioDaTv.abrir_ao_ligar()
 		if _inicio_estado == "":
 			_show_notice("SÓ NA TV BOX (ANDROID)")
-		elif _inicio_estado == "jogo":
-			_show_notice("A TV JÁ ABRE O JOGO SOZINHA")
+		elif _inicio_estado == "sim":
+			_show_notice("A TV JÁ ABRE O JOGO SOZINHA AO LIGAR")
 		else:
-			_inicio_passo = InicioDaTv.escolher()
-			Diario.marca("JOGO: Central abriu a escolha da tela inicial (%s)" % _inicio_passo)
+			_inicio_passo = InicioDaTv.pedir_sobrepor()
+			Diario.marca("JOGO: Central abriu 'sobrepor a outros apps' (%s)" % _inicio_passo)
 		return
 	elif _tocou("sair_tv", p):
 		if InicioDaTv.sair_para_tv() == "":
@@ -8191,54 +8313,39 @@ func _central_operacao() -> void:
 	)
 	_central_inicio_da_tv()
 
-## ABRIR O JOGO AO LIGAR A TV (build 129, o método do boliche): se a TV
-## já abre o jogo sozinha e, se não, como fazer. O botão da esquerda abre
-## a escolha do Android; o da direita sai para a tela da própria TV.
+## ABRIR O JOGO AO LIGAR A TV (build 133, o padrão do Strike Kids 8.8): o
+## jogo não é mais a tela inicial da TV. O botão da esquerda só existe no
+## Android 10+ ("sobrepor a outros apps"); o da direita sai para a tela da
+## própria TV.
 func _central_inicio_da_tv() -> void:
 	var y = INICIO_TV_Y
 	_secao(Rect2(80, y, 920, 340), "ABRIR O JOGO AO LIGAR A TV", Paleta.VERDE)
 	var largura = 840.0
 	var x = 120.0
-	var linhas = []
+	var linhas = [
+		"Ao ligar, o Android abre o jogo sozinho (tenta de novo até 25 s). O AUTO START também pode.",
+		"Arduino: na 1ª vez marque USAR POR PADRÃO e OK — vale depois de desligar.",
+		"Voltando da espera (controle remoto), o jogo reinicia sozinho.",
+	]
 	if _inicio_estado == "":
 		_texto("SÓ NA TV BOX (ANDROID)", y + 92.0, 24, Paleta.TINTA_FRACA)
-		linhas = [
-			"Na TV Box o jogo vira a tela inicial: abre sozinho ao ligar a TV.",
-			"",
-			"",
-		]
-	elif _inicio_estado == "jogo":
-		_texto("SIM — A TV ABRE O SUPER BOXING SOZINHA", y + 92.0, 24, Paleta.VERDE)
-		linhas = [
-			"Ligando na tomada, pelo controle remoto (volta da espera) e a cada HOME.",
-			"Para usar a TV (ajustes, outros apps): SAIR PARA A TELA DA TV, abaixo.",
-			"",
-		]
+	elif _inicio_estado == "sim":
+		_texto("SIM — AO LIGAR, O SUPER BOXING ABRE SOZINHO", y + 92.0, 24, Paleta.VERDE)
 	else:
-		var nome = InicioDaTv.nome_da_outra(_inicio_estado)
-		_texto(
-			"NÃO — HOJE A TV ABRE \"%s\"" % nome.to_upper() if nome != "" else "NÃO — O ANDROID AINDA PERGUNTA",
-			y + 92.0, 24, Paleta.AMBAR
-		)
-		linhas = [
-			"OK em ESCOLHER: na janela do Android, escolha SUPER BOXING e SEMPRE.",
-			"(ou: HOME no controle remoto > SUPER BOXING > SEMPRE)",
-			"",
-		]
-		if _inicio_passo == "app":
-			linhas[2] = "Abriu a página do app? LIMPAR PADRÕES, volte e HOME > SUPER BOXING > SEMPRE."
-		elif _inicio_passo == "":
-			linhas[2] = "Esta TV não abriu nenhuma escolha: faça pelo PC, com o adb (veja o LEIA-ME)."
+		_texto("FALTA: PERMITIR \"SOBREPOR A OUTROS APPS\"", y + 92.0, 24, Paleta.AMBAR)
+		linhas[2] = "Android 10+: OK em PERMITIR, ligue SUPER BOXING e volte (sem isso, só o AUTO START abre)."
+		if _inicio_passo == "":
+			linhas[2] = "Esta TV não abriu a página: use o AUTO START (Launch on Boot) para abrir o jogo."
 	for i in range(linhas.size()):
 		if linhas[i] != "":
 			_texto_cabendo(linhas[i], y + 138.0 + 34.0 * float(i), 15, Paleta.CREME, largura, x)
 	_botao(
-		BOTOES_SIMPLES["inicio_tv"], "JÁ ABRE SOZINHO" if _inicio_estado == "jogo" else "ESCOLHER COMO TELA INICIAL",
-		_inicio_estado == "jogo", Paleta.VERDE, 18, _inicio_estado == ""
+		BOTOES_SIMPLES["inicio_tv"], "JÁ ABRE SOZINHO" if _inicio_estado != "sobrepor" else "PERMITIR ABRIR SOZINHO",
+		_inicio_estado == "sim", Paleta.VERDE, 18, _inicio_estado == ""
 	)
 	_botao(BOTOES_SIMPLES["sair_tv"], "SAIR PARA A TELA DA TV", false, Paleta.CIANO, 18, _inicio_estado == "")
 	_texto_cabendo(
-		"Sem a Central: HOME 5 vezes seguidas no controle também sai para a TV. Um HOME volta ao jogo.",
+		"HOME no controle também vai para a tela da TV. Para voltar: abra o SUPER BOXING.",
 		y + 318.0, 14, Paleta.TINTA_FRACA, largura, x
 	)
 

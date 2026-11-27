@@ -12,9 +12,9 @@ extends Reference
 ## NUMERO em um e escreva em NOTA o que mudou. Um carimbo que não sobe
 ## mente, e um carimbo que mente é pior do que carimbo nenhum.
 
-const NUMERO = 130
+const NUMERO = 133
 const DATA = "27/11/2026"
-const NOTA = "Liso como o boliche: 30 quadros travados na batida da TV (plugin PunchQuadros) e a linha do jogo na frente do processador; o soco forte demais (\"CURTO\" na placa) conta como o mais forte em vez de sumir e devolver a ficha; a placa que cai no meio da luta é esperada (9 s) em vez de encerrar; o 2º soco mostra a força DELE e depois o mais forte é apresentado (é ele que vai para o ranking); nocaute com queda física (joelhos cedem, senta, desaba de costas, poeira e baque na lona); pele lisa, sem os gomos pintados"
+const NOTA = "Inicialização igual ao Strike Kids 8.8: o Arduino pergunta UMA vez só e vale depois de desligar (encaixe USB directBootAware); o jogo não é mais tela inicial (a TV nunca pergunta \"app padrão\") — abre pelo aviso de \"ligou\" com novas tentativas e/ou pelo AUTO START. Mais a 132 (setas da Central), 131 (todo soco conta, nota segue a força) e 130 (liso, queda física, pele lisa)"
 
 ## Rodapé da abertura: cabe em uma linha discreta.
 static func curta() -> String:
