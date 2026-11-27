@@ -39,8 +39,11 @@ const MODELO = "res://assets/lutador3d/boxeador_tvbox.glb"
 ## .glb importado antes das próprias texturas saía SEM pintura — o lutador
 ## branco no APK. Vestidas aqui, na montagem, a ordem não importa mais.
 const TEXTURAS = {
-	# a pele com a musculatura pintada (`tools/definir_musculos_boxeador.py`)
-	"Pele": ["res://assets/lutador3d/boxeador_pele.jpg", "res://assets/lutador3d/boxeador_relevo.png"],
+	# A PELE LISA (build 130): os gomos pintados no tronco (riscos escuros
+	# em grade) e o relevo por cima deixavam o tanquinho "desenhado", com
+	# cara de remendo. A pintura foi alisada (`tools/alisar_pele_boxeador.py`)
+	# e o relevo saiu: a forma do corpo vem da própria malha e da luz.
+	"Pele": ["res://assets/lutador3d/boxeador_pele.jpg", ""],
 	# o calção com a listra contínua dos dois lados (`tools/pintar_calcao_boxeador.py`)
 	"Roupa": ["res://assets/lutador3d/boxeador_calcao.jpg", ""],
 	"Cinturao": ["res://assets/lutador3d/boxeador_0.jpg", ""],
@@ -232,6 +235,62 @@ var _dolly = 0.0
 
 ## --- queda
 var _queda_vis = 0.0
+
+## A QUEDA DO NOCAUTE COM FÍSICA (build 130).
+##
+## Até a 129 o corpo inteiro girava para trás em volta dos pés, rígido
+## como uma tábua, numa curva pronta — e batia na lona sem peso nenhum.
+## Agora a queda é montada em três corpos, cada um com a sua física:
+##   1. OS JOELHOS CEDEM: a bacia despenca em queda livre e as pernas
+##      dobram com os pés plantados — o "apagou".
+##   2. AS PERNAS TOMBAM em volta dos pés (pêndulo invertido: a gravidade
+##      acelera o tombo, o empurrão do soco dá a partida) até o quadril
+##      bater na lona, com um quique curto.
+##   3. O TRONCO SEGUE em volta do quadril, com o embalo que trazia, até as
+##      costas baterem: quica e assenta; a cabeça chicoteia no baque
+##      (mola do pescoço), as luvas, que voaram para cima no tombo, batem
+##      na lona dos lados. Um giro de lado (o do último soco) tira a cara
+##      de boneco caindo reto.
+## Os joelhos ficam para cima e as solas no chão, como um nocaute de
+## verdade — e o levantar parte exatamente dessa pose.
+const QF_GRAVIDADE = 9.8
+const QF_AFUNDA = 0.34          ## fração da altura da bacia que os joelhos cedem
+const QF_AFUNDA_T = 0.28        ## segundos dos joelhos cedendo (queda livre)
+const QF_TRONCO = 1.52          ## o tronco deitado (rad)
+const QF_RAIO_DO_TRONCO = 0.55  ## do quadril ao centro do tronco (m)
+const QF_QUIQUE = 0.28          ## quanto do baque volta em quique
+const QF_ROLA = 0.17            ## giro de lado, deitado (rad)
+const QF_PASSO = 1.0 / 120.0
+## O corpo apagado não é uma tábua: os joelhos e a cintura amortecem, e o
+## tombo leva quase um segundo (medido em lutas de verdade: 0,7 a 1,0 s
+## do apagão até as costas na lona).
+const QF_MOLEZA_PERNAS = 0.60
+const QF_MOLEZA_TRONCO = 0.45
+## Enquanto as pernas tombam, o tronco mole curva para a frente (o queixo
+## no peito) e fica para trás no giro; quando o quadril bate, ele desaba.
+const QF_CURVA = -0.35
+var _qf = false
+var _qf_t = 0.0
+var _qf_a = 0.0                 ## tombo das pernas (rad)
+var _qf_av = 0.0
+var _qf_a_fim = 1.2
+var _qf_b = 0.0                 ## o tronco além das pernas (rad)
+var _qf_bv = 0.0
+var _qf_rel = Vector3.ZERO      ## bacia - pés, em pé, no instante do nocaute
+var _qf_raio = 0.5
+var _qf_lado = 1.0
+var _qf_quadril = false         ## o quadril já bateu
+var _qf_costas = false          ## as costas já bateram
+var _qf_bracos = 0.0            ## luvas jogadas para cima no tombo (0..1)
+var _qf_bracos_v = 0.0
+var _qf_maos = 0.0              ## luvas largadas na lona (0..1)
+var _qf_maos_v = 0.0
+var _qf_rola_mola = 0.0
+var _qf_rola_v = 0.0
+var _deitado_rola = 0.0
+var _deitado_tomba_pe = 0.0
+var _lev_rola = 0.0
+var _lev_tomba_pe = 0.0
 var _rng = RandomNumberGenerator.new()
 
 
@@ -300,12 +359,14 @@ func montar() -> void:
 		var mat = _pele.mesh.surface_get_material(0) as SpatialMaterial
 		if mat != null:
 			_mat_pele = mat.duplicate() as SpatialMaterial
-			_definir(_mat_pele, 0.44, 0.22)
-			# Pele suada: menos áspera — é o brilho nos músculos que desenha
-			# o corpo de longe. O relevo agora traz a musculatura (os gomos,
-			# o peitoral, o serrátil: `tools/definir_musculos_boxeador.py`),
-			# na escala em que foi esculpido.
-			_mat_pele.normal_scale = 1.0
+			_definir(_mat_pele, 0.52, 0.20)
+			# PELE LISA (build 130): sem mapa de relevo. O relevo trazia os
+			# gomos em blocos e um enrugado fino por todo o corpo — de perto
+			# era o "tanquinho estranho"; e na Mali-450 cada pixel do corpo
+			# ainda lia uma textura a mais. Um brilho suave e uniforme de
+			# pele suada desenha o volume sem riscar nada.
+			_mat_pele.normal_enabled = false
+			_mat_pele.normal_texture = null
 			_pele.set_surface_material(0, _mat_pele)
 			_mats_padrao.append(_mat_pele)
 	# O RESTO DA ROUPA TAMBÉM GANHA CONTORNO. Couro das luvas e das botas,
@@ -509,6 +570,7 @@ func _reiniciar_corpo() -> void:
 	_tonto = 0.0
 	_fila.clear()
 	_queda_vis = 0.0
+	_qf = false
 	_pes_livres = 0.0
 	_dolly = 0.0
 	_tela_ok = false
@@ -1317,10 +1379,36 @@ func _resolver() -> void:
 		_r_tomba[k] = 0.0
 		_r_mao[k] = _mao[k]
 		_r_cot[k] = _cotovelo[k]
+	var pes_deitados = 0.0
 	if levantando:
 		deita = _pose_levantando()
 		bacia = _r_bacia
 		rot_bacia = _r_rot
+	elif _qf:
+		# A QUEDA COM FÍSICA (ver `_qf_passo`): as pernas giram em volta dos
+		# pés, o tronco em volta do quadril, as luvas soltas.
+		var piv = _qf_pivo()
+		var cedeu = clamp(_qf_t / QF_AFUNDA_T, 0.0, 1.0)
+		cedeu = cedeu * cedeu
+		var gp = Basis(Vector3.RIGHT, -_qf_a)
+		bacia = piv + gp * _qf_bacia_cedida(cedeu)
+		var tau = _qf_a + _qf_b
+		var gt = Basis(Vector3.RIGHT, -tau) * Basis(Vector3.BACK, _qf_rola_mola)
+		rot_bacia = gt * rot_bacia
+		var cima = gt * Vector3.UP
+		for k in 2:
+			var s = _lado_s(k)
+			var rel = (_mao[k] as Vector3) - _bacia
+			var solta = gt * Vector3(0.24 * s, 0.30, 0.04) * clamp(_qf_bracos, 0.0, 1.2)
+			_r_mao[k] = bacia + gt * rel + solta
+			_r_cot[k] = (gt * (_cotovelo[k] as Vector3) + cima * 0.4 * _qf_bracos).normalized()
+			_r_tomba[k] = 0.0
+		deita = clamp(_qf_maos, 0.0, 1.0)
+		pes_deitados = 1.0
+		_deitado_bacia = bacia
+		_deitado_ang = -tau
+		_deitado_rola = _qf_rola_mola
+		_deitado_tomba_pe = 0.0
 	elif _queda_vis > 0.001:
 		# A QUEDA É O CORPO TODO GIRANDO PARA TRÁS EM VOLTA DOS PÉS — mas o
 		# giro vai nos ALVOS (bacia, luvas, cotovelos), e não no nó do corpo.
@@ -1342,6 +1430,8 @@ func _resolver() -> void:
 		deita = clamp(q * 2.5, 0.0, 1.0)
 		_deitado_bacia = bacia
 		_deitado_ang = ang
+		_deitado_rola = 0.0
+		_deitado_tomba_pe = ang
 	else:
 		# ---- bacia: desce se alguma perna não alcança o chão.
 		var falta = 0.0
@@ -1385,6 +1475,8 @@ func _resolver() -> void:
 			polo = _r_cot[k]
 		elif deita > 0.0:
 			mao = mao.linear_interpolate(_mao_deitado(k, O, G), deita)
+			if _qf and _qf_maos > 1.0:
+				mao.y -= (_qf_maos - 1.0) * 0.4
 		# A luva nunca entra na lona (apoio no chão, braço largado).
 		mao.y = max(mao.y, RAIO_DA_LUVA)
 		var ik = _ik(raiz, mao, _l_braco, _l_ante, polo)
@@ -1433,7 +1525,7 @@ func _resolver() -> void:
 		# O CALCANHAR SOBE GIRANDO NA PLANTA DO PÉ. O osso do pé desce o
 		# ângulo pedido e a planta (`_pe_com_calcanhar` já levantou o
 		# tornozelo na medida certa) fica no chão.
-		var inc = _inc_do_calcanhar(k) * (1.0 - deita)
+		var inc = _inc_do_calcanhar(k) * (1.0 - max(deita, pes_deitados))
 		var frente = frente_pe * cos(inc) - cima_pe * sin(inc)
 		var cima = cima_pe * cos(inc) + frente_pe * sin(inc)
 		var dir_pe = frente * cos(_desce_pe) - cima * sin(_desce_pe)
@@ -1460,7 +1552,7 @@ func _resolver() -> void:
 		fundo = min(fundo, (O[L_TOE[k]] as Vector3).y - _sola_planta)
 		var calc: Vector3 = (O[L_FOOT[k]] as Vector3) + pe_b * _calcanhar_ofs
 		fundo = min(fundo, calc.y)
-	if deita > 0.0 or levantando:
+	if deita > 0.0 or levantando or _qf:
 		fundo = min(fundo, bacia.y - RAIO_DA_BACIA)
 		fundo = min(fundo, (O["Spine2"] as Vector3).y - RAIO_DAS_COSTAS)
 		var topo: Vector3 = (O["Head"] as Vector3) + (G["Head"] as Basis) * ((_R["HeadTop_End"] - _R["Head"]) * 0.5)
@@ -1550,6 +1642,8 @@ func _comecar_a_levantar() -> void:
 	_lev_ok = true
 	_lev_bacia = _deitado_bacia
 	_lev_ang = _deitado_ang
+	_lev_rola = _deitado_rola
+	_lev_tomba_pe = _deitado_tomba_pe
 	for k in 2:
 		_lev_pe[k] = _pe[k]
 	# De pé ele fica um passo atrás de onde estavam os pés (o corpo
@@ -1577,7 +1671,9 @@ func _pose_levantando() -> float:
 	var tombos = LEVANTAR_TOMBO.duplicate()
 	tombos[0] = _lev_ang
 	var tombo = lerp(tombos[i], tombos[i + 1], u)
-	_r_rot = Basis(Vector3.RIGHT, tombo) * Basis(Vector3(_bacia_rot.x * (1.0 if i >= 3 else 0.0) * u, _bacia_rot.y, _bacia_rot.z))
+	var rola = _lev_rola * (1.0 - clamp(g / LEVANTAR_TEMPOS[2], 0.0, 1.0))
+	_r_rot = Basis(Vector3.RIGHT, tombo) * Basis(Vector3.BACK, rola) \
+		* Basis(Vector3(_bacia_rot.x * (1.0 if i >= 3 else 0.0) * u, _bacia_rot.y, _bacia_rot.z))
 	# Os pés: até sentar ficam onde caíram (dedos para cima); depois vêm
 	# por baixo do corpo, num arco rasteiro, e plantam na base da guarda.
 	for k in 2:
@@ -1585,12 +1681,12 @@ func _pose_levantando() -> float:
 		var plantado = Vector3(base.x, _tornozelo, base.y)
 		if i <= 0:
 			_r_pe[k] = _lev_pe[k]
-			_r_tomba[k] = _lev_ang
+			_r_tomba[k] = _lev_tomba_pe
 		elif i == 1:
 			var p: Vector3 = (_lev_pe[k] as Vector3).linear_interpolate(plantado, u)
 			p.y += sin(u * PI) * 0.05
 			_r_pe[k] = p
-			_r_tomba[k] = lerp(_lev_ang, 0.0, u)
+			_r_tomba[k] = lerp(_lev_tomba_pe, 0.0, u)
 		else:
 			_r_pe[k] = plantado
 			_pe[k] = plantado
@@ -1698,17 +1794,149 @@ func _raiz() -> void:
 	# A QUEDA: quanto do tombo já aconteceu. O giro em si é aplicado nos
 	# alvos da pose (ver `_resolver`), com os pés no chão; o nó do corpo
 	# fica parado.
-	var alvo = clamp(queda, 0.0, 1.0)
-	if alvo > _queda_vis:
-		_queda_vis = min(alvo, _queda_vis + _dt * 2.4)
+	if _caindo and _papel == "knockout" and not _qf and _modelo != null:
+		_qf_comecar()
+	if _qf and (not _caindo or _papel == "get_up"):
+		_qf = false
+	if _qf:
+		# A física da queda anda no relógio de verdade: o resto da
+		# coreografia corre `VELOCIDADE` vezes mais rápido, de propósito
+		# (golpes secos), mas a gravidade não.
+		_qf_passo(_dt / VELOCIDADE)
+		_queda_vis = clamp((_qf_a + _qf_b) / QF_TRONCO, 0.0, 1.0)
 	else:
-		_queda_vis = alvo
+		var alvo = clamp(queda, 0.0, 1.0)
+		if alvo > _queda_vis:
+			_queda_vis = min(alvo, _queda_vis + _dt * 2.4)
+		else:
+			_queda_vis = alvo
 	if _papel == "get_up" and not _lev_ok and _caindo:
 		_comecar_a_levantar()
 	elif _papel != "get_up" and _lev_ok:
 		_lev_ok = false
 	if _corpo.transform != Transform.IDENTITY:
 		_corpo.transform = Transform.IDENTITY
+
+
+## Onde as costas bateram, no mundo da arena (a poeira sobe dali).
+func ponto_do_baque() -> Vector3:
+	if _sk == null:
+		return global_transform.origin
+	var peito = _deitado_bacia.linear_interpolate(_deitado_bacia + Vector3(0.0, 0.0, -0.45), 0.5)
+	return _sk.global_transform.xform(peito)
+
+
+## O meio dos dois pés, na altura do tornozelo: o eixo do tombo.
+func _qf_pivo() -> Vector3:
+	return Vector3((_pe[0].x + _pe[1].x) * 0.5, _tornozelo, (_pe[0].z + _pe[1].z) * 0.5)
+
+
+## A bacia (relativa aos pés) com os joelhos cedidos `quanto` (0..1).
+func _qf_bacia_cedida(quanto: float) -> Vector3:
+	return _qf_rel - Vector3(0.0, QF_AFUNDA * _h0 * clamp(quanto, 0.0, 1.0), 0.0)
+
+
+func _qf_comecar() -> void:
+	_qf = true
+	_qf_t = 0.0
+	# Os pés param onde estão (um passo no ar desce na hora).
+	for k in 2:
+		_passo_t[k] = -1.0
+		_pe[k].y = _tornozelo
+	_qf_rel = _bacia - _qf_pivo()
+	_qf_lado = -1.0 if _lado < 0.0 else 1.0
+	# A partida do tombo vem do soco: mais forte, mais rápido ele vai.
+	_qf_av = 0.30 + 0.55 * clamp(_forca_do_recuo, 0.0, 1.0)
+	_qf_a = 0.0
+	_qf_b = 0.0
+	_qf_bv = 0.0
+	_qf_quadril = false
+	_qf_costas = false
+	_qf_bracos = 0.0
+	_qf_bracos_v = 2.5
+	_qf_maos = 0.0
+	_qf_maos_v = 0.0
+	_qf_rola_mola = 0.0
+	_qf_rola_v = 0.0
+	# Onde o quadril encosta na lona: o ângulo em que a bacia cedida,
+	# girando em volta dos pés, chega à altura do raio da bacia.
+	var v = _qf_bacia_cedida(1.0)
+	_qf_raio = max(Vector2(v.y, v.z).length(), 0.2)
+	var fi = atan2(v.z, v.y)
+	var c = (RAIO_DA_BACIA + 0.012 - _tornozelo) / _qf_raio
+	_qf_a_fim = clamp(fi + acos(clamp(c, -1.0, 1.0)), 0.55, 1.45)
+	# O apagão: o queixo cai um pouco antes de a cabeça ir para trás.
+	_mola_cab_v += Vector3(2.2, 0.0, 1.2 * _qf_lado)
+
+
+## A física da queda, em passos curtos (estável com qualquer quadro).
+func _qf_passo(dt: float) -> void:
+	var escala = max(_modelo.scale.x, 0.001)
+	var resto = dt
+	while resto > 0.00001:
+		var h = min(QF_PASSO, resto)
+		resto -= h
+		_qf_t += h
+		# 2. AS PERNAS: pêndulo invertido em volta dos pés. Enquanto os
+		# joelhos ainda estão cedendo o tombo mal começou (o corpo desce
+		# antes de ir para trás).
+		var raio_m = _qf_raio * escala
+		var cedeu = clamp(_qf_t / QF_AFUNDA_T, 0.0, 1.0)
+		if not _qf_quadril:
+			var w2 = QF_MOLEZA_PERNAS * QF_GRAVIDADE / max(raio_m, 0.25)
+			_qf_av += w2 * sin(_qf_a + 0.12) * lerp(0.3, 1.0, cedeu) * h
+			_qf_a += _qf_av * h
+			# o tronco mole curva para a frente e vem atrasado
+			_qf_bv += ((QF_CURVA * cedeu - _qf_b) * 30.0 - _qf_bv * 9.0) * h
+			_qf_b += _qf_bv * h
+			if _qf_a >= _qf_a_fim:
+				# O QUADRIL BATE: as pernas param (quique curto) e o tronco
+				# leva o embalo adiante.
+				_qf_a = _qf_a_fim
+				_qf_quadril = true
+				_qf_bv += _qf_av * 0.85
+				_qf_av = -_qf_av * QF_QUIQUE * 0.6
+				_mola_tronco_v += Vector3(2.0, 0.0, 0.8 * _qf_lado)
+				_mola_cab_v += Vector3(3.0, 1.5 * _qf_lado, 0.0)
+		else:
+			# o quique do quadril (sobe um pouco) e a gravidade traz de volta
+			_qf_av += 30.0 * h
+			_qf_a += _qf_av * h
+			if _qf_a >= _qf_a_fim:
+				_qf_a = _qf_a_fim
+				_qf_av = 0.0
+			# 3. O TRONCO DESABA em volta do quadril, com o embalo que
+			# trazia, a gravidade e um pouco de atrito (corpo mole não
+			# chicoteia como mola).
+			var tau = _qf_a + _qf_b
+			var wt2 = QF_MOLEZA_TRONCO * QF_GRAVIDADE / QF_RAIO_DO_TRONCO
+			_qf_bv += (wt2 * sin(tau) - _qf_bv * 0.6) * h
+			_qf_b += _qf_bv * h
+		if _qf_a + _qf_b >= QF_TRONCO:
+			_qf_b = QF_TRONCO - _qf_a
+			var vel = _qf_bv + max(_qf_av, 0.0)
+			if not _qf_costas:
+				# AS COSTAS BATEM: o baque. A cabeça chicoteia para trás e
+				# volta, o tronco sacode, as luvas caem na lona.
+				_qf_costas = true
+				_mola_cab_v += Vector3(-7.5 - 3.0 * clamp(vel / 4.0, 0.0, 1.0), -2.0 * _qf_lado, 2.5 * _qf_lado)
+				_mola_tronco_v += Vector3(-3.5, 0.0, 1.2 * _qf_lado)
+				_qf_rola_v += 2.2 * _qf_lado
+				_clarao = max(_clarao, 0.18)
+				_baque = true
+			_qf_bv = -vel * QF_QUIQUE if vel > 0.9 else 0.0
+		# AS LUVAS: no tombo elas ficam para trás (sobem em relação ao
+		# corpo); depois das costas, caem e quicam na lona.
+		var alvo_bracos = 0.0 if _qf_costas else clamp(_qf_t / 0.35, 0.0, 1.0)
+		_qf_bracos_v += ((alvo_bracos - _qf_bracos) * 60.0 - _qf_bracos_v * 9.0) * h
+		_qf_bracos += _qf_bracos_v * h
+		var alvo_maos = 1.0 if _qf_costas else 0.0
+		_qf_maos_v += ((alvo_maos - _qf_maos) * 160.0 - _qf_maos_v * 14.0) * h
+		_qf_maos = clamp(_qf_maos + _qf_maos_v * h, 0.0, 1.15)
+		# o giro de lado: mola que assenta no lado do último soco
+		var rola_alvo = QF_ROLA * _qf_lado * clamp((_qf_a + _qf_b) / QF_TRONCO, 0.0, 1.0)
+		_qf_rola_v += ((rola_alvo - _qf_rola_mola) * 40.0 - _qf_rola_v * 7.0) * h
+		_qf_rola_mola += _qf_rola_v * h
 
 
 func _pintar() -> void:

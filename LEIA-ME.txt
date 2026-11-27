@@ -1,4 +1,4 @@
-SUPER BOXING - TV BOX MALI-450 (TX9) - OPENGL ES 2.0 - BUILD 129
+SUPER BOXING - TV BOX MALI-450 (TX9) - OPENGL ES 2.0 - BUILD 130
 =================================================================
 
 ESTA VERSAO E PARA TV BOX COM PLACA DE VIDEO MALI-450 (TX9): Godot 3.6,
@@ -6,8 +6,55 @@ OpenGL ES 2.0. UM ARQUIVO SO: GERAR_APK_AGORA.bat gera o
 APK certo. Veja "GERAR O APK" mais abaixo.
 
 CONFIRA NA MAQUINA: o rodape da abertura e a Central mostram
-"BUILD 129". Se aparecer outro numero, o APK instalado e o antigo -
+"BUILD 130". Se aparecer outro numero, o APK instalado e o antigo -
 gere o APK de novo com GERAR_APK_AGORA.bat e instale por cima.
+
+O QUE A BUILD 130 MUDA (BASE: A 129) - LISO, SOCO FORTE CONTA, QUEDA DE VERDADE
+-------------------------------------------------------------------------------
+- LISO NA TV BOX (o mesmo metodo do Strike Kids GLES2): os 30 quadros
+  eram segurados pelo relogio do Godot, que nao enxerga a batida da TV -
+  quadros de 1, 2 e 3 batidas misturados, media 30 e o movimento
+  "agarrando". Agora cada quadro diz ao Android em que batida aparecer
+  (EGL_ANDROID_presentation_time, QuadrosDaTv.java no plugin
+  PunchQuadros): sempre 2 batidas, uniforme. A linha do jogo ganha a
+  prioridade de desenho do Android (DISPLAY) e, onde a TV Box tem, o modo
+  de desempenho constante. Central, pagina DADOS, RITMO DA MAQUINA: "30
+  qps NA BATIDA DA TV" (ou "pelo relogio do Godot" num APK antigo ou numa
+  TV Box sem o recurso - ai o jogo volta sozinho ao jeito de antes).
+  Os mapas de sombra (nao usados) cairam de 1024 para 256: memoria livre.
+- O SOCO FORTE DEMAIS VOLTAVA PARA A ABERTURA: quanto mais forte o soco,
+  mais rapido a palheta passa pelo feixe, e acima do teto da regua a placa
+  recusava como "CURTO" (vibracao). O soco mais forte da noite nao
+  contava, o tempo acabava sem soco, a ficha voltava e a maquina ia para a
+  abertura. Agora, com a maquina esperando o soco, o CURTO com duracao de
+  soco de verdade (0,3 ms ou mais) conta como o soco no teto da regua. Nao
+  precisa regravar o Arduino.
+- A PLACA QUE CAI NO MEIO DA LUTA (o tranco de um soco forte no cabo ou na
+  fonte) nao encerra mais a rodada na hora: o relogio do soco para,
+  "SENSOR RECONECTANDO - AGUARDE", e a luta segue quando a placa volta (ate
+  9 s; depois, como antes: sem soco a ficha volta, com soco vai para o
+  resultado).
+- CADA SOCO COM A SUA FORCA: o placar do 2o soco mostrava a nota do MELHOR
+  (um 2o soco de 3000 depois de um 1o de 8000 aparecia como 8000). Agora
+  ele conta a forca dele; se o 1o foi mais forte, depois do 2o (e do K.O.,
+  se houver) o placar do 2o sai e o mais forte conta de novo ("SEU MELHOR
+  SOCO" / "O MAIS FORTE"), com o som e a festa do nivel dele. E o mais
+  forte que vai para o TOP 20 e aparece no rodape da tabela ("SEU SOCO
+  MAIS FORTE").
+- NOCAUTE COM QUEDA DE VERDADE: antes o corpo girava rigido para tras em
+  volta dos pes, como uma tabua. Agora: os joelhos cedem, as pernas tombam
+  com a gravidade ate o quadril bater na lona, o tronco desaba de costas
+  com o embalo, a cabeca chicoteia, as luvas voam e batem na lona, um
+  quique curto, e ele fica com os joelhos para cima. No baque das costas:
+  poeira de onde ele caiu, a imagem treme, as cordas balancam e a queda
+  soa (antes soava no instante do soco). O levantar parte dessa pose; ele
+  fica um pouco mais apagado na lona antes de levantar.
+- PELE LISA: os gomos do tanquinho eram riscos escuros pintados em grade
+  na pele, com um relevo por cima - de perto, um remendo. A pintura foi
+  alisada (tools/alisar_pele_boxeador.py) e o relevo saiu (o corpo ganha
+  forma pela luz; uma textura a menos por pixel na Mali-450).
+- Testes novos: tools/testes/queda_teste (filma a queda) e partida_teste
+  --forcas=A,B / --curto (o Godot sem tela tambem aperta START).
 
 O QUE A BUILD 129 MUDA (BASE: A 128) - O JOGO ABRE SOZINHO AO LIGAR A TV
 ------------------------------------------------------------------------
