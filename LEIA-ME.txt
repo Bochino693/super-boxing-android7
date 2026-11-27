@@ -1,4 +1,4 @@
-SUPER BOXING - TV BOX MALI-450 (TX9) - OPENGL ES 2.0 - BUILD 131
+SUPER BOXING - TV BOX MALI-450 (TX9) - OPENGL ES 2.0 - BUILD 132
 =================================================================
 
 ESTA VERSAO E PARA TV BOX COM PLACA DE VIDEO MALI-450 (TX9): Godot 3.6,
@@ -6,8 +6,22 @@ OpenGL ES 2.0. UM ARQUIVO SO: GERAR_APK_AGORA.bat gera o
 APK certo. Veja "GERAR O APK" mais abaixo.
 
 CONFIRA NA MAQUINA: o rodape da abertura e a Central mostram
-"BUILD 131". Se aparecer outro numero, o APK instalado e o antigo -
+"BUILD 132". Se aparecer outro numero, o APK instalado e o antigo -
 gere o APK de novo com GERAR_APK_AGORA.bat e instale por cima.
+
+O QUE A BUILD 132 MUDA (BASE: A 131) - CENTRAL PELO CONTROLE SEM SUSTO
+----------------------------------------------------------------------
+- AS SETAS DO CONTROLE REMOTO NA CENTRAL TECNICA vao para onde se espera.
+  Antes era "o centro mais perto naquela direcao": para baixo podia ir
+  para o botao da outra coluna na mesma linha, para o lado podia subir
+  para as abas - 100 setas das cinco paginas iam para o lugar errado
+  (medido em tools/testes/navegacao_teste). Agora e a busca de foco do
+  Android para TV:
+  * PARA O LADO: so na mesma linha; sem vizinho na linha, fica parado.
+  * PARA CIMA/BAIXO: o botao logo acima/abaixo na mesma coluna; de outra
+    coluna so quando a linha dele vem inteira antes.
+  * Subindo para as abas, o foco cai na aba da pagina aberta.
+  O teste confere todas as setas de todos os botoes: NAVEGACAO OK.
 
 O QUE A BUILD 131 MUDA (BASE: A 130) - TODO SOCO CONTA, NOTA SEGUE A FORCA
 ---------------------------------------------------------------------------

@@ -5795,6 +5795,128 @@ func _rect_na_tela(alvo: Dictionary) -> Rect2:
 		r.position.y -= central_rolagem
 	return r
 
+## Retângulo do alvo NO ESPAÇO DA PÁGINA (o rodapé fixo vai para baixo do
+## fim da página, como em `_centro_na_pagina`).
+func _rect_na_pagina(alvo: Dictionary) -> Rect2:
+	var r: Rect2 = alvo["r"]
+	var c = _centro_na_pagina(alvo)
+	return Rect2(c - r.size * 0.5, r.size)
+
+## A SETA LEVA AO VIZINHO DE VERDADE (build 131).
+##
+## Era "o centro mais perto naquela direção", com o desvio de lado pesando
+## pouco: para baixo podia ir para o botão da outra coluna na MESMA linha,
+## para o lado podia subir para as abas, e (medido em
+## tools/testes/navegacao_teste) 98 setas das cinco páginas iam para onde
+## o técnico não esperava. Agora é a busca de foco do Android para TV
+## (FocusFinder), a que todo controle remoto já ensinou:
+##   • PARA O LADO: só na mesma linha (os botões que dividem a altura com o
+##     atual); sem vizinho na linha, o foco fica onde está.
+##   • PARA CIMA/BAIXO: vence o botão da próxima linha que está na mesma
+##     coluna (dividem a largura com o atual). Um botão de outra coluna só
+##     ganha se a linha dele inteira vier antes — aí é ele o "logo abaixo".
+##     Empate: a distância pesada (13 × ao longo² + de lado²).
+##   • Subindo para as abas, o foco cai na aba da página aberta.
+func _vizinho_na_central(lista: Array, de: int, direcao: Vector2) -> int:
+	var a = _rect_na_pagina(lista[de])
+	var horizontal = direcao.x != 0.0
+	var melhor = -1
+	var melhor_r = Rect2()
+	for i in range(lista.size()):
+		if i == de:
+			continue
+		var b = _rect_na_pagina(lista[i])
+		if not _foco_candidato(a, b, direcao):
+			continue
+		if horizontal and not _foco_no_feixe(a, b, direcao):
+			continue
+		if melhor < 0 or _foco_melhor(a, b, melhor_r, direcao):
+			melhor = i
+			melhor_r = b
+	# As abas: entrar nelas por baixo é ir para a aba da página aberta.
+	if melhor >= 0 and melhor < PAGINAS.size() and de >= PAGINAS.size() and direcao == Vector2.UP:
+		melhor = central_pagina
+	return melhor
+
+## Está naquela direção (as regras do FocusFinder do Android).
+static func _foco_candidato(a: Rect2, b: Rect2, d: Vector2) -> bool:
+	if d == Vector2.LEFT:
+		return (a.end.x > b.end.x or a.position.x >= b.end.x) and a.position.x > b.position.x
+	if d == Vector2.RIGHT:
+		return (a.position.x < b.position.x or a.end.x <= b.position.x) and a.end.x < b.end.x
+	if d == Vector2.UP:
+		return (a.end.y > b.end.y or a.position.y >= b.end.y) and a.position.y > b.position.y
+	return (a.position.y < b.position.y or a.end.y <= b.position.y) and a.end.y < b.end.y
+
+## Divide a faixa com o atual: a mesma linha (para o lado) ou a mesma
+## coluna (para cima/baixo).
+static func _foco_no_feixe(a: Rect2, b: Rect2, d: Vector2) -> bool:
+	if d.x != 0.0:
+		return b.end.y > a.position.y and b.position.y < a.end.y
+	return b.end.x > a.position.x and b.position.x < a.end.x
+
+static func _foco_inteiro_naquela_direcao(a: Rect2, b: Rect2, d: Vector2) -> bool:
+	if d == Vector2.LEFT:
+		return a.position.x >= b.end.x
+	if d == Vector2.RIGHT:
+		return a.end.x <= b.position.x
+	if d == Vector2.UP:
+		return a.position.y >= b.end.y
+	return a.end.y <= b.position.y
+
+static func _foco_ao_longo(a: Rect2, b: Rect2, d: Vector2) -> float:
+	var v = 0.0
+	if d == Vector2.LEFT:
+		v = a.position.x - b.end.x
+	elif d == Vector2.RIGHT:
+		v = b.position.x - a.end.x
+	elif d == Vector2.UP:
+		v = a.position.y - b.end.y
+	else:
+		v = b.position.y - a.end.y
+	return max(0.0, v)
+
+static func _foco_ate_a_borda_de_la(a: Rect2, b: Rect2, d: Vector2) -> float:
+	var v = 0.0
+	if d == Vector2.LEFT:
+		v = a.position.x - b.position.x
+	elif d == Vector2.RIGHT:
+		v = b.end.x - a.end.x
+	elif d == Vector2.UP:
+		v = a.position.y - b.position.y
+	else:
+		v = b.end.y - a.end.y
+	return max(1.0, v)
+
+static func _foco_de_lado(a: Rect2, b: Rect2, d: Vector2) -> float:
+	if d.x != 0.0:
+		return abs(a.get_center().y - b.get_center().y)
+	return abs(a.get_center().x - b.get_center().x)
+
+## `b1` (o que está na mesma faixa) ganha de `b2` (fora dela) — a não ser
+## que `b2` esteja inteiro antes de `b1` começar.
+static func _foco_faixa_ganha(a: Rect2, b1: Rect2, b2: Rect2, d: Vector2) -> bool:
+	var f1 = _foco_no_feixe(a, b1, d)
+	var f2 = _foco_no_feixe(a, b2, d)
+	if f2 or not f1:
+		return false
+	if not _foco_inteiro_naquela_direcao(a, b2, d):
+		return true
+	if d.x != 0.0:
+		return true
+	return _foco_ao_longo(a, b1, d) < _foco_ate_a_borda_de_la(a, b2, d)
+
+static func _foco_melhor(a: Rect2, b1: Rect2, b2: Rect2, d: Vector2) -> bool:
+	if _foco_faixa_ganha(a, b1, b2, d):
+		return true
+	if _foco_faixa_ganha(a, b2, b1, d):
+		return false
+	var l1 = _foco_ao_longo(a, b1, d)
+	var l2 = _foco_ao_longo(a, b2, d)
+	var s1 = _foco_de_lado(a, b1, d)
+	var s2 = _foco_de_lado(a, b2, d)
+	return 13.0 * l1 * l1 + s1 * s1 < 13.0 * l2 * l2 + s2 * s2
+
 func _navegar_central_pelo_controle(tecla: int, repetindo: bool) -> bool:
 	var direcao = Vector2.ZERO
 	match tecla:
@@ -5822,26 +5944,7 @@ func _navegar_central_pelo_controle(tecla: int, repetindo: bool) -> bool:
 	if lista.empty():
 		return true
 	_foco_central = int(clamp(_foco_central, 0, lista.size() - 1))
-	# Tudo medido no espaço da PÁGINA (os fixos do rodapé entram com a
-	# rolagem somada): assim descer percorre a página inteira, e os
-	# botões do rodapé só ganham quando não há mais nada abaixo.
-	var daqui = _centro_na_pagina(lista[_foco_central])
-	var melhor = -1
-	var melhor_nota = INF
-	for i in range(lista.size()):
-		if i == _foco_central:
-			continue
-		var d = _centro_na_pagina(lista[i]) - daqui
-		var ao_longo = d.dot(direcao)
-		if ao_longo <= 4.0:
-			continue
-		var de_lado = abs(d.dot(Vector2(-direcao.y, direcao.x)))
-		var nota = ao_longo + de_lado * 1.2
-		if bool(lista[i]["fixo"]) and not bool(lista[_foco_central]["fixo"]) and abs(direcao.y) > 0.5:
-			nota += 2000.0
-		if nota < melhor_nota:
-			melhor_nota = nota
-			melhor = i
+	var melhor = _vizinho_na_central(lista, _foco_central, direcao)
 	if melhor >= 0:
 		_foco_central = melhor
 		sons.play("tick", -14.0)

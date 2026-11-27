@@ -409,6 +409,8 @@ tools/simplificar_boxeador.py
 tools/som_tv_feito.json
 tools/testes/arena_teste.gd
 tools/testes/arena_teste.tscn
+tools/testes/navegacao_teste.gd
+tools/testes/navegacao_teste.tscn
 tools/testes/partida_teste.gd
 tools/testes/partida_teste.tscn
 tools/testes/queda_teste.gd

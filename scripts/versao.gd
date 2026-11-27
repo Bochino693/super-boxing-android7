@@ -12,9 +12,9 @@ extends Reference
 ## NUMERO em um e escreva em NOTA o que mudou. Um carimbo que não sobe
 ## mente, e um carimbo que mente é pior do que carimbo nenhum.
 
-const NUMERO = 131
+const NUMERO = 132
 const DATA = "27/11/2026"
-const NOTA = "Todo soco conta, como numa máquina de soco comum: o soco lento (FRACO na placa) marca pouco em vez de não contar, o rápido demais vai para o topo; a nota segue a força (sorteio estreito: o soco mais forte quase sempre marca mais), o topo continua difícil e o 9999 raro; socos fora da régua não mexem na régua automática. Mais a 130: liso na batida da TV, queda física no nocaute, pele lisa, 2º soco com a força dele"
+const NOTA = "Central pelo controle remoto coerente: para o lado fica na mesma linha, para cima/baixo vai ao botão logo acima/abaixo na mesma coluna, subir para as abas cai na aba aberta (a busca de foco do Android para TV). Mais a 131: todo soco conta (o lento marca pouco, o rápido demais vai ao topo) e a nota segue a força; e a 130: liso na batida da TV, queda física no nocaute, pele lisa"
 
 ## Rodapé da abertura: cabe em uma linha discreta.
 static func curta() -> String:
