@@ -5194,7 +5194,7 @@ func _sensor_apareceu() -> void:
 const RECUSAS = {
 	"CURTO": "EVENTO CURTO DEMAIS — VIBRAÇÃO, NÃO SOCO",
 	"LENTO": "SUBIDA LENTA — EMPURRÃO, NÃO IMPACTO",
-	"SUSTENTADO": "FORÇA SUSTENTADA — O SINAL NÃO CAIU",
+	"SUSTENTADO": "ISSO FOI EMPURRÃO — SOQUE!",
 	"GIRO": "O ALVO NÃO SE MOVEU — BAIXE O GIRO MÍNIMO",
 	"FRACO": "MAIS FORTE! SOCO LENTO NÃO CONTA",
 }
@@ -5226,6 +5226,43 @@ func _curto_vira_golpe(msg: Dictionary) -> bool:
 		"accel": float(msg.get("peak_g", 0.0)),
 		"duration_ms": ms,
 		"axis": "O",
+		# A velocidade real dele não foi medida: não entra na régua
+		# automática (entrando no teto, ela empurraria o teto para cima a
+		# cada soco assim, e a máquina ficaria mais difícil sozinha).
+		"fora_da_regua": true,
+	})
+	return true
+
+## TODO SOCO CONTA (build 131), como numa máquina de soco comum. A placa
+## chama de FRACO o soco que passou pela palheta mais devagar que o piso da
+## régua; até a 130 ele não contava ("MAIS FORTE! SOCO LENTO NÃO CONTA") e
+## a pessoa ficava sem número. Agora ele é um soco, com a nota que a
+## velocidade dele dá (baixa: ver `ScoreCurve.nota_abaixo_do_piso`), pelas
+## mesmas travas do HIT. Não entra na régua automática: ela descreve os
+## socos de dentro da faixa.
+##
+## A ÚNICA EXCEÇÃO É O BALANÇO DO SACO: depois de um soco ele vai e volta
+## pelo feixe, e as últimas passadas (devagar) chegam como FRACO. Contadas,
+## elas dariam o segundo soco sozinhas. Nos `SACO_BALANCANDO_MS` depois do
+## soco anterior um FRACO é tomado como balanço (só fica anotado na
+## Central). O HIT não tem essa exceção.
+const SACO_BALANCANDO_MS = 4000
+
+func _fraco_vira_golpe(msg: Dictionary) -> bool:
+	if state != GameDef.State.ARMED or central_aberta or calib_ativo:
+		return false
+	var desde = OS.get_ticks_msec() - ultimo_golpe_ms
+	if desde < SACO_BALANCANDO_MS:
+		ultima_recusa = "FRACO tomado como balanço do saco (%d ms depois do soco anterior)" % desde
+		return true
+	var v = float(msg.get("speed", 0.0))
+	ultima_recusa = "FRACO contado como soco fraco (%.2f m/s)" % v
+	_receber_hit({
+		"speed": v,
+		"accel": float(msg.get("peak_g", 0.0)),
+		"duration_ms": float(msg.get("duration_ms", 0.0)),
+		"axis": "O",
+		"fora_da_regua": true,
 	})
 	return true
 
@@ -5248,9 +5285,14 @@ func _recusa_da_placa(msg: Dictionary) -> void:
 	# O SOCO RÁPIDO DEMAIS É O MAIS FORTE (build 130).
 	if motivo == "CURTO" and _curto_vira_golpe(msg):
 		return
+	# E O SOCO LENTO É UM SOCO FRACO (build 131): conta, marcando pouco.
+	if motivo == "FRACO" and _fraco_vira_golpe(msg):
+		return
 	# Só incomoda quem está jogando quando ele está esperando um soco —
 	# fora daí a informação fica na Central, que é onde se regula.
-	if state == GameDef.State.ARMED and not central_aberta:
+	# (O CURTO que sobra aqui é ruído elétrico de microssegundos, não um
+	# soco: fica só na Central. Dizer "não contou" a quem nem bateu confunde.)
+	if state == GameDef.State.ARMED and not central_aberta and motivo != "CURTO":
 		_show_notice(str(RECUSAS.get(motivo, "GOLPE RECUSADO: %s" % motivo)))
 		if motivo == "FRACO":
 			_fraco_ate = animation_time + 1.8
@@ -5341,7 +5383,8 @@ func _receber_hit(msg: Dictionary) -> void:
 	# só é recalculada no fim da rodada. Um soco nunca muda a régua que
 	# ele mesmo está usando — senão dois socos iguais na mesma rodada
 	# pagariam diferente, e é impossível explicar isso a quem jogou.
-	auto_escala.registrar(speed)
+	if not bool(msg.get("fora_da_regua", false)):
+		auto_escala.registrar(speed)
 	_processar_golpe(speed, false, pico, duracao)
 
 ## O SORTEIO DA NOTA tem gerador próprio, semeado no arranque: não
@@ -5372,16 +5415,13 @@ func _processar_golpe(
 		_notas_recentes.push_front(pontos)
 		if _notas_recentes.size() > ScoreCurve.MEMORIA_DE_NOTAS:
 			_notas_recentes.resize(ScoreCurve.MEMORIA_DE_NOTAS)
+	# TODO SOCO CONTA (build 131): o que fica abaixo do piso da régua marca
+	# pouco, mas marca. Até a 130 ele "não chegava a pontuar" e a tentativa
+	# voltava — a pessoa batia e a máquina não dizia número nenhum.
+	if pontos <= 0:
+		pontos = ScoreCurve.nota_abaixo_do_piso(speed, hit_min_speed)
 	ultima_velocidade = speed
 	ultima_nota = pontos
-	if pontos <= 0:
-		# Fraco demais não gasta a tentativa: o jogador bate de novo.
-		if not simulado:
-			golpe_registrado = false
-			ultima_recusa = "fraco demais: %.2f m/s não chega à zona de pontuação" % speed
-		_show_notice("MAIS FORTE! ESSE NÃO CHEGOU A PONTUAR")
-		_fraco_ate = animation_time + 1.8
-		return
 	_registrar_impacto(pontos, speed, simulado, pico_g, duracao_ms)
 
 ## AS FITAS DA MÁQUINA ACOMPANHANDO O PLACAR.

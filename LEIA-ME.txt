@@ -1,4 +1,4 @@
-SUPER BOXING - TV BOX MALI-450 (TX9) - OPENGL ES 2.0 - BUILD 130
+SUPER BOXING - TV BOX MALI-450 (TX9) - OPENGL ES 2.0 - BUILD 131
 =================================================================
 
 ESTA VERSAO E PARA TV BOX COM PLACA DE VIDEO MALI-450 (TX9): Godot 3.6,
@@ -6,8 +6,34 @@ OpenGL ES 2.0. UM ARQUIVO SO: GERAR_APK_AGORA.bat gera o
 APK certo. Veja "GERAR O APK" mais abaixo.
 
 CONFIRA NA MAQUINA: o rodape da abertura e a Central mostram
-"BUILD 130". Se aparecer outro numero, o APK instalado e o antigo -
+"BUILD 131". Se aparecer outro numero, o APK instalado e o antigo -
 gere o APK de novo com GERAR_APK_AGORA.bat e instale por cima.
+
+O QUE A BUILD 131 MUDA (BASE: A 130) - TODO SOCO CONTA, NOTA SEGUE A FORCA
+---------------------------------------------------------------------------
+- TODO SOCO CONTA, como numa maquina de soco comum. O soco lento (a placa
+  chama de FRACO: a palheta passou mais devagar que o piso da regua) nao
+  conta mais "MAIS FORTE! SOCO LENTO NAO CONTA": ele marca pouco (de 1 a
+  18 pontos, pela fracao do piso que alcancou - sempre abaixo do que o
+  soco mais fraco da regua paga). O rapido demais (CURTO) continua indo
+  para o topo. Unica excecao: nos 4 s logo depois de um soco, um FRACO e
+  o saco ainda balancando (as ultimas passadas dele sao lentas) e nao
+  rouba o 2o soco - fica so anotado na Central.
+- A NOTA SEGUE A FORCA. O sorteio em cima da regua era largo (+-13%, um
+  "dia bom/ruim" de ate 16% em 18% das vezes e a parede dos 8000 com sorte
+  de 55% a 100%): o soco MAIS FRACO marcava mais pontos com frequencia -
+  9% das vezes entre socos 5% diferentes, 16% perto do topo entre socos
+  12% diferentes. Agora +-7%, embalo raro e pequeno, sorte da parede de
+  82% a 100%: os mesmos casos caem para 0,2% e 1%. O numero continua vivo
+  (nunca repete, nunca redondo), o soco no teto fica entre ~9100 e ~9500
+  e o 9999 continua 1 em 1000 dos socos no teto.
+- A REGUA AUTOMATICA NAO ANDA SOZINHA: os socos FRACO e CURTO (fora da
+  faixa, sem velocidade de verdade medida) nao entram na memoria dela. Na
+  130 o CURTO entrava no teto e empurrava o teto para cima a cada soco -
+  a maquina ia ficando mais dificil sozinha.
+- O ruido eletrico (pulso de microssegundos, nao e soco) nao mostra mais
+  "EVENTO CURTO DEMAIS" para quem joga; fica na Central.
+- Teste: partida_teste --fraco (o 1o soco chega como FRACO).
 
 O QUE A BUILD 130 MUDA (BASE: A 129) - LISO, SOCO FORTE CONTA, QUEDA DE VERDADE
 -------------------------------------------------------------------------------

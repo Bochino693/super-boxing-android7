@@ -33,6 +33,8 @@ extends Node
 ## do segundo tem de contar 0,30 (e depois apresentar o primeiro).
 ## `--curto` entrega o segundo soco como a placa entrega o soco rápido
 ## demais (`REJECT,CURTO`): ele tem de contar como o soco no teto.
+## `--fraco` entrega o primeiro soco como a placa entrega o soco lento
+## (`REJECT,FRACO`, metade do piso): ele tem de contar, marcando pouco.
 ## `--log-camera=arquivo` grava por quadro a câmera da arena (posição e
 ## campo de visão), o tempo do quadro, o estado, o degrau do gráfico e o
 ## número do quadro desenhado.
@@ -96,6 +98,7 @@ var _top_visto = false
 var _forcas = []
 var _estado_impresso = ""
 var _curto = false
+var _fraco = false
 var _placar_visto = -1
 var _revelacao_vista = false
 
@@ -123,6 +126,8 @@ func _ready() -> void:
 				_forcas.append(float(x))
 		elif a == "--curto":
 			_curto = true
+		elif a == "--fraco":
+			_fraco = true
 		elif a == "--perder":
 			_perder = 1
 			_natural = true
@@ -325,11 +330,16 @@ func _process(delta: float) -> void:
 			var perde = _perder == 1 or (_perder == 2 and feitas % 2 == 1)
 			if perde:
 				_foto("p%d_perdendo" % feitas, 4.0)
-			elif t - _armado_em > 1.6 and not main.golpe_registrado:
+			elif t - _armado_em > 1.6 and not main.golpe_registrado and not main._lutar_quando_descer:
+				# (só com o saco embaixo: descendo, o jogo ignora qualquer soco)
 				var f = FORCAS[feitas % FORCAS.size()][min(_socos, 1)]
 				if _forcas.size() >= 2:
 					f = float(_forcas[min(_socos, 1)])
-				if _curto and _socos == 1:
+				if _fraco and _socos == 0:
+					main._recusa_da_placa({"reason": "FRACO", "peak_g": 0.0, "duration_ms": 30.0,
+						"gyro_dps": 0.0, "speed": main.hit_min_speed * 0.5})
+					print("PARTIDA_TESTE: soco 1 entregue como REJECT,FRACO (metade do piso) -> registrado=%s" % str(main.golpe_registrado))
+				elif _curto and _socos == 1:
 					main._recusa_da_placa({"reason": "CURTO", "peak_g": 0.0, "duration_ms": 0.9,
 						"gyro_dps": 0.0, "speed": 0.0})
 					print("PARTIDA_TESTE: soco 2 entregue como REJECT,CURTO (0,9 ms) -> registrado=%s" % str(main.golpe_registrado))

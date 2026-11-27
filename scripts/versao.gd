@@ -12,9 +12,9 @@ extends Reference
 ## NUMERO em um e escreva em NOTA o que mudou. Um carimbo que não sobe
 ## mente, e um carimbo que mente é pior do que carimbo nenhum.
 
-const NUMERO = 130
+const NUMERO = 131
 const DATA = "27/11/2026"
-const NOTA = "Liso como o boliche: 30 quadros travados na batida da TV (plugin PunchQuadros) e a linha do jogo na frente do processador; o soco forte demais (\"CURTO\" na placa) conta como o mais forte em vez de sumir e devolver a ficha; a placa que cai no meio da luta é esperada (9 s) em vez de encerrar; o 2º soco mostra a força DELE e depois o mais forte é apresentado (é ele que vai para o ranking); nocaute com queda física (joelhos cedem, senta, desaba de costas, poeira e baque na lona); pele lisa, sem os gomos pintados"
+const NOTA = "Todo soco conta, como numa máquina de soco comum: o soco lento (FRACO na placa) marca pouco em vez de não contar, o rápido demais vai para o topo; a nota segue a força (sorteio estreito: o soco mais forte quase sempre marca mais), o topo continua difícil e o 9999 raro; socos fora da régua não mexem na régua automática. Mais a 130: liso na batida da TV, queda física no nocaute, pele lisa, 2º soco com a força dele"
 
 ## Rodapé da abertura: cabe em uma linha discreta.
 static func curta() -> String:
