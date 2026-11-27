@@ -1,4 +1,4 @@
-SUPER BOXING - TV BOX MALI-450 (TX9) - OPENGL ES 2.0 - BUILD 132
+SUPER BOXING - TV BOX MALI-450 (TX9) - OPENGL ES 2.0 - BUILD 133
 =================================================================
 
 ESTA VERSAO E PARA TV BOX COM PLACA DE VIDEO MALI-450 (TX9): Godot 3.6,
@@ -6,8 +6,31 @@ OpenGL ES 2.0. UM ARQUIVO SO: GERAR_APK_AGORA.bat gera o
 APK certo. Veja "GERAR O APK" mais abaixo.
 
 CONFIRA NA MAQUINA: o rodape da abertura e a Central mostram
-"BUILD 132". Se aparecer outro numero, o APK instalado e o antigo -
+"BUILD 133". Se aparecer outro numero, o APK instalado e o antigo -
 gere o APK de novo com GERAR_APK_AGORA.bat e instale por cima.
+
+O QUE A BUILD 133 MUDA (BASE: A 132) - INICIALIZACAO IGUAL AO STRIKE KIDS
+--------------------------------------------------------------------------
+- O ARDUINO PERGUNTA UMA VEZ SO (e vale depois de desligar): o Arduino que
+  ja esta ligado quando a TV Box liga e visto pelo Android bem no comeco do
+  boot, antes de o sistema ser "destravado" (Android 7+). Nesse instante o
+  Android so enxerga telas marcadas como directBootAware - a do encaixe do
+  Arduino nao era: ele nao achava quem tinha o "USAR POR PADRAO", nao dava
+  a permissao, e a janela voltava a cada vez que a TV ligava. Agora e (no
+  plugin USB, PunchUsbSerial), como no Strike Kids. Nao precisa regravar
+  o Arduino.
+- O JOGO NAO E MAIS TELA INICIAL (o padrao do Strike Kids 8.8): a TV Box
+  nunca mais pergunta "app padrao" e o jogo nao pede mais essa escolha na
+  tela de espera. Quem abre o jogo ao ligar e o aviso de "ligou" do
+  Android (na hora e de novo aos 2,5 / 6 / 12 / 25 s, se a tela da TV
+  cobrir) e/ou o AUTO START, que pode ficar ligado junto (o jogo na frente
+  nao e aberto de novo). Tambem abre sozinho depois de atualizado.
+- Central, pagina OPERACAO, "ABRIR O JOGO AO LIGAR A TV": SIM (Android 7 a
+  9: sempre) ou "PERMITIR ABRIR SOZINHO" (Android 10+: "sobrepor a outros
+  apps"). "SAIR PARA A TELA DA TV" continua; o HOME do controle tambem vai
+  para a tela da TV.
+- GERAR_APK_AGORA.bat -TelaInicial so instala e abre o jogo (nao o faz
+  mais tela inicial).
 
 O QUE A BUILD 132 MUDA (BASE: A 131) - CENTRAL PELO CONTROLE SEM SUSTO
 ----------------------------------------------------------------------
@@ -1127,8 +1150,9 @@ PRIMEIRA VEZ NA TV BOX
 As permissoes vem LOGO NO INICIO, antes da barra andar, uma de cada vez:
   1. CAMERA   -> Permitir
   2. ARDUINO  -> MARQUE "USAR POR PADRAO" e toque OK. Marcado, o Android
-                grava e nao pergunta mais. Sem permitir, o jogo pergunta
-                de novo (o Arduino e obrigatorio).
+                grava e nao pergunta mais - nem depois de desligar (build
+                133). Sem permitir, o jogo pergunta de novo (o Arduino e
+                obrigatorio).
   3. WEBCAM USB -> so aparece se o Android pedir; marque a caixa e OK
 Depois disso a barra carrega e o jogo NAO abre mais nenhuma janela.
 A camera abre sozinha e se religa se parar. O jogo tenta os dois caminhos
@@ -1138,36 +1162,27 @@ motivo (PLUGIN: ... ou CAMERA2: ...) - fotografe e mande.
 
 ABRIR O JOGO SOZINHO AO LIGAR A TV
 ----------------------------------
-O jogo e uma TELA INICIAL do Android: escolhido uma vez, a TV Box abre o
-Super Boxing sozinha - ligando na tomada, pelo controle remoto (volta da
-espera) e a cada HOME. Nao precisa de outro app (o "Launch on Boot" pode
-ser DESLIGADO ou desinstalado: dois apps abrindo o jogo ao mesmo tempo so
-atrapalham).
-  1. Instale o APK (por cima do antigo: as configuracoes ficam) e abra o
-     jogo uma vez.
-  2. Na tela de espera o jogo pede sozinho: o Android pergunta qual e a
-     tela inicial (ou "Definir Super Boxing como app de tela inicial?").
-     Escolha SUPER BOXING e aperte SEMPRE (ou "Definir como padrao").
-     Nao apareceu nada? Aperte HOME no controle remoto: escolha SUPER
-     BOXING e SEMPRE.
-     Nao perguntou (abriu o inicio da TV de novo)? Abra o jogo, segure OK
-     6 s (Central Tecnica), pagina OPERACAO, secao "ABRIR O JOGO AO LIGAR
-     A TV": ela diz SIM ou NAO e "ESCOLHER COMO TELA INICIAL" abre a
-     escolha do Android (a janela "Definir como app de tela inicial", os
-     ajustes da tela inicial ou a janela "Sempre / So uma vez"). Se abrir
-     a pagina do app do inicio da TV: aperte LIMPAR PADROES (em "Abrir
-     por padrao"), volte e aperte HOME > SUPER BOXING > SEMPRE.
-  3. Confira: tire a TV Box da tomada, ligue de novo - abre o jogo.
-     Desligue pelo controle, espere 15 s e ligue - abre o jogo (ele
-     reinicia do zero quando a tela fica 10 s ou mais apagada).
-  ULTIMO RECURSO, PELO PC (TV Box com a depuracao USB/rede ligada):
-     adb shell cmd package set-home-activity com.lazersport.superboxing/com.lazersport.punch.quadros.PunchInicioAtivo
-  ou gere e instale com: GERAR_APK_AGORA.bat -TelaInicial
-PARA USAR A TV (ajustes, Wi-Fi, outros apps): na Central, "SAIR PARA A
-TELA DA TV" - ou aperte HOME 5 vezes seguidas no controle remoto. Um
-HOME volta ao jogo. Para a TV deixar de abrir o jogo: nos ajustes do
-Android, tela inicial (ou "Apps padrao") > o inicio da TV; ou desinstale
-o Super Boxing.
+(Build 133: o padrao do Strike Kids 8.8.) O jogo NAO e mais a tela
+inicial da TV: a TV Box usa a tela inicial dela e nunca pergunta "app
+padrao". Quem abre o Super Boxing ao ligar:
+  - o aviso de "ligou" do Android: o jogo abre sozinho e tenta de novo aos
+    2,5 / 6 / 12 / 25 s se a tela da TV Box cobrir;
+  - e/ou o seu AUTO START (Launch on Boot): pode ficar ligado junto - o
+    jogo que ja esta na frente nao e aberto de novo.
+  Android 10 ou mais novo: o aviso de "ligou" so abre o jogo com a
+  permissao "SOBREPOR A OUTROS APPS" (Central Tecnica, pagina OPERACAO,
+  "PERMITIR ABRIR SOZINHO"). TV Box com Android 7 a 9: nada a fazer.
+  Ligada pelo controle remoto (volta da espera): o jogo reinicia sozinho.
+  Confira: tire a TV Box da tomada e ligue de novo - abre o jogo.
+ARDUINO UMA VEZ SO: na primeira vez marque "USAR POR PADRAO" e OK. Vale
+depois de desligar: o encaixe do Arduino agora e achado pelo Android logo
+no comeco do boot (directBootAware), como no Strike Kids - antes o
+Android nao achava e perguntava de novo a cada vez que a TV ligava.
+Ja tinha escolhido o SUPER BOXING como tela inicial (builds 129 a 132)?
+Instale por cima: na primeira vez o Android pode perguntar qual e a tela
+inicial - escolha a da TV (o inicio normal dela) e SEMPRE.
+PARA USAR A TV (ajustes, Wi-Fi, outros apps): HOME no controle remoto (ou
+"SAIR PARA A TELA DA TV" na Central). Para voltar: abra o Super Boxing.
 
 SE A ABERTURA TRAVAR
 --------------------

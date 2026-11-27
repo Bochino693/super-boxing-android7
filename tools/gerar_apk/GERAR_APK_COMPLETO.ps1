@@ -1,6 +1,8 @@
 # GERAR_APK_AGORA.bat -TelaInicial : depois de gerar, instala pelo adb na
-# TV Box ligada ao PC (depuracao USB/rede) e ja deixa o jogo como TELA
-# INICIAL da TV - ela abre o jogo sozinha ao ligar (como no boliche).
+# TV Box ligada ao PC (depuracao USB/rede) e abre o jogo. (Build 133, o
+# padrao do Strike Kids 8.8: o jogo NAO e mais tela inicial; quem o abre ao
+# ligar e o aviso de "ligou" do Android ou o AUTO START. O nome da opcao
+# ficou o mesmo para nao quebrar atalhos.)
 param([switch]$TelaInicial)
 $ErrorActionPreference = "Stop"
 # Este script mora em tools\gerar_apk; o projeto e a pasta dois niveis acima.
@@ -17,7 +19,7 @@ Set-Location $Raiz
 # (SUPERBOXING_BUILD=...): se a pasta tiver arquivos de builds diferentes
 # misturados (zip novo extraido por cima de um velho), a geracao para aqui,
 # antes de fazer qualquer coisa.
-$Build = 132
+$Build = 133
 $VersaoGodot = "3.6.2"
 $VersaoModelos = "3.6.2.stable"
 $UrlBase = "https://github.com/godotengine/godot/releases/download/3.6.2-stable"
@@ -870,8 +872,8 @@ Write-Host "Arquivo: $($Apk.FullName)"
 Write-Host "Tamanho: $([math]::Round($Apk.Length / 1MB, 2)) MB"
 Write-Host "SHA256: $((Get-FileHash -LiteralPath $Apk.FullName -Algorithm SHA256).Hash)"
 
-# -TelaInicial: instala pelo adb e faz do jogo a TELA INICIAL da TV (ela abre
-# o jogo sozinha ao ligar, na tomada ou pelo controle remoto).
+# -TelaInicial: instala pelo adb e abre o jogo (build 133: o jogo nao e mais
+# tela inicial - ver o comeco deste arquivo).
 if ($TelaInicial) {
     Write-Host ""
     Write-Host "Instalando na TV Box pelo adb (depuracao USB/rede ligada)..." -ForegroundColor Cyan
@@ -881,13 +883,6 @@ if ($TelaInicial) {
     $LogInstalar = Join-Path $Logs "adb-instalar.log"
     $Cod = Rodar-Com-Registro $Adb ('install -r "' + $Apk.FullName + '"') $LogInstalar $Raiz "O adb" 10
     if ($Cod -eq 0 -and (Ler-Compartilhado $LogInstalar) -match 'Success') {
-        $LogInicio = Join-Path $Logs "adb-tela-inicial.log"
-        $CodInicio = Rodar-Com-Registro $Adb "shell cmd package set-home-activity $Pacote/com.lazersport.punch.quadros.PunchInicioAtivo" $LogInicio $Raiz "O adb" 2 $true
-        if ($CodInicio -eq 0 -and (Ler-Compartilhado $LogInicio) -notmatch 'Error|Exception|Unknown') {
-            Write-Host "O jogo agora e a TELA INICIAL da TV: abre sozinho ao ligar." -ForegroundColor Green
-        } else {
-            Write-Host "A TV nao aceitou o jogo como tela inicial pelo adb: na Central Tecnica (OPERACAO) use 'ABRIR O JOGO AO LIGAR A TV' (veja build\android\adb-tela-inicial.log)." -ForegroundColor Yellow
-        }
         $null = Rodar-Com-Registro $Adb "shell monkey -p $Pacote -c android.intent.category.LAUNCHER 1" (Join-Path $Logs "adb-abrir.log") $Raiz "O adb" 2 $true
         Write-Host "Instalado e aberto na TV Box." -ForegroundColor Green
     } else {

@@ -7,6 +7,15 @@
 
     <application android:resizeableActivity="true" android:hardwareAccelerated="true">
         <!--
+        DIRECTBOOTAWARE (build 133, o padrão do Strike Kids): o Arduino que
+        já está ligado quando a TV Box liga é visto pelo Android bem no começo
+        do boot, antes de o usuário ser "destravado" (Android 7+). Nesse
+        instante o Android só enxerga as telas marcadas como directBootAware:
+        sem a marca ele não achava quem tinha o "Usar por padrão", não dava a
+        permissão, e o jogo perguntava de novo a cada vez que a TV ligava.
+        Com ela, a permissão vem no boot e o Arduino pergunta UMA vez só.
+        -->
+        <!--
         PERMISSÃO USB UMA VEZ SÓ, SEM MEXER NA TELA DO GODOT.
 
         Uma atividade própria e invisível atende o encaixe do Arduino e da
@@ -21,6 +30,7 @@
         -->
         <activity
             android:name="com.lazersport.punch.usbserial.UsbAttachActivity"
+            android:directBootAware="true"
             android:exported="true"
             android:excludeFromRecents="true"
             android:noHistory="true"

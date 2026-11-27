@@ -1245,10 +1245,10 @@ func _notification(what: int) -> void:
 			# câmera confere na hora se está viva e se já foi autorizada.
 			if camera_service != null:
 				camera_service.ao_voltar()
-			# De volta da escolha da tela inicial (ou da tela da TV): a
+			# De volta da página "sobrepor" (ou da tela da TV): a
 			# Central confere de novo se a TV já abre o jogo sozinha.
 			if central_aberta:
-				_inicio_estado = InicioDaTv.estado()
+				_inicio_estado = InicioDaTv.abrir_ao_ligar()
 		NOTIFICATION_WM_GO_BACK_REQUEST:
 			# Na Central o VOLTAR fecha a Central (o teclado já cuida).
 			if central_aberta or calib_ativo:
@@ -1729,41 +1729,20 @@ func _processar_abertura(delta: float) -> void:
 			abertura_chegada = 1.0
 		return
 	abertura_chegada = min(1.0, abertura_chegada + delta * 2.2)
-	_tela_inicial_t += delta
-	if _tela_inicial_t >= 6.0:
-		_tela_inicial_t = 0.0
-		_pedir_tela_inicial()
 	if aviso_de_credito >= 0.0:
 		aviso_de_credito += delta
 		if aviso_de_credito > 2.6:
 			aviso_de_credito = -1.0
 
-## O JOGO COMO TELA INICIAL DA TV (build 129, o método do boliche).
+## ABRIR O JOGO AO LIGAR A TV (build 133, o padrão do Strike Kids 8.8).
 ##
-## Enquanto a TV não abre o jogo sozinha, UMA VEZ a cada vez que o jogo
-## abre, na tela de espera, o jogo pede a escolha ao Android ("Super
-## Boxing" + SEMPRE). Uma janela do Android de cada vez: só depois de a
-## câmera e o Arduino terem tido a vez deles (as janelas de permissão
-## deles vêm primeiro) e com o jogo na frente (`Porteiro.livre`).
-const TELA_INICIAL_DEPOIS_S = 20.0
-var _tela_inicial_pedida = false
-var _tela_inicial_t = 0.0
-## Na Central: "jogo", "escolher", "outra|Nome" ou "" (fora da TV Box), e
-## o que a última escolha abriu ("-" = nenhuma ainda).
+## O jogo NÃO pede mais para ser a tela inicial da TV (até a 132 pedia, na
+## tela de espera): quem o abre ao ligar é o aviso de "ligou" do Android ou
+## o AUTO START, e a TV Box nunca mais pergunta "app padrão" (ver
+## `InicioDaTv`). Na Central: "sim", "sobrepor" ou "" (fora da TV Box), e
+## o que o último pedido abriu ("-" = nenhum ainda).
 var _inicio_estado = ""
 var _inicio_passo = "-"
-
-func _pedir_tela_inicial() -> void:
-	if _tela_inicial_pedida or entrada_segurada or central_aberta:
-		return
-	if animation_time < _perifericos_em + TELA_INICIAL_DEPOIS_S or not Porteiro.livre():
-		return
-	_tela_inicial_pedida = true
-	var agora = InicioDaTv.estado()
-	if agora == "" or agora == "jogo":
-		return
-	var abriu = InicioDaTv.pedir()
-	Diario.marca("JOGO: tela inicial da TV = %s; pedida ao Android (%s)" % [agora, abriu if abriu != "" else "nada abriu"])
 
 func _processar_contagem(delta: float) -> void:
 	# A POSE INTEIRA ACONTECE SOBRE IMAGEM AO VIVO — OU NÃO ACONTECE.
@@ -5647,7 +5626,7 @@ func _toggle_central() -> void:
 		if camera_service != null:
 			camera_service.retomar()
 		central_aberta = true
-		_inicio_estado = InicioDaTv.estado()
+		_inicio_estado = InicioDaTv.abrir_ao_ligar()
 		_inicio_passo = "-"
 		# O foco do controle remoto começa na aba da página aberta.
 		_foco_central = central_pagina
@@ -6017,14 +5996,14 @@ func _click_central(p: Vector2) -> void:
 		mapeando = "" if mapeando == "credito" else "credito"
 		return
 	elif _tocou("inicio_tv", p):
-		_inicio_estado = InicioDaTv.estado()
+		_inicio_estado = InicioDaTv.abrir_ao_ligar()
 		if _inicio_estado == "":
 			_show_notice("SÓ NA TV BOX (ANDROID)")
-		elif _inicio_estado == "jogo":
-			_show_notice("A TV JÁ ABRE O JOGO SOZINHA")
+		elif _inicio_estado == "sim":
+			_show_notice("A TV JÁ ABRE O JOGO SOZINHA AO LIGAR")
 		else:
-			_inicio_passo = InicioDaTv.escolher()
-			Diario.marca("JOGO: Central abriu a escolha da tela inicial (%s)" % _inicio_passo)
+			_inicio_passo = InicioDaTv.pedir_sobrepor()
+			Diario.marca("JOGO: Central abriu 'sobrepor a outros apps' (%s)" % _inicio_passo)
 		return
 	elif _tocou("sair_tv", p):
 		if InicioDaTv.sair_para_tv() == "":
@@ -8334,54 +8313,39 @@ func _central_operacao() -> void:
 	)
 	_central_inicio_da_tv()
 
-## ABRIR O JOGO AO LIGAR A TV (build 129, o método do boliche): se a TV
-## já abre o jogo sozinha e, se não, como fazer. O botão da esquerda abre
-## a escolha do Android; o da direita sai para a tela da própria TV.
+## ABRIR O JOGO AO LIGAR A TV (build 133, o padrão do Strike Kids 8.8): o
+## jogo não é mais a tela inicial da TV. O botão da esquerda só existe no
+## Android 10+ ("sobrepor a outros apps"); o da direita sai para a tela da
+## própria TV.
 func _central_inicio_da_tv() -> void:
 	var y = INICIO_TV_Y
 	_secao(Rect2(80, y, 920, 340), "ABRIR O JOGO AO LIGAR A TV", Paleta.VERDE)
 	var largura = 840.0
 	var x = 120.0
-	var linhas = []
+	var linhas = [
+		"Ao ligar, o Android abre o jogo sozinho (tenta de novo até 25 s). O AUTO START também pode.",
+		"Arduino: na 1ª vez marque USAR POR PADRÃO e OK — vale depois de desligar.",
+		"Voltando da espera (controle remoto), o jogo reinicia sozinho.",
+	]
 	if _inicio_estado == "":
 		_texto("SÓ NA TV BOX (ANDROID)", y + 92.0, 24, Paleta.TINTA_FRACA)
-		linhas = [
-			"Na TV Box o jogo vira a tela inicial: abre sozinho ao ligar a TV.",
-			"",
-			"",
-		]
-	elif _inicio_estado == "jogo":
-		_texto("SIM — A TV ABRE O SUPER BOXING SOZINHA", y + 92.0, 24, Paleta.VERDE)
-		linhas = [
-			"Ligando na tomada, pelo controle remoto (volta da espera) e a cada HOME.",
-			"Para usar a TV (ajustes, outros apps): SAIR PARA A TELA DA TV, abaixo.",
-			"",
-		]
+	elif _inicio_estado == "sim":
+		_texto("SIM — AO LIGAR, O SUPER BOXING ABRE SOZINHO", y + 92.0, 24, Paleta.VERDE)
 	else:
-		var nome = InicioDaTv.nome_da_outra(_inicio_estado)
-		_texto(
-			"NÃO — HOJE A TV ABRE \"%s\"" % nome.to_upper() if nome != "" else "NÃO — O ANDROID AINDA PERGUNTA",
-			y + 92.0, 24, Paleta.AMBAR
-		)
-		linhas = [
-			"OK em ESCOLHER: na janela do Android, escolha SUPER BOXING e SEMPRE.",
-			"(ou: HOME no controle remoto > SUPER BOXING > SEMPRE)",
-			"",
-		]
-		if _inicio_passo == "app":
-			linhas[2] = "Abriu a página do app? LIMPAR PADRÕES, volte e HOME > SUPER BOXING > SEMPRE."
-		elif _inicio_passo == "":
-			linhas[2] = "Esta TV não abriu nenhuma escolha: faça pelo PC, com o adb (veja o LEIA-ME)."
+		_texto("FALTA: PERMITIR \"SOBREPOR A OUTROS APPS\"", y + 92.0, 24, Paleta.AMBAR)
+		linhas[2] = "Android 10+: OK em PERMITIR, ligue SUPER BOXING e volte (sem isso, só o AUTO START abre)."
+		if _inicio_passo == "":
+			linhas[2] = "Esta TV não abriu a página: use o AUTO START (Launch on Boot) para abrir o jogo."
 	for i in range(linhas.size()):
 		if linhas[i] != "":
 			_texto_cabendo(linhas[i], y + 138.0 + 34.0 * float(i), 15, Paleta.CREME, largura, x)
 	_botao(
-		BOTOES_SIMPLES["inicio_tv"], "JÁ ABRE SOZINHO" if _inicio_estado == "jogo" else "ESCOLHER COMO TELA INICIAL",
-		_inicio_estado == "jogo", Paleta.VERDE, 18, _inicio_estado == ""
+		BOTOES_SIMPLES["inicio_tv"], "JÁ ABRE SOZINHO" if _inicio_estado != "sobrepor" else "PERMITIR ABRIR SOZINHO",
+		_inicio_estado == "sim", Paleta.VERDE, 18, _inicio_estado == ""
 	)
 	_botao(BOTOES_SIMPLES["sair_tv"], "SAIR PARA A TELA DA TV", false, Paleta.CIANO, 18, _inicio_estado == "")
 	_texto_cabendo(
-		"Sem a Central: HOME 5 vezes seguidas no controle também sai para a TV. Um HOME volta ao jogo.",
+		"HOME no controle também vai para a tela da TV. Para voltar: abra o SUPER BOXING.",
 		y + 318.0, 14, Paleta.TINTA_FRACA, largura, x
 	)
 

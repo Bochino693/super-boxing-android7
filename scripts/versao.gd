@@ -12,9 +12,9 @@ extends Reference
 ## NUMERO em um e escreva em NOTA o que mudou. Um carimbo que não sobe
 ## mente, e um carimbo que mente é pior do que carimbo nenhum.
 
-const NUMERO = 132
+const NUMERO = 133
 const DATA = "27/11/2026"
-const NOTA = "Central pelo controle remoto coerente: para o lado fica na mesma linha, para cima/baixo vai ao botão logo acima/abaixo na mesma coluna, subir para as abas cai na aba aberta (a busca de foco do Android para TV). Mais a 131: todo soco conta (o lento marca pouco, o rápido demais vai ao topo) e a nota segue a força; e a 130: liso na batida da TV, queda física no nocaute, pele lisa"
+const NOTA = "Inicialização igual ao Strike Kids 8.8: o Arduino pergunta UMA vez só e vale depois de desligar (encaixe USB directBootAware); o jogo não é mais tela inicial (a TV nunca pergunta \"app padrão\") — abre pelo aviso de \"ligou\" com novas tentativas e/ou pelo AUTO START. Mais a 132 (setas da Central), 131 (todo soco conta, nota segue a força) e 130 (liso, queda física, pele lisa)"
 
 ## Rodapé da abertura: cabe em uma linha discreta.
 static func curta() -> String:

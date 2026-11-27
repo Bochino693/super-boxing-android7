@@ -10,10 +10,13 @@ O plugin sao as classes Java ao lado (PunchQuadros.java e, desde a build
 pronto ja vem no projeto; so e preciso rodar isto se uma classe mudar.
 
 O MANIFESTO (abaixo) entra no do APK na geracao (o Gradle junta os dois):
-  - a permissao de receber o "ligou" (RECEIVE_BOOT_COMPLETED);
+  - a permissao de receber o "ligou" (RECEIVE_BOOT_COMPLETED) e, no
+    Android 10+, a de "sobrepor a outros apps" (abrir o jogo ao ligar);
   - <queries> das telas iniciais (o Android 11+ esconde as outras sem isso);
-  - PunchInicioAtivo: a tela inicial (HOME) invisivel que abre o jogo;
-  - PunchLigou: o aviso de "ligou" (BOOT_COMPLETED / QUICKBOOT_POWERON).
+  - PunchInicioAtivo: atalho interno que abre o jogo (build 133: NAO e mais
+    tela inicial - o padrao do Strike Kids 8.8);
+  - PunchLigou: o aviso de "ligou" (BOOT_COMPLETED / QUICKBOOT_POWERON) e
+    o de "atualizado" (MY_PACKAGE_REPLACED): abre o jogo.
 """
 from pathlib import Path
 import subprocess
@@ -29,6 +32,7 @@ MANIFESTO = """<?xml version="1.0" encoding="utf-8"?>
     package="com.lazersport.punch.quadros">
     <uses-sdk android:minSdkVersion="19" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <queries>
         <intent>
             <action android:name="android.intent.action.MAIN" />
@@ -42,22 +46,18 @@ MANIFESTO = """<?xml version="1.0" encoding="utf-8"?>
         <activity
             android:name="com.lazersport.punch.quadros.PunchInicioAtivo"
             android:excludeFromRecents="true"
-            android:exported="true"
+            android:exported="false"
             android:noHistory="true"
             android:stateNotNeeded="true"
-            android:theme="@android:style/Theme.Translucent.NoTitleBar">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.HOME" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-        </activity>
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
         <receiver
             android:name="com.lazersport.punch.quadros.PunchLigou"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
             </intent-filter>
         </receiver>
     </application>
